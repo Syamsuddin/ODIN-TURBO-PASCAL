@@ -39,11 +39,22 @@ folder examples ke folder kerja sendiri sebelum mengubah UNITDEMO dan UMATH.
 Enter melanjutkan indentasi baris sebelumnya. Tab memasukkan spasi sesuai
 pengaturan. Shift+Tab mengurangi indentasi baris aktif. Insert mengganti mode
 insert/overwrite. Options > Editor mengatur font, tab, dan warna sintaks.
-Mode warna sintaks nonaktif secara bawaan untuk menyerupai teks klasik.
+Warna sintaks aktif secara bawaan: kata kunci putih, string cyan, komentar
+abu-abu. Matikan untuk kembali ke teks kuning klasik.
 
 Window > List menampilkan editor yang terbuka. F6 mengganti jendela aktif.
 Window > Tile membagi layar. Cascade menyusun jendela bertumpuk. F5 memperbesar
-jendela aktif. Seret bilah judul untuk memindahkan jendela. [■] menutupnya.
+jendela aktif. Seret judul atau bingkai untuk memindahkan jendela; klik ganda
+memperbesarnya. Alt+F3 menutup jendela. Judul memuat nomor jendela, misalnya
+[1 / 2]; jendela aktif berbingkai ganda putih.
+
+Gutter kiri menampilkan nomor baris. Klik nomor baris untuk memasang atau
+melepas breakpoint; baris breakpoint bertanda * dan berlatar merah.
+
+Panel Program output di bawah editor mencatat hasil kompilasi dan kode keluar
+program. Klik ganda pesan error untuk melompat ke barisnya. Window > Output
+panel atau Shift+F5 menyembunyikan dan menampilkan panel. Menu ODIN berisi
+About dan informasi lingkungan.
 
 SEARCH
 

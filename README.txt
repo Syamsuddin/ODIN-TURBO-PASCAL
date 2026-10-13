@@ -75,8 +75,10 @@ pengguna, bukan mengubah /Applications milik sistem.
 
 FITUR YANG TERIMPLEMENTASI
 
-Antarmuka biru, teks kuning, menu abu-abu, jendela editor, status bar, dan
-pintasan fungsi klasik. File/Edit/Search/Run/Compile/Debug/Options/Window/Help.
+Desain antarmuka mengikuti ODIN Turbo Pascal v2.0: layar biru, menu abu-abu
+ODIN/File/Edit/Search/Run/Compile/Debug/Options/Window/Help, jendela editor
+berbingkai dengan nomor baris, panel Program output, status line cyan, dan
+baris tombol fungsi klasik.
 Editor beberapa berkas dengan tile, cascade, zoom, undo/redo, clipboard,
 find/replace, go-to-line, indentasi, mode insert/overwrite, warna sintaks opsional.
 Free Pascal asli, mode TP/ObjFPC/Delphi, primary file, unit/include paths,

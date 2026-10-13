@@ -4,6 +4,20 @@ Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/), dan nomor versinya mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 
+## [Unreleased]
+
+### Diubah
+
+- Desain antarmuka diganti mengikuti ODIN Turbo Pascal v2.0:
+  - menu bar diawali menu **ODIN** (About, informasi lingkungan, Exit);
+  - jendela editor berbingkai garis dengan judul `NAMA.PAS [n / N]` di tepi atas; jendela aktif berbingkai ganda putih, jendela lain abu-abu;
+  - gutter nomor baris berwarna cyan; breakpoint ditandai `*` dan latar merah;
+  - panel **Program output** abu-abu di bawah editor untuk hasil kompilasi, pesan error yang bisa diklik ganda, dan kode keluar program (`Shift+F5` menyembunyikan/menampilkan);
+  - status line cyan dengan posisi `baris:kolom`, di atas baris tombol fungsi abu-abu;
+  - dialog, Help, dan About memakai kotak abu-abu berbingkai hitam dengan judul di tepi atas; About menampilkan logo di kanan bawah.
+- Kompilasi yang gagal tidak lagi membuka dialog; pesan tampil di panel Program output dan kursor melompat ke error pertama. Dialog lengkap tetap ada di Compile › Compiler messages.
+- Warna sintaks aktif secara bawaan. Pengaturan yang sudah tersimpan tetap dihormati.
+
 ## [1.0.0] - 2026-10-13
 
 Rilis publik pertama.

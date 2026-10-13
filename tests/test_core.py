@@ -49,7 +49,7 @@ class DocumentTests(unittest.TestCase):
             s=Settings(p)
             self.assertEqual(s["font_size"],30)
             self.assertEqual(s["tab_width"],1)
-            self.assertFalse(s["syntax"])
+            self.assertTrue(s["syntax"])
             self.assertEqual(s["mode"],"tp")
 
     def test_diagnostic_path_with_parentheses(self):

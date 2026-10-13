@@ -88,7 +88,7 @@ class Document:
 
 DEFAULTS = {
     "compiler": "", "mode": "tp", "font_size": 17,
-    "syntax": False, "tab_width": 2, "range_checks": True,
+    "syntax": True, "tab_width": 2, "range_checks": True,
     "overflow_checks": True, "debug_info": True,
     "unit_paths": [], "include_paths": [], "arguments": "",
     "recent": [], "geometry": "1120x740", "main_file": "",

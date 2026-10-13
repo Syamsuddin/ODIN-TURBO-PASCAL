@@ -5,6 +5,7 @@ F1                  Help
 F2                  Save
 F3                  Open
 F5                  Zoom editor
+Shift+F5            Show / hide Program output panel
 F6                  Next editor
 F7                  LLDB step / trace into
 F8                  LLDB next / step over

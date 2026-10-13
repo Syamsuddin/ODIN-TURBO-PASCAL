@@ -29,7 +29,7 @@ Cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, guru yan
 
 <div align="center">
 
-<img src="docs/UI_PREVIEW_LINUX.png" alt="Editor Odin Turbo Pascal menampilkan HELLO.PAS dengan menu klasik dan baris tombol fungsi" width="820">
+<img src="docs/UI_PREVIEW_LINUX.png" alt="Editor Odin Turbo Pascal bergaya OTP v2.0 menampilkan HELLO.PAS dengan nomor baris, panel Program output, status line, dan baris tombol fungsi" width="820">
 
 <sub>Editor dengan contoh <code>HELLO.PAS</code>. Tangkapan layar dari lingkungan uji Linux; di macOS jendela memakai tampilan Tk native.</sub>
 
@@ -47,10 +47,11 @@ Cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, guru yan
 ## Fitur
 
 ### Antarmuka dan editor
-- Layar biru klasik dengan menu **File · Edit · Search · Run · Compile · Debug · Options · Window · Help**, status bar, dan baris tombol fungsi.
+- Desain antarmuka mengikuti **ODIN Turbo Pascal v2.0**: menu **ODIN · File · Edit · Search · Run · Compile · Debug · Options · Window · Help**, jendela editor berbingkai dengan judul `NAMA.PAS [1 / 2]`, nomor baris cyan, panel **Program output** abu-abu, status line cyan, dan baris tombol fungsi.
+- Hasil kompilasi dan pesan error tampil di panel Program output; klik ganda pesan untuk melompat ke barisnya. `Shift+F5` menyembunyikan atau menampilkan panel.
 - Beberapa jendela editor sekaligus: tile, cascade, zoom, dan daftar jendela.
 - Undo/redo, clipboard, find/replace, go to line, hapus baris, indentasi otomatis, serta mode insert/overwrite.
-- Warna sintaks opsional. Bawaannya teks kuning klasik.
+- Warna sintaks aktif secara bawaan (kata kunci putih, string cyan, komentar abu-abu), bisa dimatikan untuk teks kuning klasik.
 - Encoding CP437 dan UTF-8 (termasuk BOM), serta akhir baris LF dan CRLF, dipertahankan apa adanya saat menyimpan.
 
 ### Kompilasi
@@ -152,6 +153,7 @@ Untuk menghapus aplikasi, jalankan `Uninstall.command`. Aplikasi dipindahkan ke 
 | `F2` | Save | `Alt+F9` / `F9` | Compile / Make |
 | `F3` | Open | `Ctrl+F2` | Hentikan program atau debugger |
 | `F5` | Zoom editor | `Alt+F5` | User screen |
+| `Shift+F5` | Panel Program output | | |
 | `F6` | Editor berikutnya | `Ctrl+F8` | Toggle breakpoint |
 | `F7` / `F8` | LLDB step / next | `Alt+F8` | Diagnostik berikutnya |
 | `F10` | Menu File | `Alt+X` | Keluar |

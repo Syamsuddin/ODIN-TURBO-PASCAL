@@ -25,48 +25,82 @@ from .terminal import Process, Screen, TerminalView
 
 BLUE = "#0000aa"
 CYAN = "#00aaaa"
-WHITE = "#ffff55"
+YELLOW = "#ffff55"
+WHITE = "#ffffff"
 GRAY = "#aaaaaa"
 BLACK = "#000000"
 ASSETS = Path(__file__).resolve().parent.parent
 TEMPLATE = "program Untitled;\n\nbegin\n  WriteLn('Hello, Pascal!');\nend.\n"
 
 
+class Box:
+    """Text-mode window: a one-pixel line frame with the title sitting on the top edge (OTP v2.0 style)."""
+
+    def __init__(self, parent, title, fg, bg, font, double=False):
+        self.fg, self.bg, self.font, self.double = fg, bg, font, double
+        self.frame = tk.Frame(parent, bg=bg, borderwidth=0, highlightthickness=0)
+        self.border = tk.Canvas(self.frame, bg=bg, highlightthickness=0, borderwidth=0)
+        self.border.place(x=0, y=0, relwidth=1, relheight=1)
+        self.inner = tk.Frame(self.frame, bg=bg)
+        self.title = tk.Label(self.frame, text=title, bg=bg, fg=fg, font=font, padx=0, pady=0, borderwidth=0)
+        self.relayout()
+        self.border.bind("<Configure>", lambda e: self.draw())
+
+    def relayout(self):
+        self.inner.pack_forget()
+        self.inner.pack(fill="both", expand=True, padx=8, pady=(self.font.metrics("linespace") + 1, 7))
+        self.title.place(x=self.font.measure("  "), y=0)
+        self.draw()
+
+    def configure(self, title=None, fg=None, double=None):
+        if title is not None: self.title.configure(text=title)
+        if fg is not None:
+            self.fg = fg
+            self.title.configure(fg=fg)
+        if double is not None: self.double = double
+        self.draw()
+
+    def draw(self):
+        canvas = self.border
+        canvas.delete("all")
+        w, h = canvas.winfo_width(), canvas.winfo_height()
+        top = self.font.metrics("linespace") // 2
+        if w < 12 or h < top + 8:
+            return
+        canvas.create_rectangle(3, top, w - 4, h - 4, outline=self.fg)
+        if self.double:
+            canvas.create_rectangle(6, top + 3, w - 7, h - 7, outline=self.fg)
+
+
 class Editor:
     def __init__(self, app, document, number):
         self.app, self.document, self.number = app, document, number
-        self.frame = tk.Frame(app.desktop, bg=CYAN, borderwidth=0, highlightbackground=GRAY, highlightthickness=2)
-        self.titlebar = tk.Frame(self.frame, bg=GRAY, height=26)
-        self.titlebar.pack(fill="x")
-        self.close_label = tk.Label(self.titlebar, text="[■]", bg=GRAY, fg=BLUE, font=app.font)
-        self.close_label.pack(side="left")
-        self.close_label.bind("<Button-1>", lambda e: app.close_editor(self))
-        self.title = tk.Label(self.titlebar, bg=GRAY, fg=BLUE, font=app.font)
-        self.title.pack(side="left", expand=True, fill="x")
-        self.zoom_label = tk.Label(self.titlebar, text="[↕]", bg=GRAY, fg=BLUE, font=app.font)
-        self.zoom_label.pack(side="right")
-        self.zoom_label.bind("<Button-1>", lambda e: app.zoom(self))
-        content = tk.Frame(self.frame, bg=BLUE)
-        content.pack(fill="both", expand=True, padx=3, pady=(0, 3))
-        self.gutter = tk.Canvas(content, width=17, bg=BLUE, highlightthickness=0)
+        self.box = Box(app.desktop, "", YELLOW, BLUE, app.font, double=True)
+        self.frame = self.box.frame
+        self.title = self.box.title
+        content = self.box.inner
+        self.gutter = tk.Canvas(content, width=app.font.measure(" 99999 "), bg=BLUE, highlightthickness=0, cursor="hand2")
         self.gutter.pack(side="left", fill="y")
-        self.text = tk.Text(content, bg=BLUE, fg=WHITE, insertbackground=WHITE, selectbackground=GRAY,
-                            selectforeground=BLUE, font=app.font, wrap="none", undo=True, maxundo=500,
-                            borderwidth=0, highlightthickness=0, padx=3, pady=3, exportselection=False,
-                            insertwidth=2, insertontime=550, insertofftime=350)
-        scrollbar = tk.Scrollbar(content, command=self.text.yview, bg=CYAN, troughcolor=BLUE, width=16)
+        self.text = tk.Text(content, bg=BLUE, fg=YELLOW, insertbackground=WHITE, selectbackground=CYAN,
+                            selectforeground=WHITE, inactiveselectbackground=CYAN, font=app.font, wrap="none",
+                            undo=True, maxundo=500, borderwidth=0, highlightthickness=0, padx=3, pady=3,
+                            exportselection=False, insertwidth=2, insertontime=550, insertofftime=350)
+        scrollbar = tk.Scrollbar(content, command=self.text.yview, bg=CYAN, troughcolor=BLUE, width=14,
+                                 borderwidth=0, highlightthickness=0)
         scrollbar.pack(side="right", fill="y")
         self.text.configure(yscrollcommand=lambda a,b: (scrollbar.set(a,b), self.draw_breakpoints()))
+        horizontal = tk.Scrollbar(content, orient="horizontal", command=self.text.xview, bg=CYAN, troughcolor=BLUE,
+                                  width=10, borderwidth=0, highlightthickness=0)
+        horizontal.pack(side="bottom", fill="x")
         self.text.pack(fill="both", expand=True)
-        horizontal = tk.Scrollbar(self.frame, orient="horizontal", command=self.text.xview, width=12)
-        horizontal.pack(fill="x", padx=3)
         self.text.configure(xscrollcommand=horizontal.set)
         self.text.insert("1.0", document.text)
         self.text.edit_reset()
         self.text.edit_modified(False)
-        for name, color in (("keyword", "#ffffff"), ("string", "#55ffff"), ("comment", "#aaaaaa"), ("number", "#55ff55")):
+        for name, color in (("keyword", WHITE), ("string", "#55ffff"), ("comment", GRAY), ("number", "#55ff55")):
             self.text.tag_configure(name, foreground=color)
-        self.text.tag_configure("error", background="#aa0000", foreground="#ffffff")
+        self.text.tag_configure("breakpoint", background="#aa0000")
+        self.text.tag_configure("error", background="#aa0000", foreground=WHITE)
         self.text.tag_configure("found", background=CYAN, foreground=BLACK)
         self.text.bind("<<Modified>>", self.modified)
         self.text.bind("<FocusIn>", lambda e: app.activate(self, focus=False))
@@ -80,9 +114,10 @@ class Editor:
         self.text.bind("<KeyPress>", self.overwrite)
         self.gutter.bind("<Button-1>", self.gutter_click)
         self.text.bind("<Configure>", lambda e: self.draw_breakpoints())
-        self.title.bind("<Button-1>", self.drag_start)
-        self.title.bind("<B1-Motion>", self.drag)
-        self.title.bind("<Double-Button-1>", lambda e: app.zoom(self))
+        for widget in (self.title, self.box.border):
+            widget.bind("<Button-1>", self.drag_start)
+            widget.bind("<B1-Motion>", self.drag)
+            widget.bind("<Double-Button-1>", lambda e: app.zoom(self))
         self.overwrite_mode = False
         self.highlight_job = None
         self.apply_options()
@@ -90,12 +125,17 @@ class Editor:
 
     def apply_options(self):
         self.text.configure(tabs=(self.app.font.measure(" " * self.app.settings["tab_width"]),))
+        self.gutter.configure(width=self.app.font.measure(" 99999 "))
+        self.box.relayout()
         self.highlight()
+        self.draw_breakpoints()
 
     def update_title(self):
         doc = self.document
         name = doc.path.name if doc.path else f"NONAME{self.number:02d}.PAS"
-        self.title.configure(text=f" {name.upper()} {'*' if doc.dirty else ''} ")
+        editors = self.app.editors
+        index = editors.index(self) + 1 if self in editors else len(editors) + 1
+        self.title.configure(text=f" {name.upper()}{' *' if doc.dirty else ''}  [{index} / {max(len(editors), index)}] ")
 
     def modified(self, event=None):
         if not self.text.edit_modified():
@@ -175,14 +215,21 @@ class Editor:
         self.draw_breakpoints()
 
     def draw_breakpoints(self):
+        # The gutter shows line numbers in cyan; a breakpoint line gets "*" and a red background, as in OTP v2.0.
         if not self.gutter.winfo_exists():
             return
         self.gutter.delete("all")
+        self.text.tag_remove("breakpoint", "1.0", "end")
         for line in self.document.breakpoints:
+            self.text.tag_add("breakpoint", f"{line}.0", f"{line}.0 lineend+1c")
+        first = int(self.text.index("@0,0").split(".")[0])
+        last = int(self.text.index(f"@0,{self.text.winfo_height()}").split(".")[0])
+        for line in range(first, last + 1):
             info = self.text.dlineinfo(f"{line}.0")
             if info:
-                y = info[1] + info[3] // 2
-                self.gutter.create_oval(4,y-5,14,y+5,fill="#ff5555",outline="")
+                mark = "*" if line in self.document.breakpoints else " "
+                self.gutter.create_text(self.gutter.winfo_width() - self.app.font.measure(" "), info[1],
+                                        text=f"{mark}{line:>4}", anchor="ne", fill=CYAN, font=self.app.font)
 
 
 class App:
@@ -223,14 +270,33 @@ class App:
         self.menubar.pack(fill="x")
         self.menus = {}
         self.create_menus()
-        self.status = tk.Label(root, bg=GRAY, fg=BLUE, anchor="w", font=self.font, pady=3)
-        self.status.pack(side="bottom", fill="x")
+        # Bottom rows follow OTP v2.0: function keys on the last line, the cyan status line above it,
+        # and a grey "Program output" panel between the editor desktop and the status line.
         self.keys = tk.Frame(root, bg=GRAY)
         self.keys.pack(side="bottom", fill="x")
         for label, action in (("F1 Help",self.help), ("F2 Save",self.save), ("F3 Open",self.open_file),
-                              ("F6 Next",self.next_editor), ("F9 Make",self.compile), ("^F9 Run",self.run), ("Alt-X Exit",self.quit)):
-            tk.Button(self.keys, text=label, command=action, bg=GRAY, fg="#aa0000", activebackground=CYAN,
-                      relief="flat", borderwidth=0, padx=10, pady=3, takefocus=False).pack(side="left")
+                              ("F5 Zoom",self.zoom), ("F6 Next",self.next_editor),
+                              ("F9 Make",self.compile), ("^F9 Run",self.run), ("F10 Menu",lambda:self.post_menu(*self.menus["File"])),
+                              ("Alt+X Exit",self.quit)):
+            key = tk.Label(self.keys, text=label, bg=GRAY, fg=BLACK, padx=5, pady=1, font=self.font)
+            key.pack(side="left")
+            key.bind("<Button-1>", lambda e,a=action: a())
+            key.bind("<Enter>", lambda e: e.widget.configure(bg=BLUE, fg=WHITE))
+            key.bind("<Leave>", lambda e: e.widget.configure(bg=GRAY, fg=BLACK))
+        self.status = tk.Label(root, bg=CYAN, fg=WHITE, anchor="w", font=self.font, pady=1)
+        self.status.pack(side="bottom", fill="x")
+        self.output_box = Box(root, " Program output ", BLACK, GRAY, self.font)
+        self.output_box.frame.pack(side="bottom", fill="x")
+        self.output = tk.Text(self.output_box.inner, height=6, bg=GRAY, fg=BLACK, font=self.font, wrap="none",
+                              borderwidth=0, highlightthickness=0, padx=6, pady=0, cursor="arrow",
+                              selectbackground=CYAN, selectforeground=WHITE)
+        self.output.pack(fill="both", expand=True)
+        self.output.tag_configure("diagnostic", foreground="#aa0000")
+        self.output.tag_configure("note", foreground=BLUE)
+        self.output.tag_bind("diagnostic", "<Enter>", lambda e: self.output.configure(cursor="hand2"))
+        self.output.tag_bind("diagnostic", "<Leave>", lambda e: self.output.configure(cursor="arrow"))
+        self.output.configure(state="disabled")
+        self.output_visible = True
         self.desktop = tk.Frame(root, bg=BLUE)
         self.desktop.pack(fill="both", expand=True)
         if self.logo:
@@ -240,10 +306,12 @@ class App:
             self.watermark = tk.Label(self.desktop, text="ODIN\nTURBO PASCAL\n\n1.0  •  NATIVE PASCAL IDE",
                                       bg=BLUE, fg=CYAN, font=(family, 24, "bold"), justify="center")
         self.watermark.place(relx=.5, rely=.5, y=-34, anchor="center")
-        self.author = tk.Label(self.desktop, text=f"Created by {__author__}", bg=BLUE, fg=WHITE, font=(family, 16, "bold"))
+        self.author = tk.Label(self.desktop, text=f"Created by {__author__}", bg=BLUE, fg=YELLOW, font=(family, 16, "bold"))
         self.author.place(in_=self.watermark, relx=.5, rely=1, y=6, anchor="n")
         self.credit = tk.Label(self.desktop, text=f"GNU GPL v3  •  {__copyright__}", bg=BLUE, fg=CYAN)
         self.credit.place(in_=self.author, relx=.5, rely=1, y=2, anchor="n")
+        self.log(f"ODIN Turbo Pascal {__version__} | Created by {__author__} | Free Pascal native")
+        self.log("F3 Open  |  F9 Make  |  Ctrl+F9 Run  |  Alt+F5 User screen", "note")
         self.bind_keys()
         self.restore_session()
         if not self.editors:
@@ -273,17 +341,19 @@ class App:
         messagebox.showerror("Odin", f"Operasi gagal: {value}\n\nDetail: {data_dir() / 'last-error.log'}", parent=self.root)
 
     def menu(self, name, items, underline=0):
-        button = tk.Menubutton(self.menubar, text=f" {name} ", bg=GRAY, fg=BLACK, activebackground=CYAN,
-                               activeforeground=BLACK, relief="flat", underline=underline+1, padx=1, pady=3)
+        button = tk.Menubutton(self.menubar, text=f" {name} ", bg=GRAY, fg=BLACK, activebackground=BLUE,
+                               activeforeground=WHITE, relief="flat", underline=-1 if underline is None else underline+1,
+                               padx=6, pady=1)
         button.pack(side="left")
-        menu = tk.Menu(button, tearoff=False, bg=GRAY, fg=BLACK, activebackground=CYAN,
-                       activeforeground=BLACK, borderwidth=2)
+        menu = tk.Menu(button, tearoff=False, bg=GRAY, fg=BLACK, activebackground=BLUE,
+                       activeforeground=WHITE, borderwidth=1, relief="solid")
         button.configure(menu=menu)
         for label, command, shortcut in items:
             if label == "-": menu.add_separator()
             else: menu.add_command(label=label, command=command, accelerator=shortcut)
         self.menus[name] = (button, menu)
-        self.root.bind(f"<Alt-{name[underline].lower()}>", lambda e,b=button,m=menu: self.post_menu(b,m))
+        if underline is not None:
+            self.root.bind(f"<Alt-{name[underline].lower()}>", lambda e,b=button,m=menu: self.post_menu(b,m))
         return menu
 
     def post_menu(self, button, menu):
@@ -293,6 +363,8 @@ class App:
         return "break"
 
     def create_menus(self):
+        self.menu("ODIN", [("About ODIN Turbo Pascal",self.about,""),("Environment information",self.environment,""),
+                          ("-",None,""),("Exit",self.quit,"Alt+X")], underline=None)
         self.menu("File", [("New",self.new,"Ctrl+N"),("Open...",self.open_file,"F3"),("Save",self.save,"F2"),
                           ("Save as...",lambda:self.save(as_new=True),""),("Save all",self.save_all,""),
                           ("-",None,""),("Recent files...",self.recent,""),("Examples...",self.examples,""),
@@ -319,16 +391,16 @@ class App:
                              ("Editor...",self.editor_options,""),("Save options",self.settings.save,""),
                              ("Environment information",self.environment,"")])
         self.menu("Window", [("Tile",self.tile,""),("Cascade",self.cascade,""),("Zoom",self.zoom,"F5"),
-                            ("Next",self.next_editor,"F6"),("Close",self.close_editor,"Alt+F3"),("List...",self.window_list,"")])
+                            ("Next",self.next_editor,"F6"),("Close",self.close_editor,"Alt+F3"),("List...",self.window_list,""),
+                            ("-",None,""),("Output panel",self.toggle_output,"Shift+F5")])
         self.menu("Help", [("Contents",self.help,"F1"),("Pascal reference",self.reference,""),
                           ("Keyboard shortcuts",lambda:self.help("SHORTCUTS.txt"),""),("About Odin",self.about,"")])
-        tk.Label(self.menubar,text="◉",bg=GRAY,fg=BLUE,font=self.font).pack(side="right",padx=10)
 
     def bind_keys(self):
         commands = {"<F1>":self.help,"<F2>":self.save,"<F3>":self.open_file,"<F5>":self.zoom,"<F6>":self.next_editor,
                     "<F7>":lambda:self.debug_command("step"),"<F8>":lambda:self.debug_command("next"),"<F9>":self.compile,
                     "<F10>":lambda:self.post_menu(*self.menus["File"]),"<Control-F9>":self.run,"<Alt-F9>":self.compile,
-                    "<Alt-F3>":self.close_editor,"<Alt-F5>":self.show_console,"<Control-F2>":self.stop,
+                    "<Alt-F3>":self.close_editor,"<Shift-F5>":self.toggle_output,"<Alt-F5>":self.show_console,"<Control-F2>":self.stop,
                     "<Control-F8>":self.breakpoint,"<Control-F7>":self.evaluate,"<Alt-F8>":self.next_error,
                     "<Alt-x>":self.quit,"<Alt-BackSpace>":lambda:self.edit("undo"),
                     "<Control-n>":self.new,"<Control-o>":self.open_file,"<Control-s>":self.save,
@@ -350,7 +422,7 @@ class App:
         editor = Editor(self, doc, self.counter)
         self.editors.append(editor)
         n = (len(self.editors)-1) % 5
-        editor.frame.place(x=8+n*20, y=8+n*22, relwidth=1, relheight=1, width=-28-n*20, height=-26-n*22)
+        editor.frame.place(x=n*20, y=n*22, relwidth=1, relheight=1, width=-n*20, height=-n*22)
         self.activate(editor)
         return editor
 
@@ -361,9 +433,9 @@ class App:
         self.active = editor
         editor.frame.lift()
         for item in self.editors:
-            color = GRAY if item is editor else CYAN
-            item.titlebar.configure(bg=color)
-            for label in (item.title,item.close_label,item.zoom_label): label.configure(bg=color)
+            # Active window: white double frame; others: grey single frame.
+            item.box.configure(fg=WHITE if item is editor else GRAY, double=item is editor)
+            item.update_title()
         if focus: editor.text.focus_set()
         self.update_status()
 
@@ -435,6 +507,7 @@ class App:
             self.root.after_cancel(editor.highlight_job)
         editor.frame.destroy()
         self.editors.remove(editor)
+        for item in self.editors: item.update_title()
         self.active = self.editors[-1] if self.editors else None
         if self.active: self.activate(self.active)
         else: self.update_status()
@@ -446,16 +519,34 @@ class App:
 
     def update_status(self, message=None):
         if not hasattr(self,"status"): return
+        position = ""
+        if self.active:
+            line,col = self.active.text.index("insert").split(".")
+            position = f"{int(line)}:{int(col)+1}"
         if message:
-            self.status.configure(text=" " + message)
+            self.status.configure(text=f" {position:<7} {message}")
         elif self.banner or not self.active:
-            # Turbo Pascal style startup banner, kept until the first key or click in an editor.
-            self.status.configure(text=f" Odin Turbo Pascal 1.0   |   Created by {__author__}   |   F1 Help")
+            # Startup banner, kept until the first key or click in an editor.
+            self.status.configure(text=f" {position or '1:1':<7} Ready. Created by {__author__}. F1 Help")
         else:
             editor = self.active
-            line,col = editor.text.index("insert").split(".")
             name = str(editor.document.path) if editor.document.path else "NONAME.PAS"
-            self.status.configure(text=f" {'Overwrite' if editor.overwrite_mode else 'Insert'}  {int(line):5}:{int(col)+1:<4}  {name}  [{self.settings['mode'].upper()}]")
+            self.status.configure(text=f" {position:<7} {'Overwrite' if editor.overwrite_mode else 'Insert'}  {name}  [{self.settings['mode'].upper()}]")
+
+    def log(self, line, tag=None):
+        """Append one line to the Program output panel; the panel keeps the last 500 lines."""
+        self.output.configure(state="normal")
+        self.output.insert("end", ("\n" if self.output.index("end-1c") != "1.0" else "") + line, tag or ())
+        excess = int(self.output.index("end-1c").split(".")[0]) - 500
+        if excess > 0: self.output.delete("1.0", f"{excess + 1}.0")
+        self.output.configure(state="disabled")
+        self.output.see("end")
+        self.output.xview_moveto(0)
+
+    def toggle_output(self):
+        if self.output_visible: self.output_box.frame.pack_forget()
+        else: self.output_box.frame.pack(side="bottom", fill="x", before=self.desktop)
+        self.output_visible = not self.output_visible
 
     def next_editor(self):
         if self.editors:
@@ -465,7 +556,7 @@ class App:
     def zoom(self, editor=None):
         editor = editor or self.active
         if editor:
-            editor.frame.place(x=5,y=5,relwidth=1,relheight=1,width=-10,height=-10)
+            editor.frame.place(x=0,y=0,relwidth=1,relheight=1,width=0,height=0)
             self.activate(editor)
 
     def cascade(self):
@@ -498,13 +589,15 @@ class App:
         if self.active:self.active.text.delete("insert linestart","insert lineend+1c")
 
     def dialog(self,title,width=640):
+        # Grey box with a black line frame and the title on its top edge, as in OTP v2.0.
         win=tk.Toplevel(self.root,bg=GRAY)
         win.title(title)
         win.transient(self.root)
         win.resizable(False,False)
-        frame=tk.Frame(win,bg=GRAY,highlightthickness=2,highlightbackground=BLUE,padx=18,pady=14)
-        frame.pack(fill="both",expand=True,padx=5,pady=5)
-        tk.Label(frame,text=f" {title} ",bg=GRAY,fg=BLUE,font=self.font).pack(pady=(0,12))
+        box=Box(win,f" {title} ",BLACK,GRAY,self.font)
+        box.frame.pack(fill="both",expand=True,padx=4,pady=4)
+        frame=box.inner
+        frame.configure(padx=14,pady=6)
         win.bind("<Escape>",lambda e:win.destroy())
         win.update_idletasks()
         win.geometry(f"+{self.root.winfo_rootx()+80}+{self.root.winfo_rooty()+80}")
@@ -513,13 +606,14 @@ class App:
     def field(self,parent,label,value="",width=50):
         tk.Label(parent,text=label,bg=GRAY,fg=BLACK,anchor="w").pack(fill="x",pady=(7,2))
         var=tk.StringVar(value=value)
-        entry=tk.Entry(parent,textvariable=var,bg=BLUE,fg=WHITE,insertbackground=WHITE,width=width,relief="sunken")
+        entry=tk.Entry(parent,textvariable=var,bg=BLUE,fg=YELLOW,insertbackground=WHITE,width=width,relief="flat",
+                       borderwidth=2,highlightthickness=0,selectbackground=CYAN,selectforeground=WHITE)
         entry.pack(fill="x")
         return var,entry
 
     def button(self,parent,label,command):
-        return tk.Button(parent,text=f" {label} ",command=command,bg=CYAN,fg=BLACK,activebackground=BLUE,
-                         activeforeground=WHITE,relief="raised",padx=8,pady=3)
+        return tk.Button(parent,text=f"[ {label} ]",command=command,bg=GRAY,fg=BLACK,activebackground=BLUE,
+                         activeforeground=WHITE,relief="flat",borderwidth=0,highlightthickness=0,padx=6,pady=2)
 
     def input(self,title,label,value,callback):
         win,body=self.dialog(title)
@@ -534,7 +628,8 @@ class App:
 
     def choose(self,title,items,callback):
         win,body=self.dialog(title)
-        listing=tk.Listbox(body,width=65,height=min(15,max(4,len(items))),bg=BLUE,fg=WHITE,selectbackground=CYAN,selectforeground=BLACK)
+        listing=tk.Listbox(body,width=65,height=min(15,max(4,len(items))),bg=BLUE,fg=YELLOW,selectbackground=CYAN,
+                         selectforeground=WHITE,borderwidth=0,highlightthickness=0)
         listing.pack(fill="both",expand=True)
         for label,value in items:listing.insert("end",label)
         def accept(e=None):
@@ -564,7 +659,7 @@ class App:
         replacement=None
         if replace:replacement,_=self.field(body,"New text")
         sensitive=tk.BooleanVar(value=False)
-        tk.Checkbutton(body,text="Case sensitive",variable=sensitive,bg=GRAY,fg=BLACK,selectcolor=GRAY).pack(anchor="w",pady=8)
+        tk.Checkbutton(body,text="Case sensitive",variable=sensitive,bg=GRAY,fg=BLACK,selectcolor=GRAY,activebackground=GRAY,highlightthickness=0).pack(anchor="w",pady=8)
         def search():
             self.search_term=find.get()
             self.find_next(case=sensitive.get())
@@ -637,6 +732,10 @@ class App:
             return
         self.compiling=True
         self.pending_action=after
+        self.output.configure(state="normal")
+        self.output.delete("1.0","end")
+        self.output.configure(state="disabled")
+        self.log(f"Compiling {path.name} ...")
         self.update_status(f"Compiling {path.name} ...")
         # Snapshot settings before the worker starts. The worker never accesses Tk.
         snapshot=Settings(self.settings.path)
@@ -661,15 +760,17 @@ class App:
                 self.error_index=-1
                 action=self.pending_action
                 self.pending_action=None
+                self.log_build(value)
                 if value.success:
                     self.update_status("Compile successful" if value.executable else "Unit compiled. No executable.")
                     if action and value.executable:self.start_process(debug=action=="debug")
                     elif action:messagebox.showinfo("Run","Berkas ini menghasilkan unit. Pilih berkas program sebagai Primary file.",parent=self.root)
-                    else:self.show_messages()
+                elif value.diagnostics:self.next_error()
                 else:self.show_messages()
             elif kind=="build_error":
                 self.compiling=False
                 self.pending_action=None
+                self.log(f"Compiler error: {value}","diagnostic")
                 messagebox.showerror("Compiler",value,parent=self.root)
             elif kind=="output":
                 if self.console:
@@ -680,6 +781,7 @@ class App:
                     self.console.feed(f"\r\n\r\n[Process finished, exit code {value}]\r\n")
                     render=True
                 self.debugging=False
+                self.log(f"Program finished. Exit code {value}")
                 self.update_status(f"Program finished. Exit code {value}")
         if render and self.console:self.console.render()
         self.root.after(40,self.poll)
@@ -774,7 +876,7 @@ class App:
             self.update_status("No compiler messages")
             return
         win,body=self.dialog("Compile successful" if result.success else "Compile failed")
-        text=tk.Text(body,width=82,height=18,bg=BLUE,fg=WHITE,wrap="word",font=self.font)
+        text=tk.Text(body,width=82,height=18,bg=BLUE,fg=YELLOW,wrap="word",font=self.font)
         text.pack(fill="both",expand=True)
         text.insert("end", "$ "+shlex.join(result.command)+"\n\n"+result.output)
         text.configure(state="disabled")
@@ -792,6 +894,24 @@ class App:
             self.button(body,"Go to error",jump).pack(side="left",pady=8)
             listing.selection_set(0)
         self.button(body,"OK",win.destroy).pack(side="right",pady=8)
+
+    def log_build(self,result):
+        if result.success:
+            target=result.executable.name if result.executable else "unit, no executable"
+            self.log(f"Compile successful: {target}")
+            return
+        self.log(f"Compile failed: {len(result.diagnostics)} message(s). Double-click a message to jump; Alt+F8 next.")
+        if not result.diagnostics:
+            for line in result.output.strip().splitlines()[-6:]:self.log("  "+line)
+        for i,diag in enumerate(result.diagnostics):
+            tag=f"diagnostic{i}"
+            self.log(f"  {Path(diag.file).name}({diag.line},{diag.column}) {diag.kind}: {diag.message}",("diagnostic",tag))
+            self.output.tag_bind(tag,"<Double-Button-1>",lambda e,d=diag,i=i:self.jump_from_output(i,d))
+
+    def jump_from_output(self,index,diag):
+        self.error_index=index
+        self.jump_diagnostic(diag)
+        return "break"
 
     def jump_diagnostic(self,diag):
         path=Path(diag.file)
@@ -847,11 +967,11 @@ class App:
         compiler,entry=self.field(body,"Compiler path (empty = automatic)",self.settings["compiler"])
         mode=tk.StringVar(value=self.settings["mode"])
         for value,label in (("tp","Turbo Pascal 7 compatibility"),("objfpc","Object Pascal"),("delphi","Delphi")):
-            tk.Radiobutton(body,text=label,value=value,variable=mode,bg=GRAY,selectcolor=GRAY).pack(anchor="w")
+            tk.Radiobutton(body,text=label,value=value,variable=mode,bg=GRAY,selectcolor=GRAY,activebackground=GRAY,highlightthickness=0).pack(anchor="w")
         flags={}
         for key,label in (("range_checks","Range checks"),("overflow_checks","Overflow checks"),("debug_info","Debug information for LLDB")):
             flags[key]=tk.BooleanVar(value=self.settings[key])
-            tk.Checkbutton(body,text=label,variable=flags[key],bg=GRAY,selectcolor=GRAY).pack(anchor="w")
+            tk.Checkbutton(body,text=label,variable=flags[key],bg=GRAY,selectcolor=GRAY,activebackground=GRAY,highlightthickness=0).pack(anchor="w")
         def save():
             self.settings["compiler"]=compiler.get().strip()
             self.settings["mode"]=mode.get()
@@ -867,7 +987,7 @@ class App:
         fields={}
         for key,label in (("unit_paths","Unit search paths"),("include_paths","Include search paths")):
             tk.Label(body,text=label,bg=GRAY,fg=BLUE).pack(anchor="w",pady=8)
-            text=tk.Text(body,width=60,height=4,bg=BLUE,fg=WHITE,insertbackground=WHITE)
+            text=tk.Text(body,width=60,height=4,bg=BLUE,fg=YELLOW,insertbackground=YELLOW)
             text.pack()
             text.insert("1.0","\n".join(self.settings[key]))
             fields[key]=text
@@ -882,7 +1002,7 @@ class App:
         size,_=self.field(body,"Font size (10..30)",str(self.settings["font_size"]))
         tab,_=self.field(body,"Tab width (1..8)",str(self.settings["tab_width"]))
         syntax=tk.BooleanVar(value=self.settings["syntax"])
-        tk.Checkbutton(body,text="Syntax colors (off = classic yellow text)",variable=syntax,bg=GRAY,selectcolor=GRAY).pack(pady=12)
+        tk.Checkbutton(body,text="Syntax colors (off = classic yellow text)",variable=syntax,bg=GRAY,selectcolor=GRAY,activebackground=GRAY,highlightthickness=0).pack(pady=12)
         def save():
             try:
                 font_size,tab_width=int(size.get()),int(tab.get())
@@ -900,11 +1020,14 @@ class App:
         self.button(body,"OK",save).pack()
 
     def show_text(self,title,content,image=None):
-        win=tk.Toplevel(self.root,bg=BLUE)
+        win=tk.Toplevel(self.root,bg=GRAY)
         win.title(title)
         win.geometry("900x620")
-        text=tk.Text(win,bg=BLUE,fg=WHITE,font=self.font,wrap="word",padx=22,pady=20,relief="flat")
-        scroll=tk.Scrollbar(win,command=text.yview)
+        box=Box(win,f" {title} ",BLACK,GRAY,self.font)
+        box.frame.pack(fill="both",expand=True,padx=4,pady=4)
+        text=tk.Text(box.inner,bg=GRAY,fg=BLACK,font=self.font,wrap="word",padx=14,pady=8,relief="flat",
+                     borderwidth=0,highlightthickness=0,selectbackground=CYAN,selectforeground=WHITE)
+        scroll=tk.Scrollbar(box.inner,command=text.yview,bg=CYAN,troughcolor=GRAY,borderwidth=0,highlightthickness=0)
         scroll.pack(side="right",fill="y")
         text.configure(yscrollcommand=scroll.set)
         text.pack(fill="both",expand=True)
@@ -916,15 +1039,36 @@ class App:
         text.insert("end",content)
         text.configure(state="disabled")
         win.bind("<Escape>",lambda e:win.destroy())
+        return win
 
     def help(self,name="HELP.txt"):
         try:content=(ASSETS/"docs"/name).read_text()
         except OSError:content="Dokumentasi tidak ditemukan. Lihat README.txt."
-        self.show_text("Odin Help",content)
+        self.show_text("ODIN Help",content)
 
     def reference(self):self.help("PASCAL.txt")
     def about(self):
-        self.show_text("About Odin Turbo Pascal",f"ODIN TURBO PASCAL\nVersion {__version__}\nCreated by {__author__}\n\nIndependent classic Pascal IDE.\nPython / Tk + Free Pascal.\n\nInterface inspired by the DOS-era Turbo Pascal IDE.\nThis software is not Borland Turbo Pascal and is not affiliated with Borland.\nNo Borland binaries, logos, fonts, or help files are included.\n\nNative Pascal compilation for the host CPU.\nIntel x86_64 and Apple Silicon arm64 use the same application sources.\n\n{__copyright__}.\nThis program is free software: you can redistribute it and/or modify it\nunder the terms of the GNU General Public License, version 3 or later.\nIt comes with ABSOLUTELY NO WARRANTY. See LICENSE and THIRD_PARTY.txt.\n",self.logo_small)
+        # Layout follows the OTP v2.0 About box: text on the left, artwork at the bottom right.
+        win,body=self.dialog("About ODIN Turbo Pascal")
+        lines=(f"ODIN TURBO PASCAL {__version__}",f"Created by {__author__}. GPL-3.0-or-later.","",
+               "Reference: Turbo Pascal 7.0 DOS (1992).",
+               "Not Borland Turbo Pascal; not affiliated with Borland.",
+               "No Borland binaries, logos, fonts or help files.","",
+               "Python / Tk IDE + the real Free Pascal compiler.",
+               "Native programs: Intel x86_64, Apple Silicon arm64.","",
+               f"{__copyright__}.",
+               "Free software under the GNU GPL v3 or later,",
+               "with ABSOLUTELY NO WARRANTY.",
+               "See LICENSE and THIRD_PARTY.txt.","",
+               "Enter or Esc closes this window.")
+        row=tk.Frame(body,bg=GRAY)
+        row.pack(fill="both",expand=True)
+        tk.Label(row,text="\n".join(lines),bg=GRAY,fg=BLACK,font=self.font,justify="left",anchor="nw").pack(side="left",fill="y")
+        self.about_logo=tk.Label(row,image=self.logo_small,bg=GRAY) if self.logo_small else None
+        if self.about_logo:self.about_logo.pack(side="right",anchor="se",padx=(24,0))
+        win.bind("<Return>",lambda e:win.destroy())
+        win.focus_set()
+        return win
 
     def environment(self):
         self.show_text("Environment",f"Odin {__version__}\n\nOS: {platform.platform()}\nCPU: {platform.machine()}\nPython: {sys.version}\nRuntime: {sys.executable}\nTk: {self.root.tk.call('info','patchlevel')}\nCompiler: {locate_compiler(self.settings['compiler']) or 'NOT FOUND'}\nMode: {self.settings['mode']}\nPrimary file: {self.settings['main_file'] or '(active editor)'}\nSettings: {self.settings.path}\n")

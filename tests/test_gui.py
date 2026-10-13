@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from odin.core import Document, Settings, locate_compiler
+from odin.core import BuildResult, Diagnostic, Document, Settings, locate_compiler
 
 
 @unittest.skipUnless(os.environ.get("DISPLAY") or sys.platform=="darwin", "Needs graphical display")
@@ -84,7 +84,7 @@ class GuiTests(unittest.TestCase):
         self.assertFalse(editor.document.breakpoints)
 
     def test_menus_dialogs_and_terminal(self):
-        self.assertEqual(set(self.app.menus),set("File Edit Search Run Compile Debug Options Window Help".split()))
+        self.assertEqual(set(self.app.menus),set("ODIN File Edit Search Run Compile Debug Options Window Help".split()))
         for action in (self.app.compiler_options,self.app.directory_options,self.app.editor_options,
                        self.app.find_dialog,self.app.examples,self.app.window_list,self.app.help,self.app.about):
             action()
@@ -105,12 +105,52 @@ class GuiTests(unittest.TestCase):
         self.assertIn("Created by Syams Ideris",self.app.status.cget("text"))
         self.app.user_input()
         self.assertIn("Insert",self.app.status.cget("text"))
-        self.app.about()
+        about=self.app.about()
         self.root.update()
-        about=[c for c in self.root.winfo_children() if isinstance(c,tk.Toplevel)][-1]
-        text=[c for c in about.winfo_children() if isinstance(c,tk.Text)][0]
-        self.assertEqual(str(text.image_cget("1.0","image")),str(self.app.logo_small))
+        self.assertEqual(str(self.app.about_logo.cget("image")),str(self.app.logo_small))
+        self.assertTrue(self.app.about_logo.winfo_ismapped())
         about.destroy()
+
+    def test_v2_layout_title_gutter_and_output_panel(self):
+        first=self.app.active
+        second=self.app.new()
+        self.root.update()
+        self.assertIn("[2 / 2]",second.title.cget("text"))
+        self.assertIn("[1 / 2]",first.title.cget("text"))
+        self.assertTrue(second.box.double)
+        self.assertFalse(first.box.double)
+        self.assertEqual(self.app.status.cget("bg"),"#00aaaa")
+        self.assertIn("ODIN Turbo Pascal",self.app.output.get("1.0","end"))
+        second.toggle_breakpoint(2)
+        self.root.update()
+        texts=[second.gutter.itemcget(i,"text") for i in second.gutter.find_all()]
+        self.assertIn("    1",texts)
+        self.assertIn("*   2",texts)
+        self.assertTrue(second.text.tag_nextrange("breakpoint","1.0"))
+        self.app.toggle_output()
+        self.root.update()
+        self.assertFalse(self.app.output_box.frame.winfo_ismapped())
+        self.app.toggle_output()
+        self.root.update()
+        self.assertTrue(self.app.output_box.frame.winfo_ismapped())
+        self.app.close_editor(first)
+        self.assertIn("[1 / 1]",second.title.cget("text"))
+
+    def test_failed_build_is_listed_in_output_panel(self):
+        source=self.path/"broken.pas"
+        source.write_text("program Broken;\nbegin\n  WriteLn(x);\nend.\n")
+        editor=self.app.open_file(source)
+        diag=Diagnostic(str(source),3,11,"Error","Identifier not found \"x\"")
+        self.app.messages.put(("build",BuildResult(False,["fpc",str(source)],"",[diag],None,source)))
+        self.app.compiling=True
+        self.app.poll()
+        self.root.update()
+        log=self.app.output.get("1.0","end")
+        self.assertIn("Compile failed",log)
+        self.assertIn("broken.pas(3,11) Error: Identifier not found",log)
+        self.assertEqual(editor.text.index("insert"),"3.10")
+        self.assertTrue(editor.text.tag_nextrange("error","1.0"))
+        self.assertEqual([c for c in self.root.winfo_children() if isinstance(c,tk.Toplevel)],[])
 
     @unittest.skipUnless(locate_compiler(os.environ.get("ODIN_FPC", "")), "Needs FPC")
     def test_real_gui_compile_and_run(self):
