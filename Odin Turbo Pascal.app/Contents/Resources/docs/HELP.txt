@@ -1,0 +1,162 @@
+ODIN TURBO PASCAL
+Panduan penggunaan 1.0
+Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
+
+MEMBUAT PROGRAM PERTAMA
+
+Pilih File > New. Simpan ke folder kerja sendiri dengan F2. Ketik:
+
+program Halo;
+var Nama: string;
+begin
+  Write('Nama Anda: ');
+  ReadLn(Nama);
+  WriteLn('Halo, ', Nama);
+end.
+
+Ctrl+F9 mengompilasi ulang sumber terbaru dan menjalankan executable jika
+kompilasi berhasil. Masukkan nama pada User screen, lalu tekan Enter.
+Tombol Editor pada User screen kembali ke editor. Alt+F5 membukanya kembali.
+Jendela terminal yang ditutup hanya disembunyikan. Program yang sedang berjalan
+tetap aktif sampai selesai atau dihentikan dengan tombol Stop / Ctrl+F2.
+Ctrl+C pada terminal mengirim interupsi ke grup proses.
+
+EDITOR
+
+File > Open menerima .pas, .pp, .inc dan berkas teks lain. Satu berkas dibuka
+sekali dalam sesi yang sama. Tanda * menunjukkan perubahan belum disimpan.
+Save melakukan penulisan atomik pada folder tujuan. Jika sumber diubah oleh
+editor lain, Odin meminta keputusan sebelum menimpa.
+
+Open mendeteksi UTF-8, UTF-8 dengan BOM, lalu CP437 untuk kode DOS lama.
+Line ending CRLF dipertahankan. Berkas DOS yang memakai code page selain
+CP437 perlu dikonversi ke UTF-8 terlebih dahulu.
+
+File > Save as membuat salinan. Contoh bawaan diarahkan ke Save as agar source
+di dalam aplikasi tidak diubah. Untuk proyek dengan beberapa unit, salin seluruh
+folder examples ke folder kerja sendiri sebelum mengubah UNITDEMO dan UMATH.
+
+Enter melanjutkan indentasi baris sebelumnya. Tab memasukkan spasi sesuai
+pengaturan. Shift+Tab mengurangi indentasi baris aktif. Insert mengganti mode
+insert/overwrite. Options > Editor mengatur font, tab, dan warna sintaks.
+Mode warna sintaks nonaktif secara bawaan untuk menyerupai teks klasik.
+
+Window > List menampilkan editor yang terbuka. F6 mengganti jendela aktif.
+Window > Tile membagi layar. Cascade menyusun jendela bertumpuk. F5 memperbesar
+jendela aktif. Seret bilah judul untuk memindahkan jendela. [■] menutupnya.
+
+SEARCH
+
+Find mencari teks literal, bukan regex. Search again melanjutkan pencarian
+dan kembali ke awal berkas bila mencapai akhir. Replace mengganti seleksi
+yang cocok. Replace all mengganti semua kecocokan dalam editor aktif.
+Opsi case sensitive membedakan huruf besar dan kecil pada dialog.
+Go to line memindahkan kursor ke nomor baris.
+
+KOMPILASI
+
+Alt+F9 / F9: memanggil Free Pascal, unit yang belum berubah memakai hasil
+build sebelumnya bila masih sesuai konfigurasi compiler.
+Compile > Build: menambahkan -B agar unit dikompilasi ulang.
+Ctrl+F9: kompilasi kemudian run. Tidak menjalankan executable lama saat
+kompilasi terbaru gagal. Semua perubahan berkas terbuka disimpan dahulu.
+
+Tanpa Primary file, editor aktif adalah target kompilasi. Untuk proyek yang
+terdiri dari program dan unit, pilih Compile > Primary file dan tentukan
+berkas program .pas. Clear primary file mengembalikan mode editor aktif.
+Mengompilasi unit saja menghasilkan .ppu/.o tanpa executable, dan tidak run.
+
+Build cache dipisahkan menurut path program dan pilihan compiler, di:
+~/Library/Application Support/OdinTurboPascal/build/
+Compiler tidak diarahkan untuk menimpa executable di folder sumber.
+Compile > Export executable menyalin hasil build terakhir ke lokasi pilihan.
+Executable hanya sesuai OS dan CPU mesin pembuatnya.
+
+Klik dua kali pesan error untuk menuju sumber, baris, dan kolomnya.
+Alt+F8 berpindah ke diagnostik berikutnya, termasuk warning dan hint.
+Compile > Compiler messages menampilkan perintah dan seluruh keluaran compiler.
+
+Options > Compiler:
+TP adalah mode bawaan untuk sumber bergaya Turbo Pascal.
+ObjFPC dan Delphi tersedia untuk bahasa dengan fitur lebih baru.
+Mode dalam direktif {$mode ...} di source dapat mengalahkan pilihan command line.
+Range checks dan overflow checks aktif secara bawaan.
+Debug information memakai informasi baris dan DWARF untuk debugger.
+
+Options > Directories menerima satu unit/include path per baris. Path dengan
+spasi didukung tanpa tanda kutip tambahan. Sumber unit pada direktori yang
+sama biasanya ditemukan oleh FPC secara otomatis.
+
+PROGRAM PARAMETERS
+
+Run > Parameters menerima argumen dengan aturan kutip seperti:
+  "hello world" 123
+Contoh PARAMETER.PAS akan membaca dua argumen melalui ParamStr.
+Argumen diteruskan sebagai daftar, tanpa menjalankan shell.
+
+USER SCREEN
+
+Terminal memakai pseudo-terminal OS sehingga input program bersifat interaktif.
+Ukuran layar emulasi 80 kolom × 25 baris. Membesarkan jendela tidak mengubah
+ukuran buffer. Terminal mendukung bagian VT100/ANSI yang digunakan oleh CRT:
+warna 16, posisi kursor, clear, scroll, insertion/deletion, dan input keyboard.
+Karakter garis dan pola desktop Turbo Vision (Free Vision) ditampilkan. Tombol
+F1..F12 dan Insert diteruskan ke program; F7/F8 hanya menjadi perintah LLDB
+saat sesi debug berjalan.
+Ini bukan emulator terminal lengkap: tidak ada scrollback, mouse reporting,
+true color, atau akurasi lebar glyph Unicode CJK. Gunakan teks ASCII untuk
+program dengan tata letak kolom yang ketat.
+
+DEBUG DENGAN LLDB
+
+Aktifkan Debug information di Options > Compiler.
+Tempatkan kursor pada baris executable, lalu Ctrl+F8 atau klik gutter kiri.
+Lingkaran merah menandai breakpoint. Angka baris tidak mengikuti perubahan
+struktur source secara otomatis. Sesuaikan breakpoint setelah menambah atau
+menghapus baris, kemudian mulai ulang sesi debug.
+
+Pilih Debug > Start LLDB. Program dikompilasi sebelum debugger dimulai.
+LLDB menempatkan breakpoint dari semua editor terbuka. Bila tidak ada
+breakpoint, Odin meminta breakpoint pada simbol PASCALMAIN.
+Saat LLDB berhenti:
+  F8 / Step over      next
+  F7 / Trace into     step
+  Continue           continue
+  Local variables    frame variable
+  Call stack         bt
+  Evaluate           expression -- <ekspresi>
+
+Semua keluaran berada pada User screen. Anda juga dapat mengetik perintah
+LLDB langsung. Breakpoint yang diubah di editor berlaku pada sesi berikutnya.
+Perintah step sebaiknya dikirim ketika LLDB menampilkan prompt, bukan ketika
+program sedang meminta ReadLn. Gunakan Ctrl+C untuk menginterupsi.
+
+LLDB bukan debugger Pascal Borland. Nama simbol dan ekspresi mengikuti
+dukungan DWARF/LLDB yang terpasang. Evaluasi ekspresi Pascal kompleks tidak
+dijamin. Tidak ada tampilan watches dan penyorotan baris debugger terpadu.
+Jika debugger diblokir oleh Developer Tools permissions, periksa pengaturan
+Privacy & Security macOS dan pemasangan Xcode Command Line Tools.
+
+RECOVERY
+
+Setiap 10 detik Odin mencatat salinan isi editor ke recovery.json pada folder
+pengaturan. Sumber pribadi tidak ditimpa oleh mekanisme recovery. Bila aplikasi
+berhenti tidak normal, pembukaan berikutnya menawarkan pemulihan. Perubahan
+pada interval terakhir sebelum snapshot mungkin belum tercatat.
+File recovery dihapus ketika keluar secara normal.
+
+TROUBLESHOOTING
+
+Compiler not found: jalankan kembali Install.command atau isi path FPC pada
+Options > Compiler, misalnya /opt/homebrew/bin/fpc atau /usr/local/bin/fpc.
+Linker/SDK error: pastikan xcode-select -p dan xcrun --show-sdk-path berhasil.
+Unit not found: periksa primary file, nama unit, dan Options > Directories.
+ReadLn terlihat diam: klik User screen, ketik masukan, lalu Enter.
+Tombol F1..F12 mengatur volume/kecerahan: gunakan Fn bersama tombol fungsi,
+atau aktifkan penggunaan tombol fungsi standar pada pengaturan Keyboard Mac.
+Font terlalu besar: Options > Editor. Gunakan Command+B/R jika tombol fungsi
+lebih nyaman dipakai untuk kontrol perangkat.
+Program macet: Run > Program reset. Proses diterminasi, lalu dipaksa berhenti
+jika belum keluar setelah satu detik.
+Error saat membuka aplikasi: periksa launch.log dan last-error.log pada
+folder pengaturan. Help > Environment information menampilkan path runtime.

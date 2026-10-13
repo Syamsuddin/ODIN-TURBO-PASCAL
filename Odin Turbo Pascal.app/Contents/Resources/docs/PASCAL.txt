@@ -1,0 +1,108 @@
+PASCAL - REFERENSI RINGKAS
+Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
+
+STRUKTUR PROGRAM
+program NamaProgram;
+uses Crt;
+const Maksimum = 10;
+var I: Integer;
+begin
+  for I := 1 to Maksimum do
+    WriteLn(I);
+end.
+
+TIPE DAN VARIABEL
+Integer     Bilangan bulat. Rentang bergantung mode dan target compiler.
+LongInt     Bilangan bulat 32-bit pada target FPC yang dipakai di sini.
+Real        Bilangan pecahan, representasi bergantung target.
+Boolean     True atau False.
+Char        Satu karakter.
+string      Mode TP memakai short string, umumnya panjang maksimum 255 byte.
+
+var
+  Nama: string;
+  Nilai: array[1..5] of Integer;
+
+PENUGASAN DAN PERBANDINGAN
+X := 5;             Penugasan.
+X = 5               Perbandingan sama dengan.
+X <> 5              Tidak sama dengan.
+X < 5, X <= 5       Kurang dari, kurang dari atau sama dengan.
+A div B             Pembagian bulat.
+A mod B             Sisa pembagian.
+
+PERCABANGAN
+if Nilai >= 75 then
+  WriteLn('Lulus')
+else
+  WriteLn('Belum lulus');
+
+Tidak ada titik koma sebelum else yang berpasangan dengan if tersebut.
+Gunakan begin/end bila cabang berisi lebih dari satu pernyataan.
+
+PENGULANGAN
+for I := 1 to 10 do WriteLn(I);
+
+while I < 10 do
+begin
+  Inc(I);
+end;
+
+repeat
+  ReadLn(I);
+until I = 0;
+
+PROCEDURE DAN FUNCTION
+procedure Sapa(Nama: string);
+begin
+  WriteLn('Halo ', Nama);
+end;
+
+function Kuadrat(X: Integer): LongInt;
+begin
+  Kuadrat := LongInt(X) * X;
+end;
+
+RECORD
+type
+  TSiswa = record
+    Nama: string[50];
+    Nilai: Integer;
+  end;
+
+INPUT DAN OUTPUT
+Write('Nama: '); ReadLn(Nama);
+WriteLn('Jumlah: ', Total);
+WriteLn('Rata-rata: ', Rata:0:2);
+
+CRT
+uses Crt;
+ClrScr;                     Membersihkan layar.
+TextColor(Yellow);           Warna teks.
+TextBackground(Blue);        Warna latar.
+GotoXY(10,5);                Posisi kolom 10, baris 5.
+Tombol := ReadKey;           Membaca tombol tanpa Enter.
+
+UNIT STANDAR
+Tersedia:        System (otomatis), Crt, Dos, Strings, Printer, Objects.
+Turbo Vision:    App, Drivers, Views, Menus, Dialogs, MsgBox, StdDlg, Memory,
+                 HistList, Validate, Editors, Outline (Free Vision).
+Tidak tersedia:  Graph, Graph3, Turbo3, Overlay, WinDos, ColorSel, TextView.
+Printer mengirim Lst ke printer default macOS melalui lpr.
+Rincian dan perbedaan perilaku: docs/COMPATIBILITY.txt.
+
+UNIT
+unit UContoh;
+interface
+procedure Halo;
+implementation
+procedure Halo;
+begin
+  WriteLn('Halo');
+end;
+end.
+
+Unit dipakai dari program melalui uses UContoh.
+Simpan nama source sesuai nama unit dan pastikan direktorinya ditemukan FPC.
+
+Contoh lengkap tersedia melalui File > Examples.

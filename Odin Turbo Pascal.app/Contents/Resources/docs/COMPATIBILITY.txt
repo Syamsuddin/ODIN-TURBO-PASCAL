@@ -1,0 +1,100 @@
+KOMPATIBILITAS DAN CAKUPAN VERSI 1.0
+Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
+
+Implementasi baru dengan penampilan terinspirasi IDE Turbo Pascal era DOS.
+Bukan emulasi Borland compiler, bukan replika identik, bukan kompatibilitas
+binary DOS, dan tidak berafiliasi dengan Borland.
+
+Komponen                          Status
+Editor dan operasi berkas         Diimplementasikan, diuji GUI Linux
+Kompilasi FPC mode TP              Diimplementasikan, diuji FPC 3.2.2 Linux
+ReadLn, WriteLn                    Diuji melalui binary dan PTY
+CRT warna/GotoXY/ClrScr/ReadKey     Diuji melalui program CRT nyata di Linux
+Unit Pascal                       Diuji dengan UMATH dan UNITDEMO
+LF/CRLF, UTF-8/BOM, CP437          Diuji round-trip
+Shell injection via arguments     Tidak memakai shell untuk compile/run
+LLDB                              Integrasi tersedia, belum diuji macOS
+Mac Intel / Apple Silicon         Jalur installer tersedia, belum diuji hardware
+Signing / notarization Apple      Belum tersedia
+BGI/Graph DOS                     Tidak diimplementasikan
+Interrupt/port/mem DOS            Tidak diemulasi
+Debugger Borland terpadu          Tidak diimplementasikan
+Watch window, project manager     Tidak tersedia
+Terminal truecolor/Unicode lebar  Tidak tersedia
+Compiler/runtime dalam bundel     Tidak disertakan, dipasang terpisah
+
+Mode -Mtp mengarahkan FPC mendekati sintaks Turbo Pascal. Perbedaan CPU,
+ukuran pointer, ABI, sistem berkas, dan unit tetap berlaku. Jangan menganggap
+layout record/binary file DOS atau aritmetika pointer identik pada macOS 64-bit.
+Lihat referensi resmi sebelum memindahkan program DOS dengan asumsi 16-bit.
+
+UNIT STANDAR TURBO PASCAL 7
+
+Diuji 13 Oktober 2026 pada Mac Intel x86_64 (Darwin 24.6) dengan FPC 3.2.2,
+melalui jalur build dan User screen Odin. Untuk Apple Silicon, program uji
+hanya dikompilasi silang ke arm64, belum dijalankan pada hardware arm64.
+
+Unit           Status
+System         Tersedia otomatis. Rutin string, matematika, Str/Val, berkas
+               teks dan bertipe, direktori, ParamStr, New/Dispose, Include/
+               Exclude, IOResult, ExitProc diuji berjalan.
+Crt            Tersedia. ClrScr, GotoXY, WhereX/WhereY, warna, Window, ClrEol,
+               DelLine, Delay, Sound/NoSound, KeyPressed, ReadKey diuji
+               berjalan, termasuk F1..F12, Insert, dan panah dengan kode scan TP.
+Dos            Tersedia. GetDate/GetTime, GetEnv/EnvCount/EnvStr, FSplit,
+               FExpand, FSearch, FindFirst/FindNext, DiskFree/DiskSize,
+               GetFAttr, GetFTime/PackTime/UnpackTime, Exec/DosExitCode diuji
+               berjalan. DosVersion berisi versi kernel Darwin.
+Strings        Tersedia. Rutin PChar (StrPCopy, StrCat, StrPos, StrNew, dst.)
+               diuji berjalan.
+Objects        Tersedia. TStringCollection dan TBufStream diuji berjalan.
+Printer        Tersedia, hanya dikompilasi. Lst diteruskan ke /usr/bin/lpr,
+               yaitu printer default macOS.
+Turbo Vision   Tersedia sebagai Free Vision: App, Drivers, Views, Menus,
+               Dialogs, MsgBox, StdDlg, Memory, HistList, Validate, Editors,
+               Outline. Aplikasi uji tampil di User screen dan keluar dengan
+               Alt-X. ColorSel dan TextView tidak tersedia. Odin menambahkan
+               direktori Free Vision ke unit path secara otomatis karena unit
+               Menus milik Apple (univint) terbaca lebih dahulu.
+Graph, Graph3  Tidak tersedia (BGI).
+Overlay        Tidak tersedia. Hapus uses Overlay dan pemanggilan OvrInit.
+WinDos         Tidak tersedia. Gunakan Dos dan Strings.
+Turbo3         Tidak tersedia.
+
+Fitur era DOS yang tidak dapat dikompilasi di macOS 64-bit: Mem/MemW/MemL,
+Port, absolute $Seg:$Ofs, PrefixSeg, MemAvail/MaxAvail, Test8087, inline(...),
+serta Intr/MsDos/Registers. GetIntVec/SetIntVec, Keep, dan procedure interrupt
+dapat dikompilasi tetapi tidak berefek: GetIntVec mengembalikan nil dan Keep
+tidak menghentikan program. CSeg/DSeg/SSeg bernilai 0. Blok asm memerlukan
+{$ASMMODE INTEL}, dan kode 16-bit atau pemanggilan interrupt tetap tidak jalan.
+
+Perbedaan perilaku yang perlu diperhatikan:
+- Real berukuran 8 byte (TP: 6 byte). Gunakan tipe Real48 dan Real2Double
+  untuk membaca berkas biner berisi Real dari TP.
+- Pointer berukuran 8 byte. Integer tetap 2 byte dan LongInt 4 byte di mode TP.
+- Round memakai pembulatan ke genap: Round(2.5)=2, Round(-2.5)=-2. Periksa
+  program yang bergantung pada pembulatan nilai .5.
+
+Referensi resmi yang diperiksa saat pengembangan:
+https://www.freepascal.org/docs-html/current/user/usersu84.html
+https://docs.freepascal.org/port.html
+https://www.freepascal.org/fpcmac.html
+https://www.python.org/download/mac/tcltk/
+https://www.python.org/downloads/macos/
+https://formulae.brew.sh/formula/fpc
+https://formulae.brew.sh/formula/python-tk@3.13
+
+Proses build mengarahkan FPC ke -Paarch64 untuk Mac arm64 dan -Px86_64 untuk
+Mac Intel, serta memakai SDK dari xcrun jika tersedia. Interpreter launcher
+dan source Python sama untuk kedua CPU. Ini berbeda dari binary universal2
+yang membundel semua runtime ke satu aplikasi mandiri.
+
+Pemeriksaan akhir di Mac yang masih diperlukan:
+1. Jalankan Install.command pada Intel dan Apple Silicon.
+2. Pastikan pemeriksaan compile/run native berhasil pada kedua chip.
+3. Buka .app dari Finder, tutup, buka kembali, dan uji Open With untuk .pas.
+4. Uji Fn+F1..F12, Command shortcuts, clipboard, dialog, dan display Retina.
+5. Run INPUT.PAS dan CRTDEMO.PAS, lalu uji LLDB step dan breakpoint.
+6. Uji izin Privacy & Security, Gatekeeper, pembaruan app, dan Uninstall.
+
+Hasil Linux tidak menggantikan enam pemeriksaan macOS tersebut.

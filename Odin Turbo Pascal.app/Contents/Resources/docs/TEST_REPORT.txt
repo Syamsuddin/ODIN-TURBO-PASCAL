@@ -1,0 +1,57 @@
+ODIN TURBO PASCAL 1.0.0 - HASIL PENGUJIAN
+Tanggal: 12 Oktober 2026
+Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
+
+LINGKUNGAN
+Linux x86_64, Python 3.12, Tk 9.0, Free Pascal 3.2.2.
+Display virtual Xvfb untuk pengujian interaksi antarmuka Tk.
+Compiler dipanggil secara nyata, bukan mock compiler atau interpreter Pascal.
+
+HASIL TERAKHIR
+20 pengujian otomatis: PASS, 0 failure, 0 error, 0 skipped.
+Waktu suite terakhir: 2,145 detik.
+
+CAKUPAN
+- Semua 10 source contoh berhasil dikompilasi, termasuk unit UMATH.
+- Keluaran program HELLO, ARRAY, REKURSI, UNITDEMO diperiksa.
+- Masukan INPUT dan KALKULATOR diperiksa, termasuk pembagi nol.
+- Parameter dengan spasi diteruskan sebagai satu argumen tanpa shell.
+- BERKAS menulis dan membaca teks, serta menolak nama yang sudah ada.
+- Kompilasi gagal menghasilkan diagnostik dan tidak menyisakan executable lama.
+- Jalur sumber dengan spasi dan diagnostik dengan tanda kurung diperiksa.
+- ReadLn interaktif diuji melalui PTY, dengan masukan nama dan umur.
+- CRTDEMO benar-benar dijalankan: posisi judul, warna, ClrScr, ReadKey,
+  serta keluarnya proses setelah satu tombol.
+- Penghentian grup proses aktif diuji.
+- ANSI fragmented escape, posisi, clear, warna, wrap, scroll, delete,
+  backspace, dan visibilitas kursor diperiksa.
+- CP437 + CRLF dan UTF-8 BOM berhasil disimpan kembali tanpa perubahan byte.
+- Kegagalan encoding tidak merusak source sebelumnya.
+- Perubahan eksternal pada disk terdeteksi.
+- Konfigurasi dengan tipe/nilai salah ditangani.
+- Tokenisasi komentar dan string dengan quote ganda diperiksa.
+- GUI edit/save/find/undo diuji melalui widget Tk nyata.
+- Multiwindow tile/cascade/zoom, pembatalan close, breakpoint, dan
+  snapshot recovery diperiksa.
+- Semua sembilan menu utama, dialog pengaturan, bantuan, dan terminal dibuka.
+- Alur GUI Open > Run mengompilasi dan menjalankan source nyata, lalu
+  menampilkan GUI_RUN_OK dan status akhir pada User screen.
+- Screenshot tampilan aktual diperiksa setelah penyesuaian fallback font.
+
+PEMERIKSAAN PAKET
+Sintaks Python: compileall.
+Sintaks shell: bash -n pada Install, Uninstall, launcher, dan validator Mac.
+Info.plist: dibaca ulang melalui plistlib.
+ZIP: pemeriksaan CRC, path, executable permission, dan keberadaan source.
+
+BELUM DIVERIFIKASI DI HARDWARE MAC
+- Instalasi di Mac Intel maupun Apple Silicon.
+- Eksekusi .app melalui Finder / LaunchServices / Open With.
+- Pengaturan Gatekeeper dan tampilan Tk Cocoa pada Retina.
+- Homebrew pada tiap versi macOS.
+- LLDB, breakpoint, step/next, dan evaluasi variabel pada binary Darwin.
+- Pelaksanaan script check_mac.py dan Validate-on-Mac.command.
+
+Pemasang akan menjalankan pemeriksaan compile/run native di Mac pengguna
+sebelum memasang aplikasi. Pemeriksaan tersebut belum dijalankan di sini.
+Hasil Linux tidak dipresentasikan sebagai hasil pengujian macOS.

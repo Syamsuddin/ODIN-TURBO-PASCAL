@@ -1,0 +1,20 @@
+Odin Turbo Pascal: GNU General Public License v3.0 or later,
+Copyright (c) 2026 Syams Ideris.
+Odin includes original application source and example source under LICENSE.
+No Borland binaries, logos, proprietary fonts, or documentation are included.
+The logo, emblem and application icon (assets/*.svg) are original artwork
+made for this project and are covered by the same license.
+
+The following components are dependencies installed separately, not bundled:
+Python: Python Software Foundation License, https://www.python.org/
+Tcl/Tk: Tcl/Tk license, https://www.tcl.tk/software/tcltk/license.html
+Free Pascal compiler: GPL and runtime licensing as distributed by the FPC
+project, https://www.freepascal.org/. Consult its runtime exception when
+redistributing compiled programs.
+LLDB / Xcode Command Line Tools: obtained from Apple or LLVM separately.
+Homebrew: https://brew.sh/, its own license and formula licenses apply.
+
+Menus and workflow refer to familiar Pascal IDE conventions. Odin is an
+independent application, not an official Borland product or a licensed
+distribution of Turbo Pascal. References to third-party names identify
+compatibility or inspiration, not affiliation.
