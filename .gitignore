@@ -1,5 +1,5 @@
 __pycache__/
 *.pyc
 .DS_Store
-.claude/settings.local.json
-.claude/.cc-writes/
+.claude/
+CLAUDE.md
