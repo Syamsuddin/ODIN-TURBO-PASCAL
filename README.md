@@ -243,7 +243,7 @@ Odin_Turbo_Pascal/
 ├── tests/                  Tes Python (fungsional, compiler, debugger, GUI) dan
 │   └── pascal/             korpus Pascal dengan keluaran FPC sebagai pembanding
 ├── scripts/                Launcher, pemeriksaan Mac, oracle FPC, bundel .app, render logo
-├── assets/                 Logo, ikon, dan banner (sumber SVG serta PNG/ICNS)
+├── assets/                 Logo, ikon, dan banner (master PNG serta PNG/ICNS hasil render)
 ├── Odin Turbo Pascal.app   Bundel macOS (dibentuk dari source)
 ├── IMPLEMENTATION_PLAN.md  Rencana dan status toolchain Odin
 └── Install.command · Uninstall.command · CHANGELOG.md · LICENSE · THIRD_PARTY.txt

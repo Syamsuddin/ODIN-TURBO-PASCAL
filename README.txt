@@ -37,10 +37,10 @@ toolchain/            Source toolchain Odin: compiler, assembler, linker,
                       dan debugger (Rust).
 docs/                 Panduan, referensi Pascal, pintasan, kompatibilitas,
                       laporan pengujian, serta pratinjau antarmuka.
-assets/               Logo dan ikon: sumber SVG serta PNG/ICNS hasil render.
+assets/               Logo dan ikon: master PNG serta PNG/ICNS hasil render.
 tests/                Pengujian fungsional dan GUI.
 scripts/              Pemeriksaan macOS, pembentukan ulang bundel .app, dan
-                      render logo (render_logo.py, butuh cairosvg).
+                      render logo (render_logo.py, butuh Pillow).
 
 BENTUK DISTRIBUSI
 

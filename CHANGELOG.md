@@ -6,6 +6,10 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Diubah
+
+- Logo dan ikon aplikasi memakai logo ODIN Turbo Pascal dari proyek OTP v2.0: Odin bertambal mata, petir, dan buku `begin. end.`. Logo lengkap tampil di desktop IDE, jendela About, dan ikon besar. Ukuran ikon 64 px ke bawah dan banner README memakai emblemnya saja. Sumbernya `assets/odin-logo-master.png`, dirender dengan `scripts/render_logo.py` (sekarang butuh Pillow, bukan cairosvg). Sumber SVG logo lama dihapus.
+
 ## [2.0.0-alpha.1] - 2026-10-15
 
 Rilis alfa pertama menuju 2.0.0. Toolchain Pascal milik Odin sendiri (compiler, assembler, linker, runtime library, debugger, dan Odin Vision) menjadi backend bawaan di Mac Intel. Free Pascal tetap tersedia, dan dipakai otomatis di Apple Silicon. Backend Odin untuk arm64 dan Linux, serta pelepasan Free Pascal, LLDB, dan Xcode sepenuhnya, menyusul sebelum 2.0.0 (lihat `IMPLEMENTATION_PLAN.md`, Tahap 8-10).

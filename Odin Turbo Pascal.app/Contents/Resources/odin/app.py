@@ -97,7 +97,7 @@ class App:
             self.watermark = tk.Label(self.desktop, image=self.logo, text=f"{__version__.replace('-alpha.', ' alpha ').upper()}  •  NATIVE PASCAL IDE", compound="top",
                                       bg=BLUE, fg=CYAN, font=(family, 14, "bold"))
         else:
-            self.watermark = tk.Label(self.desktop, text="ODIN\nTURBO PASCAL\n\n1.0  •  NATIVE PASCAL IDE",
+            self.watermark = tk.Label(self.desktop, text=f"ODIN\nTURBO PASCAL\n\n{__version__.replace('-alpha.', ' alpha ').upper()}  •  NATIVE PASCAL IDE",
                                       bg=BLUE, fg=CYAN, font=(family, 24, "bold"), justify="center")
         self.watermark.place(relx=.5, rely=.5, y=-34, anchor="center")
         self.author = tk.Label(self.desktop, text=f"Created by {__author__}", bg=BLUE, fg=WHITE, font=(family, 16, "bold"))
@@ -118,7 +118,7 @@ class App:
             root.createcommand("::tk::mac::OpenDocument", lambda *paths: [self.open_file(Path(p)) for p in paths])
 
     def load_image(self, name):
-        # The PNGs are rendered from assets/*.svg by scripts/render_logo.py; without them the IDE falls back to text.
+        # The PNGs are rendered from assets/odin-logo-master.png by scripts/render_logo.py; without them the IDE falls back to text.
         try:
             return tk.PhotoImage(master=self.root, file=str(ASSETS / "assets" / name))
         except tk.TclError:

@@ -24,9 +24,10 @@ if APP.exists():
 (CONTENTS / "MacOS").mkdir(parents=True)
 resources = CONTENTS / "Resources"
 resources.mkdir()
+# The logo master (odin-logo-master.png) is only a source for scripts/render_logo.py.
 for folder in ("odin", "examples", "docs", "assets"):
     shutil.copytree(ROOT / folder, resources / folder,
-                    ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+                    ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "odin-logo-master.png"))
 # The Odin toolchain: the RTL sources and a release build of odinpc
 # (cargo build --release in toolchain/). Without odinpc the IDE falls back
 # to Free Pascal.
