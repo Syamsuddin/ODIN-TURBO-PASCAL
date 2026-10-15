@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2026 Syams Ideris
 import queue
+import time
 import tempfile
 import unittest
 from pathlib import Path
@@ -29,7 +30,16 @@ class DebugSessionTests(unittest.TestCase):
     def tearDown(self):
         if self.session and self.session.alive:
             self.session.terminate()
-        self.temp.cleanup()
+        # Windows keeps the program's file locked for a moment after it ends.
+        deadline = time.monotonic() + 10
+        while True:
+            try:
+                self.temp.cleanup()
+                break
+            except PermissionError:
+                if time.monotonic() > deadline:
+                    raise
+                time.sleep(.2)
 
     def start(self, source):
         r = build(source, self.settings, cache=self.root / "build", debug=True)

@@ -45,6 +45,7 @@ ULONGLONG = ctypes.c_uint64
 EXTENDED_STARTUPINFO_PRESENT = 0x00080000
 CREATE_UNICODE_ENVIRONMENT = 0x00000400
 CREATE_SUSPENDED = 0x00000004
+PSEUDOCONSOLE_PASSTHROUGH_MODE = 0x8
 STARTF_USESTDHANDLES = 0x00000100
 PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016
 JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS = 9   # JobObjectExtendedLimitInformation
@@ -307,8 +308,15 @@ class ConPtyProcess:
             self._output, conhost_output = _pipe()
             try:
                 console = HANDLE()
-                check_hresult(k.CreatePseudoConsole(COORD(cols, rows), conhost_input, conhost_output, 0,
-                                                    ctypes.byref(console)), "CreatePseudoConsole")
+                # Passthrough (Windows 11 24H2 / Server 2025 and later) hands the program's own
+                # escape sequences to the User screen. Without it conhost renders the screen again
+                # in 16 colors and drops bright backgrounds, which Turbo Vision palettes use.
+                result = k.CreatePseudoConsole(COORD(cols, rows), conhost_input, conhost_output,
+                                               PSEUDOCONSOLE_PASSTHROUGH_MODE, ctypes.byref(console))
+                if result < 0:
+                    result = k.CreatePseudoConsole(COORD(cols, rows), conhost_input, conhost_output, 0,
+                                                   ctypes.byref(console))
+                check_hresult(result, "CreatePseudoConsole")
                 self._console = console.value
             finally:
                 # The pseudoconsole has its own duplicates. Without ours, the output pipe breaks

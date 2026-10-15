@@ -92,7 +92,11 @@ jobs:
       - name: Rust tests
         working-directory: toolchain
         continue-on-error: ${{ runner.os == 'Windows' }}
-        run: cargo test --workspace
+        run: |
+          # On Windows the corpus runs on drive C:, like the FPC expectations
+          # (FExpand puts the current drive into paths).
+          if [ "$RUNNER_OS" = Windows ]; then export ODIN_CORPUS_TMP="$TEMP/odin-corpus"; fi
+          cargo test --workspace
 
       - name: Python tests
         run: |
