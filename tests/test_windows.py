@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 from odin import conpty
-from odin.core import locate_compiler
+from odin.core import locate_compiler, locate_toolchain
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -157,7 +157,9 @@ class WindowsInstallTests(unittest.TestCase):
         result = subprocess.run([sys.executable, str(ROOT / "scripts" / "check_windows.py"), locate_compiler()],
                                 capture_output=True, text=True, timeout=180)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("OK: compile + run native", result.stdout)
+        self.assertIn("OK: Free Pascal: compile + run native", result.stdout)
+        if locate_toolchain():
+            self.assertIn("OK: toolchain Odin (odinpc.exe): compile + run native x86_64", result.stdout)
 
     @unittest.skipUnless(sys.platform == "win32" and shutil.which("powershell"), "needs Windows PowerShell")
     def test_powershell_parses_installer_scripts(self):
