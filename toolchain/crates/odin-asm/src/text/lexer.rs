@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 Syams Ideris
 //! Splits one source line into tokens and drops its comment.
+//!
+//! The x86-64 (Intel) and AArch64 dialects differ in comments and a few
+//! characters: on AArch64 `#` marks an immediate (a comment only at the
+//! start of a line), `//` starts a comment, `!` marks write-back, and
+//! decimal literals may have a fraction (`#1.5`).
 
 /// A token of an assembly line.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -11,6 +16,9 @@ pub(crate) enum Tok {
     /// An integer literal or character constant. Kept wide so expressions
     /// can detect overflow before the value is narrowed.
     Num(i128),
+    /// A decimal literal with a fraction or exponent (AArch64 only), as the
+    /// bits of an `f64` so the token stays `Eq`.
+    Float(u64),
     /// A string literal with escapes already processed.
     Str(Vec<u8>),
     /// `<<`
@@ -31,6 +39,7 @@ impl Tok {
         match self {
             Tok::Ident(s) => format!("`{s}`"),
             Tok::Num(n) => format!("`{n}`"),
+            Tok::Float(b) => format!("`{}`", f64::from_bits(*b)),
             Tok::Str(_) => "a string".to_string(),
             Tok::Shl => "`<<`".to_string(),
             Tok::Shr => "`>>`".to_string(),
@@ -47,9 +56,22 @@ fn ident_char(c: char) -> bool {
     c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | '$')
 }
 
-/// Tokenizes `line`. A `;` or `#` outside a string or character literal
-/// starts a comment that runs to the end of the line.
+/// Tokenizes an Intel-syntax `line`. A `;` or `#` outside a string or
+/// character literal starts a comment that runs to the end of the line.
 pub(crate) fn lex(line: &str) -> Result<Vec<Tok>, String> {
+    lex_with(line, false)
+}
+
+/// Tokenizes an AArch64 `line` (the syntax clang accepts for both Darwin
+/// and Linux targets). `//` starts a comment, and so does `#` as the first
+/// character of a line; elsewhere `#` is a token (the immediate prefix). A
+/// `;` is rejected: clang reads it as a comment on Darwin but as a statement
+/// separator on Linux, so a file using it would mean different things.
+pub(crate) fn lex_a64(line: &str) -> Result<Vec<Tok>, String> {
+    lex_with(line, true)
+}
+
+fn lex_with(line: &str, a64: bool) -> Result<Vec<Tok>, String> {
     let chars: Vec<char> = line.chars().collect();
     let mut toks = Vec::new();
     let mut i = 0;
@@ -57,8 +79,18 @@ pub(crate) fn lex(line: &str) -> Result<Vec<Tok>, String> {
         let c = chars[i];
         if c.is_whitespace() {
             i += 1;
-        } else if c == ';' || c == '#' {
+        } else if a64 && ((c == '/' && chars.get(i + 1) == Some(&'/')) || (c == '#' && toks.is_empty())) {
             break;
+        } else if a64 && c == ';' {
+            return Err("`;` means a comment on Darwin but a statement separator on Linux; use `//`".into());
+        } else if !a64 && (c == ';' || c == '#') {
+            break;
+        } else if a64
+            && c.is_ascii_digit()
+            && let Some((value, next)) = float(&chars, i)
+        {
+            toks.push(Tok::Float(value.to_bits()));
+            i = next;
         } else if ident_start(c) {
             let start = i;
             while i < chars.len() && ident_char(chars[i]) {
@@ -112,7 +144,7 @@ pub(crate) fn lex(line: &str) -> Result<Vec<Tok>, String> {
         } else if c == '>' && chars.get(i + 1) == Some(&'>') {
             toks.push(Tok::Shr);
             i += 2;
-        } else if "[]()+-*/%,:@~&|^=".contains(c) {
+        } else if "[]()+-*/%,:@~&|^=".contains(c) || (a64 && (c == '#' || c == '!')) {
             toks.push(Tok::Punct(c));
             i += 1;
         } else {
@@ -120,6 +152,34 @@ pub(crate) fn lex(line: &str) -> Result<Vec<Tok>, String> {
         }
     }
     Ok(toks)
+}
+
+/// A decimal literal with a fraction at `chars[i]`: `digits.digits`, with an
+/// optional exponent (`1.5`, `0.125`, `2.0e3`). Returns the value and the
+/// index after it, or `None` if the text is not such a literal.
+fn float(chars: &[char], i: usize) -> Option<(f64, usize)> {
+    let digits = |mut j: usize| {
+        while j < chars.len() && chars[j].is_ascii_digit() {
+            j += 1;
+        }
+        j
+    };
+    let int_end = digits(i);
+    if chars.get(int_end) != Some(&'.') || !chars.get(int_end + 1).is_some_and(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    let mut end = digits(int_end + 1);
+    if matches!(chars.get(end), Some('e' | 'E')) {
+        let sign = usize::from(matches!(chars.get(end + 1), Some('+' | '-')));
+        if chars.get(end + 1 + sign).is_some_and(|c| c.is_ascii_digit()) {
+            end = digits(end + 1 + sign);
+        }
+    }
+    if chars.get(end).is_some_and(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '.') {
+        return None;
+    }
+    let text: String = chars[i..end].iter().collect();
+    text.parse().ok().map(|v| (v, end))
 }
 
 /// Decodes the escape sequence starting at `chars[i]` (just after the
@@ -211,6 +271,23 @@ mod tests {
         assert_eq!(number("18446744073709551615").unwrap(), u64::MAX as i128);
         assert!(number("18446744073709551616").is_err());
         assert!(number("010").is_err());
+    }
+
+    #[test]
+    fn aarch64_dialect() {
+        let t = lex_a64("    ldr x0, [x1, #8]!   // load").unwrap();
+        let words: Vec<String> = t.iter().map(Tok::describe).collect();
+        assert_eq!(words.join(" "), "`ldr` `x0` `,` `[` `x1` `,` `#` `8` `]` `!`");
+        assert_eq!(lex_a64("# a comment line").unwrap(), vec![]);
+        assert_eq!(lex_a64("   # indented comment").unwrap(), vec![]);
+        assert!(lex_a64("add x0, x1, #1 ; no").is_err());
+        let f = lex_a64("fmov d0, #-1.25e1").unwrap();
+        assert_eq!(&f[3..], &[Tok::Punct('#'), Tok::Punct('-'), Tok::Float((1.25e1f64).to_bits())]);
+        assert_eq!(lex_a64("b.eq .L1").unwrap()[0], Tok::Ident("b.eq".into()));
+        // A plain integer stays an integer; `1.L` is not a float.
+        assert_eq!(lex_a64("x #12").unwrap()[1..], [Tok::Punct('#'), Tok::Num(12)]);
+        // The x86 dialect is unchanged.
+        assert_eq!(lex("mov eax, 1 # comment").unwrap().len(), 4);
     }
 
     #[test]

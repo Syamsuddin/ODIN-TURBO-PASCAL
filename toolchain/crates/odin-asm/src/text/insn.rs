@@ -11,9 +11,9 @@ use crate::x86_64::{
     AluOp, Assembler, BitOp, Cond, Fp, FpLogic, FpOp, Label, Mem, Operand, Reg, ShiftOp, Target, UnaryOp, Width,
 };
 
-/// A `.L` label of a code atom.
-pub(crate) struct LocalLabel {
-    pub label: Label,
+/// A `.L` label of a code atom (of either architecture's `Label` type).
+pub(crate) struct LocalLabel<L = Label> {
+    pub label: L,
     /// Line of the definition, once seen.
     pub defined: Option<u32>,
     /// Line of the first reference (or of the definition).
