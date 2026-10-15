@@ -6,6 +6,10 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Diperbaiki
+
+- Windows: program tidak lagi sesekali berhenti dengan runtime error 216 saat `Exec` menjalankan program lewat PATH. Handler pengecualian hanya menangani pelanggaran akses di kode program sendiri; pelanggaran akses di DLL sistem (yang bisa ditangani DLL itu sendiri) diteruskan, dan yang tidak tertangani tetap menjadi runtime error lewat filter terakhir.
+
 ## [2.2.0] - 2026-10-15
 
 Rilis 2.2.0. IDE, toolchain Odin, debugger terpadu, dan Odin Vision kini juga berjalan di Windows 10 1809 atau lebih baru (x86_64). Rilis ini juga membawa dukungan Apple Silicon dan Linux (x86_64 dan arm64) dari 2.1.0-alpha.1 (rinciannya di entri itu); tidak ada rilis 2.1.0 terpisah.
