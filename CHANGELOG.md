@@ -6,6 +6,23 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Ditambahkan
+
+- IDE untuk Windows x86-64 (Windows 10 1809 atau yang lebih baru, Tahap 8d). User screen memakai ConPTY lewat `ctypes` (`odin/conpty.py`, tetap tanpa dependensi pip), dengan kontrak yang sama seperti PTY di macOS dan Linux: keluaran, kode keluar, masukan keyboard, Ctrl-C, ukuran terminal, dan Program reset. Program berjalan di dalam job object, sehingga Program reset dan menutup IDE menghentikan seluruh pohon prosesnya.
+- Di Windows, data pengguna ada di `%APPDATA%\OdinTurboPascal`, Free Pascal dicari di PATH serta di `C:\FPC`, `C:\lazarus\fpc`, dan `C:\tools\freepascal`, unit Free Vision di `units\<target>\fv`, dan hasil kompilasi berakhiran `.exe`. Kunci satu-instans memakai `msvcrt.locking`, font editor Consolas (cadangan Courier New), dan tombol Alt dibaca dari `ALT_MASK` Tk (di Windows, Mod1 adalah Num Lock).
+- Pemasang Windows: `Install.ps1` (dijalankan lewat `Install.cmd`) mencari Python 3.10+ dengan Tk dan Free Pascal, menawarkan `winget` atau unduhan manual, memeriksa kompilasi native (`scripts/check_windows.py`), menyalin aplikasi ke `%LOCALAPPDATA%\Programs\OdinTurboPascal` (`scripts/stage_windows.py`, dengan cadangan pemasangan lama), menulis `python-path`, dan membuat pintasan menu Start serta Desktop yang menjalankan `pythonw.exe -X utf8` dengan peluncur `OdinTurboPascal.pyw`. `Uninstall.ps1` (lewat `Uninstall.cmd`) memindahkan aplikasi ke Recycle Bin dan menyimpan pengaturan.
+- `tests/test_process.py` menguji kontrak proses User screen di semua platform, dan `tests/test_windows.py` menguji layout struktur Win64, blok environment, folder pemasangan, ikon, dan skrip pemasang.
+
+### Diubah
+
+- Parser layar menerima warna 256 dan RGB (`38;5;n`, `38;2;r;g;b`) dan memetakannya ke 16 warna CRT; parameternya tidak lagi terbaca sebagai atribut lain.
+- `.gitattributes` mematikan konversi CRLF Git, sehingga checkout di Windows sama byte demi byte dengan repo.
+- Debugger Odin di Windows belum tersedia (kanalnya akan memakai TCP loopback); IDE memberi pesan yang jelas.
+
+### Pengujian
+
+Kode Windows hanya diverifikasi di runner GitHub Actions Windows, tanpa perangkat fisik. Pemasang, pintasan, SmartScreen, dan peluncuran dari Explorer belum diverifikasi.
+
 ## [2.0.1] - 2026-10-15
 
 Rilis perbaikan kecil: tag versi yang selalu terbaru di IDE dan alat bantu rilis. Compiler, runtime library, dan debugger sama dengan 2.0.0, jadi backend Odin tetap hanya untuk Mac Intel.

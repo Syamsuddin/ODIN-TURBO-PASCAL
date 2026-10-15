@@ -109,6 +109,7 @@ class Editor(DesktopWindow):
         self.gutter.bind("<Button-1>", self.gutter_click)
         self.text.bind("<Configure>", lambda e: self.draw_breakpoints())
         self.overwrite_mode = False
+        self.win32 = self.text.tk.call("tk", "windowingsystem") == "win32"
         self.highlight_job = None
         self.apply_options()
         self.update_title()
@@ -189,8 +190,16 @@ class Editor(DesktopWindow):
         self.app.update_status()
         return "break"
 
+    def command_key(self, e):
+        """Control or Mod1 (Command on macOS, Alt on X11) held: a shortcut, not typing. On Windows
+        Mod1 is Num Lock and Alt is Tk's ALT_MASK (0x20000); AltGr arrives as Control+Alt and types."""
+        if self.win32:
+            held = e.state & 0x20004
+            return bool(held) and held != 0x20004
+        return bool(e.state & 0x0c)
+
     def overwrite(self, e):
-        if self.overwrite_mode and e.char and e.char.isprintable() and not (e.state & 0x0c) and not self.text.tag_ranges("sel"):
+        if self.overwrite_mode and e.char and e.char.isprintable() and not self.command_key(e) and not self.text.tag_ranges("sel"):
             if self.text.get("insert", "insert+1c") != "\n":
                 self.text.delete("insert", "insert+1c")
 
