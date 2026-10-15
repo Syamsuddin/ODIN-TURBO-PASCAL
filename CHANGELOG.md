@@ -6,11 +6,21 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-10-15
+
+Rilis perbaikan kecil: tag versi yang selalu terbaru di IDE dan alat bantu rilis. Compiler, runtime library, dan debugger sama dengan 2.0.0, jadi backend Odin tetap hanya untuk Mac Intel.
+
 ### Ditambahkan
 
 - Tag versi rilis (misalnya `v2.0.0`) tampil di desktop IDE, baris status saat startup, jendela About, Environment, dan komentar `examples/HELLO.PAS` yang terbuka sebagai halaman bawaan. Semuanya diambil dari `__version__` di `odin/__init__.py`. `scripts/package_app.py` menyamakan tag di HELLO.PAS setiap kali bundle dibangun, dan tes gagal bila tag itu tertinggal.
 - `scripts/set_version.py X.Y.Z` menaikkan nomor versi di semua berkas yang menuliskannya: `odin/__init__.py`, workspace toolchain (`odinpc version`), banner `Install.command`, judul `README.txt` dan docs, badge serta baris pemasangan README, tag di HELLO.PAS, dan entri CHANGELOG (bagian `[Unreleased]` menjadi rilis baru beserta tautan perbandingannya). Skrip ini hanya menulis bila semua pola cocok. Klaim pengujian dan prosa rilis tetap ditulis tangan; skrip menyebutkan bagian mana saja.
 - `scripts/update_checksums.py` membuat ulang `SHA256SUMS.json` dari berkas yang dilacak git.
+
+### Pengujian
+
+Di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2, Rust 1.99): 58 tes Python lulus (termasuk 17 tes GUI dengan jendela Tk sungguhan, 4 tes snapshot Odin Vision, dan 2 tes versi), 110 tes Rust lulus, dan korpus diferensial 77 program memberi keluaran dan kode keluar yang sama dengan Free Pascal 3.2.2, baik dengan build biasa maupun build debug.
+
+Yang belum diverifikasi langsung sama dengan 2.0.0.
 
 ## [2.0.0] - 2026-10-15
 
@@ -168,7 +178,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.2...v2.0.0
 [2.0.0-alpha.2]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.1...v2.0.0-alpha.2
 [2.0.0-alpha.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/releases/tag/v2.0.0-alpha.1

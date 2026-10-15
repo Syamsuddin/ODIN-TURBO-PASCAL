@@ -1,5 +1,5 @@
 ODIN TURBO PASCAL
-Panduan penggunaan 2.0.0
+Panduan penggunaan 2.0.1
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 MEMBUAT PROGRAM PERTAMA
