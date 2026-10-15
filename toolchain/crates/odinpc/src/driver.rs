@@ -340,10 +340,10 @@ pub fn build(map: &SourceMap, options: &Options, checked: &Checked) -> Result<Bu
     // --debug instruments the user's sources, never the RTL.
     let mut debug_files = std::collections::HashSet::new();
     if options.debug {
-        let rtl_root = rtl.canonicalize().unwrap_or_else(|_| rtl.clone());
+        let rtl_root = odin_base::canonical(&rtl).unwrap_or_else(|_| rtl.clone());
         for i in 0..map.len() {
             let path = &map.file(FileId(i as u32)).path;
-            let path = path.canonicalize().unwrap_or_else(|_| path.clone());
+            let path = odin_base::canonical(path).unwrap_or_else(|_| path.clone());
             if !path.starts_with(&rtl_root) {
                 debug_files.insert(FileId(i as u32));
             }

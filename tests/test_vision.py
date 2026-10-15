@@ -6,6 +6,7 @@ step must equal tests/pascal/vision/NAME.snap. Snapshots come from our own imple
 by hand; ODIN_UPDATE_SNAPSHOTS=1 rewrites them."""
 import os
 import queue
+import re
 import tempfile
 import time
 import unittest
@@ -117,6 +118,7 @@ class VisionSnapshotTests(unittest.TestCase):
         self.assertTrue(r.success, r.output)
         events = queue.Queue()
         screen = Screen()
+        self.raw = []
         process = Process([str(r.executable)], self.root, lambda k, v: events.put((k, v)))
         exit_code = None
 
@@ -134,6 +136,7 @@ class VisionSnapshotTests(unittest.TestCase):
                     continue
                 if kind == "output":
                     screen.feed(value)
+                    self.raw.append(value)
                     last = time.monotonic()
                 elif kind == "exit":
                     exit_code = value
@@ -170,7 +173,10 @@ class VisionSnapshotTests(unittest.TestCase):
         for snap, lines in taken.items():
             want = expected[snap]
             self.assertEqual(lines[:25], want[:25], f"{name} {snap}: text")
-            self.assertEqual(lines[25:], want[25:], f"{name} {snap}: colors")
+            if lines[25:] != want[25:]:
+                # The color escapes as the terminal (ConPTY on Windows) sent them, to see why.
+                sgr = sorted(set(re.findall(r"\x1b\[[0-9;]*m", "".join(self.raw))))
+                self.assertEqual(lines[25:], want[25:], f"{name} {snap}: colors; SGR seen: {sgr[:60]}")
 
     def test_menus_windows_and_mouse(self):
         self.check("VMENUS")
@@ -190,8 +196,9 @@ class VisionSnapshotTests(unittest.TestCase):
         # Rows are 80 cells wide: the temporary path wraps.
         text = screen.text().replace("\n", "")
         # A name without extension takes the one of the wildcard.
-        self.assertRegex(text, r"FILE 800 /.*/BETA\.PAS")
-        self.assertRegex(text, r"DIR /.*/sub")
+        # An absolute path: /... on Unix, X:\... on Windows.
+        self.assertRegex(text, r"FILE 800 (/|[A-Z]:\\).*[/\\]BETA\.PAS")
+        self.assertRegex(text, r"DIR (/|[A-Z]:\\).*[/\\]sub")
 
 
 if __name__ == "__main__":

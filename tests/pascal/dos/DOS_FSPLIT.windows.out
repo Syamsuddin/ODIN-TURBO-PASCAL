@@ -1,0 +1,36 @@
+-- ordinary paths
+[/usr/local/bin/fpc] -> dir [\usr\local\bin\] name [fpc] ext []
+[file.txt] -> dir [] name [file] ext [.txt]
+[archive.tar.gz] -> dir [] name [archive.tar] ext [.gz]
+[a.b.c] -> dir [] name [a.b] ext [.c]
+[../x.pas] -> dir [..\] name [x] ext [.pas]
+[./y] -> dir [.\] name [y] ext []
+[dir.d/file] -> dir [dir.d\] name [file] ext []
+[a.b/c] -> dir [a.b\] name [c] ext []
+[x/y/z.] -> dir [x\y\] name [z] ext [.]
+[a b/c d.e f] -> dir [a b\] name [c d] ext [.e f]
+-- directories only
+[dir/] -> dir [dir\] name [] ext []
+[/] -> dir [\] name [] ext []
+[/a/b.c/] -> dir [\a\b.c\] name [] ext []
+[//double//slash.x] -> dir [\\double\\] name [slash] ext [.x]
+-- dots
+[.profile] -> dir [] name [] ext [.profile]
+[dir/.hidden.txt] -> dir [dir\] name [.hidden] ext [.txt]
+[name.] -> dir [] name [name] ext [.]
+[.] -> dir [] name [] ext [.]
+[..] -> dir [] name [.] ext [.]
+[...] -> dir [] name [..] ext [.]
+[a..b] -> dir [] name [a.] ext [.b]
+-- empty
+[] -> dir [] name [] ext []
+-- DOS style
+[C:\TP\BIN\TURBO.EXE] -> dir [C:\TP\BIN\] name [TURBO] ext [.EXE]
+[dir\file.ext] -> dir [dir\] name [file] ext [.ext]
+[mixed\sep/file.e] -> dir [mixed\sep\] name [file] ext [.e]
+[C:FOO.BAR] -> dir [C:] name [FOO] ext [.BAR]
+-- long names
+[averyveryverylongfilename.extensionlong] -> dir [] name [averyveryverylongfilename] ext [.extensionlong]
+[/a/directory/name/that/is/longer/than/sixty/seven/characters/total/f.pas] -> dir [\a\directory\name\that\is\longer\than\sixty\seven\characters\total\] name [f] ext [.pas]
+String vars: [\home\user\] [report.final] [.txt]
+rejoined: FALSE

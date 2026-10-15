@@ -9,4 +9,4 @@ pub mod sha256;
 pub mod source;
 
 pub use diag::{Diagnostic, Severity, code};
-pub use source::{FileId, Location, SourceMap, Span};
+pub use source::{FileId, Location, SourceMap, Span, canonical};

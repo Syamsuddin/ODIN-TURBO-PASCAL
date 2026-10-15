@@ -311,10 +311,20 @@ begin
   else
     Emit('3');
   Emit(AnsiColor[A and 7]);
+{$IFDEF WINDOWS}
+  { The Windows console has no blink: bit 7 brightens the background, as
+    with FPC's Crt there. }
+  if A and $80 <> 0 then
+    EmitStr(';10')
+  else
+    EmitStr(';4');
+  Emit(AnsiColor[(A shr 4) and 7]);
+{$ELSE}
   EmitStr(';4');
   Emit(AnsiColor[(A shr 4) and 7]);
   if A and $80 <> 0 then
     EmitStr(';5');
+{$ENDIF}
   Emit('m');
   TermAttr := A;
 end;

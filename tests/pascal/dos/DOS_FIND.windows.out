@@ -1,0 +1,34 @@
+[w/*] attr 63 first 0: ../16 ./16 .dot/32 .hdir/16 a.txt/32 b.TXT/32 data.bin/32 noext/32 sp ace.t/32 sub/16 x.y.z/32 | end 18
+[w/*.*] attr 63 first 0: ../16 ./16 .dot/32 .hdir/16 a.txt/32 b.TXT/32 data.bin/32 noext/32 sp ace.t/32 sub/16 x.y.z/32 | end 18
+[w/*] attr 0 first 0: .dot/32 a.txt/32 b.TXT/32 data.bin/32 noext/32 sp ace.t/32 x.y.z/32 | end 18
+[w/*] attr 16 first 0: ../16 ./16 .dot/32 .hdir/16 a.txt/32 b.TXT/32 data.bin/32 noext/32 sp ace.t/32 sub/16 x.y.z/32 | end 18
+[w/*] attr 2 first 0: .dot/32 a.txt/32 b.TXT/32 data.bin/32 noext/32 sp ace.t/32 x.y.z/32 | end 18
+[w/*] attr 1 first 0: .dot/32 a.txt/32 b.TXT/32 data.bin/32 noext/32 sp ace.t/32 x.y.z/32 | end 18
+[w/*.txt] attr 63 first 0: a.txt/32 b.TXT/32 | end 18
+[w/*.TXT] attr 63 first 0: a.txt/32 b.TXT/32 | end 18
+[w/?.txt] attr 63 first 0: a.txt/32 b.TXT/32 | end 18
+[w/a.*] attr 63 first 0: a.txt/32 | end 18
+[w/*.] attr 63 first 0: ../16 ./16 .dot/32 .hdir/16 noext/32 sub/16 | end 18
+[w/noext] attr 63 first 0: noext/32 | end 18
+[w/a.txt] attr 0 first 0: a.txt/32 | end 18
+[w/sub] attr 16 first 0: sub/16 | end 18
+[w/sub] attr 0 first 18: | end 18
+[w/nothing*] attr 63 first 18: | end 18
+[nodir/*] attr 63 first 3: | end 3
+[w/*.y] attr 63 first 18: | end 18
+[w/*z] attr 63 first 0: x.y.z/32 | end 18
+[w/x*] attr 63 first 0: x.y.z/32 | end 18
+[w/[ab]*] attr 63 first 18: | end 18
+[w/] attr 63 first 13: | end 13
+[w] attr 63 first 0: w/16 | end 18
+[] attr 63 first 3: | end 3
+size 12 time set TRUE name data.bin
+next after single 18
+next again 18
+attr file 32 err 0
+attr dir 16 err 0
+attr dot 32 err 0
+attr missing 0 err 2
+SetFAttr changes nothing: err 0 attr 1
+GetFTime closed: err 6 time 0
+SetFTime by name: err 6
