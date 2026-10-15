@@ -6,6 +6,12 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Ditambahkan
+
+- Tag versi rilis (misalnya `v2.0.0`) tampil di desktop IDE, baris status saat startup, jendela About, Environment, dan komentar `examples/HELLO.PAS` yang terbuka sebagai halaman bawaan. Semuanya diambil dari `__version__` di `odin/__init__.py`. `scripts/package_app.py` menyamakan tag di HELLO.PAS setiap kali bundle dibangun, dan tes gagal bila tag itu tertinggal.
+- `scripts/set_version.py X.Y.Z` menaikkan nomor versi di semua berkas yang menuliskannya: `odin/__init__.py`, workspace toolchain (`odinpc version`), banner `Install.command`, judul `README.txt` dan docs, badge serta baris pemasangan README, tag di HELLO.PAS, dan entri CHANGELOG (bagian `[Unreleased]` menjadi rilis baru beserta tautan perbandingannya). Skrip ini hanya menulis bila semua pola cocok. Klaim pengujian dan prosa rilis tetap ditulis tangan; skrip menyebutkan bagian mana saja.
+- `scripts/update_checksums.py` membuat ulang `SHA256SUMS.json` dari berkas yang dilacak git.
+
 ## [2.0.0] - 2026-10-15
 
 Rilis 2.0.0. Isinya sama dengan 2.0.0-alpha.2, hanya nomor versinya yang naik. Toolchain Pascal milik Odin (compiler, assembler, linker, runtime library, debugger terpadu, dan Odin Vision) menjadi backend bawaan di Mac Intel. Di Apple Silicon, Odin tetap memakai Free Pascal dan belum punya debugger.

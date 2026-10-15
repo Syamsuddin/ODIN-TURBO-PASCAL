@@ -11,6 +11,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from odin import __version_tag__
 from odin.core import Document, Settings, locate_compiler, locate_toolchain, odin_supported
 
 
@@ -122,6 +123,10 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(str(self.app.watermark.cget("image")),str(self.app.logo))
         self.assertEqual(self.app.author.cget("text"),"Created by Syams Ideris")
         self.assertIn("Created by Syams Ideris",self.app.status.cget("text"))
+        # The release tag on the desktop, the startup status bar, the default HELLO.PAS page and About.
+        self.assertEqual(self.app.watermark.cget("text"),f"{__version_tag__}  •  NATIVE PASCAL IDE")
+        self.assertIn(f"Odin Turbo Pascal {__version_tag__}",self.app.status.cget("text"))
+        self.assertIn(f"Odin Turbo Pascal {__version_tag__} - program pertama",self.app.active_editor.text.get("1.0","end"))
         self.app.user_input()
         self.assertIn("Insert",self.app.status.cget("text"))
         self.app.about()
@@ -129,6 +134,7 @@ class GuiTests(unittest.TestCase):
         about=[c for c in self.root.winfo_children() if isinstance(c,tk.Toplevel)][-1]
         text=[c for c in about.winfo_children() if isinstance(c,tk.Text)][0]
         self.assertEqual(str(text.image_cget("1.0","image")),str(self.app.logo_small))
+        self.assertIn(f"Version {__version_tag__}",text.get("1.0","end"))
         about.destroy()
 
     def add_dummy(self,title="WATCH"):

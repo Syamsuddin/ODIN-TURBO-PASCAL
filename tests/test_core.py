@@ -1,19 +1,62 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2026 Syams Ideris
+import importlib.util
+import io
 import os
 import queue
+import shutil
 import subprocess
 import tempfile
 import time
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from unittest.mock import patch
 from pathlib import Path
 
+from odin import __version__, __version_tag__
 from odin.core import Document, Settings, build, locate_compiler, locate_toolchain, odin_supported, parse_diagnostics, syntax_spans
 from odin.terminal import KEYS, Process, Screen, modified_key, mouse_report
 
 ROOT=Path(__file__).resolve().parent.parent
 FPC=locate_compiler(os.environ.get("ODIN_FPC",""))
+
+
+class VersionTests(unittest.TestCase):
+    def test_hello_example_carries_release_tag(self):
+        # scripts/package_app.py restamps this comment on every build; a stale tag fails here.
+        self.assertEqual(__version_tag__,f"v{__version__}")
+        self.assertIn(f"{{ Odin Turbo Pascal {__version_tag__} - program pertama }}",(ROOT/"examples"/"HELLO.PAS").read_text())
+
+    def test_set_version_rewrites_every_copy(self):
+        # Runs the real bump on copies of the real files, so a reworded README or doc fails here, not at release time.
+        spec=importlib.util.spec_from_file_location("set_version",ROOT/"scripts"/"set_version.py")
+        set_version=importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(set_version)
+        with tempfile.TemporaryDirectory() as temp:
+            temp=Path(temp)
+            for name in set_version.FILES:
+                (temp/name).parent.mkdir(parents=True,exist_ok=True)
+                shutil.copy2(ROOT/name,temp/name)
+            changelog=temp/"CHANGELOG.md"
+            changelog.write_bytes(changelog.read_bytes().replace(b"## [Unreleased]\n",b"## [Unreleased]\n\n### Diubah\n\n- Uji.\n",1))
+            new="9.8.7-rc.1"
+            with redirect_stdout(io.StringIO()),redirect_stderr(io.StringIO()):
+                self.assertEqual(set_version.main([new,"--root",str(temp),"--date","2030-01-02"]),0)
+                # The same version again is refused and writes nothing.
+                self.assertEqual(set_version.main([new,"--root",str(temp)]),1)
+            read=lambda name:(temp/name).read_text()
+            self.assertIn(f'__version__ = "{new}"',read("odin/__init__.py"))
+            self.assertIn(f'version = "{new}"',read("toolchain/Cargo.toml"))
+            self.assertNotIn(f'version = "{__version__}"',read("toolchain/Cargo.lock"))
+            self.assertIn(f"ODIN TURBO PASCAL {new}\\n",read("Install.command"))
+            self.assertTrue(read("README.txt").startswith(f"ODIN TURBO PASCAL {new}\n"))
+            self.assertIn(f"Panduan penggunaan {new}\n",read("docs/HELP.txt"))
+            self.assertIn(f"KOMPATIBILITAS DAN CAKUPAN VERSI {new}\n",read("docs/COMPATIBILITY.txt"))
+            self.assertIn("badge/rilis-9.8.7--rc.1-",read("README.md"))
+            self.assertIn(f"Pemasang ini memasang **rilis {new}**",read("README.md"))
+            self.assertIn(f"{{ Odin Turbo Pascal v{new} - program pertama }}",read("examples/HELLO.PAS"))
+            self.assertIn(f"## [Unreleased]\n\n## [{new}] - 2030-01-02\n\n### Diubah\n\n- Uji.\n",read("CHANGELOG.md"))
+            self.assertIn(f"compare/v{__version__}...v{new}",read("CHANGELOG.md"))
 
 
 class DocumentTests(unittest.TestCase):

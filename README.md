@@ -68,7 +68,7 @@ Cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, guru yan
 - Beberapa jendela sekaligus: tile, cascade, zoom, dan daftar jendela.
 - Undo/redo, clipboard, find/replace, go to line, hapus baris, indentasi otomatis, serta mode insert/overwrite.
 - Warna sintaks opsional. Bawaannya teks kuning klasik.
-- Desktop menampilkan logo Odin, nomor versi, dan kredit penulis.
+- Desktop menampilkan logo Odin, tag versi (misalnya `v2.0.0`), dan kredit penulis. Tag yang sama tampil di baris status, About, dan contoh `HELLO.PAS`.
 - Encoding CP437 dan UTF-8 (termasuk BOM), serta akhir baris LF dan CRLF, dipertahankan apa adanya saat menyimpan.
 
 ### Kompilasi
@@ -236,7 +236,9 @@ ODIN_FPC=/path/ke/fpc python3 -m unittest discover -s tests -v   # pakai compile
 (cd toolchain && cargo test --workspace)            # tes Rust, termasuk korpus diferensial
 python3 scripts/oracle.py                           # tulis ulang ekspektasi korpus dengan FPC
 python3 scripts/render_logo.py                      # render logo, ikon, dan banner (butuh Pillow)
-python3 scripts/package_app.py                      # bentuk ulang bundel .app dari source
+python3 scripts/package_app.py                      # bentuk ulang bundel .app dari source, termasuk tag versi di HELLO.PAS
+python3 scripts/set_version.py 2.0.1                # naikkan nomor versi di semua berkas dan CHANGELOG
+python3 scripts/update_checksums.py                 # buat ulang SHA256SUMS.json (terakhir, setelah package_app)
 ```
 
 Penjelasan tes:
