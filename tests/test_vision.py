@@ -7,6 +7,7 @@ by hand; ODIN_UPDATE_SNAPSHOTS=1 rewrites them."""
 import os
 import queue
 import re
+import shutil
 import tempfile
 import time
 import unittest
@@ -57,7 +58,7 @@ SCENARIOS = {
 # Steps can also be ("expect", text) or ("absent", text): the screen must (not) show text then.
 CHECKS = {
     "VFILES": [
-        ("expect", "ALPHA.PAS"), ("expect", "BETA.PAS"), ("expect", "sub/"), ("expect", "Open a file"),
+        ("expect", "ALPHA.PAS"), ("expect", "BETA.PAS"), ("expect", "sub" + os.sep), ("expect", "Open a file"),
         ("absent", "notes.txt"), ("absent", ".hidden"),
         b"BETA", KEYS["Return"],
         ("expect", "Change Directory"), ("expect", "Directory tree"),
@@ -78,6 +79,27 @@ def encode(screen):
     text = ["|" + "".join(c[0] for c in row) + "|" for row in screen.grid]
     colors = ["".join(f"{c[1]:x}{c[2]:x}" for c in row) for row in screen.grid]
     return text + colors
+
+
+def visible(lines):
+    """The color rows with the foreground of blank cells left out: it cannot be seen, and
+    ConPTY on Windows does not keep it when it re-renders the screen."""
+    text, colors = lines[:25], lines[25:]
+    return [
+        "".join("." + row[2 * i + 1] if i + 1 < len(chars) - 1 and chars[i + 1] == " " else row[2 * i:2 * i + 2]
+                for i in range(len(row) // 2))
+        for chars, row in zip(text, colors)
+    ]
+
+
+def differing_cells(lines, want, limit=30):
+    """(row, column, character, wanted fg/bg, got fg/bg) for the cells whose colors differ."""
+    cells = []
+    for y, (got_row, want_row) in enumerate(zip(visible(lines), visible(want))):
+        for x in range(min(len(got_row), len(want_row)) // 2):
+            if got_row[2 * x:2 * x + 2] != want_row[2 * x:2 * x + 2]:
+                cells.append((y, x, want[y][x + 1], want_row[2 * x:2 * x + 2], got_row[2 * x:2 * x + 2]))
+    return cells[:limit]
 
 
 def read_snapshots(path):
@@ -105,13 +127,20 @@ def write_snapshots(path, snapshots):
 @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc (cargo build in toolchain/) on a host it supports (core.ODIN_HOSTS)")
 class VisionSnapshotTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="odin vision ")
-        self.root = Path(self.temp.name)
+        self.root = Path(tempfile.mkdtemp(prefix="odin vision "))
         self.settings = Settings(self.root / "settings.json")
         self.settings["backend"] = "odin"
 
     def tearDown(self):
-        self.temp.cleanup()
+        # Windows keeps a program's .exe locked for a moment after it has ended.
+        for attempt in range(50):
+            try:
+                shutil.rmtree(self.root)
+                return
+            except PermissionError:
+                if attempt == 49:
+                    raise
+                time.sleep(.1)
 
     def run_demo(self, name):
         r = build(VISION / f"{name}.PAS", self.settings, cache=self.root / "build")
@@ -173,10 +202,11 @@ class VisionSnapshotTests(unittest.TestCase):
         for snap, lines in taken.items():
             want = expected[snap]
             self.assertEqual(lines[:25], want[:25], f"{name} {snap}: text")
-            if lines[25:] != want[25:]:
-                # The color escapes as the terminal (ConPTY on Windows) sent them, to see why.
+            if visible(lines) != visible(want):
+                # The cells and the color escapes as the terminal (ConPTY on Windows) sent them.
                 sgr = sorted(set(re.findall(r"\x1b\[[0-9;]*m", "".join(self.raw))))
-                self.assertEqual(lines[25:], want[25:], f"{name} {snap}: colors; SGR seen: {sgr[:60]}")
+                self.fail(f"{name} {snap}: colors (row, column, char, want, got): "
+                          f"{differing_cells(lines, want)}; SGR seen: {sgr[:60]}")
 
     def test_menus_windows_and_mouse(self):
         self.check("VMENUS")

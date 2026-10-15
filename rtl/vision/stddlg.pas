@@ -3,9 +3,9 @@
   ganti direktori (TChDirDialog) di atas Dos.FindFirst. Implementasi
   clean-room berdasarkan dokumentasi API Turbo Vision TP7.
 
-  Path memakai '/' (macOS dan Linux). Berkas yang namanya diawali titik
-  tidak ditampilkan. Nama di input line boleh sampai 255 karakter, jadi
-  data TFileDialog adalah PathStr (256 byte). }
+  Path memakai '/' di macOS dan Linux, '\' (dan 'C:\') di Windows. Berkas
+  yang namanya diawali titik tidak ditampilkan. Nama di input line boleh
+  sampai 255 karakter, jadi data TFileDialog adalah PathStr (256 byte). }
 unit StdDlg;
 
 {$R-,Q-,I-,X+}
@@ -191,6 +191,50 @@ const
 
 { ---- path helpers ------------------------------------------------------------------ }
 
+const
+{$IFDEF WINDOWS}
+  Sep = '\';
+{$ELSE}
+  Sep = '/';
+{$ENDIF}
+
+{ '/' everywhere, and '\' on Windows. }
+function IsSep(C: Char): Boolean;
+begin
+{$IFDEF WINDOWS}
+  IsSep := (C = '/') or (C = '\');
+{$ELSE}
+  IsSep := C = '/';
+{$ENDIF}
+end;
+
+{ The length of the root at the start of S: '/' (or '\'), or 'C:\' on
+  Windows; 0 for a relative path. }
+function RootLength(const S: String): Integer;
+begin
+  RootLength := 0;
+{$IFDEF WINDOWS}
+  if (Length(S) >= 3) and (S[2] = ':') and IsSep(S[3]) then
+    RootLength := 3
+  else if (Length(S) = 2) and (S[2] = ':') then
+    RootLength := 2
+  else
+{$ENDIF}
+  if (S <> '') and IsSep(S[1]) then
+    RootLength := 1;
+end;
+
+{ S without its last separator, unless S is a root. }
+function NoSlash(const S: String): String;
+var
+  T: String;
+begin
+  T := S;
+  while (Length(T) > RootLength(T)) and IsSep(T[Length(T)]) do
+    Dec(T[0]);
+  NoSlash := T;
+end;
+
 function IsWild(const S: String): Boolean;
 begin
   IsWild := (Pos('*', S) > 0) or (Pos('?', S) > 0);
@@ -201,10 +245,8 @@ var
   F: SearchRec;
   T: String;
 begin
-  T := S;
-  while (Length(T) > 1) and (T[Length(T)] = '/') do
-    Dec(T[0]);
-  if T = '/' then
+  T := NoSlash(S);
+  if (T <> '') and (RootLength(T) = Length(T)) then
   begin
     IsDir := True;
     Exit;
@@ -219,8 +261,8 @@ var
   S: String;
 begin
   GetDir(0, S);
-  if (S = '') or (S[Length(S)] <> '/') then
-    S := S + '/';
+  if (S = '') or not IsSep(S[Length(S)]) then
+    S := S + Sep;
   GetCurDir := S;
 end;
 
@@ -245,10 +287,10 @@ end;
 
 function WithSlash(const S: String): String;
 begin
-  if (S <> '') and (S[Length(S)] = '/') then
+  if (S <> '') and IsSep(S[Length(S)]) then
     WithSlash := S
   else
-    WithSlash := S + '/';
+    WithSlash := S + Sep;
 end;
 
 { ---- TFileInputLine ------------------------------------------------------------------ }
@@ -269,7 +311,7 @@ begin
   begin
     R := PSearchRec(Event.InfoPtr);
     if R^.Attr and Directory <> 0 then
-      Data^ := Copy(R^.Name + '/' + PFileDialog(Owner)^.WildCard, 1, MaxLen)
+      Data^ := Copy(R^.Name + Sep + PFileDialog(Owner)^.WildCard, 1, MaxLen)
     else
       Data^ := Copy(R^.Name, 1, MaxLen);
     DrawView;
@@ -472,7 +514,7 @@ begin
   P := PSearchRec(List^.At(Item));
   S := P^.Name;
   if P^.Attr and Directory <> 0 then
-    S := S + '/';
+    S := S + Sep;
   GetText := Copy(S, 1, MaxLen);
 end;
 
@@ -536,7 +578,7 @@ begin
     FindNext(F);
   end;
   FindClose(F);
-  if D <> '/' then
+  if RootLength(D) <> Length(D) then
   begin
     F.Attr := Directory;
     F.Time := 0;
@@ -588,7 +630,7 @@ begin
   begin
     Line := S.Name;
     if S.Attr and Directory <> 0 then
-      Line := Line + '/';
+      Line := Line + Sep;
     MoveStr(B[1], Copy(Line, 1, Size.X - 28), Color);
     if S.Attr and Directory = 0 then
     begin
@@ -759,7 +801,7 @@ begin
     Dec(T[0]);
   while (Length(T) > 0) and (T[1] = ' ') do
     System.Delete(T, 1, 1);
-  if (T <> '') and (T[1] <> '/') and (T[1] <> '~') and (Directory <> nil) then
+  if (T <> '') and (RootLength(T) = 0) and (T[1] <> '~') and (Directory <> nil) then
     T := Directory^ + T;
   T := FExpand(T);
   FSplit(T, D, N, E);
@@ -945,7 +987,7 @@ begin
   IsSelected := Item = Cur;
 end;
 
-{ The path from / to ADir, one level per line, then the subdirectories of
+{ The path from the root (/ or C:\) to ADir, one level per line, then the subdirectories of
   ADir:
     /
     └─┬Users
@@ -983,21 +1025,21 @@ begin
     FindNext(F);
   end;
   FindClose(F);
-  AddEntry('/', '/');
-  Path := '/';
+  Path := Copy(Dir, 1, RootLength(Dir));
+  AddEntry(Path, Path);
   Indent := '';
   Level := 0;
-  I := 2;
+  I := Length(Path) + 1;
   while I <= Length(Dir) do
   begin
     Start := I;
-    while (I <= Length(Dir)) and (Dir[I] <> '/') do
+    while (I <= Length(Dir)) and not IsSep(Dir[I]) do
       Inc(I);
     Part := Copy(Dir, Start, I - Start);
     Inc(I);
     if Part = '' then
       Continue;
-    Path := Path + Part + '/';
+    Path := Path + Part + Sep;
     Inc(Level);
     if (I > Length(Dir)) and (Subs^.Count = 0) then
       AddEntry(Indent + #192#196#196 + Part, Path)
@@ -1010,9 +1052,9 @@ begin
   begin
     Name := PString(Subs^.At(I));
     if I = Subs^.Count - 1 then
-      AddEntry(Indent + #192#196#196 + Name^, Path + Name^ + '/')
+      AddEntry(Indent + #192#196#196 + Name^, Path + Name^ + Sep)
     else
-      AddEntry(Indent + #195#196#196 + Name^, Path + Name^ + '/');
+      AddEntry(Indent + #195#196#196 + Name^, Path + Name^ + Sep);
   end;
   Dispose(Subs, Done);
   NewList(Dirs);
@@ -1106,10 +1148,7 @@ end;
 
 function ShownDir(const D: String): String;
 begin
-  if (Length(D) > 1) and (D[Length(D)] = '/') then
-    ShownDir := Copy(D, 1, Length(D) - 1)
-  else
-    ShownDir := D;
+  ShownDir := NoSlash(D);
 end;
 
 procedure TChDirDialog.SetUpDialog;
@@ -1164,9 +1203,7 @@ begin
   Valid := True;
   if Command <> cmOK then
     Exit;
-  P := FExpand(DirInput^.Data^);
-  if (Length(P) > 1) and (P[Length(P)] = '/') then
-    Dec(P[0]);
+  P := NoSlash(FExpand(DirInput^.Data^));
   ChDir(P);
   if IOResult <> 0 then
   begin
