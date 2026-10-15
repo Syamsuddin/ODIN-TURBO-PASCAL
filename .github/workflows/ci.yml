@@ -24,19 +24,16 @@ jobs:
   test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
-    # Windows support arrives in Tahap 8d; until then the job reports
-    # what fails without failing the workflow.
-    continue-on-error: ${{ matrix.experimental }}
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { name: macOS Intel, runner: macos-15-intel, experimental: false }
-          - { name: macOS Apple Silicon, runner: macos-15, experimental: false }
-          - { name: Linux x86_64, runner: ubuntu-24.04, experimental: false }
-          - { name: Linux arm64, runner: ubuntu-24.04-arm, experimental: false }
-          - { name: Windows x86_64, runner: windows-2025, experimental: true }
+          - { name: macOS Intel, runner: macos-15-intel }
+          - { name: macOS Apple Silicon, runner: macos-15 }
+          - { name: Linux x86_64, runner: ubuntu-24.04 }
+          - { name: Linux arm64, runner: ubuntu-24.04-arm }
+          - { name: Windows x86_64, runner: windows-2025 }
     defaults:
       run:
         shell: bash
@@ -82,16 +79,22 @@ jobs:
             ls C:/tools/freepascal/bin C:/tools/freepascal/units || true
           fi
 
-      # On Windows odinpc does not build yet (odin-debug, Tahap 8d): the
-      # Python tests still run, with the Free Pascal backend.
       - name: Build odinpc
         working-directory: toolchain
-        continue-on-error: ${{ runner.os == 'Windows' }}
         run: cargo build --release
+
+      # The Windows odinpc.exe that releases ship (toolchain/odinpc.exe):
+      # the development Mac cannot build it.
+      - name: Upload odinpc.exe
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: odinpc-windows-x86_64
+          path: toolchain/target/release/odinpc.exe
+          if-no-files-found: error
 
       - name: Rust tests
         working-directory: toolchain
-        continue-on-error: ${{ runner.os == 'Windows' }}
         run: |
           # On Windows the corpus runs on drive C:, like the FPC expectations
           # (FExpand puts the current drive into paths).
