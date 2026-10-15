@@ -1,0 +1,9 @@
+repeat continue tests until: 12 I=3
+repeat break: cegik I=12
+while continue: 124578 evals=9
+while break I=35 evals=5
+nested total=23 I=4
+case in loop: BCDFG stopped I=7
+9 18 36 with loop N=45
+3 0 mixed I=0
+repeat in repeat total=10

@@ -1,0 +1,18 @@
+1 2 3 | 4 5 6 | 
+cube 12345678 6
+apel 3 1.50 4.50
+jeruk 0 2.25 0.00
+mangga 7 0.75 5.25
+shape 9 segitiga (0,0)(4,0)(0,3) TRUE FALSE TRUE TRUE FALSE TRUE
+HELLO OLLEH gd 9 x 255
+ptr 42 TRUE TRUE TRUE
+through ptr 7
+merah hijau biru 
+2 3 5 7 11 13 200 255 
+1.50 -2.25 1000.00 
+3 -2 66 4 16 
+Q TRUE halo 4 -123456789 -1 -2 no yes
+modified 100 5 TRUE halo! R JE 10 16
+tick 1 1
+tick 2 12
+tick 3 123

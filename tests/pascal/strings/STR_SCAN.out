@@ -1,0 +1,28 @@
+scan o 4 o, World
+scan H 0 Hello, World
+scan d 11 d
+scan comma 5 , World
+scan z nil
+scan case nil
+scan null 12 
+scan from middle 8 orld
+rscan o 8 orld
+rscan l 10 ld
+rscan H 0 Hello, World
+rscan d 11 d
+rscan z nil
+rscan null 12 
+scan empty a nil
+scan empty null 0 
+rscan empty a nil
+rscan empty null 0 
+scan stops at null nil
+rscan stops at null 1 b
+scan high 1
+rscan high 5
+scan 255 3
+scan 128 nil TRUE
+replace all a;b;;c
+count s 4
+last s 6 ippi
+scan literal teral

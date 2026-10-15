@@ -1,0 +1,21 @@
+long 4 3 2 1 low word 772
+long after 2130838276
+low cleared 2130837504
+len 6 pl
+cut pas
+grow pas!
+real 0 1072693248
+real now 2.0
+char A 65
+short -56 200
+byte 122
+bool TRUE
+bool FALSE
+param 255 255 255 255
+param after 16777215
+cleared 13124
+257 257 257 257 257 257 
+65535 255 0
+sum 765 119
+local 1 2 global via local 13124
+global 77

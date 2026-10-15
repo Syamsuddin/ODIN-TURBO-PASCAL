@@ -1,0 +1,19 @@
+new 1: [alpha]
+new 2: [beta]
+new 3: [gamma]
+new lines=3
+rewritten 1: [only]
+rewritten lines=1
+appended 1: [only]
+appended 2: [tail-joined]
+appended 3: [last]
+appended lines=3
+second line [tail-joined]
+after reset again [only]
+reopened 1: [replaced]
+reopened lines=1
+many2 first [file 2 row 1]
+many3 second [file 3 row 2]
+many1 first [file 1 row 1]
+many3 remaining=2
+reassigned [file 1 row 1]

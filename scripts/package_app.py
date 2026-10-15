@@ -7,10 +7,16 @@ This is not a frozen standalone executable. Runtime installation belongs to
 Install.command. Only the build bundle beside this repository is replaced.
 """
 import plistlib
+import re
 import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+VERSION = re.search(r'__version__ = "([^"]+)"', (ROOT / "odin" / "__init__.py").read_text()).group(1)
+# Info.plist: the short version is numeric; a pre-release such as 2.0.0-alpha.1
+# becomes the build version 2.0.0a1 (Apple's development/alpha/beta form).
+SHORT_VERSION = VERSION.split("-")[0]
+BUILD_VERSION = re.sub(r"-(alpha|beta|rc)\.?(\d*)", lambda m: {"alpha": "a", "beta": "b", "rc": "fc"}[m.group(1)] + (m.group(2) or "1"), VERSION)
 APP = ROOT / "Odin Turbo Pascal.app"
 CONTENTS = APP / "Contents"
 if APP.exists():
@@ -21,6 +27,16 @@ resources.mkdir()
 for folder in ("odin", "examples", "docs", "assets"):
     shutil.copytree(ROOT / folder, resources / folder,
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+# The Odin toolchain: the RTL sources and a release build of odinpc
+# (cargo build --release in toolchain/). Without odinpc the IDE falls back
+# to Free Pascal.
+shutil.copytree(ROOT / "rtl", resources / "rtl")
+odinpc = ROOT / "toolchain" / "target" / "release" / "odinpc"
+if odinpc.is_file():
+    (resources / "toolchain").mkdir()
+    shutil.copy2(odinpc, resources / "toolchain" / "odinpc")
+else:
+    print("Peringatan: toolchain/target/release/odinpc belum ada; bundle memakai Free Pascal.")
 for name in ("main.py", "LICENSE", "THIRD_PARTY.txt"):
     shutil.copy2(ROOT / name, resources / name)
 icon = ROOT / "assets" / "odin.icns"
@@ -33,8 +49,8 @@ metadata = {
     "CFBundleName": "Odin Turbo Pascal",
     "CFBundleDisplayName": "Odin Turbo Pascal",
     "CFBundleIdentifier": "id.digitalkab.odin-turbo-pascal",
-    "CFBundleVersion": "1.0.0",
-    "CFBundleShortVersionString": "1.0.0",
+    "CFBundleVersion": BUILD_VERSION,
+    "CFBundleShortVersionString": SHORT_VERSION,
     "CFBundleExecutable": "OdinTurboPascal",
     "CFBundleIconFile": "odin.icns",
     "CFBundlePackageType": "APPL",

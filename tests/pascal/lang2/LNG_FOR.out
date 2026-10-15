@@ -1,0 +1,11 @@
+0123456 6543210 12345 012 210
+abcdef ZYXWVU XYZ 253,254,255, 2,1,0,
+FALSE TRUE TRUE FALSE once 
+9876543210 0123456789 -3 -2 -1 
+byte up 6 byte down 6 short 4 4 word 3 int 3 3 long 3 3
+bounds once 3 N=10
+bound calls 2 count 5
+bound calls 2 count 5
+empty 0
+single 2
+nested 42

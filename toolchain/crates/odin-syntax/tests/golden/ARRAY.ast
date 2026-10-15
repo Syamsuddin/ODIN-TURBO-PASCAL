@@ -1,0 +1,14 @@
+(program NilaiSiswa
+  (const Jumlah = 5)
+  (var (Nilai) (array [(.. 1 Jumlah)] Integer))
+  (var (I Total) Integer)
+  (begin
+    (:= Total 0)
+    (for I 1 to Jumlah
+      (begin
+        (:= (index Nilai I) (+ 60 (* I 5)))
+        (:= Total (+ Total (index Nilai I)))
+        (do (call WriteLn 'Siswa ' I ': ' (index Nilai I)))
+        (empty)))
+    (do (call WriteLn 'Rata-rata: ' (/ Total Jumlah):0:2))
+    (empty)))

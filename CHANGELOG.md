@@ -4,6 +4,78 @@ Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/), dan nomor versinya mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 
+## [Unreleased]
+
+## [2.0.0-alpha.1] - 2026-10-15
+
+Rilis alfa pertama menuju 2.0.0. Toolchain Pascal milik Odin sendiri (compiler, assembler, linker, runtime library, debugger, dan Odin Vision) menjadi backend bawaan di Mac Intel. Free Pascal tetap tersedia, dan dipakai otomatis di Apple Silicon. Backend Odin untuk arm64 dan Linux, serta pelepasan Free Pascal, LLDB, dan Xcode sepenuhnya, menyusul sebelum 2.0.0 (lihat `IMPLEMENTATION_PLAN.md`, Tahap 8-10).
+
+### Ditambahkan
+
+- Toolchain Pascal milik Odin sendiri (`toolchain/`, Rust, tanpa crate pihak ketiga), sebagai backend eksperimental di Options > Compiler. Isinya:
+  - `odinpc build`/`check`: lexer, direktif dan kompilasi bersyarat, parser TP7 lengkap, analisis semantik, codegen x86-64, assembler, dan linker Mach-O dengan tanda tangan ad-hoc;
+  - diagnostik bernomor gaya TP7 dalam bahasa Indonesia, dikirim ke IDE sebagai JSON.
+- Runtime library Odin (`rtl/system/`, Pascal): I/O teks, `ParamStr`, operasi string, format bilangan real, dan runtime error seperti FPC.
+- Korpus tes diferensial (`tests/pascal/`) dengan ekspektasi dari FPC (`scripts/oracle.py`).
+- Unit standar di runtime library Odin (`rtl/`):
+  - `Crt`: jendela, warna, scroll, `InsLine`/`DelLine`, `ReadKey` dengan kode scan TP, `KeyPressed`, `Delay`, dan editor baris untuk `ReadLn`;
+  - `Dos`: tanggal dan waktu, environment, `FSplit`/`FExpand`/`FSearch`, `FindFirst`/`FindNext`, atribut dan waktu berkas, `DiskFree`/`DiskSize`, `Exec`/`DosExitCode`, `DosVersion`;
+  - `Strings` (rutin PChar) dan `Printer` (`Lst` ke `/usr/bin/lpr`).
+- Berkas bertipe dan tanpa tipe, `FillChar`, `GetMem`/`FreeMem`, `Random`, dan `RunError` di backend Odin.
+- Runtime error dari kesalahan prosesor seperti FPC: akses memori tidak sah (216), pembagian real dengan nol (200), operasi real tidak sah (207), overflow real (205). Stack overflow menjadi runtime error 202.
+
+- Debugger Odin, pengganti LLDB (backend Odin):
+  - breakpoint yang ikut bergeser saat baris disisipkan dan tersimpan di pemulihan sesi;
+  - Trace into (F7), Step over (F8), Go to cursor (F4), Continue, dan pause dengan Ctrl+C di User screen;
+  - jendela Watches, Local variables, dan Call stack sebagai jendela desktop;
+  - Evaluate/Modify (Ctrl+F7) untuk ekspresi Pascal dengan format nilai gaya Turbo Pascal;
+  - baris eksekusi ditandai hijau, dan baris runtime error ditandai merah.
+- Search > Find error, juga untuk runtime error dari Run biasa.
+- `odinpc build --debug`, berkas `NAME.odbg`, dan `odinpc debug`.
+- Tipe `object` di backend Odin: pewarisan, `private`, metode virtual, constructor dan destructor, `inherited`, `Self`, `TypeOf`, serta `New`/`Dispose` dengan constructor/destructor. Debugger juga menampilkan field object.
+- Unit `Objects` di runtime library Odin: TObject, TPoint, TRect, collection (termasuk yang terurut dan koleksi string), stream (berkas, berkas ber-buffer, memori), dan registrasi tipe untuk `Put`/`Get`. Format stream sama dengan FPC.
+- `packed record` tanpa padding, builtin `Ofs`/`Seg`, dan tipe `PtrInt`/`PtrUInt`/`SizeInt`/`SizeUInt`/`PPointer`.
+- Odin Vision (`rtl/vision/`), Turbo Vision milik Odin untuk backend Odin. Unitnya `Drivers`, `Memory`, `HistList`, `Views`, `Menus`, `Validate`, `Dialogs`, `App`, `MsgBox`, `StdDlg`, `Editors`, dan `Outline`, dengan:
+  - jendela bertumpuk dengan bayangan, menu bar dan menu drop-down, status line;
+  - dialog dengan tombol, input line, check box, radio button, list box, riwayat, dan validator;
+  - dialog berkas dan dialog ganti direktori, editor teks, dan outline;
+  - dukungan keyboard dan mouse.
+
+  Perilakunya dijelaskan di `rtl/vision/SPEC.md`, dan palet warnanya dirancang sendiri.
+- Contoh `examples/VISION.PAS`: menu, jendela editor, dialog, dan MessageBox.
+- User screen meneruskan klik, seret, dan roda mouse ke program yang memintanya (laporan mouse xterm). Shift, Ctrl, dan Alt (Option di macOS) pada tombol khusus juga diteruskan, dan Alt+huruf dikirim sebagai Esc + huruf. Layar alternatif didukung, jadi layar sebelum program kembali setelah program Turbo Vision selesai.
+- Tes snapshot Odin Vision (`tests/test_vision.py`, `tests/pascal/vision/`).
+
+### Diubah
+
+- Kerangka jendela editor dipisah menjadi `DesktopWindow` (`odin/windows.py`), supaya jendela debug nanti bisa ikut diatur Tile, Cascade, dan Window > List. Perilaku IDE tidak berubah.
+- Backend bawaan sekarang toolchain Odin. Free Pascal tetap bisa dipilih di Options > Compiler, dan otomatis dipakai bila `odinpc` tidak ditemukan.
+- `scripts/package_app.py` menyertakan `rtl/` dan, bila sudah dibangun, `toolchain/target/release/odinpc` di dalam bundle. Nomor versi bundle diambil dari `odin/__init__.py`.
+- Paket pemasang membawa toolchain Odin (`odinpc` untuk Mac Intel) dan runtime library-nya.
+
+### Dihapus
+
+- Konsol LLDB di menu Debug. Debugger terpadu menggantikannya, tetapi hanya tersedia di backend Odin. Di Apple Silicon, untuk sementara Odin tidak punya debugger.
+
+### Belum tersedia di backend Odin
+
+- arm64 dan Linux.
+- Unit Turbo Vision opsional `ColorSel` dan `TextView`. Untuk program yang memakainya, pilih backend Free Pascal; pesan galatnya menyebutkan hal ini.
+
+### Lisensi
+
+Runtime library Odin (`rtl/`) berlisensi GNU GPL v3 atau yang lebih baru tanpa pengecualian runtime, jadi executable yang dibagikan ikut terikat GPL. `odinpc` di dalam bundle memuat pustaka standar Rust (MIT); lihat `THIRD_PARTY.txt`.
+
+### Pengujian
+
+Di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2, Rust 1.99):
+
+- 56 tes Python lulus, termasuk 17 tes GUI dengan jendela Tk sungguhan, sesi debugger nyata, dan 4 tes snapshot Odin Vision;
+- 110 tes Rust lulus;
+- korpus diferensial 77 program memberi keluaran dan kode keluar yang sama dengan Free Pascal 3.2.2, baik dengan build biasa maupun build debug.
+
+Yang belum diverifikasi langsung: Apple Silicon, Gatekeeper, Option sebagai Alt di keyboard Mac sungguhan (baru diuji dengan event sintetis), dan pencetakan lewat `Printer`.
+
 ## [1.0.0] - 2026-10-13
 
 Rilis publik pertama.
@@ -52,4 +124,6 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.1...HEAD
+[2.0.0-alpha.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/releases/tag/v2.0.0-alpha.1
 [1.0.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/releases/tag/v1.0.0

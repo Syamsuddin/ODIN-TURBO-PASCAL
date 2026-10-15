@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 Syams Ideris
+[package]
+name = "odin-codegen"
+description = "Instruction selection and frame layout for Odin Pascal"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+odin-base.workspace = true
+odin-ir.workspace = true
+odin-asm.workspace = true

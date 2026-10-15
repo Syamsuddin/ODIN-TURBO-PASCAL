@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 Syams Ideris
+max_width = 120
+use_small_heuristics = "Max"

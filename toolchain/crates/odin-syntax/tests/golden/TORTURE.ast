@@ -1,0 +1,153 @@
+(program Torture
+  (uses Crt Dos)
+  (label 10 SELESAI)
+  (const Max = 10)
+  (const Neg = (neg 5))
+  (const Pesan = 'Halo'#13#10'dunia')
+  (const Bel = #7)
+  (const Mask = [1, 3..5])
+  (const Hex = (and 255 (not 15)))
+  (const Nyata : Real = 0.0025)
+  (const Tabel : (array [(.. 1 3)] Integer) = (10, 20, 30))
+  (const Matriks : (array [(.. 1 2) (.. 1 2)] Byte) = ((1, 2), (3, 4)))
+  (const Titik : (record (X Y: Integer)) = (X: 1; Y: 2))
+  (type TWarna = (enum Merah Hijau Biru))
+  (type TKecil = (.. 0 (- Max 1)))
+  (type THuruf = (.. 'A' 'Z'))
+  (type PNode = (^ TNode))
+  (type TNode = (record (Nilai: Integer) (Berikut: PNode)))
+  (type TBentuk = (record (Nama: string[20]) (case Jenis: Byte (0 (Jari: Real)) (1 2 (Lebar Tinggi: Integer)))))
+  (type TVarian = (packed-record (case Integer (0 (B: (array [(.. 0 3)] Byte))) (1 (L: LongInt)))))
+  (type TSetWarna = (set-of TWarna))
+  (type TBerkas = (file-of TNode))
+  (type TFungsi = (function (A B: Integer) : Integer))
+  (type TProsedur = (procedure))
+  (type PString = (^ string))
+  (type TBuffer = (array [Char] Boolean))
+  (type PShape = (^ TShape))
+  (type TShape = (object (X Y: Integer) (constructor Init (AX AY: Integer)) (destructor Done [virtual]) (procedure Draw [virtual]) (function Area : Real [virtual]) (private Tersembunyi: Word) (private procedure Rahasia) (procedure Pindah (DX DY: Integer))))
+  (type TCircle = (object (TShape) (R: Real) (constructor Init (AX AY: Integer; AR: Real)) (function Area : Real [virtual])))
+  (var (I J) Integer)
+  (var (Huruf) Char)
+  (var (Warna) TWarna)
+  (var (Daftar) PNode)
+  (var (Bentuk) TBentuk)
+  (var (S) string)
+  (var (F) Text)
+  (var (Fn) TFungsi)
+  (var (Shape) PShape)
+  (var (Alias) Word absolute I)
+  (var (Himpunan) TSetWarna)
+  (constructor TShape.Init (AX AY: Integer)
+    (begin
+      (:= X AX)
+      (:= Y AY)
+      (empty)))
+  (destructor TShape.Done
+    (begin
+      (empty)))
+  (procedure TShape.Draw
+    (begin
+      (do (call WriteLn 'Shape at ' X ',' Y))
+      (empty)))
+  (function TShape.Area : Real
+    (begin
+      (:= Area 0)
+      (empty)))
+  (procedure TShape.Rahasia
+    (begin
+      (empty)))
+  (procedure TShape.Pindah (DX DY: Integer)
+    (begin
+      (do (call Inc X DX))
+      (do (call Inc Y DY))
+      (empty)))
+  (constructor TCircle.Init (AX AY: Integer; AR: Real)
+    (begin
+      (do (call (inherited Init) AX AY))
+      (:= R AR)
+      (empty)))
+  (function TCircle.Area : Real
+    (begin
+      (:= Area (* Pi (call Sqr R)))
+      (empty)))
+  (function Tambah (A B: Integer) : Integer [far]
+    (begin
+      (:= Tambah (+ A B))
+      (empty)))
+  (procedure Maju [forward]
+    declaration)
+  (procedure Luar (var Total: LongInt; const Nama: string; Data: (array-of Integer))
+    (var (K) Integer)
+    (procedure Dalam
+      (begin
+        (:= Total (+ Total (call Length Nama)))
+        (empty)))
+    (begin
+      (for K (call Low Data) to (call High Data)
+        (:= Total (+ Total (index Data K))))
+      (do Dalam)
+      (empty)))
+  (procedure Maju
+    (begin
+      (empty)))
+  (procedure Tanpa (var Apa; const Juga)
+    (begin
+      (empty)))
+  (begin
+    (:= I 0)
+    (:= J (+ (* (neg I) 2) (shl (mod (div I 3) 4) 1)))
+    (if (or (and (> I 0) (not (<= J 0))) (in I [1..3]))
+      (do (call WriteLn 'ya'))
+      (else
+        (if (<> I J)
+          (do (call WriteLn 'tidak':10))
+          (else
+            (empty)))))
+    (case I
+      (arm 0
+        (do (call WriteLn 'nol')))
+      (arm 1 2
+        (begin
+          (do (call WriteLn 'kecil'))))
+      (arm 3..9
+        (empty))
+      (else
+        (do (call WriteLn 'besar'))
+        (do (call WriteLn I:5))
+        (empty)))
+    (while (< I Max)
+      (do (call Inc I)))
+    (repeat-until (= I 0)
+      (do (call Dec I)))
+    (for Warna Merah to Biru
+      (:= Himpunan (+ Himpunan [Warna])))
+    (for I 10 downto 1
+      (empty))
+    (do (call New Daftar))
+    (:= (. (^ Daftar) Nilai) 1)
+    (:= (. (^ Daftar) Berikut) nil)
+    (with (^ Daftar) Bentuk
+      (begin
+        (:= Nilai 2)
+        (:= Nama 'kotak')
+        (empty)))
+    (do (call Dispose Daftar))
+    (:= Fn Tambah)
+    (:= I (call Fn 1 2))
+    (:= Shape (call New PShape (call Init 1 2)))
+    (do (. (^ Shape) Draw))
+    (do (call Dispose Shape Done))
+    (:= S (+ (+ (+ Pesan (call Chr 65)) 'A') #13))
+    (:= Huruf (index S 1))
+    (do (call WriteLn Nyata:8:3 ' ' (index Tabel 2) ' ' (index Matriks 2 1)))
+    (do (call Assign F 'x.txt'))
+    (do (call Reset F))
+    (if (<> IOResult 0)
+      (goto SELESAI))
+    (do (call Close F))
+    (label 10
+      (:= I (+ (+ (call Ord Huruf) (call Integer Warna)) (call SizeOf TNode))))
+    (label SELESAI
+      (do (call Writeln (<> (@ Tambah) nil))))
+    (empty)))

@@ -1,0 +1,9 @@
+sizes 8 12 24 16 0
+TLater A=0 B=4 C=8 D=12
+plain A=1 B=2 sum=3
+more C=5 / plain A=3 B=4 sum=7
+more C=5 / plain A=3 B=4 sum=7
+with: 3 4 5
+more C=6 / plain A=3 B=4 sum=7
+K.E=e
+empty object, size 0

@@ -1,0 +1,13 @@
+[global X=5] N1 one 1 2 10 X=5 Name=global
+N2 two 3 30 33
+inner wins 99 0
+inner wins 99 7
+same type 1 33
+heap chain 3 -4 30 TRUE
+deref chain 103
+evaluated once TRUE 77 30
+array once 1 50 3 I=3
+grid 21 12
+local X=1 pair2 500 501
+mixed 9 8 1
+end X=5

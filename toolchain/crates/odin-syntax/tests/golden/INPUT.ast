@@ -1,0 +1,12 @@
+(program InputNama
+  (var (Nama) string)
+  (var (Umur) Integer)
+  (begin
+    (do (call Write 'Nama Anda: '))
+    (do (call ReadLn Nama))
+    (do (call Write 'Umur Anda: '))
+    (do (call ReadLn Umur))
+    (do WriteLn)
+    (do (call WriteLn 'Halo, ' Nama '!'))
+    (do (call WriteLn 'Tahun depan umur Anda ' (+ Umur 1) ' tahun.'))
+    (empty)))

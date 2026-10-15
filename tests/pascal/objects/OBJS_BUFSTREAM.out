@@ -1,0 +1,14 @@
+written: size 120 pos 120 status 0
+more: size 130 pos 130 status 0
+opened: size 130 pos 0 status 0
+third: 3 4.5 tag33
+first: 1 1.5 tag11
+tail: the end 4660
+at end: size 130 pos 130 status 0
+read past end: size -1 pos -1 status -3
+after reset: size 130 pos 130 status 0
+appended: size 142 pos 142 status 0
+truncated: size 24 pos 24 status 0
+reopened: size 24 pos 0 status 0
+only: 1 tag11
+missing: status -2 info 2

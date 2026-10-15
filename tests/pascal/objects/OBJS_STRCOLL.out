@@ -1,0 +1,15 @@
+sorted (4) 1:apple 2:banana 3:fig 4:pear
+limit 5 delta 2
+search fig TRUE at 2
+search kiwi FALSE at 3
+indexof banana 1
+first long apple last long banana
+none long TRUE
+duplicates (6) 1:apple 2:apple 3:banana 4:fig 5:fig 6:pear
+after free (4) 1:apple 2:banana 3:fig 4:fig
+memory size 38 status 0
+from memory (4) 1:apple 2:banana 3:fig 4:fig
+same type TRUE duplicates TRUE
+file size 38 pos 38 status 0
+from file (4) 1:apple 2:banana 3:fig 4:fig
+file status 0 pos 38

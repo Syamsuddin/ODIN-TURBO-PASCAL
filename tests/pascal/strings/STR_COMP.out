@@ -1,0 +1,37 @@
+comp equal 0
+comp a c -2
+comp c a 2
+comp first diff -1
+comp prefix -99
+comp longer 99
+comp empty empty 0
+comp empty a -97
+comp a empty 97
+comp case 32 -32
+comp digits -8
+comp space -66
+comp after null 0
+comp high vs a 103
+comp a vs high -103
+comp 255 vs 1 254
+comp 128 vs 127 1
+comp high prefix 201
+comp arrays 0
+comp arrays differ -8
+comp pchar 99 0
+sign apple banana <
+sign zoo zebra >
+comp equal test TRUE
+lcomp 0 0
+lcomp before diff 0
+lcomp at diff -23
+lcomp past diff -23
+lcomp equal long max 0
+lcomp prefix -99
+lcomp prefix short max 0
+lcomp longer 99
+lcomp empty 0 -113 0
+lcomp high 245
+lcomp 1 0 -1
+lcomp case -32
+lcomp arrays 0 -5

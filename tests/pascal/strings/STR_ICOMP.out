@@ -1,0 +1,25 @@
+icomp equal 0
+icomp mixed equal 0
+icomp ABC abd -1
+icomp a B -1 1
+icomp underscore -2 2
+icomp bracket -6 31
+icomp backquote -32 -1
+icomp prefix -100 100
+icomp empty 0 -113 113
+icomp digits -1
+icomp high not folded 32 -32
+icomp high vs letter 103
+icomp after null 0
+icomp arrays 0
+icomp pchar 0 -115
+icomp letters folded 26
+icomp chars equal to a 2
+licomp 0 0
+licomp before diff 0
+licomp at diff -1
+licomp equal long max 0
+licomp prefix -99 0
+licomp underscore -2
+licomp high 32
+licomp empty 0 -98

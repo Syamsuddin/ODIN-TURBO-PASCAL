@@ -1,0 +1,19 @@
+[abcde] 5 5 [chang]
+[longe] 5 5 [chang]
+[tenle] 5 5 [chang]
+[ab] 2 5 [chang]
+vs [five5] 255
+exact abcdefghij 10
+element xy12345678 10
+long abcdef 6
+func trunc 5 ab
+assign abcde abcdeXYZXY a 1
+compare TRUE TRUE TRUE TRUE
+sizes 6 11 2 12 5 1
+fill ***** ---------- +
+open high=5 size=6 xy012 5
+open high=10 size=11 pq01234567 10
+open high=255 size=256 long0123456789 14
+relaxed ABC IXED CASE 9 RECORD 77
+cap 255 4 01234
+len byte ab 2 2

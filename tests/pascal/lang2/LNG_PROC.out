@@ -1,0 +1,22 @@
+17 7 60 12 
+28 -22 3780 9 
+fold add 28 max 9
+plus 10
+minus 4
+times 21
+14 6 40 
+copy -9
+reassigned -3 copy still -9
+half twice 2.500
+square twice 81.0
+n=5
+[m] 6
+counter 44
+lacsap NIDO same
+hello hello hello hello hello hello 
+ptr=@Add TRUE FALSE
+@F=@Add TRUE @F=@Mul FALSE
+via @ 42
+assigned TRUE FALSE
+after nil FALSE TRUE
+restored 42

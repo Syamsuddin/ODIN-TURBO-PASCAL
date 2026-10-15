@@ -28,6 +28,32 @@ KEYS = {"Return": b"\r", "BackSpace": b"\x7f", "Tab": b"\t", "Escape": b"\x1b",
         "F1": b"\x1bOP", "F2": b"\x1bOQ", "F3": b"\x1bOR", "F4": b"\x1bOS",
         "F5": b"\x1b[15~", "F6": b"\x1b[17~", "F7": b"\x1b[18~", "F8": b"\x1b[19~",
         "F9": b"\x1b[20~", "F10": b"\x1b[21~", "F11": b"\x1b[23~", "F12": b"\x1b[24~"}
+# Option+key on a US Mac layout gives these characters; Odin Vision reads Alt+key as Esc + key.
+OPTION_CHARS = dict(zip("å∫ç∂ƒ©˙∆˚¬µøπœ®ß†√∑≈¥Ω¡™£¢∞§¶•ªº", "abcdfghjklmopqrstvwxyz1234567890"))
+MOUSE_MODES = (9, 1000, 1002, 1003)
+
+
+def modified_key(sequence, modifier):
+    """An xterm key sequence with a modifier parameter (2 = Shift, 3 = Alt, 5 = Ctrl, ...)."""
+    if modifier == 1:
+        return sequence
+    body = sequence[2:]
+    if sequence.startswith(b"\x1bO"):
+        return b"\x1b[1;%d" % modifier + body
+    if body.endswith(b"~"):
+        return b"\x1b[" + body[:-1] + b";%d~" % modifier
+    return b"\x1b[1;%d" % modifier + body
+
+
+def mouse_report(code, x, y, release, sgr):
+    """An xterm mouse report for cell (x, y), counted from 0."""
+    if sgr:
+        return b"\x1b[<%d;%d;%d%s" % (code, x + 1, y + 1, b"m" if release else b"M")
+    if release:
+        code = 3
+    if x + 33 > 255 or y + 33 > 255:
+        return b""
+    return b"\x1b[M" + bytes((32 + code, 33 + x, 33 + y))
 
 
 class Screen:
@@ -42,6 +68,9 @@ class Screen:
         self.charsets, self.shifted = ["B", "B"], False
         self.wrap_pending = False
         self.grid = [[self.blank() for _ in range(cols)] for _ in range(rows)]
+        self.mouse = set()        # xterm mouse tracking modes the program turned on
+        self.sgr_mouse = False    # mode 1006: SGR mouse reports
+        self.alternate = None     # main screen saved while the alternate screen (1049) is on
 
     def blank(self):
         return (" ", self.fg, self.bg)
@@ -182,7 +211,20 @@ class Screen:
                 elif v == 39: self.fg = 7
                 elif v == 49: self.bg = 0
         elif final in "hl" and private:
-            if 25 in p: self.visible = final == "h"
+            on = final == "h"
+            if 25 in p: self.visible = on
+            for mode in MOUSE_MODES:
+                if mode in p:
+                    if on: self.mouse.add(mode)
+                    else: self.mouse.discard(mode)
+            if 1006 in p: self.sgr_mouse = on
+            if 1049 in p or 1047 in p or 47 in p:
+                if on and self.alternate is None:
+                    self.alternate = ([row[:] for row in self.grid], self.x, self.y)
+                    self.grid = [[self.blank() for _ in range(self.cols)] for _ in range(self.rows)]
+                elif not on and self.alternate is not None:
+                    self.grid, self.x, self.y = self.alternate
+                    self.alternate = None
         elif final == "r":
             top = n - 1
             bottom = (p[1] if len(p) > 1 and p[1] else self.rows) - 1
@@ -214,13 +256,14 @@ class Screen:
 
 
 class Process:
-    def __init__(self, argv, cwd, emit, cols=80, rows=25):
+    def __init__(self, argv, cwd, emit, cols=80, rows=25, pass_fds=(), env=None):
         self.master, slave = pty.openpty()
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
-        env = dict(os.environ, TERM="xterm", COLUMNS=str(cols), LINES=str(rows))
+        env = dict(os.environ, **(env or {}), TERM="xterm", COLUMNS=str(cols), LINES=str(rows))
         try:
+            # pass_fds keeps extra descriptors (the debugger's pipes) open in the child.
             self.child = subprocess.Popen(argv, cwd=cwd, stdin=slave, stdout=slave, stderr=slave,
-                                          env=env, start_new_session=True, close_fds=True)
+                                          env=env, start_new_session=True, close_fds=True, pass_fds=tuple(pass_fds))
         except BaseException:
             os.close(self.master)
             raise
@@ -290,9 +333,18 @@ class TerminalView(tk.Text):
                          padx=8, pady=6, cursor="xterm", exportselection=False)
         self.screen = Screen()
         self.send = send
+        self.aqua = self.tk.call("tk", "windowingsystem") == "aqua"
+        self.buttons = set()      # xterm button codes held down
+        self.last_cell = None
         self.bind("<Key>", self.key)
         self.bind("<<Paste>>", self.paste)
-        self.bind("<Button-1>", lambda e: self.focus_set())
+        for n in (1, 2, 3):
+            self.bind(f"<ButtonPress-{n}>", lambda e, n=n: self.mouse_button(e, n, False))
+            self.bind(f"<ButtonRelease-{n}>", lambda e, n=n: self.mouse_button(e, n, True))
+        self.bind("<Motion>", self.mouse_motion)
+        self.bind("<MouseWheel>", lambda e: self.mouse_wheel(e, e.delta > 0))
+        self.bind("<Button-4>", lambda e: self.mouse_wheel(e, True))
+        self.bind("<Button-5>", lambda e: self.mouse_wheel(e, False))
         for f in range(16):
             for b in range(16):
                 self.tag_configure(f"c{f}_{b}", foreground=PALETTE[f], background=PALETTE[b])
@@ -306,10 +358,67 @@ class TerminalView(tk.Text):
         return "break"
 
     def key(self, e):
-        if e.keysym in KEYS:
-            self.send(KEYS[e.keysym])
+        shift = bool(e.state & 0x0001)
+        ctrl = bool(e.state & 0x0004)
+        # Alt is Option (Mod2) on macOS and Mod1 elsewhere; on macOS Mod1 is Command.
+        alt = bool(e.state & (0x0010 if self.aqua else 0x0008))
+        if e.keysym == "ISO_Left_Tab" or (e.keysym == "Tab" and shift):
+            self.send(b"\x1b[Z")
+        elif e.keysym in KEYS:
+            sequence = KEYS[e.keysym]
+            if sequence.startswith(b"\x1b") and len(sequence) > 1 and e.keysym != "Escape":
+                sequence = modified_key(sequence, 1 + shift + 2 * alt + 4 * ctrl)
+            elif alt:
+                sequence = b"\x1b" + sequence
+            self.send(sequence)
+        elif alt and len(e.keysym) == 1 and e.keysym.isascii() and e.keysym.isalnum():
+            self.send(b"\x1b" + e.keysym.lower().encode())
+        elif alt and e.char in OPTION_CHARS:
+            self.send(b"\x1b" + OPTION_CHARS[e.char].encode())
         elif e.char:
             self.send(e.char.encode())
+        return "break"
+
+    def cell(self, e):
+        line, column = self.index(f"@{e.x},{e.y}").split(".")
+        return (max(0, min(int(column), self.screen.cols - 1)), max(0, min(int(line) - 1, self.screen.rows - 1)))
+
+    def mouse_button(self, e, number, release):
+        """Reports a click when the program turned on mouse tracking (Odin Vision, Free Vision)."""
+        self.focus_set()
+        if not self.screen.mouse:
+            return None
+        # Tk numbers the right button 2 on macOS and 3 elsewhere.
+        code = {1: 0, 2: 2, 3: 1}[number] if self.aqua else {1: 0, 2: 1, 3: 2}[number]
+        x, y = self.cell(e)
+        if release:
+            self.buttons.discard(code)
+        else:
+            self.buttons.add(code)
+        if not release or self.screen.mouse != {9}:
+            self.send(mouse_report(code, x, y, release, self.screen.sgr_mouse))
+        self.last_cell = (x, y)
+        return "break"
+
+    def mouse_motion(self, e):
+        modes = self.screen.mouse
+        if not modes or not ({1002, 1003} & modes):
+            return None
+        if not self.buttons and 1003 not in modes:
+            return "break"
+        x, y = self.cell(e)
+        if (x, y) == self.last_cell:
+            return "break"
+        self.last_cell = (x, y)
+        code = (min(self.buttons) if self.buttons else 3) + 32
+        self.send(mouse_report(code, x, y, False, self.screen.sgr_mouse))
+        return "break"
+
+    def mouse_wheel(self, e, up):
+        if not self.screen.mouse:
+            return None
+        x, y = self.cell(e)
+        self.send(mouse_report(64 if up else 65, x, y, False, self.screen.sgr_mouse))
         return "break"
 
     def feed(self, data):

@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 Syams Ideris
+#
+# Odin Pascal toolchain. No third-party crates: everything builds offline
+# from this repository and the Rust standard library.
+
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "GPL-3.0-or-later"
+authors = ["Syams Ideris"]
+publish = false
+
+[workspace.dependencies]
+odin-base = { path = "crates/odin-base" }
+odin-syntax = { path = "crates/odin-syntax" }
+odin-sema = { path = "crates/odin-sema" }
+odin-ir = { path = "crates/odin-ir" }
+odin-codegen = { path = "crates/odin-codegen" }
+odin-asm = { path = "crates/odin-asm" }
+odin-link = { path = "crates/odin-link" }
+odin-debuginfo = { path = "crates/odin-debuginfo" }
+odin-unitcache = { path = "crates/odin-unitcache" }
+odin-debug = { path = "crates/odin-debug" }
+
+[profile.release]
+debug = 1
