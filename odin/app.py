@@ -31,6 +31,10 @@ TEMPLATE = "program Untitled;\n\nbegin\n  WriteLn('Hello, Pascal!');\nend.\n"
 DEBUG_ACTIONS = ("debug", "step", "cursor")
 # Monospace fonts in order of preference; Courier when none is installed.
 FONTS = {"darwin": ("Menlo",), "win32": ("Consolas", "Courier New")}
+# The plaque under the desktop logo: a Turbo Vision dialog (gray, white double frame, black shadow).
+# Its fonts are fixed, so it keeps its shape whatever the editor font size is.
+PLAQUE_GAP, PLAQUE_PAD, PLAQUE_SHADOW = 14, 16, 8
+PLAQUE_FRAME, PLAQUE_VERSION = "#ffffff", "#006060"
 
 
 class App:
@@ -94,16 +98,15 @@ class App:
         self.desktop = tk.Frame(root, bg=BLUE)
         self.desktop.pack(fill="both", expand=True)
         if self.logo:
-            self.watermark = tk.Label(self.desktop, image=self.logo, text=f"{__version_tag__}  •  NATIVE PASCAL IDE", compound="top",
-                                      bg=BLUE, fg=CYAN, font=(family, 14, "bold"))
+            self.watermark = tk.Label(self.desktop, image=self.logo, bg=BLUE, borderwidth=0)
         else:
-            self.watermark = tk.Label(self.desktop, text=f"ODIN\nTURBO PASCAL\n\n{__version_tag__}  •  NATIVE PASCAL IDE",
-                                      bg=BLUE, fg=CYAN, font=(family, 24, "bold"), justify="center")
-        self.watermark.place(relx=.5, rely=.5, y=-34, anchor="center")
-        self.author = tk.Label(self.desktop, text=f"Created by {__author__}", bg=BLUE, fg=WHITE, font=(family, 16, "bold"))
-        self.author.place(in_=self.watermark, relx=.5, rely=1, y=6, anchor="n")
-        self.credit = tk.Label(self.desktop, text=f"GNU GPL v3  •  {__copyright__}", bg=BLUE, fg=CYAN)
-        self.credit.place(in_=self.author, relx=.5, rely=1, y=2, anchor="n")
+            self.watermark = tk.Label(self.desktop, text="ODIN\nTURBO PASCAL", bg=BLUE, fg=CYAN, font=(family, 24, "bold"),
+                                      justify="center")
+        self.plaque = self.make_plaque(family)
+        # The logo and the plaque are centered together on the desktop.
+        below = PLAQUE_GAP + int(self.plaque.cget("height"))
+        self.watermark.place(relx=.5, rely=.5, y=-below // 2, anchor="center")
+        self.plaque.place(in_=self.watermark, relx=.5, rely=1, y=PLAQUE_GAP, anchor="n")
         self.bind_keys()
         self.restore_session()
         if not self.editors:
@@ -123,6 +126,38 @@ class App:
             return tk.PhotoImage(master=self.root, file=str(ASSETS / "assets" / name))
         except tk.TclError:
             return None
+
+    def make_plaque(self, family):
+        """The desktop plaque under the logo: tagline and release tag, author credit, copyright and
+        license. Canvas items carry the tags tagline, version, author, copyright and license."""
+        small = tkfont.Font(root=self.root, family=family, size=10)
+        fonts = {"tagline": tkfont.Font(root=self.root, family=family, size=12, weight="bold"),
+                 "author": tkfont.Font(root=self.root, family=family, size=14, weight="bold"),
+                 "copyright": small, "license": small}
+        lines = [("tagline", "NATIVE PASCAL IDE"), ("author", f"Created by {__author__}"),
+                 ("copyright", __copyright__), ("license", "GNU GPL v3 or later")]
+        gap = 5
+        version_width = fonts["tagline"].measure(__version_tag__)
+        inner = max(fonts["tagline"].measure(lines[0][1]) + 3 * gap + version_width,
+                    *(fonts[tag].measure(text) for tag, text in lines[1:]))
+        width = inner + 2 * PLAQUE_PAD
+        height = sum(fonts[tag].metrics("linespace") for tag, _ in lines) + (len(lines) - 1) * gap + 2 * PLAQUE_PAD
+        canvas = tk.Canvas(self.desktop, width=width + PLAQUE_SHADOW, height=height + PLAQUE_SHADOW, bg=BLUE,
+                           highlightthickness=0, borderwidth=0)
+        canvas.create_rectangle(PLAQUE_SHADOW, PLAQUE_SHADOW, width + PLAQUE_SHADOW, height + PLAQUE_SHADOW, fill=BLACK, width=0)
+        canvas.create_rectangle(0, 0, width, height, fill=GRAY, width=0)
+        # Double frame, as on an active Turbo Vision dialog.
+        for inset in (5, 9):
+            canvas.create_rectangle(inset, inset, width - inset, height - inset, outline=PLAQUE_FRAME, width=1)
+        y = PLAQUE_PAD
+        for tag, text in lines:
+            canvas.create_text(PLAQUE_PAD, y, text=text, anchor="nw", fill=BLACK, font=fonts[tag], tags=tag)
+            if tag == "tagline":
+                canvas.create_text(width - PLAQUE_PAD, y, text=__version_tag__, anchor="ne", fill=PLAQUE_VERSION,
+                                   font=fonts[tag], tags="version")
+            y += fonts[tag].metrics("linespace") + gap
+        canvas.fonts = fonts
+        return canvas
 
     def report_error(self, kind, value, tb):
         detail = "".join(traceback.format_exception(kind, value, tb))

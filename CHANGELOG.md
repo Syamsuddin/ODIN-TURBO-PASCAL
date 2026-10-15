@@ -26,6 +26,7 @@ Rilis 2.2.0. IDE, toolchain Odin, debugger terpadu, dan Odin Vision kini juga be
 
 ### Diubah
 
+- Teks di bawah logo desktop kini berupa plakat bergaya dialog Turbo Vision (abu-abu, bingkai ganda putih, bayangan hitam): `NATIVE PASCAL IDE` dengan tag versi, `Created by Syams Ideris`, hak cipta, dan lisensi. Ukurannya tetap, tidak ikut ukuran font editor, sehingga baris-barisnya tidak lagi berimpitan atau melebar jauh melampaui logo.
 - CI: job Windows kini wajib lulus, menjalankan pemeriksaan pemasang, dan mengunggah `odinpc.exe` sebagai artefak.
 - Tes snapshot Odin Vision mengabaikan warna depan sel kosong (tidak terlihat, dan ConPTY tidak mempertahankannya), lalu menyebutkan sel mana yang berbeda bila warna tidak cocok.
 

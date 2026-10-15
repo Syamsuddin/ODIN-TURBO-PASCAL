@@ -11,7 +11,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from odin import __version_tag__
+from odin import __copyright__, __version_tag__
 from odin.core import Document, Settings, locate_compiler, locate_toolchain, odin_supported
 from odin.terminal import ALT_MASKS
 
@@ -143,10 +143,23 @@ class GuiTests(unittest.TestCase):
         self.assertIsNotNone(self.app.icon)
         self.assertEqual((self.app.logo.width(),self.app.logo.height()),(280,280))
         self.assertEqual(str(self.app.watermark.cget("image")),str(self.app.logo))
-        self.assertEqual(self.app.author.cget("text"),"Created by Syams Ideris")
+        plaque=self.app.plaque
+        self.assertEqual(plaque.itemcget("author","text"),"Created by Syams Ideris")
+        self.assertEqual(plaque.itemcget("tagline","text"),"NATIVE PASCAL IDE")
+        self.assertEqual(plaque.itemcget("copyright","text"),__copyright__)
+        self.assertEqual(plaque.itemcget("license","text"),"GNU GPL v3 or later")
+        # The plaque sits under the logo, as wide as its longest line, whatever the editor font size.
+        self.root.update()
+        self.assertGreaterEqual(plaque.winfo_y(),self.app.watermark.winfo_y()+self.app.watermark.winfo_height())
+        for tag in ("tagline","version","author","copyright","license"):
+            x1,y1,x2,y2=plaque.bbox(tag)
+            self.assertTrue(0<=x1 and x2<=int(plaque.cget("width")) and 0<=y1 and y2<=int(plaque.cget("height")),tag)
+        boxes=[plaque.bbox(tag) for tag in ("tagline","author","copyright","license")]
+        self.assertTrue(all(a[3]<=b[1] for a,b in zip(boxes,boxes[1:])),"plaque lines overlap")
+        self.assertLess(plaque.bbox("tagline")[2],plaque.bbox("version")[0])
         self.assertIn("Created by Syams Ideris",self.app.status.cget("text"))
         # The release tag on the desktop, the startup status bar, the default HELLO.PAS page and About.
-        self.assertEqual(self.app.watermark.cget("text"),f"{__version_tag__}  •  NATIVE PASCAL IDE")
+        self.assertEqual(plaque.itemcget("version","text"),__version_tag__)
         self.assertIn(f"Odin Turbo Pascal {__version_tag__}",self.app.status.cget("text"))
         self.assertIn(f"Odin Turbo Pascal {__version_tag__} - program pertama",self.app.active_editor.text.get("1.0","end"))
         self.app.user_input()

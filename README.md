@@ -74,7 +74,7 @@ Cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, guru yan
 - Beberapa jendela sekaligus: tile, cascade, zoom, dan daftar jendela.
 - Undo/redo, clipboard, find/replace, go to line, hapus baris, indentasi otomatis, serta mode insert/overwrite.
 - Warna sintaks opsional. Bawaannya teks kuning klasik.
-- Desktop menampilkan logo Odin, tag versi (misalnya `v2.0.0`), dan kredit penulis. Tag yang sama tampil di baris status, About, dan contoh `HELLO.PAS`.
+- Desktop menampilkan logo Odin dengan plakat bergaya dialog Turbo Vision di bawahnya: tag versi (misalnya `v2.2.0`), kredit penulis, hak cipta, dan lisensi. Tag yang sama tampil di baris status, About, dan contoh `HELLO.PAS`.
 - Encoding CP437 dan UTF-8 (termasuk BOM), serta akhir baris LF dan CRLF, dipertahankan apa adanya saat menyimpan.
 
 ### Kompilasi
