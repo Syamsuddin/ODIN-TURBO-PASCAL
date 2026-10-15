@@ -6,6 +6,36 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-10-15
+
+Rilis 2.2.0. IDE, toolchain Odin, debugger terpadu, dan Odin Vision kini juga berjalan di Windows 10 1809 atau lebih baru (x86_64). Rilis ini juga membawa dukungan Apple Silicon dan Linux (x86_64 dan arm64) dari 2.1.0-alpha.1 (rinciannya di entri itu); tidak ada rilis 2.1.0 terpisah.
+
+### Ditambahkan
+
+- Target `x86_64-windows` di `odinpc`: konvensi panggil Win64 (shadow space, register argumen Windows, probe stack untuk frame besar) dan linker PE32+ yang mengimpor `kernel32.dll` dan `ucrtbase.dll`. `odinpc.exe` sendiri dibangun di runner CI Windows, dan paket rilis membawanya di `toolchain/odinpc.exe`.
+- RTL Windows:
+  - `System`: berkas lewat UCRT dalam mode biner, `WriteLn` menulis CRLF seperti FPC, runtime error dari vectored exception handler;
+  - `Crt`: konsol dengan pemrosesan VT dan UTF-8, `KeyPressed`/`ReadKey` dari event konsol;
+  - `Dos`: `FindFirst`/`FindNext` lewat `FindFirstFileA`, atribut dan waktu berkas, `DiskFree`, `Exec` lewat `_spawnvpe`, `FExpand` dan `FSplit` dengan huruf drive dan `\`, kode `DosError` seperti FPC untuk Windows;
+  - `Printer` mencetak lewat `notepad /p`;
+  - Odin Vision: lapisan konsol Windows di `Drivers`, dan dialog berkas `StdDlg` yang memakai `\` dan akar `C:\`.
+- Debugger terpadu di Windows: program dan `odinpc debug` berbicara lewat TCP 127.0.0.1 dengan memori bersama berbasis berkas; IDE berbicara dengan `odinpc debug` lewat TCP juga.
+- User screen ConPTY (`odin/conpty.py`, lewat `ctypes`): job object agar Stop menghentikan seluruh pohon proses, dan `Ctrl+C` yang sampai ke program lewat helper yang menempel ke pseudoconsole.
+- Pemasang Windows `Install.cmd`/`Install.ps1` dan `Uninstall.cmd`: mencari Python dengan Tk dan Free Pascal (menawarkan winget), memeriksa kompilasi dengan Free Pascal dan dengan `odinpc.exe`, lalu memasang di `%LOCALAPPDATA%\Programs\OdinTurboPascal` dengan pintasan Start dan Desktop.
+- Ekspektasi korpus per sistem operasi (`NAME.windows.out`) dari Free Pascal untuk Windows, dibuat oleh workflow `oracle.yml`.
+
+### Diubah
+
+- Teks di bawah logo desktop kini berupa plakat bergaya dialog Turbo Vision (abu-abu, bingkai ganda putih, bayangan hitam): `NATIVE PASCAL IDE` dengan tag versi, `Created by Syams Ideris`, hak cipta, dan lisensi. Ukurannya tetap, tidak ikut ukuran font editor, sehingga baris-barisnya tidak lagi berimpitan atau melebar jauh melampaui logo.
+- CI: job Windows kini wajib lulus, menjalankan pemeriksaan pemasang, dan mengunggah `odinpc.exe` sebagai artefak.
+- Tes snapshot Odin Vision mengabaikan warna depan sel kosong (tidak terlihat, dan ConPTY tidak mempertahankannya), lalu menyebutkan sel mana yang berbeda bila warna tidak cocok.
+
+### Pengujian
+
+- **Mac Intel** (macOS 15.7, Python 3.13, Tk 9.1, FPC 3.2.2, Rust 1.99): 92 tes Python (6 tes khusus Windows dilewati) dan 185 tes Rust lulus. Korpus diferensial 77 program (build biasa dan debug) identik dengan FPC 3.2.2.
+- **GitHub Actions:** di Windows Server 2025, korpus 77 program (biasa dan debug) identik dengan FPC 3.2.2 untuk Windows, 92 tes Python lulus (2 tes khusus Unix dilewati), termasuk GUI, debugger, dan Odin Vision,, dan pemeriksaan pemasang lulus. macOS 15 Intel dan Apple Silicon serta Ubuntu 24.04 x86_64 dan arm64 tetap lulus.
+- **Belum diverifikasi langsung:** PC Windows fisik, `Install.cmd` lengkap (winget, pintasan, peluncuran dari menu Start), Windows on ARM, serta yang belum diverifikasi di 2.1.0-alpha.1.
+
 ## [2.1.0-alpha.1] - 2026-10-15
 
 Rilis alfa pertama menuju 2.1.0. Toolchain Odin, debugger terpadu, dan Odin Vision kini juga berjalan di Apple Silicon dan Linux (x86_64 dan arm64). Windows sedang dikerjakan dan belum didukung.
@@ -214,7 +244,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.1.0-alpha.1...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.1.0-alpha.1...v2.2.0
 [2.1.0-alpha.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.1...v2.1.0-alpha.1
 [2.0.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.2...v2.0.0

@@ -24,19 +24,16 @@ jobs:
   test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
-    # Windows support arrives in Tahap 8d; until then the job reports
-    # what fails without failing the workflow.
-    continue-on-error: ${{ matrix.experimental }}
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { name: macOS Intel, runner: macos-15-intel, experimental: false }
-          - { name: macOS Apple Silicon, runner: macos-15, experimental: false }
-          - { name: Linux x86_64, runner: ubuntu-24.04, experimental: false }
-          - { name: Linux arm64, runner: ubuntu-24.04-arm, experimental: false }
-          - { name: Windows x86_64, runner: windows-2025, experimental: true }
+          - { name: macOS Intel, runner: macos-15-intel }
+          - { name: macOS Apple Silicon, runner: macos-15 }
+          - { name: Linux x86_64, runner: ubuntu-24.04 }
+          - { name: Linux arm64, runner: ubuntu-24.04-arm }
+          - { name: Windows x86_64, runner: windows-2025 }
     defaults:
       run:
         shell: bash
@@ -69,7 +66,9 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install freepascal -y --no-progress
-          echo "C:/tools/freepascal/bin/x86_64-win64" >> "$GITHUB_PATH"
+          # The Chocolatey package is the 32-bit compiler, without fpc.cfg (the IDE
+          # adds the unit folders itself then).
+          echo "C:/tools/freepascal/bin/i386-win32" >> "$GITHUB_PATH"
           echo "PYTHON=python" >> "$GITHUB_ENV"
 
       - name: Versions
@@ -77,21 +76,38 @@ jobs:
           "$PYTHON" -c "import sys, tkinter; print(sys.version); print('Tk', tkinter.TkVersion)"
           fpc -iV || echo "fpc tidak ditemukan"
           if [ "$RUNNER_OS" = Windows ]; then
-            ls C:/tools/freepascal C:/tools/freepascal/bin C:/tools/freepascal/units 2>&1 | head -40
-            for c in C:/tools/freepascal/bin/*/fpc.cfg; do echo "== $c"; head -30 "$c"; done
+            ls C:/tools/freepascal/bin C:/tools/freepascal/units || true
           fi
 
-      # On Windows odinpc does not build yet (odin-debug, Tahap 8d): the
-      # Python tests still run, with the Free Pascal backend.
       - name: Build odinpc
         working-directory: toolchain
-        continue-on-error: ${{ runner.os == 'Windows' }}
         run: cargo build --release
+
+      # The Windows odinpc.exe that releases ship (toolchain/odinpc.exe):
+      # the development Mac cannot build it.
+      - name: Upload odinpc.exe
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: odinpc-windows-x86_64
+          path: toolchain/target/release/odinpc.exe
+          if-no-files-found: error
 
       - name: Rust tests
         working-directory: toolchain
-        continue-on-error: ${{ runner.os == 'Windows' }}
-        run: cargo test --workspace
+        run: |
+          # On Windows the corpus runs on drive C:, like the FPC expectations
+          # (FExpand puts the current drive into paths).
+          if [ "$RUNNER_OS" = Windows ]; then export ODIN_CORPUS_TMP="$TEMP/odin-corpus"; fi
+          cargo test --workspace
+
+      # The installer gate (Install.ps1) and the install folder it stages.
+      - name: Windows installer check
+        if: runner.os == 'Windows'
+        run: |
+          "$PYTHON" scripts/check_windows.py "$(cygpath -w "$(command -v fpc)")"
+          "$PYTHON" scripts/stage_windows.py "$RUNNER_TEMP/odin-install"
+          test -f "$RUNNER_TEMP/odin-install/toolchain/odinpc.exe"
 
       - name: Python tests
         run: |

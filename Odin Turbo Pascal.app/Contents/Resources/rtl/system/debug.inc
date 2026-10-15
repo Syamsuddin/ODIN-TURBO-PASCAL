@@ -3,7 +3,7 @@
   berbicara dengan `odinpc debug` lewat Unix socket ($ODIN_DEBUG_SOCKET) dan
   berbagi memori ($ODIN_DEBUG_SHM) berisi flag langkah, pause, dan
   breakpoint. Di Windows kanalnya TCP 127.0.0.1 (variabel itu berisi nomor
-  port) dan memorinya file mapping bernama. Protokolnya ada di rtl/COMPILER_INTERFACE.md. Tanpa kedua
+  port), dan berkas bersama itu dipetakan dengan CreateFileMapping. Protokolnya ada di rtl/COMPILER_INTERFACE.md. Tanpa kedua
   variabel lingkungan itu, program berjalan biasa. }
 
 {$IFDEF UNIX}
@@ -38,7 +38,10 @@ function w_socket(Family, Kind, Protocol: LongInt): Int64; external 'ws2_32' nam
 function w_connect(S: Int64; Addr: Pointer; Len: LongInt): LongInt; external 'ws2_32' name 'connect';
 function w_send(S: Int64; Buf: Pointer; Len, Flags: LongInt): LongInt; external 'ws2_32' name 'send';
 function w_recv(S: Int64; Buf: Pointer; Len, Flags: LongInt): LongInt; external 'ws2_32' name 'recv';
-function OpenFileMappingA(Access, Inherit: LongInt; Name: PChar): Pointer; external 'kernel32' name 'OpenFileMappingA';
+function CreateFileA(Name: PChar; Access, Share: LongInt; Security: Pointer; Disposition, Flags: LongInt;
+  Template: Pointer): Pointer; external 'kernel32' name 'CreateFileA';
+function CreateFileMappingA(F, Security: Pointer; Protect, SizeHigh, SizeLow: LongInt; Name: PChar): Pointer;
+  external 'kernel32' name 'CreateFileMappingA';
 function MapViewOfFile(Mapping: Pointer; Access, OffsetHigh, OffsetLow: LongInt; Size: Int64): Pointer;
   external 'kernel32' name 'MapViewOfFile';
 function GetCurrentProcess: Pointer; external 'kernel32' name 'GetCurrentProcess';
@@ -379,6 +382,10 @@ end;
 procedure ODIN_DBG_INIT(LineCount: LongInt);
 const
   FILE_MAP_ALL_ACCESS = $F001F;
+  GENERIC_READ_WRITE = LongInt($C0000000);
+  FILE_SHARE_READ_WRITE = 3;
+  OPEN_EXISTING = 3;
+  PAGE_READWRITE = 4;
   AF_INET = 2;
   SOCK_STREAM = 1;
   IPPROTO_TCP = 6;
@@ -390,7 +397,7 @@ type
   end;
 var
   PortText, ShmName: PChar;
-  Mapping, Map: Pointer;
+  ShmFile, Mapping, Map: Pointer;
   Addr: TSockAddrIn;
   WsaData: array[0..511] of Byte;
   Port, I: LongInt;
@@ -402,7 +409,11 @@ begin
   ShmName := c_getenv(@ShmVar);
   if (PortText = nil) or (ShmName = nil) then
     Exit;
-  Mapping := OpenFileMappingA(FILE_MAP_ALL_ACCESS, 0, ShmName);
+  { The debugger writes the flags into this file; a view of it sees them. }
+  ShmFile := CreateFileA(ShmName, GENERIC_READ_WRITE, FILE_SHARE_READ_WRITE, nil, OPEN_EXISTING, 0, nil);
+  if Int64(ShmFile) = -1 then
+    Exit;
+  Mapping := CreateFileMappingA(ShmFile, nil, PAGE_READWRITE, 0, 0, nil);
   if Mapping = nil then
     Exit;
   Map := MapViewOfFile(Mapping, FILE_MAP_ALL_ACCESS, 0, 0, 16 + Int64(LineCount));

@@ -234,10 +234,11 @@ class WindowsConPtyTests(unittest.TestCase):
             os.close(r)
             os.close(w)
 
-    def test_debugger_reports_it_is_not_available_yet(self):
+    def test_debugger_without_odinpc_fails_cleanly(self):
         from odin.debugger import DebugSession
         with self.assertRaises(OSError):
-            DebugSession("odinpc.exe", "program.exe", "program.odbg", [], ROOT, lambda kind, value: None)
+            DebugSession(str(ROOT / "no-such-odinpc.exe"), "program.exe", "program.odbg", [], ROOT,
+                         lambda kind, value: None)
 
 
 if __name__ == "__main__":

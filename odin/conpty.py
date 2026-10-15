@@ -25,6 +25,7 @@ import codecs
 import ctypes
 import os
 import subprocess
+import sys
 import threading
 import time
 
@@ -44,6 +45,7 @@ ULONGLONG = ctypes.c_uint64
 EXTENDED_STARTUPINFO_PRESENT = 0x00080000
 CREATE_UNICODE_ENVIRONMENT = 0x00000400
 CREATE_SUSPENDED = 0x00000004
+PSEUDOCONSOLE_PASSTHROUGH_MODE = 0x8
 STARTF_USESTDHANDLES = 0x00000100
 PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016
 JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS = 9   # JobObjectExtendedLimitInformation
@@ -133,6 +135,7 @@ SIGNATURES = (
     ("CreatePseudoConsole", HRESULT, (COORD, HANDLE, HANDLE, DWORD, ctypes.POINTER(HANDLE))),
     ("ResizePseudoConsole", HRESULT, (HANDLE, COORD)),
     ("ClosePseudoConsole", None, (HANDLE,)),
+    ("SetConsoleCtrlHandler", BOOL, (LPVOID, BOOL)),
     ("InitializeProcThreadAttributeList", BOOL, (LPVOID, DWORD, DWORD, ctypes.POINTER(SIZE_T))),
     ("UpdateProcThreadAttribute", BOOL, (LPVOID, DWORD, SIZE_T, LPVOID, SIZE_T, LPVOID, ctypes.POINTER(SIZE_T))),
     ("DeleteProcThreadAttributeList", None, (LPVOID,)),
@@ -305,8 +308,15 @@ class ConPtyProcess:
             self._output, conhost_output = _pipe()
             try:
                 console = HANDLE()
-                check_hresult(k.CreatePseudoConsole(COORD(cols, rows), conhost_input, conhost_output, 0,
-                                                    ctypes.byref(console)), "CreatePseudoConsole")
+                # Passthrough (Windows 11 24H2 / Server 2025 and later) hands the program's own
+                # escape sequences to the User screen. Without it conhost renders the screen again
+                # in 16 colors and drops bright backgrounds, which Turbo Vision palettes use.
+                result = k.CreatePseudoConsole(COORD(cols, rows), conhost_input, conhost_output,
+                                               PSEUDOCONSOLE_PASSTHROUGH_MODE, ctypes.byref(console))
+                if result < 0:
+                    result = k.CreatePseudoConsole(COORD(cols, rows), conhost_input, conhost_output, 0,
+                                                   ctypes.byref(console))
+                check_hresult(result, "CreatePseudoConsole")
                 self._console = console.value
             finally:
                 # The pseudoconsole has its own duplicates. Without ours, the output pipe breaks
@@ -337,6 +347,9 @@ class ConPtyProcess:
             block = ctypes.create_string_buffer(environment_block(environment).encode("utf-16-le"))
             directory = os.path.abspath(os.fspath(cwd)) if cwd else None
             flags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT | CREATE_SUSPENDED
+            # Children inherit "ignore Ctrl-C" (CI runners and some launchers start us that way);
+            # clear it so the program reacts to Ctrl-C like in a console window.
+            k.SetConsoleCtrlHandler(None, False)
             if not k.CreateProcessW(None, command, None, None, False, flags, block, directory,
                                     ctypes.byref(startup), ctypes.byref(info)):
                 raise last_error()
@@ -427,6 +440,8 @@ class ConPtyProcess:
 
     def write(self, value):
         """Sends bytes to the program; b"\\x03" becomes Ctrl-C (CTRL_C_EVENT) in conhost."""
+        if value == b"\x03" and self._ctrl_c_event():
+            return
         if value == b"\x03" and self._win32_input:
             value = b"\x1b[67;46;3;1;8;1_\x1b[67;46;3;0;8;1_"
         with self._input_lock:
@@ -441,10 +456,28 @@ class ConPtyProcess:
                     return
                 view = view[written.value:]
 
+    def _ctrl_c_event(self):
+        """Ctrl-C as a real console might: a helper without a console of its own attaches to the
+        program's pseudoconsole and raises CTRL_C_EVENT there. Input bytes are not enough: newer
+        conhost asks for win32-input-mode and then reads 0x03 as plain text. True on success."""
+        if self.closed or self.child.poll() is not None:
+            return False
+        code = ("import ctypes,sys;k=ctypes.windll.kernel32;"
+                "ok=k.AttachConsole(int(sys.argv[1])) and k.SetConsoleCtrlHandler(None,1) "
+                "and k.GenerateConsoleCtrlEvent(0,0);sys.exit(0 if ok else 1)")
+        try:
+            return subprocess.run([sys.executable, "-c", code, str(self.child.pid)],
+                                  creationflags=0x00000008, timeout=10,  # DETACHED_PROCESS
+                                  stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL).returncode == 0
+        except (OSError, subprocess.SubprocessError):
+            return False
+
     def interrupt(self):
-        # Under win32-input-mode, write() sends Ctrl+C down and up as key
-        # records: ESC [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _ with VK 'C', scan code
-        # 46, character 3 and LEFT_CTRL_PRESSED.
+        # A CTRL_C_EVENT through a helper (see _ctrl_c_event); failing that, Ctrl+C as input,
+        # as a win32-input-mode key record when conhost asked for that mode:
+        # ESC [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _ with VK 'C', scan code 46, character 3 and
+        # LEFT_CTRL_PRESSED.
         self.write(b"\x03")
 
     def resize(self, cols, rows):

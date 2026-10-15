@@ -113,7 +113,7 @@ fn check(options: &Options) -> ExitCode {
             }
             if options.dump_ast {
                 let source = options.source.as_ref().expect("checked by options::parse");
-                if let Some(id) = map.find(&source.canonicalize().unwrap_or_default()) {
+                if let Some(id) = map.find(&odin_base::canonical(&source).unwrap_or_default()) {
                     let mut tmp = SourceMap::new();
                     let id2 = tmp.add(map.file(id).path.clone(), map.file(id).bytes.clone());
                     if let Ok(p) = parse_file(&mut tmp, id2, &options.lex_options()) {

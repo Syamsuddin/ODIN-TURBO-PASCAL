@@ -17,6 +17,7 @@
 //! `__libc_start_main`, reached through the GOT like every import.
 
 use std::io::ErrorKind;
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -43,6 +44,7 @@ fn write_executable(name: &str, image: &LinkedImage) -> PathBuf {
     let path = dir.join(name);
     let _ = std::fs::remove_file(&path);
     std::fs::write(&path, &image.bytes).unwrap();
+    #[cfg(unix)]
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
     path
 }

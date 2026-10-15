@@ -1,5 +1,5 @@
 ODIN TURBO PASCAL
-Panduan penggunaan 2.1.0-alpha.1
+Panduan penggunaan 2.2.0
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 MEMBUAT PROGRAM PERTAMA
@@ -118,7 +118,8 @@ DEBUGGER
 Debugger Odin bekerja dengan backend Odin (Options > Compiler > Odin native).
 Program dikompilasi ulang dengan pengait debugger, lalu dijalankan di User
 screen. LLDB, GDB, dan Xcode tidak diperlukan. Diuji di Mac Intel, dan di
-runner GitHub Actions untuk Mac Apple Silicon serta Linux x86_64 dan arm64.
+runner GitHub Actions untuk Mac Apple Silicon, Linux x86_64 dan arm64, serta
+Windows x86_64.
 
 Breakpoint: Ctrl+F8 atau klik gutter kiri. Lingkaran merah ikut bergeser saat
 baris disisipkan atau dihapus, dan tersimpan bersama pemulihan sesi.

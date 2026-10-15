@@ -136,7 +136,7 @@ impl SourceMap {
     /// Loads a file from disk; a file already loaded under the same
     /// canonical path is returned again.
     pub fn load(&mut self, path: &Path) -> io::Result<FileId> {
-        let canonical = path.canonicalize()?;
+        let canonical = canonical(path)?;
         if let Some(id) = self.find(&canonical) {
             return Ok(id);
         }
@@ -204,4 +204,24 @@ mod tests {
         let id = map.add("c.pas", b"\x82\x82x".to_vec());
         assert_eq!(map.file(id).line_col(2), (1, 3));
     }
+}
+
+/// [`Path::canonicalize`], but on Windows without the verbatim `\\?\` prefix
+/// it adds (`\\?\C:\x` becomes `C:\x`, `\\?\UNC\host\share` becomes
+/// `\\host\share`), so the paths in diagnostics and debug info are the ones
+/// the IDE and the user write.
+pub fn canonical(path: &Path) -> io::Result<PathBuf> {
+    let full = path.canonicalize()?;
+    if cfg!(windows) {
+        let text = full.to_string_lossy();
+        if let Some(rest) = text.strip_prefix(r"\\?\UNC\") {
+            return Ok(PathBuf::from(format!(r"\\{rest}")));
+        }
+        if let Some(rest) = text.strip_prefix(r"\\?\")
+            && rest.as_bytes().get(1) == Some(&b':')
+        {
+            return Ok(PathBuf::from(rest));
+        }
+    }
+    Ok(full)
 }

@@ -23,7 +23,7 @@ Angka G0–G7 diukur di Mac pengembang: Intel x86_64, macOS 15.7, FPC 3.2.2 seba
 | G8a | Lolos | CI GitHub Actions di lima runner (macOS Intel, macOS arm64, Ubuntu x86_64, Ubuntu arm64, Windows); VM Lima `odin-linux` (Ubuntu 24.04, dengan qemu-user dan Wine). Plumbing target di `odinpc`; korpus untuk target lain (`ODIN_CORPUS_TARGET`/`ODIN_CORPUS_RUNNER`). |
 | G8b | Lolos | Linker ELF (PIE dinamis, glibc). Korpus 77 program (biasa dan debug) dan 92 tes Python dengan backend Odin lulus di VM dan di runner Ubuntu 24.04 x86_64. |
 | G8c | Lolos (CI) | Encoder AArch64 (575 golden dari clang) dan codegen AArch64. Korpus lulus di aarch64 Linux (qemu dan runner Ubuntu arm64) dan native di runner macOS 15 Apple Silicon, bersama tes GUI, debugger, dan Odin Vision. Mac Apple Silicon fisik dan `Install.command` di sana belum diuji. |
-| G8d | Sebagian | Konvensi Win64 di codegen, linker PE32+, RTL Windows (korpus 63 dari 77 lulus lewat Wine), IDE ConPTY (86 dari 92 tes Python lulus di runner Windows). Belum: `odinpc` untuk Windows (odin-debug memakai Unix socket), debugger TCP, sisa korpus (Exec, path, berkas teks), FPC di runner Windows. |
+| G8d | Lolos (CI) | Konvensi Win64 di codegen, linker PE32+, RTL Windows (UCRT, Win32, konsol VT, vectored exception handler), `odinpc.exe`, debugger lewat TCP 127.0.0.1, IDE dengan User screen ConPTY (Ctrl-C lewat helper yang menempel ke pseudoconsole). Di runner Windows Server 2025: korpus 77 program (biasa dan debug) identik dengan FPC 3.2.2 untuk Windows (`oracle.yml`), 93 tes Python lulus (GUI, debugger, Odin Vision), dan pemeriksaan pemasang (`check_windows.py`, `stage_windows.py`) lulus. `Install.ps1` lengkap belum dijalankan di PC Windows sungguhan. |
 
 Perbedaan dari rencana yang sudah terjadi:
 
@@ -38,6 +38,7 @@ Perbedaan dari rencana yang sudah terjadi:
 - Trek Pascal Odin Vision tidak dikembangkan dengan FPC sejak G0. Unit-unitnya ditulis setelah G6 dan langsung dikompilasi `odinpc`. `rtl/vision/SPEC.md` ditulis bersamaan dengan kode, bukan sebelumnya.
 - Ukuran data dialog mengikuti TP7 (cluster 2 byte), bukan Free Vision. Seperti di FPC, record biasa disejajarkan, jadi record data dialog sebaiknya `packed record`.
 - `ColorSel` dan `TextView` (opsional) belum dibuat. Pesan galat `odinpc` menyebutkannya.
+- Rilis Tahap 8 dipadatkan atas permintaan pemilik proyek: sesudah 2.1.0-alpha.1 (8b dan 8c), Windows (8d) langsung dirilis sebagai 2.2.0, tanpa 2.1.0 final dan tanpa 2.2.0-alpha.N. Pemasang Apple Silicon dan Windows tetap belum diuji di perangkat fisik.
 - Perbaikan compiler yang dibutuhkan Odin Vision: konstanta bertipe object (VMT ikut diisi), simbol konstanta lokal di metode bernama sama pada object berbeda, `Dispose` dengan typecast variabel, dan siklus unit lewat `uses` di bagian implementation. Semuanya punya program korpus (`OBJ_TCONST`, `LNG_UCYCLE`).
 - `Printer` hanya diuji tanpa isi (tidak ada pekerjaan cetak yang dikirim ke `lpr`), supaya tes tidak mencetak ke printer pengembang.
 - `Write` ke berkas dengan hook (misalnya `Crt`) di-flush per pernyataan lewat `ODIN_WRITE_END`, bukan per item, sama dengan TP dan FPC.

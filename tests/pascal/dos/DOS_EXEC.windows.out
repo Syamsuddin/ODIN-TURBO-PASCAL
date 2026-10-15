@@ -1,0 +1,14 @@
+start
+Exec [/bin/sh] [-c "exit 3"] err 2 code 0
+Exec [/bin/echo] [a  b "c d" 'e f' g\h "x""y" z"w q"] err 2 code 0
+Exec [/bin/echo] [] err 2 code 0
+Exec [/no/such/program] [x] err 2 code 0
+Exec [/etc/hosts] [x] err 2 code 0
+Exec [/bin] [x] err 2 code 0
+Exec [/bin/sh] [-c "kill -9 $$"] err 2 code 0
+Exec [/bin/sh] [-c "exit 300"] err 2 code 0
+Exec [sh] [-c "exit 4"] err 0 code 4
+Exec [/bin/sh] [-c "echo $0"] err 2 code 4
+Exec [/bin/sh] [-c "echo  [$1] [$2]" A  B] err 2 code 4
+Exec [/bin/sh] [-c "exit 127"] err 2 code 4
+Exec [/bin/sh] [-c "test -n \"$HOME\""] err 2 code 4

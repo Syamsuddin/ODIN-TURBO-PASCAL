@@ -1,0 +1,13 @@
+two ints: 10 20 eoln=FALSE
+third: 30 eoln=TRUE
+on next line: -7 eoln=FALSE
+readln: 8 eoln=TRUE
+blank line: [] len=0
+reals: 3.250 -150.000 longint: 7
+int then string: 42 [ hello world]
+chars: ab eoln=TRUE
+char at eoln: 13 eoln=TRUE
+short 1: []
+short 2: []
+short 3: [] eoln=TRUE
+string at eoln: []

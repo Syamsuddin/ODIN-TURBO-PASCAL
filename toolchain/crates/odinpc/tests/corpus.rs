@@ -130,14 +130,23 @@ fn pascal_corpus_matches_fpc() {
             .unwrap();
         child.stdin.take().unwrap().write_all(&input).unwrap();
         let run = child.wait_with_output().unwrap();
-        let want_out = std::fs::read(src.with_extension("out")).unwrap();
+        // A program whose behaviour is rightly different on one OS (DOS attributes, paths, CR LF
+        // text files) has expectations of its own there: NAME.<os>.out / NAME.<os>.code, made by
+        // scripts/oracle.py --os with FPC on that OS.
+        let os = target.rsplit('-').next().unwrap_or("");
+        let expected = |ext: &str| {
+            let own = src.with_extension(format!("{os}.{ext}"));
+            if own.exists() { own } else { src.with_extension(ext) }
+        };
+        let mut want_out = std::fs::read(expected("out")).unwrap();
         let want_code: i32 =
-            std::fs::read_to_string(src.with_extension("code")).map(|s| s.trim().parse().unwrap()).unwrap_or(0);
+            std::fs::read_to_string(expected("code")).map(|s| s.trim().parse().unwrap()).unwrap_or(0);
         let code = run.status.code().unwrap_or(-1);
         let mut got_out = run.stdout.clone();
         if target.ends_with("windows") {
             // WriteLn ends lines with CR LF on Windows; the expectations come from FPC on Unix.
             got_out = String::from_utf8_lossy(&got_out).replace("\r\n", "\n").into_bytes();
+            want_out = String::from_utf8_lossy(&want_out).replace("\r\n", "\n").into_bytes();
         }
         if got_out != want_out || code != want_code {
             failures.push(format!(
