@@ -102,6 +102,7 @@ procedure ODIN_STARTUP(ArgC: LongInt; ArgV: Pointer);
 procedure ODIN_DBG_INIT(LineCount: LongInt);
 procedure ODIN_DBG_HOOK(Id: LongInt);
 procedure ODIN_HALT(Code: LongInt);
+procedure ODIN_FPERROR(Flags: Int64);
 procedure ODIN_RUNERROR(Code: LongInt);
 procedure ODIN_RANGEERROR;
 procedure ODIN_OVERFLOWERROR;
@@ -748,6 +749,20 @@ end;
 procedure ODIN_RANGEERROR;
 begin
   RunErrorAt(201, ODIN_RETADDR);
+end;
+
+{ AArch64 does not trap on floating-point errors: after a real operation the
+  generated code reads the cumulative FPSR flags and comes here when invalid
+  operation (bit 0), division by zero (bit 1) or overflow (bit 2) is set, so
+  the program stops as it does on x86-64. }
+procedure ODIN_FPERROR(Flags: Int64);
+begin
+  if Flags and 1 <> 0 then
+    RunErrorAt(207, ODIN_RETADDR)
+  else if Flags and 2 <> 0 then
+    RunErrorAt(200, ODIN_RETADDR)
+  else
+    RunErrorAt(205, ODIN_RETADDR);
 end;
 
 procedure ODIN_OVERFLOWERROR;

@@ -324,15 +324,15 @@ pub fn build(map: &SourceMap, options: &Options, checked: &Checked) -> Result<Bu
         "x86_64-darwin" => (Os::Darwin, odin_link::Target::X86_64Darwin),
         "x86_64-linux" => (Os::Linux, odin_link::Target::X86_64Linux),
         "x86_64-windows" => (Os::Windows, odin_link::Target::X86_64Windows),
+        "aarch64-darwin" => (Os::Darwin, odin_link::Target::Aarch64Darwin),
+        "aarch64-linux" => (Os::Linux, odin_link::Target::Aarch64Linux),
         other => {
-            let hint = match other {
-                "aarch64-darwin" | "aarch64-linux" => "; arm64 menyusul di Tahap 8c",
-                _ => "",
-            };
             return Err(Diagnostic::error_with(
                 code::NOT_SUPPORTED,
                 Span::default(),
-                format!(": target {other} (yang tersedia: x86_64-darwin, x86_64-linux, x86_64-windows{hint})"),
+                format!(
+                    ": target {other} (yang tersedia: x86_64-darwin, x86_64-linux, x86_64-windows, aarch64-darwin, aarch64-linux)"
+                ),
             ));
         }
     };
@@ -349,13 +349,21 @@ pub fn build(map: &SourceMap, options: &Options, checked: &Checked) -> Result<Bu
             }
         }
     }
-    let mut out = odin_codegen::x86_64::generate(&checked.program, &odin_codegen::Options { os, debug_files })
-        .map_err(|e| Diagnostic::error_with(code::CODEGEN_ERROR, e.span, format!(": {}", e.message)))?;
+    let codegen_options = odin_codegen::Options { os, debug_files };
+    let arm64 = target.is_arm64();
+    let generated = if arm64 {
+        odin_codegen::aarch64::generate(&checked.program, &codegen_options)
+    } else {
+        odin_codegen::x86_64::generate(&checked.program, &codegen_options)
+    };
+    let mut out =
+        generated.map_err(|e| Diagnostic::error_with(code::CODEGEN_ERROR, e.span, format!(": {}", e.message)))?;
     let shim_path = rtl.join("system").join("arch").join(format!("{}.s", options.target));
     let shim_text = std::fs::read_to_string(&shim_path).map_err(|e| {
         Diagnostic::error_with(code::FILE_NOT_FOUND, Span::default(), format!(": {} ({e})", shim_path.display()))
     })?;
-    let shim = odin_asm::text::assemble(&shim_text, &shim_path.to_string_lossy())
+    let arch = if arm64 { odin_asm::text::Arch::Aarch64 } else { odin_asm::text::Arch::X86_64 };
+    let shim = odin_asm::text::assemble_for(arch, &shim_text, &shim_path.to_string_lossy())
         .map_err(|e| Diagnostic::error_with(code::INTERNAL, Span::default(), format!(": {e}")))?;
     let _ = c_library(os);
     let identifier = options

@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Syams Ideris
 //! Code generation: HIR to machine-code atoms.
 
+pub mod aarch64;
 pub mod x86_64;
 
 use std::collections::HashSet;

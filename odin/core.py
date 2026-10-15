@@ -318,7 +318,7 @@ PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 
 # Hosts whose native programs odinpc generates (IMPLEMENTATION_PLAN.md, Tahap 8).
 # Elsewhere the IDE builds with Free Pascal.
-ODIN_HOSTS = {("darwin", "x86_64"), ("linux", "x86_64")}
+ODIN_HOSTS = {("darwin", "x86_64"), ("darwin", "aarch64"), ("linux", "x86_64"), ("linux", "aarch64")}
 
 
 def odin_supported() -> bool:
