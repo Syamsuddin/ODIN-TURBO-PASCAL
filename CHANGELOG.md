@@ -6,9 +6,15 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.0.0-alpha.2] - 2026-10-15
+
+Rilis alfa kedua menuju 2.0.0: logo baru dan dokumentasi yang diperbarui. Compiler, runtime library, dan debugger sama dengan 2.0.0-alpha.1.
+
 ### Diubah
 
 - Logo dan ikon aplikasi memakai logo ODIN Turbo Pascal dari proyek OTP v2.0: Odin bertambal mata, petir, dan buku `begin. end.`. Logo lengkap tampil di desktop IDE, jendela About, dan ikon besar. Ukuran ikon 64 px ke bawah dan banner README memakai emblemnya saja. Sumbernya `assets/odin-logo-master.png`, dirender dengan `scripts/render_logo.py` (sekarang butuh Pillow, bukan cairosvg). Sumber SVG logo lama dihapus.
+- README diperbarui dengan keadaan terbaru: logo, bagian Turbo Vision (Odin Vision), mouse dan tombol bermodifier di User screen, perintah pengembang (tes snapshot, render logo), serta struktur proyek. Teks banner README tidak lagi menyebut Free Pascal sebagai compiler utama.
+- Nomor versi toolchain (`odinpc version`) disamakan dengan nomor rilis aplikasi.
 
 ## [2.0.0-alpha.1] - 2026-10-15
 
@@ -128,6 +134,7 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.1...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.2...HEAD
+[2.0.0-alpha.2]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.1...v2.0.0-alpha.2
 [2.0.0-alpha.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/releases/tag/v2.0.0-alpha.1
 [1.0.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/releases/tag/v1.0.0

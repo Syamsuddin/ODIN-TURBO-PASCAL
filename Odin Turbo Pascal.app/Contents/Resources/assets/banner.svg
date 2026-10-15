@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1200 380" width="1200" height="380" role="img" aria-labelledby="t d">
   <title id="t">Odin Turbo Pascal</title>
-  <desc id="d">Classic Pascal IDE with a native Free Pascal compiler for macOS Intel and Apple Silicon. GNU GPL v3, Syams Ideris.</desc>
+  <desc id="d">Classic Pascal IDE for macOS with its own native compiler, debugger and Turbo Vision library. GNU GPL v3, Syams Ideris.</desc>
   <defs><clipPath id="r"><rect width="1200" height="380" rx="16"/></clipPath></defs>
   <g clip-path="url(#r)" font-family="Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', 'Courier New', monospace">
     <rect width="1200" height="380" fill="#0000aa"/>
@@ -16,7 +16,7 @@
     <text x="325" y="195" font-size="108" font-weight="bold" fill="#000000" textLength="330" lengthAdjust="spacingAndGlyphs">ODIN</text>
     <text x="320" y="190" font-size="108" font-weight="bold" fill="#ffff55" textLength="330" lengthAdjust="spacingAndGlyphs">ODIN</text>
     <text x="322" y="250" font-size="50" font-weight="bold" fill="#ffffff" textLength="470" lengthAdjust="spacingAndGlyphs">TURBO PASCAL</text>
-    <text x="324" y="292" font-size="21" fill="#55ffff" textLength="822" lengthAdjust="spacingAndGlyphs">IDE Pascal klasik · Free Pascal native · macOS Intel &amp; Apple Silicon</text>
+    <text x="324" y="292" font-size="21" fill="#55ffff" textLength="822" lengthAdjust="spacingAndGlyphs">IDE Pascal klasik · compiler &amp; debugger native · Turbo Vision · macOS</text>
     <rect y="340" width="1200" height="40" fill="#aaaaaa"/>
     <text x="22" y="367" font-size="19" xml:space="preserve"><tspan fill="#aa0000">F1</tspan><tspan fill="#000000">&#160;Help</tspan>&#160;&#160;<tspan fill="#aa0000">F2</tspan><tspan fill="#000000">&#160;Save</tspan>&#160;&#160;<tspan fill="#aa0000">F3</tspan><tspan fill="#000000">&#160;Open</tspan>&#160;&#160;<tspan fill="#aa0000">F9</tspan><tspan fill="#000000">&#160;Make</tspan>&#160;&#160;<tspan fill="#aa0000">^F9</tspan><tspan fill="#000000">&#160;Run</tspan>&#160;&#160;<tspan fill="#aa0000">Alt-X</tspan><tspan fill="#000000">&#160;Exit</tspan></text>
     <text x="1178" y="367" font-size="17" fill="#0000aa" text-anchor="end">GNU GPL v3 · Syams Ideris</text>
