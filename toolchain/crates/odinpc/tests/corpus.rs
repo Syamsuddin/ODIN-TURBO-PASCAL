@@ -81,7 +81,10 @@ fn pascal_corpus_matches_fpc() {
         if debug {
             name.push_str(" (--debug)");
         }
-        let mut exe = tmp.join(src.file_stem().unwrap());
+        // Each build gets its own file: replacing a file another machine just
+        // ran (the VM, through a shared folder) may still run the old one.
+        let stem = src.file_stem().unwrap().to_string_lossy();
+        let mut exe = tmp.join(if debug { format!("{stem}-debug") } else { stem.to_string() });
         if target.ends_with("windows") {
             exe.set_extension("exe");
         }
@@ -101,7 +104,7 @@ fn pascal_corpus_matches_fpc() {
             failures.push(format!("{name}: compile failed\n{message}"));
             continue;
         }
-        let work = tmp.join(format!("{}.work", src.file_stem().unwrap().to_string_lossy()));
+        let work = tmp.join(format!("{}.work", exe.file_stem().unwrap().to_string_lossy()));
         let _ = std::fs::remove_dir_all(&work);
         std::fs::create_dir_all(&work).unwrap();
         let args: Vec<String> = std::fs::read_to_string(src.with_extension("args"))
