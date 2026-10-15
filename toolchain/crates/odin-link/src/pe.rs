@@ -147,7 +147,7 @@ pub(crate) fn link(objects: &[Object], options: &LinkOptions) -> Result<LinkedIm
         imports: Vec::new(),
     };
     let resolved =
-        resolve::resolve_with(objects.iter().chain([&linker]), &options.entry, |a, b| a.eq_ignore_ascii_case(b))?;
+        resolve::resolve_with(objects.iter().chain([&linker]), &options.entry, &[], |a, b| a.eq_ignore_ascii_case(b))?;
     write(&resolved, options)
 }
 
@@ -326,6 +326,8 @@ fn write(resolved: &Resolved, options: &LinkOptions) -> Result<LinkedImage, Link
                     IMAGE_BASE + rdata_rva + got_at + 8 * got_slot[r.target.as_str()]
                 }
                 Sym::Local { atom, offset } => atom_va[atom] + offset,
+                // PE resolves with no synthetic names: __ImageBase is an atom of its own.
+                Sym::Synthetic(_) => unreachable!("PE has no synthetic symbols"),
             };
             let buffer =
                 contents(atom.section, &mut text, &mut rdata, &mut data).expect("bss atoms have no relocations");
