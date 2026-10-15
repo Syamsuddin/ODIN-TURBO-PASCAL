@@ -1,20 +1,28 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2026 Syams Ideris
-"""Small VT100 screen and PTY process driver for console Pascal programs."""
+"""Small VT100 screen and PTY process driver for console Pascal programs.
+
+Process is PtyProcess (a POSIX pseudo-terminal) on macOS and Linux, and ConPtyProcess (odin/conpty.py,
+a ConPTY pseudoconsole) on Windows; both have the same constructor, methods and emit() events."""
 from __future__ import annotations
 
 import codecs
 import errno
-import fcntl
 import os
-import pty
 import select
 import signal
 import struct
 import subprocess
-import termios
+import sys
 import threading
 import tkinter as tk
+
+if sys.platform == "win32":
+    from .conpty import ConPtyProcess
+else:
+    import fcntl
+    import pty
+    import termios
 
 PALETTE = ["#000000", "#aa0000", "#00aa00", "#aa5500", "#0000aa", "#aa00aa", "#00aaaa", "#aaaaaa",
            "#555555", "#ff5555", "#55ff55", "#ffff55", "#5555ff", "#ff55ff", "#55ffff", "#ffffff"]
@@ -31,6 +39,30 @@ KEYS = {"Return": b"\r", "BackSpace": b"\x7f", "Tab": b"\t", "Escape": b"\x1b",
 # Option+key on a US Mac layout gives these characters; Odin Vision reads Alt+key as Esc + key.
 OPTION_CHARS = dict(zip("å∫ç∂ƒ©˙∆˚¬µøπœ®ß†√∑≈¥Ω¡™£¢∞§¶•ªº", "abcdfghjklmopqrstvwxyz1234567890"))
 MOUSE_MODES = (9, 1000, 1002, 1003)
+# event.state bit of the Alt key: Option (Mod2) on macOS, Tk's ALT_MASK on Windows (where Mod1 is
+# Num Lock), Mod1 on X11 (on macOS Mod1 is Command).
+ALT_MASKS = {"aqua": 0x0010, "win32": 0x20000, "x11": 0x0008}
+
+
+def nearest_color(red, green, blue):
+    """The CRT palette index closest to an RGB color."""
+    def distance(index):
+        value = int(PALETTE[index][1:], 16)
+        return (red - (value >> 16)) ** 2 + (green - (value >> 8 & 255)) ** 2 + (blue - (value & 255)) ** 2
+    return min(range(16), key=distance)
+
+
+def color_256(n):
+    """xterm 256-color index to the CRT palette: 0-15 as they are, the color cube and the gray ramp
+    to the nearest of the 16."""
+    if n < 16:
+        return n
+    if n >= 232:
+        level = 8 + (n - 232) * 10
+        return nearest_color(level, level, level)
+    n -= 16
+    levels = [0 if v == 0 else 55 + 40 * v for v in (n // 36, n // 6 % 6, n % 6)]
+    return nearest_color(*levels)
 
 
 def modified_key(sequence, modifier):
@@ -198,8 +230,20 @@ class Screen:
                 if p[0] == 2 or (p[0] == 0 and x >= self.x) or (p[0] == 1 and x <= self.x):
                     self.grid[self.y][x] = self.blank()
         elif final == "m":
-            for v in p:
-                if v == 0: self.fg, self.bg, self.bold, self.inverse = 7, 0, False, False
+            i = 0
+            while i < len(p):
+                v = p[i]
+                i += 1
+                if v in (38, 48) and i < len(p) and p[i] in (2, 5):
+                    # Extended colors (256-color index or RGB), mapped to the CRT palette.
+                    size = 4 if p[i] == 2 else 2
+                    values = p[i + 1:i + size]
+                    i += size
+                    if len(values) == size - 1:
+                        color = color_256(min(255, values[0])) if size == 2 else nearest_color(*(min(255, c) for c in values))
+                        if v == 38: self.fg = color
+                        else: self.bg = color
+                elif v == 0: self.fg, self.bg, self.bold, self.inverse = 7, 0, False, False
                 elif v == 1: self.bold = True
                 elif v == 22: self.bold = False
                 elif v == 7: self.inverse = True
@@ -255,7 +299,10 @@ class Screen:
         return "\n".join("".join(c[0] for c in row) for row in self.grid)
 
 
-class Process:
+class PtyProcess:
+    """A program on a POSIX pseudo-terminal, in its own session. A reader thread calls
+    emit("output", text) for its output and finally emit("exit", returncode)."""
+
     def __init__(self, argv, cwd, emit, cols=80, rows=25, pass_fds=(), env=None):
         self.master, slave = pty.openpty()
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
@@ -310,6 +357,18 @@ class Process:
             except OSError:
                 pass
 
+    def interrupt(self):
+        """Ctrl-C: SIGINT to the program's process group."""
+        self.write(b"\x03")
+
+    def resize(self, cols, rows):
+        """Changes the terminal size; the kernel sends SIGWINCH to the program."""
+        if not self.closed:
+            try:
+                fcntl.ioctl(self.master, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
+            except OSError:
+                pass
+
     def stop(self):
         if self.child.poll() is None:
             try:
@@ -326,6 +385,9 @@ class Process:
                 pass
 
 
+Process = ConPtyProcess if sys.platform == "win32" else PtyProcess
+
+
 class TerminalView(tk.Text):
     def __init__(self, master, font, send):
         super().__init__(master, bg="#000000", fg="#aaaaaa", insertbackground="#ffffff", font=font,
@@ -333,7 +395,10 @@ class TerminalView(tk.Text):
                          padx=8, pady=6, cursor="xterm", exportselection=False)
         self.screen = Screen()
         self.send = send
-        self.aqua = self.tk.call("tk", "windowingsystem") == "aqua"
+        system = self.tk.call("tk", "windowingsystem")
+        self.aqua = system == "aqua"
+        self.win32 = system == "win32"
+        self.alt_mask = ALT_MASKS.get(system, ALT_MASKS["x11"])
         self.buttons = set()      # xterm button codes held down
         self.last_cell = None
         self.bind("<Key>", self.key)
@@ -360,10 +425,12 @@ class TerminalView(tk.Text):
     def key(self, e):
         shift = bool(e.state & 0x0001)
         ctrl = bool(e.state & 0x0004)
-        # Alt is Option (Mod2) on macOS and Mod1 elsewhere; on macOS Mod1 is Command.
-        alt = bool(e.state & (0x0010 if self.aqua else 0x0008))
+        alt = bool(e.state & self.alt_mask)
         if e.keysym == "ISO_Left_Tab" or (e.keysym == "Tab" and shift):
             self.send(b"\x1b[Z")
+        elif self.win32 and ctrl and alt and e.char and e.char.isprintable():
+            # AltGr on Windows arrives as Ctrl+Alt and types a character (@, {, € ...).
+            self.send(e.char.encode())
         elif e.keysym in KEYS:
             sequence = KEYS[e.keysym]
             if sequence.startswith(b"\x1b") and len(sequence) > 1 and e.keysym != "Escape":

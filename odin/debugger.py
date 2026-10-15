@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import threading
 from pathlib import Path
 
@@ -19,6 +20,10 @@ class DebugSession:
     keeps state ("starting", "running", "stopped", "exited") and the stop location."""
 
     def __init__(self, toolchain, executable, debug_info, arguments, cwd, emit):
+        if sys.platform == "win32":
+            # The command/event pipes reach odinpc debug as inherited descriptors (pass_fds), which
+            # Windows does not have; there the channel will be TCP loopback (Tahap 8d).
+            raise OSError("Debugger Odin belum tersedia di Windows.")
         command_read, self._command_write = os.pipe()
         event_read, event_write = os.pipe()
         argv = [str(toolchain), "debug", "--exe", str(executable), "--odbg", str(debug_info),

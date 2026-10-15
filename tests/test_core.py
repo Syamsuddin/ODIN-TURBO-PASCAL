@@ -6,6 +6,7 @@ import os
 import queue
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
@@ -14,8 +15,11 @@ from unittest.mock import patch
 from pathlib import Path
 
 from odin import __version__, __version_tag__
-from odin.core import Document, Settings, build, locate_compiler, locate_toolchain, odin_supported, parse_diagnostics, syntax_spans
-from odin.terminal import KEYS, Process, Screen, modified_key, mouse_report
+from odin import core
+from odin.core import (Document, Settings, build, data_dir, executable_name, free_vision_dir, join_command, locate_compiler,
+                       locate_toolchain, lock_instance, odin_supported, parse_diagnostics, split_arguments, syntax_spans,
+                       unlock_instance)
+from odin.terminal import ALT_MASKS, KEYS, Process, Screen, color_256, modified_key, mouse_report
 
 ROOT=Path(__file__).resolve().parent.parent
 FPC=locate_compiler(os.environ.get("ODIN_FPC",""))
@@ -25,7 +29,7 @@ class VersionTests(unittest.TestCase):
     def test_hello_example_carries_release_tag(self):
         # scripts/package_app.py restamps this comment on every build; a stale tag fails here.
         self.assertEqual(__version_tag__,f"v{__version__}")
-        self.assertIn(f"{{ Odin Turbo Pascal {__version_tag__} - program pertama }}",(ROOT/"examples"/"HELLO.PAS").read_text())
+        self.assertIn(f"{{ Odin Turbo Pascal {__version_tag__} - program pertama }}",(ROOT/"examples"/"HELLO.PAS").read_text(encoding="utf-8"))
 
     def test_set_version_rewrites_every_copy(self):
         # Runs the real bump on copies of the real files, so a reworded README or doc fails here, not at release time.
@@ -44,7 +48,7 @@ class VersionTests(unittest.TestCase):
                 self.assertEqual(set_version.main([new,"--root",str(temp),"--date","2030-01-02"]),0)
                 # The same version again is refused and writes nothing.
                 self.assertEqual(set_version.main([new,"--root",str(temp)]),1)
-            read=lambda name:(temp/name).read_text()
+            read=lambda name:(temp/name).read_text(encoding="utf-8")
             self.assertIn(f'__version__ = "{new}"',read("odin/__init__.py"))
             self.assertIn(f'version = "{new}"',read("toolchain/Cargo.toml"))
             self.assertNotIn(f'version = "{__version__}"',read("toolchain/Cargo.lock"))
@@ -159,6 +163,24 @@ class TerminalTests(unittest.TestCase):
         self.assertEqual(mouse_report(2,4,2,True,True),b"\x1b[<2;5;3m")
         self.assertEqual(mouse_report(0,4,2,True,False),b"\x1b[M#%#")
 
+    def test_extended_colors(self):
+        # 256-color and RGB SGR (ConPTY and modern programs) map to the CRT palette and do not
+        # leak their parameters as other attributes (the 1 of 38;5;1 is not bold).
+        s=Screen(10,1)
+        s.feed("\x1b[38;5;1mA\x1b[48;5;12mB\x1b[38;2;255;255;85;48;2;0;0;170mC\x1b[0;38;5;226mD\x1b[38;5;240mE")
+        self.assertEqual(s.grid[0][0],("A",1,0))
+        self.assertEqual(s.grid[0][1],("B",1,12))
+        self.assertEqual(s.grid[0][2],("C",11,4))
+        self.assertEqual(s.grid[0][3],("D",11,0))
+        self.assertEqual(s.grid[0][4][1],8)
+        self.assertFalse(s.bold)
+        self.assertEqual([color_256(n) for n in (0,15,16,231,232,255)],[0,15,0,15,0,15])
+
+    def test_alt_masks(self):
+        # Alt is Option (Mod2) on macOS, Mod1 on X11 and Tk's ALT_MASK on Windows, where Mod1 is Num Lock.
+        self.assertEqual(ALT_MASKS,{"aqua":0x10,"win32":0x20000,"x11":0x08})
+
+    @unittest.skipUnless(os.name=="posix","pass_fds and /bin/sh are POSIX; on Windows the debugger channel will be TCP (Tahap 8d)")
     def test_extra_descriptors_reach_grandchildren(self):
         # Spike S4: the debug channel is a pipe passed through the debugger
         # process to the program, while the program's output stays on the PTY.
@@ -193,6 +215,110 @@ class TerminalTests(unittest.TestCase):
                 self.assertNotEqual(v,0)
                 break
         else:self.fail("Process did not stop")
+
+
+class PlatformTests(unittest.TestCase):
+    """Platform paths and helpers; Windows behaviour is checked here by patching sys.platform."""
+
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory(prefix="odin platform ")
+        self.root=Path(self.temp.name)
+
+    def tearDown(self):self.temp.cleanup()
+
+    def test_data_dir_per_platform(self):
+        home=self.root/"home"
+        with patch.object(core.Path,"home",return_value=home):
+            with patch.object(core.sys,"platform","darwin"):
+                self.assertEqual(data_dir(),home/"Library"/"Application Support"/"OdinTurboPascal")
+            with patch.object(core.sys,"platform","linux"):
+                self.assertEqual(data_dir(),home/".local"/"share"/"OdinTurboPascal")
+            with patch.object(core.sys,"platform","win32"):
+                with patch.dict(os.environ,{"APPDATA":str(self.root/"Roaming")}):
+                    self.assertEqual(data_dir(),self.root/"Roaming"/"OdinTurboPascal")
+                with patch.dict(os.environ):
+                    os.environ.pop("APPDATA",None)
+                    self.assertEqual(data_dir(),home/"AppData"/"Roaming"/"OdinTurboPascal")
+        self.assertTrue((self.root/"Roaming"/"OdinTurboPascal").is_dir())
+
+    def test_executable_names_and_arguments(self):
+        with patch.object(core.sys,"platform","win32"):
+            self.assertEqual(executable_name("HELLO"),"HELLO.exe")
+            # Backslashes are path separators on Windows; quotes still group words.
+            self.assertEqual(split_arguments(r'C:\Pascal\data.txt "two words" 3'),[r"C:\Pascal\data.txt","two words","3"])
+            self.assertEqual(join_command([r"C:\FPC\fpc.exe",r"-oC:\my dir\a.exe"]),r'C:\FPC\fpc.exe "-oC:\my dir\a.exe"')
+        with patch.object(core.sys,"platform","darwin"):
+            self.assertEqual(executable_name("HELLO"),"HELLO")
+            self.assertEqual(split_arguments("\"hello world\" '$(no shell)' a\\ b"),["hello world","$(no shell)","a b"])
+            self.assertEqual(join_command(["fpc","my file.pas"]),"fpc 'my file.pas'")
+
+    def test_single_instance_lock(self):
+        path=self.root/"instance.lock"
+        first=lock_instance(path)
+        self.assertIsNotNone(first)
+        try:
+            # Another open of the same file, as a second IDE would do, is refused.
+            self.assertIsNone(lock_instance(path))
+        finally:
+            unlock_instance(first)
+        again=lock_instance(path)
+        self.assertIsNotNone(again)
+        unlock_instance(again)
+
+    def fake_file(self,path,content=""):
+        path.parent.mkdir(parents=True,exist_ok=True)
+        path.write_text(content)
+        path.chmod(0o755)
+        return path
+
+    def test_locate_compiler_in_windows_install_folders(self):
+        drive=self.root/"drive"
+        self.fake_file(drive/"FPC"/"3.2.0"/"bin"/"x86_64-win64"/"fpc.exe")
+        self.fake_file(drive/"FPC"/"3.2.2"/"bin"/"i386-win32"/"fpc.exe")
+        native=self.fake_file(drive/"FPC"/"3.2.2"/"bin"/"x86_64-win64"/"fpc.exe")
+        choco=self.fake_file(self.root/"tools"/"freepascal"/"bin"/"x86_64-win64"/"fpc.exe")
+        with patch.object(core.sys,"platform","win32"),patch("odin.core.shutil.which",return_value=None),\
+             patch.dict(os.environ,{"SystemDrive":str(drive),"ChocolateyToolsLocation":str(self.root/"tools")}):
+            # Newest version first, a 64-bit compiler before a 32-bit one.
+            self.assertEqual(locate_compiler(),str(native))
+            shutil.rmtree(drive/"FPC")
+            self.assertEqual(locate_compiler(),str(choco))
+            self.assertEqual(locate_compiler(str(native.parent)),str(choco))
+
+    @unittest.skipUnless(os.name=="posix","the fake compiler is a shell script")
+    def test_free_vision_dir_in_windows_layout(self):
+        fpc=self.fake_file(self.root/"FPC"/"3.2.2"/"bin"/"x86_64-win64"/"fpc","#!/bin/sh\necho 3.2.2 x86_64 win64\n")
+        units=self.root/"FPC"/"3.2.2"/"units"/"x86_64-win64"/"fv"
+        units.mkdir(parents=True)
+        free_vision_dir.cache_clear()
+        with patch.object(core.sys,"platform","win32"):
+            self.assertEqual(free_vision_dir(str(fpc)),str(units))
+        free_vision_dir.cache_clear()
+
+    def test_windows_fpc_build_command(self):
+        source=self.root/"hello.pas"
+        source.write_text("program Hello;\nbegin\nend.\n")
+        settings=Settings(self.root/"settings.json")
+        settings["backend"]="fpc"
+        commands=[]
+        def run(command,**options):
+            commands.append((command,options))
+            return subprocess.CompletedProcess(command,0,stdout="" if options.get("text") else b"")
+        free_vision_dir.cache_clear()
+        with patch.object(core.sys,"platform","win32"),patch("odin.core.locate_compiler",return_value=r"C:\FPC\fpc.exe"),\
+             patch("odin.core.subprocess.run",side_effect=run):
+            r=build(source,settings,cache=self.root/"build")
+        free_vision_dir.cache_clear()
+        command=r.command
+        output=[a for a in command if a.startswith("-o")][0]
+        self.assertTrue(output.endswith("hello.exe"),output)
+        # No macOS-only flags: no -P (CPU) and no -XR (SDK).
+        self.assertFalse([a for a in command if a.startswith(("-P","-XR"))])
+        self.assertEqual(commands[-1][0],command)
+        self.assertEqual(commands[-1][1].get("creationflags"),0x08000000 if os.name=="nt" else None)
+        with patch.object(core.sys,"platform","win32"),patch("odin.core.locate_compiler",return_value=None):
+            r=build(source,settings,cache=self.root/"build")
+        self.assertIn("Install.ps1",r.output)
 
 
 @unittest.skipUnless(FPC,"Free Pascal is not installed")
@@ -292,13 +418,16 @@ class CompilerTests(unittest.TestCase):
         q=queue.Queue()
         p=Process([str(r.executable)],self.root,lambda k,v:q.put((k,v)))
         output=""
+        # ConPTY (Windows) may repaint with cursor moves between words: also check the rendered screen.
+        screen=Screen()
         sent=False
         deadline=time.monotonic()+10
         while time.monotonic()<deadline:
             k,v=q.get(timeout=10)
             if k=="output":
                 output+=v
-                if "Nama Anda:" in output and not sent:
+                screen.feed(v)
+                if "Nama Anda:" in output+screen.text() and not sent:
                     p.write(b"Syams\r40\r")
                     sent=True
             else:
@@ -307,7 +436,7 @@ class CompilerTests(unittest.TestCase):
         else:
             p.stop()
             self.fail("ReadLn hung")
-        self.assertIn("41 tahun",output)
+        self.assertIn("41 tahun",output+screen.text())
 
     def test_crt_cursor_and_readkey(self):
         r=self.compile_example("CRTDEMO.PAS")

@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 Syams Ideris
+#
+# Every file is checked out byte for byte on every platform. Git for Windows converts LF to
+# CRLF by default (core.autocrlf=true), but the tests compare bytes (set_version.py, the Odin
+# Vision snapshots, the corpus .out files), SHA256SUMS.json hashes the tree, and Install.cmd
+# and Uninstall.cmd are stored with the CRLF that cmd.exe expects.
+* -text
