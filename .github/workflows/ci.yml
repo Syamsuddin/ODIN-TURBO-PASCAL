@@ -69,7 +69,9 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install freepascal -y --no-progress
-          echo "C:/tools/freepascal/bin/x86_64-win64" >> "$GITHUB_PATH"
+          # The Chocolatey package is the 32-bit compiler, without fpc.cfg (the IDE
+          # adds the unit folders itself then).
+          echo "C:/tools/freepascal/bin/i386-win32" >> "$GITHUB_PATH"
           echo "PYTHON=python" >> "$GITHUB_ENV"
 
       - name: Versions
@@ -77,8 +79,7 @@ jobs:
           "$PYTHON" -c "import sys, tkinter; print(sys.version); print('Tk', tkinter.TkVersion)"
           fpc -iV || echo "fpc tidak ditemukan"
           if [ "$RUNNER_OS" = Windows ]; then
-            ls C:/tools/freepascal C:/tools/freepascal/bin C:/tools/freepascal/units 2>&1 | head -40
-            for c in C:/tools/freepascal/bin/*/fpc.cfg; do echo "== $c"; head -30 "$c"; done
+            ls C:/tools/freepascal/bin C:/tools/freepascal/units || true
           fi
 
       # On Windows odinpc does not build yet (odin-debug, Tahap 8d): the

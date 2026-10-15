@@ -1,19 +1,30 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 Syams Ideris
-//! `odinpc debug --exe EXE [--odbg FILE] --ide-fds R,W [--cwd DIR] -- ARGS...`
+//! `odinpc debug --exe EXE [--odbg FILE] (--ide-fds R,W | --ide HOST:PORT) [--cwd DIR] -- ARGS...`
 //!
 //! Runs a `--debug` build in the current terminal (the IDE's user screen),
-//! reads JSON-line commands from fd R and writes JSON-line events to fd W.
-//! The program connects back over a Unix socket; breakpoints and pause
-//! requests go through a shared file the program maps.
+//! reads JSON-line commands from fd R and writes JSON-line events to fd W
+//! (or both over a TCP connection to the IDE, where descriptors cannot be
+//! passed: Windows). The program connects back over a Unix socket (TCP on
+//! 127.0.0.1 on Windows); breakpoints and pause requests go through a shared
+//! file the program maps.
 
 use std::collections::{HashMap, VecDeque};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
+use std::net::TcpStream;
+#[cfg(windows)]
+use std::net::{TcpListener as Listener, TcpStream as Stream};
+#[cfg(unix)]
 use std::os::fd::FromRawFd;
+#[cfg(unix)]
 use std::os::unix::fs::FileExt;
-use std::os::unix::net::{UnixListener, UnixStream};
+#[cfg(unix)]
+use std::os::unix::net::{UnixListener as Listener, UnixStream as Stream};
+#[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
+#[cfg(windows)]
+use std::os::windows::fs::FileExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 use std::sync::mpsc::{Receiver, Sender, channel};
@@ -45,9 +56,57 @@ const CHUNK: usize = 4096;
 /// Entries of the program's shadow stack (`ODIN_DBG_STACK`).
 const STACK_SIZE: u32 = 4096;
 
+#[cfg(unix)]
 unsafe extern "C" {
     fn signal(sig: i32, handler: usize) -> usize;
     fn fcntl(fd: i32, cmd: i32, ...) -> i32;
+}
+
+#[cfg(windows)]
+#[link(name = "kernel32")]
+unsafe extern "system" {
+    fn SetConsoleCtrlHandler(handler: usize, add: i32) -> i32;
+}
+
+/// Writes `bytes` at `offset` of the shared file the program maps.
+fn shm_write(file: &File, bytes: &[u8], offset: u64) -> std::io::Result<usize> {
+    #[cfg(unix)]
+    return file.write_at(bytes, offset);
+    #[cfg(windows)]
+    return file.seek_write(bytes, offset);
+}
+
+/// Where the JSON events for the IDE go: a pipe the IDE passed, or a TCP
+/// connection to it.
+#[cfg_attr(not(unix), allow(dead_code))]
+enum IdeOut {
+    File(File),
+    Tcp(TcpStream),
+}
+
+impl IdeOut {
+    fn try_clone(&self) -> std::io::Result<IdeOut> {
+        Ok(match self {
+            IdeOut::File(f) => IdeOut::File(f.try_clone()?),
+            IdeOut::Tcp(t) => IdeOut::Tcp(t.try_clone()?),
+        })
+    }
+}
+
+impl Write for IdeOut {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        match self {
+            IdeOut::File(f) => f.write(buf),
+            IdeOut::Tcp(t) => t.write(buf),
+        }
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        match self {
+            IdeOut::File(f) => f.flush(),
+            IdeOut::Tcp(t) => t.flush(),
+        }
+    }
 }
 
 enum Event {
@@ -60,7 +119,7 @@ enum Event {
 /// The program's memory, reached through READ/WRITE frames while it is
 /// stopped. IDE commands that arrive meanwhile wait in `pending`.
 struct Link<'s> {
-    stream: &'s mut UnixStream,
+    stream: &'s mut Stream,
     rx: &'s Receiver<Event>,
     pending: &'s mut VecDeque<Value>,
     ide_closed: &'s mut bool,
@@ -143,11 +202,11 @@ struct Session {
     info: DebugInfo,
     slide: i64,
     stack: u64,
-    stream: UnixStream,
+    stream: Stream,
     rx: Receiver<Event>,
     pending: VecDeque<Value>,
     ide_closed: bool,
-    out: File,
+    out: IdeOut,
     shm: File,
     child: Child,
     /// `(file, line)` -> line ids.
@@ -208,7 +267,7 @@ impl Session {
         let v = on as u8;
         if self.flags[id as usize] != v {
             self.flags[id as usize] = v;
-            let _ = self.shm.write_at(&[v], 16 + id as u64);
+            let _ = shm_write(&self.shm, &[v], 16 + id as u64);
         }
     }
 
@@ -447,7 +506,7 @@ impl Session {
                 }
             }
             "pause" => {
-                let _ = self.shm.write_at(&[1], 1);
+                let _ = shm_write(&self.shm, &[1], 1);
             }
             "set_breakpoints" => {
                 let lines: Vec<u32> = cmd
@@ -518,9 +577,10 @@ impl Session {
         let status = self.child.wait().ok();
         let code = self
             .exit_code
-            .or_else(|| status.and_then(|s| s.code()))
-            .or_else(|| status.and_then(|s| s.signal()).map(|s| 128 + s))
-            .unwrap_or(-1);
+            .or_else(|| status.and_then(|s| s.code()));
+        #[cfg(unix)]
+        let code = code.or_else(|| status.and_then(|s| s.signal()).map(|s| 128 + s));
+        let code = code.unwrap_or(-1);
         self.emit("exited", vec![("code", int(code as i64))]);
     }
 
@@ -554,17 +614,26 @@ impl Session {
     }
 }
 
+/// How the IDE talks to us.
+#[cfg_attr(not(unix), allow(dead_code))]
+enum Ide {
+    /// Descriptors the IDE passed (Unix).
+    Fds(i32, i32),
+    /// A TCP address the IDE listens on.
+    Tcp(String),
+}
+
 struct Args {
     exe: PathBuf,
     odbg: Option<PathBuf>,
-    fds: (i32, i32),
+    ide: Ide,
     cwd: Option<PathBuf>,
     program: Vec<String>,
 }
 
 fn parse_args(args: &[String]) -> Result<Args, String> {
     let mut it = args.iter();
-    let (mut exe, mut odbg, mut fds, mut cwd) = (None, None, None, None);
+    let (mut exe, mut odbg, mut ide, mut cwd) = (None, None, None, None);
     let mut program = Vec::new();
     while let Some(a) = it.next() {
         let mut value = || it.next().cloned().ok_or_else(|| format!("{a} memerlukan nilai"));
@@ -575,8 +644,9 @@ fn parse_args(args: &[String]) -> Result<Args, String> {
             "--ide-fds" => {
                 let v = value()?;
                 let (r, w) = v.split_once(',').ok_or("--ide-fds R,W")?;
-                fds = Some((r.parse().map_err(|_| "--ide-fds R,W")?, w.parse().map_err(|_| "--ide-fds R,W")?));
+                ide = Some(Ide::Fds(r.parse().map_err(|_| "--ide-fds R,W")?, w.parse().map_err(|_| "--ide-fds R,W")?));
             }
+            "--ide" => ide = Some(Ide::Tcp(value()?)),
             "--" => {
                 program.extend(it.by_ref().cloned());
             }
@@ -586,13 +656,13 @@ fn parse_args(args: &[String]) -> Result<Args, String> {
     Ok(Args {
         exe: exe.ok_or("--exe EXE diharapkan")?,
         odbg,
-        fds: fds.ok_or("--ide-fds R,W diharapkan")?,
+        ide: ide.ok_or("--ide-fds R,W atau --ide HOST:PORT diharapkan")?,
         cwd,
         program,
     })
 }
 
-fn reader_thread(mut stream: UnixStream, tx: Sender<Event>) {
+fn reader_thread(mut stream: Stream, tx: Sender<Event>) {
     std::thread::spawn(move || {
         loop {
             let mut head = [0u8; 5];
@@ -612,7 +682,7 @@ fn reader_thread(mut stream: UnixStream, tx: Sender<Event>) {
     });
 }
 
-fn ide_thread(input: File, tx: Sender<Event>) {
+fn ide_thread(input: Box<dyn Read + Send>, tx: Sender<Event>) {
     std::thread::spawn(move || {
         for line in BufReader::new(input).lines() {
             let Ok(line) = line else { break };
@@ -629,7 +699,7 @@ fn ide_thread(input: File, tx: Sender<Event>) {
     });
 }
 
-fn emit_raw(out: &mut File, event: &str, message: &str) {
+fn emit_raw(out: &mut IdeOut, event: &str, message: &str) {
     let line = obj(vec![("event", text(event)), ("message", text(message))]).to_json() + "\n";
     let _ = out.write_all(line.as_bytes());
 }
@@ -643,13 +713,27 @@ pub fn main(args: &[String]) -> i32 {
             return 2;
         }
     };
-    // SAFETY: the IDE passed these descriptors to us (pass_fds); nothing
-    // else owns them. The child must not inherit them, or the IDE would
-    // never see end of file after we exit.
-    let (input, mut out) = unsafe {
-        fcntl(args.fds.0, 2, 1);
-        fcntl(args.fds.1, 2, 1);
-        (File::from_raw_fd(args.fds.0), File::from_raw_fd(args.fds.1))
+    let channel: std::io::Result<(Box<dyn Read + Send>, IdeOut)> = match &args.ide {
+        // SAFETY: the IDE passed these descriptors to us (pass_fds); nothing
+        // else owns them. The child must not inherit them, or the IDE would
+        // never see end of file after we exit.
+        #[cfg(unix)]
+        &Ide::Fds(r, w) => unsafe {
+            fcntl(r, 2, 1);
+            fcntl(w, 2, 1);
+            Ok((Box::new(File::from_raw_fd(r)), IdeOut::File(File::from_raw_fd(w))))
+        },
+        #[cfg(not(unix))]
+        Ide::Fds(..) => Err(std::io::Error::other("--ide-fds hanya ada di Unix; pakai --ide HOST:PORT")),
+        Ide::Tcp(address) => TcpStream::connect(address)
+            .and_then(|s| Ok((Box::new(s.try_clone()?) as Box<dyn Read + Send>, IdeOut::Tcp(s)))),
+    };
+    let (input, mut out) = match channel {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("odinpc debug: {e}");
+            return 2;
+        }
     };
     match start(args, input, &mut out) {
         Ok(()) => 0,
@@ -661,7 +745,7 @@ pub fn main(args: &[String]) -> i32 {
     }
 }
 
-fn start(args: Args, input: File, out: &mut File) -> Result<(), String> {
+fn start(args: Args, input: Box<dyn Read + Send>, out: &mut IdeOut) -> Result<(), String> {
     let odbg = args.odbg.clone().unwrap_or_else(|| {
         let mut name = args.exe.file_name().map(|n| n.to_os_string()).unwrap_or_default();
         name.push(".odbg");
@@ -680,8 +764,7 @@ fn start(args: Args, input: File, out: &mut File) -> Result<(), String> {
     result
 }
 
-fn session(args: Args, info: DebugInfo, dir: &Path, input: File, out: &mut File) -> Result<(), String> {
-    let socket = dir.join("s");
+fn session(args: Args, info: DebugInfo, dir: &Path, input: Box<dyn Read + Send>, out: &mut IdeOut) -> Result<(), String> {
     let shm_path = dir.join("shm");
     let shm = File::options()
         .read(true)
@@ -691,15 +774,32 @@ fn session(args: Args, info: DebugInfo, dir: &Path, input: File, out: &mut File)
         .open(&shm_path)
         .map_err(|e| e.to_string())?;
     shm.set_len(16 + info.lines.len() as u64).map_err(|e| e.to_string())?;
-    let listener = UnixListener::bind(&socket).map_err(|e| format!("{}: {e}", socket.display()))?;
+    // The program finds us at a socket path (Unix) or a port on 127.0.0.1.
+    #[cfg(unix)]
+    let (listener, address) = {
+        let socket = dir.join("s");
+        let listener = Listener::bind(&socket).map_err(|e| format!("{}: {e}", socket.display()))?;
+        (listener, socket.to_string_lossy().into_owned())
+    };
+    #[cfg(windows)]
+    let (listener, address) = {
+        let listener = Listener::bind("127.0.0.1:0").map_err(|e| e.to_string())?;
+        let port = listener.local_addr().map_err(|e| e.to_string())?.port();
+        (listener, port.to_string())
+    };
     listener.set_nonblocking(true).map_err(|e| e.to_string())?;
     // Ctrl-C in the user screen is for the program (it pauses), not for us.
-    // SAFETY: plain libc call; SIG_IGN needs no handler code.
+    // SAFETY: plain libc/kernel32 calls; ignoring needs no handler code.
+    #[cfg(unix)]
     unsafe {
         signal(2, 1);
     }
+    #[cfg(windows)]
+    unsafe {
+        SetConsoleCtrlHandler(0, 1);
+    }
     let mut command = Command::new(&args.exe);
-    command.args(&args.program).env("ODIN_DEBUG_SOCKET", &socket).env("ODIN_DEBUG_SHM", &shm_path);
+    command.args(&args.program).env("ODIN_DEBUG_SOCKET", &address).env("ODIN_DEBUG_SHM", &shm_path);
     if let Some(cwd) = &args.cwd {
         command.current_dir(cwd);
     }
