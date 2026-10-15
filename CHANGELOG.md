@@ -6,6 +6,34 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-15
+
+Rilis 2.0.0. Isinya sama dengan 2.0.0-alpha.2, hanya nomor versinya yang naik. Toolchain Pascal milik Odin (compiler, assembler, linker, runtime library, debugger terpadu, dan Odin Vision) menjadi backend bawaan di Mac Intel. Di Apple Silicon, Odin tetap memakai Free Pascal dan belum punya debugger.
+
+Ringkasan perubahan sejak 1.0.0 (rinciannya di entri 2.0.0-alpha.1 dan 2.0.0-alpha.2):
+
+- toolchain Odin native (`odinpc`, Rust tanpa crate pihak ketiga) dan runtime library sendiri: `System`, `Crt`, `Dos`, `Strings`, `Printer`, `Objects`, serta tipe `object` TP7;
+- debugger terpadu pengganti konsol LLDB: breakpoint, Trace into, Step over, Go to cursor, jendela Watches, Local variables, dan Call stack, serta Evaluate/Modify;
+- Odin Vision, Turbo Vision milik Odin, dengan contoh `examples/VISION.PAS`;
+- mouse, tombol bermodifier, dan layar alternatif di User screen;
+- logo dan ikon baru dari proyek OTP v2.0.
+
+### Diubah
+
+- Nomor versi 2.0.0 di aplikasi (About, watermark desktop, baris status), `odinpc version`, pemasang, Info.plist, README, dan docs.
+- Rencana rilis: dukungan arm64 dan Linux untuk backend Odin serta pelepasan Free Pascal, LLDB, dan Xcode (Tahap 8–9 di `IMPLEMENTATION_PLAN.md`) dipindah dari 2.0.0 ke 2.1.0.
+
+### Belum tersedia
+
+- Backend Odin untuk Apple Silicon dan Linux. Di Apple Silicon, IDE memakai Free Pascal dan belum punya debugger.
+- Unit Turbo Vision opsional `ColorSel` dan `TextView` di backend Odin.
+
+### Pengujian
+
+Di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2, Rust 1.99): 56 tes Python lulus (termasuk 17 tes GUI dengan jendela Tk sungguhan dan 4 tes snapshot Odin Vision), 110 tes Rust lulus, dan korpus diferensial 77 program memberi keluaran dan kode keluar yang sama dengan Free Pascal 3.2.2, baik dengan build biasa maupun build debug.
+
+Yang belum diverifikasi langsung tetap sama dengan 2.0.0-alpha.1: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, Option sebagai Alt di keyboard Mac sungguhan, dan pencetakan lewat `Printer`.
+
 ## [2.0.0-alpha.2] - 2026-10-15
 
 Rilis alfa kedua menuju 2.0.0: logo baru dan dokumentasi yang diperbarui. Compiler, runtime library, dan debugger sama dengan 2.0.0-alpha.1.
@@ -134,7 +162,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.2...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.2...v2.0.0
 [2.0.0-alpha.2]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.1...v2.0.0-alpha.2
 [2.0.0-alpha.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/releases/tag/v2.0.0-alpha.1
 [1.0.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/releases/tag/v1.0.0
