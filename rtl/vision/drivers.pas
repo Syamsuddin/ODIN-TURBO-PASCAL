@@ -268,6 +268,7 @@ function GetTicks: LongInt;
 implementation
 
 type
+{$IFDEF UNIX}
 {$IFDEF DARWIN}
   { struct termios (macOS 64-bit: tcflag_t and speed_t are 8 bytes) }
   TTermios = record
@@ -299,7 +300,50 @@ type
     USec: LongInt;
     Pad: LongInt;
   end;
+{$ENDIF}
+{$IFDEF WINDOWS}
+  { INPUT_RECORD holding a KEY_EVENT_RECORD }
+  TInputRecord = record
+    EventType, Pad: Word;
+    KeyDown: LongInt;
+    RepeatCount, VirtualKey, ScanCode, UnicodeChar: Word;
+    ControlKeys: LongInt;
+  end;
 
+  { CONSOLE_SCREEN_BUFFER_INFO }
+  TScreenInfo = record
+    SizeX, SizeY, CursorX, CursorY: SmallInt;
+    Attributes: Word;
+    Left, Top, Right, Bottom: SmallInt;
+    MaxX, MaxY: SmallInt;
+  end;
+{$ENDIF}
+
+{$IFDEF WINDOWS}
+function c_write(Fd: LongInt; Buf: Pointer; Count: LongInt): LongInt; cdecl; external 'c' name '_write';
+function c_read(Fd: LongInt; Buf: Pointer; Count: LongInt): LongInt; cdecl; external 'c' name '_read';
+function c_isatty(Fd: LongInt): LongInt; cdecl; external 'c' name '_isatty';
+function GetStdHandle(Which: LongInt): Pointer; external 'kernel32' name 'GetStdHandle';
+function GetConsoleMode(H: Pointer; var Mode: LongInt): LongInt; external 'kernel32' name 'GetConsoleMode';
+function SetConsoleMode(H: Pointer; Mode: LongInt): LongInt; external 'kernel32' name 'SetConsoleMode';
+function GetNumberOfConsoleInputEvents(H: Pointer; var N: LongInt): LongInt;
+  external 'kernel32' name 'GetNumberOfConsoleInputEvents';
+function PeekConsoleInputW(H: Pointer; var Rec: TInputRecord; Len: LongInt; var Got: LongInt): LongInt;
+  external 'kernel32' name 'PeekConsoleInputW';
+function ReadConsoleInputW(H: Pointer; var Rec: TInputRecord; Len: LongInt; var Got: LongInt): LongInt;
+  external 'kernel32' name 'ReadConsoleInputW';
+function WaitForSingleObject(H: Pointer; Ms: LongInt): LongInt; external 'kernel32' name 'WaitForSingleObject';
+function PeekNamedPipe(H, Buf: Pointer; Size: LongInt; BytesRead: Pointer; var Avail: LongInt; Left: Pointer): LongInt;
+  external 'kernel32' name 'PeekNamedPipe';
+function GetConsoleScreenBufferInfo(H: Pointer; var Info: TScreenInfo): LongInt;
+  external 'kernel32' name 'GetConsoleScreenBufferInfo';
+function GetConsoleCP: LongInt; external 'kernel32' name 'GetConsoleCP';
+function GetConsoleOutputCP: LongInt; external 'kernel32' name 'GetConsoleOutputCP';
+function SetConsoleCP(Cp: LongInt): LongInt; external 'kernel32' name 'SetConsoleCP';
+function SetConsoleOutputCP(Cp: LongInt): LongInt; external 'kernel32' name 'SetConsoleOutputCP';
+function SetConsoleCtrlHandler(Handler: Pointer; Add: LongInt): LongInt; external 'kernel32' name 'SetConsoleCtrlHandler';
+function GetTickCount64: Int64; external 'kernel32' name 'GetTickCount64';
+{$ELSE}
 function c_write(Fd: LongInt; Buf: Pointer; Count: Int64): Int64; cdecl; external 'c' name 'write';
 function c_read(Fd: LongInt; Buf: Pointer; Count: Int64): Int64; cdecl; external 'c' name 'read';
 function c_isatty(Fd: LongInt): LongInt; cdecl; external 'c' name 'isatty';
@@ -310,8 +354,10 @@ function c_poll(var Fds: TPollFd; NFds: LongInt; Timeout: LongInt): LongInt; cde
 function c_gettimeofday(var TV: TTimeVal; TZ: Pointer): LongInt; cdecl; external 'c' name 'gettimeofday';
 function c_signal(Sig: LongInt; Handler: Pointer): Pointer; cdecl; external 'c' name 'signal';
 function c_raise(Sig: LongInt): LongInt; cdecl; external 'c' name 'raise';
+{$ENDIF}
 
 const
+{$IFDEF UNIX}
   ICRNL = $100;
   ECHO = $8;
   TCSANOW = 0;
@@ -337,6 +383,23 @@ const
   SIGINT = 2;
   SIGQUIT = 3;
   SIGTERM = 15;
+{$ENDIF}
+{$IFDEF WINDOWS}
+  STD_INPUT_HANDLE = -10;
+  STD_OUTPUT_HANDLE = -11;
+  ENABLE_PROCESSED_INPUT = 1;
+  ENABLE_LINE_INPUT = 2;
+  ENABLE_ECHO_INPUT = 4;
+  ENABLE_MOUSE_INPUT = $10;
+  ENABLE_QUICK_EDIT_MODE = $40;
+  ENABLE_EXTENDED_FLAGS = $80;
+  ENABLE_VIRTUAL_TERMINAL_INPUT = $200;
+  ENABLE_PROCESSED_OUTPUT = 1;
+  ENABLE_VIRTUAL_TERMINAL_PROCESSING = 4;
+  KEY_EVENT = 1;
+  WAIT_OBJECT_0 = 0;
+  CP_UTF8 = 65001;
+{$ENDIF}
 
   { Unicode code point of every CP437 character (#0 shows as a space). }
   CP437: array[0..255] of Word = (
@@ -373,7 +436,13 @@ var
   OutBuf: array[0..16383] of Char;
   OutLen: LongInt;
   OutTty, InTty, RawMode, VideoOn, EventsOn: Boolean;
+{$IFDEF UNIX}
   Saved: TTermios;
+{$ELSE}
+  InHandle, OutHandle: Pointer;
+  InConsole, CodePagesSet: Boolean;
+  SavedIn, SavedInCp, SavedOutCp: LongInt;
+{$ENDIF}
   TermX, TermY, TermAttr: LongInt;
   CursorX, CursorY: LongInt;
   CursorOn, CursorIns, CursorShown: Boolean;
@@ -394,6 +463,12 @@ var
 { ---- time ------------------------------------------------------------------ }
 
 { Ticks of 1/18.2 s, like the PC timer that TP code expects. }
+{$IFDEF WINDOWS}
+function GetTicks: LongInt;
+begin
+  GetTicks := LongInt(GetTickCount64 * 182 div 10000);
+end;
+{$ELSE}
 function GetTicks: LongInt;
 var
   TV: TTimeVal;
@@ -401,6 +476,7 @@ begin
   c_gettimeofday(TV, nil);
   GetTicks := LongInt((TV.Sec * 1000 + TV.USec div 1000) * 182 div 10000);
 end;
+{$ENDIF}
 
 { ---- terminal output ------------------------------------------------------------ }
 
@@ -553,7 +629,12 @@ end;
 
 procedure InitVideo;
 var
+{$IFDEF UNIX}
   WS: TWinSize;
+{$ELSE}
+  Info: TScreenInfo;
+  Mode: LongInt;
+{$ENDIF}
   N: LongInt;
 begin
   if VideoOn then
@@ -561,11 +642,33 @@ begin
   OutTty := c_isatty(1) <> 0;
   ScreenWidth := 80;
   ScreenHeight := 25;
+{$IFDEF UNIX}
   if OutTty and (c_ioctl(1, TIOCGWINSZ, @WS) = 0) and (WS.Col > 0) and (WS.Row > 0) then
   begin
     ScreenWidth := WS.Col;
     ScreenHeight := WS.Row;
   end;
+{$ELSE}
+  OutHandle := GetStdHandle(STD_OUTPUT_HANDLE);
+  if OutTty and (GetConsoleMode(OutHandle, Mode) <> 0) then
+  begin
+    { Escape sequences and UTF-8, as on a Unix terminal. }
+    SetConsoleMode(OutHandle, Mode or ENABLE_PROCESSED_OUTPUT or ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    if not CodePagesSet then
+    begin
+      SavedInCp := GetConsoleCP;
+      SavedOutCp := GetConsoleOutputCP;
+      CodePagesSet := True;
+    end;
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+    if (GetConsoleScreenBufferInfo(OutHandle, Info) <> 0) and (Info.Right > Info.Left) then
+    begin
+      ScreenWidth := Info.Right - Info.Left + 1;
+      ScreenHeight := Info.Bottom - Info.Top + 1;
+    end;
+  end;
+{$ENDIF}
   if ScreenWidth > MaxScreenWidth then
     ScreenWidth := MaxScreenWidth;
   if ScreenHeight > MaxScreenHeight then
@@ -593,6 +696,14 @@ begin
     Exit;
   EmitStr(#27'[0m'#27'[2J'#27'[H'#27'[?25h'#27'[?1049l');
   FlushOut;
+{$IFDEF WINDOWS}
+  if CodePagesSet then
+  begin
+    SetConsoleCP(SavedInCp);
+    SetConsoleOutputCP(SavedOutCp);
+    CodePagesSet := False;
+  end;
+{$ENDIF}
   FreeMem(ScreenBuffer, LongInt(ScreenWidth) * ScreenHeight * SizeOf(Word));
   FreeMem(Shadow, LongInt(ScreenWidth) * ScreenHeight * SizeOf(Word));
   ScreenBuffer := nil;
@@ -661,6 +772,7 @@ begin
   Inc(MouseCount);
 end;
 
+{$IFDEF UNIX}
 function InputReady(Timeout: LongInt): Boolean;
 var
   P: TPollFd;
@@ -670,6 +782,51 @@ begin
   P.REvents := 0;
   InputReady := c_poll(P, 1, Timeout) > 0;
 end;
+{$ELSE}
+{ True when a byte can be read without waiting. With VT input, keys and
+  mouse reports arrive as characters of key-down events; other console
+  events (focus, key up, ...) would block ReadFile and are dropped. }
+function InputReady(Timeout: LongInt): Boolean;
+var
+  Rec: TInputRecord;
+  N, Got, Avail: LongInt;
+begin
+  InputReady := False;
+  if not InConsole then
+  begin
+    Avail := 0;
+    if PeekNamedPipe(InHandle, nil, 0, nil, Avail, nil) = 0 then
+      InputReady := True
+    else
+      InputReady := Avail > 0;
+    Exit;
+  end;
+  repeat
+    N := 0;
+    GetNumberOfConsoleInputEvents(InHandle, N);
+    while N > 0 do
+    begin
+      Got := 0;
+      PeekConsoleInputW(InHandle, Rec, 1, Got);
+      if Got <> 1 then
+        N := 0
+      else if (Rec.EventType = KEY_EVENT) and (Rec.KeyDown <> 0) and (Rec.UnicodeChar <> 0) then
+      begin
+        InputReady := True;
+        Exit;
+      end
+      else
+      begin
+        ReadConsoleInputW(InHandle, Rec, 1, Got);
+        Dec(N);
+      end;
+    end;
+    if (Timeout = 0) or (WaitForSingleObject(InHandle, Timeout) <> WAIT_OBJECT_0) then
+      Exit;
+    Timeout := 0;
+  until False;
+end;
+{$ENDIF}
 
 { Reads what the terminal has sent so far, waiting briefly for the rest of
   an escape sequence. }
@@ -1046,6 +1203,7 @@ begin
   GetShiftState := LastShift;
 end;
 
+{$IFDEF UNIX}
 procedure EnterRaw;
 var
   T: TTermios;
@@ -1069,12 +1227,37 @@ begin
     c_tcsetattr(0, TCSANOW, Saved);
   RawMode := False;
 end;
+{$ELSE}
+{ Raw input: keys (Ctrl-C included) and mouse reports as VT sequences,
+  without line editing, echo or Quick Edit selection. }
+procedure EnterRaw;
+begin
+  if not InTty or RawMode then
+    Exit;
+  if GetConsoleMode(InHandle, SavedIn) = 0 then
+    Exit;
+  SetConsoleMode(InHandle, ((SavedIn and not (ENABLE_PROCESSED_INPUT or ENABLE_LINE_INPUT or ENABLE_ECHO_INPUT or
+    ENABLE_QUICK_EDIT_MODE)) or ENABLE_VIRTUAL_TERMINAL_INPUT or ENABLE_MOUSE_INPUT or ENABLE_EXTENDED_FLAGS));
+  RawMode := True;
+end;
+
+procedure LeaveRaw;
+begin
+  if RawMode then
+    SetConsoleMode(InHandle, SavedIn);
+  RawMode := False;
+end;
+{$ENDIF}
 
 procedure InitEvents;
 begin
   if EventsOn then
     Exit;
   InTty := c_isatty(0) <> 0;
+{$IFDEF WINDOWS}
+  InHandle := GetStdHandle(STD_INPUT_HANDLE);
+  InConsole := GetConsoleMode(InHandle, SavedIn) <> 0;
+{$ENDIF}
   EnterRaw;
   KeyCount := 0;
   MouseCount := 0;
@@ -1129,6 +1312,7 @@ begin
   DoneVideo;
 end;
 
+{$IFDEF UNIX}
 procedure OnSignal(Sig: LongInt);
 const
   Restore: array[0..44] of Char = #27'[0m'#27'[?25h'#27'[?1000l'#27'[?1002l'#27'[?1006l'#27'[?1049l'#27'[H';
@@ -1147,6 +1331,23 @@ begin
   if Old <> nil then
     c_signal(Sig, Old);
 end;
+{$ELSE}
+{ Ctrl-Break or closing the console: give the console back, then let the
+  default handler end the process. }
+function DriversCtrlHandler(Event: LongInt): LongInt;
+const
+  Restore: array[0..44] of Char = #27'[0m'#27'[?25h'#27'[?1000l'#27'[?1002l'#27'[?1006l'#27'[?1049l'#27'[H';
+begin
+  LeaveRaw;
+  c_write(1, @Restore, SizeOf(Restore));
+  if CodePagesSet then
+  begin
+    SetConsoleCP(SavedInCp);
+    SetConsoleOutputCP(SavedOutCp);
+  end;
+  DriversCtrlHandler := 0;
+end;
+{$ENDIF}
 
 { ---- keyboard helpers ------------------------------------------------------------ }
 
@@ -1403,9 +1604,14 @@ begin
   ExitProc := @DriversExit;
   if c_isatty(0) <> 0 then
   begin
+{$IFDEF UNIX}
     Catch(SIGHUP);
     Catch(SIGINT);
     Catch(SIGQUIT);
     Catch(SIGTERM);
+{$ELSE}
+    if ODIN_DBG_SHARED = nil then
+      SetConsoleCtrlHandler(@DriversCtrlHandler, 1);
+{$ENDIF}
   end;
 end.

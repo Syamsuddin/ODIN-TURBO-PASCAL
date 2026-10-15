@@ -173,6 +173,45 @@ type
     SysName, NodeName, Release, Version, Machine, DomainName: array[0..64] of Char;
   end;
 {$ENDIF}
+{$IFDEF WINDOWS}
+  { struct _stat64 of the UCRT }
+  TCStat = record
+    Dev: LongInt;
+    Ino, Mode: Word;
+    NLink, Uid, Gid: SmallInt;
+    RDev: LongInt;
+    Size: Int64;
+    ATime, MTime, CTime: Int64;
+  end;
+
+  { What c_readdir below hands out: just the name. }
+  TCDirent = record
+    Name: CName;
+  end;
+  PCDirent = ^TCDirent;
+
+  { Filled by c_statfs below, in bytes. }
+  TCStatFs = record
+    BSize, Blocks, BFree, BAvail: Int64;
+  end;
+
+  { struct __finddata64_t of the UCRT }
+  TFindData = record
+    Attrib, Pad: LongInt;
+    Created, Accessed, Written, Size: Int64;
+    Name: array[0..259] of Char;
+  end;
+
+  { A directory being read: the UCRT's find handle and the entry that
+    _findfirst64 already returned. }
+  TDirHandle = record
+    Handle: Int64;
+    Pending: Boolean;
+    Data: TFindData;
+    Ent: TCDirent;
+  end;
+  PDirHandle = ^TDirHandle;
+{$ENDIF}
 
   TCTm = record
     Sec, Min, Hour, MDay, Mon, Year, WDay, YDay, IsDst: LongInt;
@@ -213,6 +252,7 @@ function c_readdir(Dir: Pointer): PCDirent; cdecl; external 'c' name 'readdir';
 function c_environ: PEnviron; external 'odinrtl' name 'ODIN_NSGETENVIRON';
 function c_errno: PLongInt; cdecl; external 'c' name '__errno_location';
 {$ENDIF}
+{$IFDEF UNIX}
 function c_closedir(Dir: Pointer): LongInt; cdecl; external 'c' name 'closedir';
 function c_access(Path: PChar; Mode: LongInt): LongInt; cdecl; external 'c' name 'access';
 function c_getenv(Name: PChar): PChar; cdecl; external 'c' name 'getenv';
@@ -224,6 +264,129 @@ function c_uname(var U: TCUtsName): LongInt; cdecl; external 'c' name 'uname';
 function c_posix_spawn(var Pid: LongInt; Path: PChar; Actions, Attr: Pointer; Argv, Envp: Pointer): LongInt;
   cdecl; external 'c' name 'posix_spawn';
 function c_waitpid(Pid: LongInt; var Status: LongInt; Options: LongInt): LongInt; cdecl; external 'c' name 'waitpid';
+{$ENDIF}
+{$IFDEF WINDOWS}
+function c_stat(Path: PChar; var St: TCStat): LongInt; cdecl; external 'c' name '_stat64';
+function c_fstat(Fd: LongInt; var St: TCStat): LongInt; cdecl; external 'c' name '_fstat64';
+function c_access(Path: PChar; Mode: LongInt): LongInt; cdecl; external 'c' name '_access';
+function c_getenv(Name: PChar): PChar; cdecl; external 'c' name 'getenv';
+function c_mktime(var Tm: TCTm): Int64; cdecl; external 'c' name '_mktime64';
+function c_environ: PEnviron; external 'odinrtl' name 'ODIN_NSGETENVIRON';
+function c_errno: PLongInt; cdecl; external 'c' name '_errno';
+function w_findfirst(Spec: PChar; var Data: TFindData): Int64; cdecl; external 'c' name '_findfirst64';
+function w_findnext(Handle: Int64; var Data: TFindData): LongInt; cdecl; external 'c' name '_findnext64';
+function w_findclose(Handle: Int64): LongInt; cdecl; external 'c' name '_findclose';
+function w_localtime(var Tm: TCTm; var T: Int64): LongInt; cdecl; external 'c' name '_localtime64_s';
+function w_utime(Path: PChar; Times: Pointer): LongInt; cdecl; external 'c' name '_utime64';
+function w_spawnve(Mode: LongInt; Path: PChar; Argv, Envp: Pointer): Int64; cdecl; external 'c' name '_spawnve';
+function GetDiskFreeSpaceExA(Dir: PChar; var Avail, Total, Free: Int64): LongInt;
+  external 'kernel32' name 'GetDiskFreeSpaceExA';
+procedure GetSystemTimeAsFileTime(var Time: Int64); external 'kernel32' name 'GetSystemTimeAsFileTime';
+function GetVersion: LongInt; external 'kernel32' name 'GetVersion';
+function GetFileAttributesA(Name: PChar): LongInt; external 'kernel32' name 'GetFileAttributesA';
+function SetFileAttributesA(Name: PChar; Attr: LongInt): LongInt; external 'kernel32' name 'SetFileAttributesA';
+
+{ The few POSIX calls the rest of this unit is written against, on top of
+  the UCRT and Win32. }
+
+function c_localtime_r(var T: Int64; var Tm: TCTm): Pointer;
+begin
+  FillChar(Tm, SizeOf(Tm), 0);
+  w_localtime(Tm, T);
+  c_localtime_r := @Tm;
+end;
+
+function c_gettimeofday(var TV: TCTimeVal; TZ: Pointer): LongInt;
+var
+  T: Int64;
+begin
+  { 100 ns units since 1601-01-01 }
+  GetSystemTimeAsFileTime(T);
+  T := T - 116444736000000000;
+  TV.Sec := T div 10000000;
+  TV.USec := (T mod 10000000) div 10;
+  TV.Pad := 0;
+  c_gettimeofday := 0;
+end;
+
+{ Times points at two TCTimeVal (access, modification). }
+function c_utimes(Path: PChar; Times: Pointer): LongInt;
+var
+  B: array[0..1] of Int64;
+  TV: ^TCTimeVal;
+begin
+  TV := Times;
+  B[0] := TV^.Sec;
+  TV := Pointer(Int64(Times) + SizeOf(TCTimeVal));
+  B[1] := TV^.Sec;
+  c_utimes := w_utime(Path, @B);
+end;
+
+function c_statfs(Path: PChar; var St: TCStatFs): LongInt;
+var
+  Avail, Total, Free: Int64;
+begin
+  c_statfs := -1;
+  if GetDiskFreeSpaceExA(Path, Avail, Total, Free) = 0 then
+    Exit;
+  St.BSize := 1;
+  St.Blocks := Total;
+  St.BFree := Free;
+  St.BAvail := Avail;
+  c_statfs := 0;
+end;
+
+function c_opendir(Path: PChar): Pointer;
+var
+  D: PDirHandle;
+  Spec: CName;
+  I: Integer;
+begin
+  c_opendir := nil;
+  I := 0;
+  while (Path[I] <> #0) and (I < 1000) do
+  begin
+    Spec[I] := Path[I];
+    Inc(I);
+  end;
+  if (I > 0) and (Spec[I - 1] <> '\') and (Spec[I - 1] <> '/') then
+  begin
+    Spec[I] := '\';
+    Inc(I);
+  end;
+  Spec[I] := '*';
+  Spec[I + 1] := #0;
+  New(D);
+  D^.Handle := w_findfirst(@Spec, D^.Data);
+  if D^.Handle = -1 then
+  begin
+    Dispose(D);
+    Exit;
+  end;
+  D^.Pending := True;
+  c_opendir := D;
+end;
+
+function c_readdir(Dir: Pointer): PCDirent;
+var
+  D: PDirHandle;
+begin
+  c_readdir := nil;
+  D := Dir;
+  if not D^.Pending and (w_findnext(D^.Handle, D^.Data) <> 0) then
+    Exit;
+  D^.Pending := False;
+  Move(D^.Data.Name, D^.Ent.Name, SizeOf(D^.Data.Name));
+  c_readdir := @D^.Ent;
+end;
+
+function c_closedir(Dir: Pointer): LongInt;
+begin
+  w_findclose(PDirHandle(Dir)^.Handle);
+  Dispose(PDirHandle(Dir));
+  c_closedir := 0;
+end;
+{$ENDIF}
 
 const
   S_IFMT = $F000;
@@ -261,6 +424,17 @@ begin
   FromCName := S;
 end;
 
+{ A directory separator: '/' on Unix; '\', '/' and the ':' after a drive
+  letter on Windows. }
+function IsSep(C: Char): Boolean;
+begin
+{$IFDEF WINDOWS}
+  IsSep := (C = '\') or (C = '/') or (C = ':');
+{$ELSE}
+  IsSep := C = '/';
+{$ENDIF}
+end;
+
 { File name stored in a TextRec or FileRec: Name sits at offset 48 in both. }
 function FileName(var F): String;
 begin
@@ -277,7 +451,19 @@ end;
 function AttrOf(Path: PChar; const Name: String; const St: TCStat): Byte;
 var
   A: Byte;
+{$IFDEF WINDOWS}
+  W: LongInt;
+{$ENDIF}
 begin
+{$IFDEF WINDOWS}
+  { Windows keeps the DOS attribute bits themselves. }
+  W := GetFileAttributesA(Path);
+  if W <> -1 then
+  begin
+    AttrOf := W and (ReadOnly or Hidden or SysFile or Directory or Archive);
+    Exit;
+  end;
+{$ENDIF}
   A := 0;
   if IsDir(St) then
     A := A or Directory;
@@ -307,6 +493,15 @@ end;
 
 { ---- version, date and time --------------------------------------------- }
 
+{$IFDEF WINDOWS}
+function DosVersion: Word;
+var
+  V: LongInt;
+begin
+  V := GetVersion;
+  DosVersion := V and $FFFF;
+end;
+{$ELSE}
 function DosVersion: Word;
 var
   U: TCUtsName;
@@ -334,6 +529,7 @@ begin
   end;
   DosVersion := (Major and $FF) or ((Minor and $FF) shl 8);
 end;
+{$ENDIF}
 
 procedure Now(var Tm: TCTm; var Sec100: Word);
 var
@@ -426,12 +622,22 @@ var
   Path: CName;
 begin
   DiskInfo := -1;
+{$IFDEF WINDOWS}
+  { 0 is the current drive, 1 A:, 2 B:, 3 C: ... }
+  case Drive of
+    0: ToCName('.', Path);
+    1..26: ToCName(Chr(Ord('A') + Drive - 1) + ':\', Path);
+  else
+    Exit;
+  end;
+{$ELSE}
   case Drive of
     0: ToCName('.', Path);
     3: ToCName('/', Path);
   else
     Exit;
   end;
+{$ENDIF}
   if c_statfs(@Path, St) <> 0 then
     Exit;
   if Total then
@@ -469,11 +675,24 @@ begin
   DosError := 0;
 end;
 
+{$IFDEF WINDOWS}
+procedure SetFAttr(var F; Attr: Word);
+var
+  Path: CName;
+begin
+  ToCName(FileName(F), Path);
+  if SetFileAttributesA(@Path, Attr and (ReadOnly or Hidden or SysFile or Archive)) <> 0 then
+    DosError := 0
+  else
+    DosError := 5;
+end;
+{$ELSE}
 { DOS attributes have no Unix counterpart to change: like FPC, a no-op. }
 procedure SetFAttr(var F; Attr: Word);
 begin
   DosError := 0;
 end;
+{$ENDIF}
 
 procedure GetFTime(var F; var Time: LongInt);
 var
@@ -619,7 +838,7 @@ begin
     Exit;
   end;
   I := Length(Path);
-  while (I > 0) and (Path[I] <> '/') do
+  while (I > 0) and not IsSep(Path[I]) do
     Dec(I);
   F.FindDir := Copy(Path, 1, I);
   F.FindPattern := Copy(Path, I + 1, 255);
@@ -703,14 +922,23 @@ begin
   end;
   Start := 1;
   for I := 1 to Length(DirList) + 1 do
+{$IFDEF WINDOWS}
+    { ':' belongs to drive letters here: only ';' separates. }
+    if (I > Length(DirList)) or (DirList[I] = ';') then
+{$ELSE}
     if (I > Length(DirList)) or (DirList[I] = ';') or (DirList[I] = ':') then
+{$ENDIF}
     begin
       Dir := Copy(DirList, Start, I - Start);
       Start := I + 1;
       if Dir <> '' then
       begin
-        if Dir[Length(Dir)] <> '/' then
+        if not IsSep(Dir[Length(Dir)]) then
+{$IFDEF WINDOWS}
+          Dir := Dir + '\';
+{$ELSE}
           Dir := Dir + '/';
+{$ENDIF}
         if IsFile(Dir + Path) then
         begin
           FSearch := Dir + Path;
@@ -720,6 +948,75 @@ begin
     end;
 end;
 
+{$IFDEF WINDOWS}
+{ Absolute form of Path: '/' becomes '\', a missing drive or directory comes
+  from the current one, '.' and '..' are resolved and repeated separators
+  collapse. A trailing '\' stays; \\server\share names keep their prefix. }
+function FExpand(const Path: PathStr): PathStr;
+var
+  S, Dir, Prefix, Result: String;
+  Parts: array[1..128] of String;
+  Count, I, Start: Integer;
+  Part: String;
+  Trailing: Boolean;
+begin
+  S := Path;
+  for I := 1 to Length(S) do
+    if S[I] = '/' then
+      S[I] := '\';
+  GetDir(0, Dir);
+  if (Length(S) >= 2) and (S[1] = '\') and (S[2] = '\') then
+  begin
+    Prefix := '\\';
+    S := Copy(S, 3, 255);
+  end
+  else
+  begin
+    if (Length(S) >= 2) and (S[2] = ':') then
+    begin
+      Prefix := UpCase(S[1]) + ':\';
+      S := Copy(S, 3, 255);
+      { X:name is relative to that drive's current directory; only the
+        current drive's is known here. }
+      if ((Length(S) = 0) or (S[1] <> '\')) and (UpCase(Dir[1]) = Prefix[1]) then
+        S := Copy(Dir, 3, 255) + '\' + S;
+    end
+    else
+    begin
+      Prefix := UpCase(Dir[1]) + ':\';
+      if (Length(S) = 0) or (S[1] <> '\') then
+        S := Copy(Dir, 3, 255) + '\' + S;
+    end;
+  end;
+  Trailing := (Length(S) > 0) and (S[Length(S)] = '\');
+  Count := 0;
+  Start := 1;
+  for I := 1 to Length(S) + 1 do
+    if (I > Length(S)) or (S[I] = '\') then
+    begin
+      Part := Copy(S, Start, I - Start);
+      Start := I + 1;
+      if Part = '..' then
+      begin
+        if Count > 0 then
+          Dec(Count);
+      end
+      else if (Part <> '.') and (Part <> '') then
+      begin
+        Inc(Count);
+        Parts[Count] := Part;
+      end;
+    end;
+  Result := Prefix;
+  for I := 1 to Count do
+  begin
+    Result := Result + Parts[I];
+    if (I < Count) or Trailing then
+      Result := Result + '\';
+  end;
+  FExpand := Result;
+end;
+{$ELSE}
 { Absolute form of Path: '\' becomes '/', '~' is $HOME, '.' and '..' are
   resolved and repeated separators collapse. A trailing '/' stays. }
 function FExpand(const Path: PathStr): PathStr;
@@ -775,16 +1072,19 @@ begin
   end;
   FExpand := Result;
 end;
+{$ENDIF}
 
 procedure FSplit(Path: PathStr; var Dir: DirStr; var Name: NameStr; var Ext: ExtStr);
 var
   I, Slash, Dot: Integer;
 begin
+{$IFDEF UNIX}
   for I := 1 to Length(Path) do
     if Path[I] = '\' then
       Path[I] := '/';
+{$ENDIF}
   Slash := Length(Path);
-  while (Slash > 0) and (Path[Slash] <> '/') do
+  while (Slash > 0) and not IsSep(Path[Slash]) do
     Dec(Slash);
   Dot := Length(Path);
   while (Dot > Slash) and (Path[Dot] <> '.') do
@@ -816,12 +1116,28 @@ var
   procedure Add(const S: String);
   var
     K: Integer;
+    Quote: Boolean;
   begin
     Argv[Argc] := @Buf[Used];
     Inc(Argc);
+{$IFDEF WINDOWS}
+    Quote := (Argc > 1) and ((Pos(' ', S) > 0) or (S = ''));
+{$ELSE}
+    Quote := False;
+{$ENDIF}
+    if Quote then
+    begin
+      Buf[Used] := '"';
+      Inc(Used);
+    end;
     for K := 1 to Length(S) do
     begin
       Buf[Used] := S[K];
+      Inc(Used);
+    end;
+    if Quote then
+    begin
+      Buf[Used] := '"';
       Inc(Used);
     end;
     Buf[Used] := #0;
@@ -864,6 +1180,18 @@ begin
     end;
   end;
   Argv[Argc] := nil;
+{$IFDEF WINDOWS}
+  { _spawnve joins the arguments with blanks: Add quoted those with blanks. }
+  R := w_spawnve(0, Argv[0], @Argv, c_environ^);
+  if R = -1 then
+  begin
+    LastExitCode := 127;
+    DosError := 8;
+    Exit;
+  end;
+  LastExitCode := Word(R and $FFFF);
+  DosError := 0;
+{$ELSE}
   if c_posix_spawn(Pid, Argv[0], nil, nil, @Argv, c_environ^) <> 0 then
   begin
     LastExitCode := 127;
@@ -886,6 +1214,7 @@ begin
     LastExitCode := Word(-(Status and $7F));
     DosError := 8;
   end;
+{$ENDIF}
 end;
 
 function DosExitCode: Word;

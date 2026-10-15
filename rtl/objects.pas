@@ -250,6 +250,16 @@ function CallerFrame: Pointer; external 'odinrtl' name 'ODIN_CALLERFRAME';
 procedure CallLocal(Code, Frame, Item: Pointer); external 'odinrtl' name 'ODIN_CALLLOCAL';
 function CallLocalTest(Code, Frame, Item: Pointer): Boolean; external 'odinrtl' name 'ODIN_CALLLOCAL';
 
+{$IFDEF WINDOWS}
+{ The UCRT's POSIX-style functions: underscored names, 32-bit counts. }
+function c_open(Path: PChar; Flags, Mode: LongInt): LongInt; cdecl; external 'c' name '_open';
+function c_close(Fd: LongInt): LongInt; cdecl; external 'c' name '_close';
+function c_read(Fd: LongInt; Buf: Pointer; Count: LongInt): LongInt; cdecl; external 'c' name '_read';
+function c_write(Fd: LongInt; Buf: Pointer; Count: LongInt): LongInt; cdecl; external 'c' name '_write';
+function c_lseek(Fd: LongInt; Offset: Int64; Whence: LongInt): Int64; cdecl; external 'c' name '_lseeki64';
+function c_ftruncate(Fd: LongInt; Length: Int64): LongInt; cdecl; external 'c' name '_chsize_s';
+function c_errno: PLongInt; cdecl; external 'c' name '_errno';
+{$ELSE}
 function c_open(Path: PChar; Flags, Mode: LongInt): LongInt; cdecl; external 'c' name 'open';
 function c_close(Fd: LongInt): LongInt; cdecl; external 'c' name 'close';
 function c_read(Fd: LongInt; Buf: Pointer; Count: Int64): Int64; cdecl; external 'c' name 'read';
@@ -261,8 +271,17 @@ function c_errno: PLongInt; cdecl; external 'c' name '__error';
 {$ELSE}
 function c_errno: PLongInt; cdecl; external 'c' name '__errno_location';
 {$ENDIF}
+{$ENDIF}
 
 const
+{$IFDEF WINDOWS}
+  { _O_BINARY ($8000) in every mode: no newline translation. }
+  O_RDONLY = $8000;
+  O_WRONLY = $8001;
+  O_RDWR = $8002;
+  O_CREAT = $100;
+  O_TRUNC = $200;
+{$ELSE}
   O_RDONLY = 0;
   O_WRONLY = 1;
   O_RDWR = 2;
@@ -272,6 +291,7 @@ const
 {$ELSE}
   O_CREAT = $40;
   O_TRUNC = $200;
+{$ENDIF}
 {$ENDIF}
 
 var
