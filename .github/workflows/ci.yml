@@ -77,12 +77,16 @@ jobs:
           "$PYTHON" -c "import sys, tkinter; print(sys.version); print('Tk', tkinter.TkVersion)"
           fpc -iV || echo "fpc tidak ditemukan"
 
+      # On Windows odinpc does not build yet (odin-debug, Tahap 8d): the
+      # Python tests still run, with the Free Pascal backend.
       - name: Build odinpc
         working-directory: toolchain
+        continue-on-error: ${{ runner.os == 'Windows' }}
         run: cargo build --release
 
       - name: Rust tests
         working-directory: toolchain
+        continue-on-error: ${{ runner.os == 'Windows' }}
         run: cargo test --workspace
 
       - name: Python tests

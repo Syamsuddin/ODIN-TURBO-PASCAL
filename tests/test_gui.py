@@ -323,7 +323,7 @@ class GuiTests(unittest.TestCase):
         self.assertIn("GUI_RUN_OK",self.app.console.screen.text())
 
 
-    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on Intel macOS")
+    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
     def test_real_gui_compile_and_run_odin(self):
         self.settings["backend"]="odin"
         source=self.path/"gui-check.pas"
@@ -340,7 +340,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(self.app.last_build.command[1],"build")
         self.assertIn("GUI_RUN_OK 42",self.app.console.screen.text())
 
-    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on Intel macOS")
+    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
     def test_vision_example_in_user_screen(self):
         # examples/VISION.PAS (Odin Vision) in the User screen: a mouse click opens the Help
         # menu, Esc closes it, Alt+X quits and the screen before the program comes back.
@@ -445,7 +445,7 @@ class GuiTests(unittest.TestCase):
             time.sleep(.02)
         self.fail("timed out")
 
-    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on Intel macOS")
+    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
     def test_real_gui_debug_session(self):
         self.settings["backend"]="odin"
         source=self.path/"REKURSI.PAS"
@@ -475,7 +475,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(editor.text.tag_ranges("exec"),())
         self.assertIn("10! =  3628800",self.app.console.screen.text())
 
-    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on Intel macOS")
+    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
     def test_runtime_error_line_after_run(self):
         self.settings["backend"]="odin"
         source=self.path/"crash.pas"

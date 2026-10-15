@@ -122,6 +122,11 @@ class TerminalTests(unittest.TestCase):
         self.assertEqual(s.grid[2][3],("O",11,4))
         self.assertEqual("".join(c[0] for c in s.grid[0])," "*20)
 
+    def test_status_and_cursor_reports(self):
+        s=Screen()
+        s.feed("\x1b[3;5Hab\x1b[6n\x1b[5n\x1b[?6n")
+        self.assertEqual(s.replies,[b"\x1b[3;7R",b"\x1b[0n"])
+
     def test_wrap_crlf_and_scroll(self):
         s=Screen(4,2)
         s.feed("1234\r\n5678")
@@ -322,7 +327,7 @@ class PlatformTests(unittest.TestCase):
 
 
 @unittest.skipUnless(FPC,"Free Pascal is not installed")
-@unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc (cargo build in toolchain/) on Intel macOS")
+@unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc (cargo build in toolchain/) on a host it supports (core.ODIN_HOSTS)")
 class OdinBackendTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory(prefix="odin backend ")
@@ -508,7 +513,7 @@ class CompilerTests(unittest.TestCase):
 
 
 
-@unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc (cargo build in toolchain/) on Intel macOS")
+@unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc (cargo build in toolchain/) on a host it supports (core.ODIN_HOSTS)")
 class OdinCompilerTests(CompilerTests):
     """The same compiler tests with the Odin toolchain as backend."""
     __unittest_skip__=False
@@ -556,7 +561,10 @@ class OdinCompilerTests(CompilerTests):
                     p.write(b"x")
                     sent=True
                 continue
-            if k=="output":screen.feed(v)
+            if k=="output":
+                screen.feed(v)
+                # Answer cursor-position requests as TerminalView does (FPC's Crt on Linux asks).
+                while screen.replies:p.write(screen.replies.pop(0))
             elif k=="exit":
                 self.assertEqual(v,0)
                 return screen

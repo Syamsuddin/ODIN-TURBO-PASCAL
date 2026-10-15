@@ -316,9 +316,15 @@ class BuildResult:
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 
 
+# Hosts whose native programs odinpc generates (IMPLEMENTATION_PLAN.md, Tahap 8).
+# Elsewhere the IDE builds with Free Pascal.
+ODIN_HOSTS = {("darwin", "x86_64"), ("linux", "x86_64")}
+
+
 def odin_supported() -> bool:
-    """odinpc generates x86-64 macOS code only; arm64 comes in a later stage."""
-    return sys.platform == "darwin" and platform.machine() == "x86_64"
+    """odinpc generates native programs for this machine (see ODIN_HOSTS)."""
+    machine = {"amd64": "x86_64", "arm64": "aarch64"}.get(platform.machine().lower(), platform.machine().lower())
+    return (sys.platform, machine) in ODIN_HOSTS
 
 
 def locate_toolchain() -> str | None:

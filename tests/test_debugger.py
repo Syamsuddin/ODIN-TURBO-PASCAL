@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 REKURSI = ROOT / "examples" / "REKURSI.PAS"
 
 
-@unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc (cargo build in toolchain/) on Intel macOS")
+@unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc (cargo build in toolchain/) on a host it supports (core.ODIN_HOSTS)")
 class DebugSessionTests(unittest.TestCase):
     """The Odin debugger without Tk: odinpc debug on a PTY, driven through DebugSession."""
 
