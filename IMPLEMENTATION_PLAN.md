@@ -752,21 +752,49 @@ Python (`terminal.py`):
 - Program uji Turbo Vision dari 1.0 (`uses Objects, Drivers, Views, Menus, Dialogs, App, MsgBox, StdDlg`) dan semua demo snapshot lolos dengan backend `odin`.
 - Satu contoh Vision baru, misalnya `examples/VISION.PAS` dengan header lisensi, berjalan di User screen.
 
-### Tahap 8 — AArch64 dan Linux
+### Tahap 8 — Apple Silicon, Linux, dan Windows
 
-**Rust:**
+**Keputusan pemilik proyek (15 Oktober 2026):**
 
-- encoder AArch64;
-- codegen dengan AAPCS64 varian Apple: x18 dicadangkan, frame x29/x30, variadik di stack;
-- Mach-O arm64 dengan halaman 16 KB dan tanda tangan ad-hoc wajib;
-- ELF statis untuk x86_64 dan aarch64 Linux;
-- kompilasi silang lewat `--target`.
+- Ketiga platform dikerjakan dalam tahap ini. Windows langsung mendapat backend Odin native, bukan hanya IDE dengan Free Pascal.
+- Verifikasi dilakukan di runner GitHub Actions: macOS Intel, macOS arm64, Ubuntu x86_64, Ubuntu arm64, dan Windows x86_64. Linux juga diuji lokal di VM Lima (`odin-linux`). Untuk aarch64 Linux, VM itu memakai qemu-user.
+- Rilis dibuat bertahap per platform.
 
-**Pascal:** `os_linux.pas` beserta shim syscall, dan `arch/*.s` untuk tiap target.
+**Target baru:** `x86_64-linux`, `aarch64-linux`, `aarch64-darwin`, dan `x86_64-windows`.
 
-**Gerbang G8:** seluruh korpus, tes debugger, dan tes Vision hijau di macOS arm64 (perangkat asli atau CI) dan di Linux x86_64.
+**Keputusan arsitektur yang berubah dari bagian 3.4:**
 
-### Tahap 9 — Melepas FPC, LLDB, dan Xcode, lalu merilis 2.1.0
+- **Linux memakai ELF PIE dinamis yang bergantung pada glibc**, bukan ELF statis dengan syscall langsung.
+  - Fungsi C (`libc.so.6`, `libm.so.6`) diambil lewat GOT yang diisi `ld-linux`, sama seperti cara Mach-O memakai dyld.
+  - Alasannya: RTL tetap memanggil fungsi C yang sama seperti di macOS (`localtime_r`, `posix_spawn`, `opendir`, dan lainnya), jadi tidak perlu menulis mini-libc.
+  - Akibatnya: Odin butuh distro berbasis glibc. musl (Alpine) tidak didukung.
+  - Entry `_start` ada di shim `arch/<target>.s` dan memanggil `__libc_start_main`.
+- **Windows memakai PE32+ x86-64** yang mengimpor `kernel32.dll` dan `ucrtbase.dll` (Windows 10 1809 atau lebih baru).
+  - ABI-nya Win64: argumen di rcx, rdx, r8, r9, shadow space 32 byte, xmm6–xmm15 dipertahankan callee, dan stack probe untuk frame di atas 4 KB.
+  - Crt memakai mode konsol VT (`ENABLE_VIRTUAL_TERMINAL_PROCESSING`/`_INPUT`), jadi jalur escape sequence-nya sama dengan Unix.
+  - Runtime error dari prosesor ditangkap lewat vectored exception handler.
+  - Debugger memakai TCP loopback dan file mapping, bukan Unix socket dan `mmap`.
+- **AArch64** memakai AAPCS64; di Apple, x18 dicadangkan dan argumen variadik dikirim lewat stack.
+  - Static link ada di x15.
+  - arm64 tidak punya trap FPU. Codegen membaca bendera FPSR sesudah operasi real, lalu menghasilkan runtime error 200, 205, atau 207 seperti di x86-64.
+- **RTL:** bagian yang bergantung pada OS dipisah per OS (`{$IFDEF DARWIN}`, `LINUX`, `WINDOWS`, `UNIX`). Layout struct (`stat`, `dirent`, `termios`, `sigaction`, konteks sinyal) dan konstanta ditulis per OS dan per CPU. Shim assembly dibuat satu per target.
+- **IDE di Windows:**
+  - User screen memakai ConPTY lewat `ctypes` (tetap stdlib saja), dan proses dihentikan lewat job object;
+  - data disimpan di `%APPDATA%\OdinTurboPascal`;
+  - pemasangnya `Install.ps1`.
+
+**Sub-tahap dan gerbang:**
+
+| Sub-tahap | Isi | Gerbang | Rilis |
+| --- | --- | --- | --- |
+| 8a Fondasi | Plumbing target di `odinpc` (dispatch per arsitektur dan format, define `WINDOWS`), CI GitHub Actions di lima runner, VM Lima | G8a: CI hijau untuk yang sudah didukung, dan tes yang belum didukung dilewati dengan alasan tertulis | — |
+| 8b Linux x86-64 | Linker ELF, RTL Linux, IDE dengan backend Odin di Linux | G8b: korpus diferensial, tes debugger, tes Vision, dan tes GUI hijau di Ubuntu x86_64 (VM dan CI) | 2.1.0-alpha.1 |
+| 8c AArch64 | Encoder (golden dibandingkan dengan `clang -arch arm64`), codegen, shim. Linux arm64 dulu, lalu Apple Silicon | G8c: yang sama hijau di macOS arm64 dan Ubuntu arm64 | 2.1.0-alpha.2, lalu 2.1.0 setelah pemasang Apple Silicon lolos di CI |
+| 8d Windows | IDE (ConPTY, pemasang), `odinpc` untuk Windows, linker PE, ABI Win64, RTL Windows, debugger TCP | G8d: yang sama hijau di CI Windows | 2.2.0-alpha.N, lalu 2.2.0 |
+
+**Batasan verifikasi:** Apple Silicon dan Windows hanya diuji di runner CI, tanpa perangkat fisik, dan dokumen menyebutkan hal itu. Gatekeeper, SmartScreen, dan peluncuran dari Finder atau Explorer tetap belum diverifikasi.
+
+### Tahap 9 — Melepas FPC, LLDB, dan Xcode
 
 **Python — hapus kode yang terkait FPC:**
 
@@ -793,7 +821,7 @@ Python (`terminal.py`):
 
 **Dokumen:** perbarui `README.md` (termasuk alt text `assets/banner.svg`), `README.txt`, `docs/HELP.txt`, `docs/SHORTCUTS.txt`, `docs/PASCAL.txt`, `docs/COMPATIBILITY.txt` (tabel baru dengan kolom "diuji di"), `docs/TEST_REPORT.txt`, `THIRD_PARTY.txt` (hapus FPC, LLDB, dan Xcode; tambahkan pustaka standar Rust), `CHANGELOG.md`, `CLAUDE.md`, serta teks About ("Python / Tk + Odin native toolchain").
 
-**Versi 2.1.0** diperbarui di semua tempat yang ditulis langsung:
+**Nomor versi** dinaikkan dengan `scripts/set_version.py`. Skrip itu memperbarui semua tempat yang menuliskannya langsung:
 
 - `odin/__init__.py`;
 - `package_app.py` (Info.plist);
@@ -888,10 +916,10 @@ Totalnya sekitar 65–95 ribu baris kode produk, atau 40–60 kali ukuran Odin 1
 | --- | --- | --- | --- |
 | 1 | Lisensi RTL dan Odin Vision (3.8) | **Diputuskan 15 Oktober 2026** | GPL-3.0-or-later tanpa pengecualian runtime |
 | 2 | Apple Developer ID untuk tanda tangan dan notarisasi | Sebelum Tahap 9 | Kalau tidak ada, pakai persetujuan saat instalasi |
-| 3 | Akses perangkat atau CI arm64 | Tahap 0 (S2) | Runner CI macOS arm64 |
+| 3 | Akses perangkat atau CI arm64 | **Diputuskan 15 Oktober 2026** | GitHub Actions: macOS arm64, Ubuntu arm64, dan Windows |
 | 4 | `Round` dan format Real: tetap seperti FPC 1.0 (pembulatan ke genap) atau seperti TP7 (menjauhi nol) | Tahap 4 | Tetap seperti FPC demi kompatibilitas dengan 1.0; perbedaan dicatat di dokumen |
 | 5 | Shortcut debug: tetap seperti 1.0 (Ctrl+F7 = Evaluate) atau diselaraskan ke TP7 (Ctrl+F4 = Evaluate, Ctrl+F7 = Add watch) | Tahap 5 | Tetap seperti 1.0 sampai ada uji bentrok shortcut di Mac |
-| 6 | Nomor versi rilis | **Diputuskan 15 Oktober 2026** | 2.0.0 dirilis sesudah Tahap 7 (backend Odin hanya Mac Intel); Tahap 9 merilis 2.1.0 |
+| 6 | Nomor versi rilis | **Diputuskan 15 Oktober 2026** | 2.0.0 dirilis sesudah Tahap 7 (backend Odin hanya Mac Intel). Tahap 8: 2.1.0 untuk Apple Silicon + Linux, 2.2.0 untuk Windows. Nomor untuk Tahap 9 ditentukan nanti |
 
 ---
 
