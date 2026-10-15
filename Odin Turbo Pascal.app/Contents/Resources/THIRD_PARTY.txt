@@ -2,8 +2,10 @@ Odin Turbo Pascal: GNU General Public License v3.0 or later,
 Copyright (c) 2026 Syams Ideris.
 Odin includes original application source and example source under LICENSE.
 No Borland binaries, logos, proprietary fonts, or documentation are included.
-The logo, emblem and application icon (assets/*.svg) are original artwork
-made for this project and are covered by the same license.
+The logo, emblem and application icon (assets/odin-logo-master.png and the
+PNG/ICNS files rendered from it) are original artwork by the same author,
+made for the ODIN Turbo Pascal v2.0 project and reused here. They are covered
+by the same license and are not derived from Borland material.
 
 Bundled in compiled form: the Rust standard library (std, core, alloc and
 their dependencies), statically linked into the odinpc executable

@@ -1,4 +1,4 @@
-ODIN TURBO PASCAL 2.0.0-alpha.1
+ODIN TURBO PASCAL 2.0.0-alpha.2
 Paket aplikasi desktop untuk Mac Intel dan Apple Silicon
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
@@ -37,10 +37,10 @@ toolchain/            Source toolchain Odin: compiler, assembler, linker,
                       dan debugger (Rust).
 docs/                 Panduan, referensi Pascal, pintasan, kompatibilitas,
                       laporan pengujian, serta pratinjau antarmuka.
-assets/               Logo dan ikon: sumber SVG serta PNG/ICNS hasil render.
+assets/               Logo dan ikon: master PNG serta PNG/ICNS hasil render.
 tests/                Pengujian fungsional dan GUI.
 scripts/              Pemeriksaan macOS, pembentukan ulang bundel .app, dan
-                      render logo (render_logo.py, butuh cairosvg).
+                      render logo (render_logo.py, butuh Pillow).
 
 BENTUK DISTRIBUSI
 
@@ -115,7 +115,7 @@ Lihat docs/COMPATIBILITY.txt untuk rincian.
 
 PENGUJIAN
 
-Rilis 2.0.0-alpha.1 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
+Rilis 2.0.0-alpha.2 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
 Free Pascal 3.2.2): 56 tes Python (termasuk 17 tes GUI dengan jendela Tk
 sungguhan), 110 tes Rust, dan 77 program uji yang keluarannya sama dengan
 Free Pascal. Rilis 1.0.0 diuji di Linux dengan Free Pascal 3.2.2 dan display

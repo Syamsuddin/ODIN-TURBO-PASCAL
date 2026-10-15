@@ -4,15 +4,15 @@ version = 4
 
 [[package]]
 name = "odin-asm"
-version = "0.1.0"
+version = "2.0.0-alpha.2"
 
 [[package]]
 name = "odin-base"
-version = "0.1.0"
+version = "2.0.0-alpha.2"
 
 [[package]]
 name = "odin-codegen"
-version = "0.1.0"
+version = "2.0.0-alpha.2"
 dependencies = [
  "odin-asm",
  "odin-base",
@@ -21,7 +21,7 @@ dependencies = [
 
 [[package]]
 name = "odin-debug"
-version = "0.1.0"
+version = "2.0.0-alpha.2"
 dependencies = [
  "odin-base",
  "odin-debuginfo",
@@ -31,21 +31,21 @@ dependencies = [
 
 [[package]]
 name = "odin-debuginfo"
-version = "0.1.0"
+version = "2.0.0-alpha.2"
 dependencies = [
  "odin-base",
 ]
 
 [[package]]
 name = "odin-ir"
-version = "0.1.0"
+version = "2.0.0-alpha.2"
 dependencies = [
  "odin-base",
 ]
 
 [[package]]
 name = "odin-link"
-version = "0.1.0"
+version = "2.0.0-alpha.2"
 dependencies = [
  "odin-asm",
  "odin-base",
@@ -53,7 +53,7 @@ dependencies = [
 
 [[package]]
 name = "odin-sema"
-version = "0.1.0"
+version = "2.0.0-alpha.2"
 dependencies = [
  "odin-base",
  "odin-ir",
@@ -62,21 +62,21 @@ dependencies = [
 
 [[package]]
 name = "odin-syntax"
-version = "0.1.0"
+version = "2.0.0-alpha.2"
 dependencies = [
  "odin-base",
 ]
 
 [[package]]
 name = "odin-unitcache"
-version = "0.1.0"
+version = "2.0.0-alpha.2"
 dependencies = [
  "odin-base",
 ]
 
 [[package]]
 name = "odinpc"
-version = "0.1.0"
+version = "2.0.0-alpha.2"
 dependencies = [
  "odin-asm",
  "odin-base",

@@ -118,7 +118,7 @@ class GuiTests(unittest.TestCase):
 
     def test_logo_on_desktop_and_about(self):
         self.assertIsNotNone(self.app.icon)
-        self.assertEqual((self.app.logo.width(),self.app.logo.height()),(280,332))
+        self.assertEqual((self.app.logo.width(),self.app.logo.height()),(280,280))
         self.assertEqual(str(self.app.watermark.cget("image")),str(self.app.logo))
         self.assertEqual(self.app.author.cget("text"),"Created by Syams Ideris")
         self.assertIn("Created by Syams Ideris",self.app.status.cget("text"))
