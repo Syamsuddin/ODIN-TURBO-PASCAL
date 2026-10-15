@@ -7,9 +7,20 @@
 //! Darwin targets produce a position-independent Mach-O `MH_EXECUTE` that
 //! reaches libSystem through a GOT bound by dyld, with an ad-hoc,
 //! linker-signed code signature computed here (no `codesign`, no SDK).
-//! Linux targets (static ELF) arrive in Tahap 8.
+//!
+//! Linux targets produce a dynamically linked, position-independent ELF
+//! executable (`ET_DYN`, `DF_1_PIE`) for glibc: ld-linux loads libc.so.6 and
+//! libm.so.6 and fills a GOT through which every import is reached, all
+//! before the program starts (`BIND_NOW`, no PLT). Nothing from the system
+//! is needed to write it either: no crt files, no `ld`. The entry point is
+//! usually the RTL's `_start`, which hands `main` to `__libc_start_main`.
+//!
+//! Each writer defines the address of its own header for atoms to refer to:
+//! `__mh_execute_header` on Darwin, `__ehdr_start` on Linux.
 
 mod codesign;
+mod elf;
+mod layout;
 mod leb;
 mod macho;
 mod reloc;
@@ -58,12 +69,15 @@ pub const DEFAULT_MIN_OS: (u16, u8, u8) = (11, 0, 0);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LinkOptions {
     pub target: Target,
-    /// Symbol where execution starts, e.g. `_main`. Must name a code atom or
-    /// a label inside one.
+    /// Symbol where execution starts, e.g. `_main` on Darwin (called by
+    /// dyld like a C `main`) or `_start` on Linux (entered from ld-linux
+    /// with the initial process stack). Must name a code atom or a label
+    /// inside one.
     pub entry: String,
-    /// Code-signing identifier, usually the executable's file name.
+    /// Code-signing identifier, usually the executable's file name. Darwin
+    /// only.
     pub identifier: String,
-    /// Minimum OS version as (major, minor, patch).
+    /// Minimum OS version as (major, minor, patch). Darwin only.
     pub min_os: (u16, u8, u8),
 }
 
@@ -79,7 +93,9 @@ impl LinkOptions {
 pub struct LinkedImage {
     /// The whole file.
     pub bytes: Vec<u8>,
-    /// Unslid address of the Mach-O header.
+    /// Unslid address of the Mach-O or ELF header (0 for a Linux PIE). At run
+    /// time, an address minus the header's runtime address plus this is the
+    /// link-time address.
     pub image_base: u64,
     /// Unslid address of every placed atom and label. Atoms dropped by smart
     /// linking are absent.
@@ -124,12 +140,11 @@ impl std::error::Error for LinkError {}
 
 /// Links `objects` into an executable for `options.target`.
 pub fn link(objects: &[Object], options: &LinkOptions) -> Result<LinkedImage, LinkError> {
-    if !options.target.is_darwin() {
-        return Err(LinkError::Unsupported(format!(
-            "{} executables (static ELF) arrive in Tahap 8",
-            options.target.triple()
-        )));
+    if options.target.is_darwin() {
+        let resolved = resolve::resolve(objects, &options.entry, macho::SYNTHETIC)?;
+        macho::write(&resolved, options)
+    } else {
+        let resolved = resolve::resolve(objects, &options.entry, elf::SYNTHETIC)?;
+        elf::write(&resolved, options)
     }
-    let resolved = resolve::resolve(objects, &options.entry)?;
-    macho::write(&resolved, options)
 }

@@ -17,6 +17,9 @@
 //! classic `LC_DYLD_INFO_ONLY` opcodes; every absolute pointer gets a rebase
 //! so ASLR can slide the image. File offsets equal address offsets from the
 //! header up to the end of the file-backed part of `__DATA`.
+//!
+//! `__mh_execute_header`, the address of the header, is defined here as
+//! ld64 does, so atoms may refer to it.
 
 use std::collections::{BTreeMap, HashMap};
 
@@ -24,6 +27,7 @@ use odin_asm::object::{Atom, RelocKind, SectionKind};
 use odin_base::sha256::sha256;
 
 use crate::codesign;
+use crate::layout::{check_input, place, put16, put32, put64};
 use crate::leb::{sleb128, uleb128};
 use crate::reloc;
 use crate::resolve::{Resolved, Sym};
@@ -36,6 +40,8 @@ const DYLD: &str = "/usr/lib/dyld";
 /// Always loaded first (ordinal 1): dyld refuses programs without it.
 const LIBSYSTEM: &str = "/usr/lib/libSystem.B.dylib";
 const MH_EXECUTE_HEADER: &str = "__mh_execute_header";
+/// Names this writer defines: [`Sym::Synthetic`] indexes this list.
+pub(crate) const SYNTHETIC: &[&str] = &[MH_EXECUTE_HEADER];
 
 const MH_MAGIC_64: u32 = 0xfeed_facf;
 const CPU_TYPE_X86_64: u32 = 0x0100_0007;
@@ -115,7 +121,6 @@ struct Arch {
     code_atom_align: u64,
     /// Padding between code atoms: `int3` on x86-64, `udf #0` on arm64.
     text_fill: u8,
-    arm64: bool,
 }
 
 impl Arch {
@@ -128,7 +133,6 @@ impl Arch {
                 text_align: 4,
                 code_atom_align: 4,
                 text_fill: 0,
-                arm64: true,
             }
         } else {
             Arch {
@@ -138,7 +142,6 @@ impl Arch {
                 text_align: 16,
                 code_atom_align: 1,
                 text_fill: 0xcc,
-                arm64: false,
             }
         }
     }
@@ -381,6 +384,7 @@ pub(crate) fn write(resolved: &Resolved, options: &LinkOptions) -> Result<Linked
     // Relocations.
     let address_of = |sym: Sym| match sym {
         Sym::Local { atom, offset } => Some(atom_addr[atom] + offset),
+        Sym::Synthetic(_) => Some(IMAGE_BASE), // __mh_execute_header
         Sym::Import(_) => None,
     };
     let mut rebases: Vec<u64> = Vec::new();
@@ -665,66 +669,7 @@ fn check(resolved: &Resolved, options: &LinkOptions, arch: &Arch) -> Result<(), 
             "the code-signing identifier must be non-empty and free of NUL bytes".to_string(),
         ));
     }
-    if resolved.defines(MH_EXECUTE_HEADER) {
-        return Err(LinkError::Duplicate { name: MH_EXECUTE_HEADER.to_string() });
-    }
-    let Sym::Local { atom: entry, .. } = resolved.entry else { unreachable!("the entry is defined") };
-    if resolved.atoms[entry].section != SectionKind::Text {
-        return Err(LinkError::Unsupported(format!("entry symbol `{}` is not in a code atom", options.entry)));
-    }
-    let triple = options.target.triple();
-    for index in resolved.live_atoms() {
-        let atom = resolved.atoms[index];
-        if u64::from(atom.align) > arch.segment_align {
-            return Err(LinkError::Unsupported(format!(
-                "atom `{}` asks for {}-byte alignment, more than a {triple} page",
-                atom.name, atom.align
-            )));
-        }
-        for reloc in &atom.relocs {
-            let kind = reloc.kind;
-            if (arch.arm64 && reloc::is_x86(kind)) || (!arch.arm64 && reloc::is_arm64(kind)) {
-                return Err(LinkError::Unsupported(format!(
-                    "`{}` has a {kind:?} relocation, which does not exist on {triple}",
-                    atom.name
-                )));
-            }
-            if kind == RelocKind::Abs64 && atom.section == SectionKind::Text {
-                return Err(LinkError::Unsupported(format!(
-                    "`{}` stores the absolute address of `{}` in code, which would need a text relocation",
-                    atom.name, reloc.target
-                )));
-            }
-            if !reloc::uses_got(kind)
-                && kind != RelocKind::Abs64
-                && let Some(Sym::Import(_)) = resolved.lookup(&reloc.target)
-            {
-                return Err(LinkError::Unsupported(format!(
-                    "`{}` refers to imported `{}` with {kind:?}; imports are reached through their GOT slot \
-                     (X86GotPc32, or Arm64GotPage21 with Arm64GotPageOff12)",
-                    atom.name, reloc.target
-                )));
-            }
-        }
-    }
-    Ok(())
-}
-
-/// Places atoms given as `(align, size)` one after another from `cursor`.
-/// Returns the section start (aligned to the largest alignment, at least
-/// `min_align`), each atom's address, the end and the section alignment.
-fn place(cursor: u64, atoms: impl Iterator<Item = (u64, u64)>, min_align: u64) -> (u64, Vec<u64>, u64, u64) {
-    let atoms: Vec<(u64, u64)> = atoms.collect();
-    let align = atoms.iter().map(|&(align, _)| align).fold(min_align, u64::max);
-    let start = cursor.next_multiple_of(align);
-    let mut at = start;
-    let mut addrs = Vec::with_capacity(atoms.len());
-    for (align, size) in atoms {
-        at = at.next_multiple_of(align);
-        addrs.push(at);
-        at += size;
-    }
-    (start, addrs, at, align)
+    check_input(resolved, options, arch.segment_align)
 }
 
 /// Rebase opcodes sliding every pointer at `addrs` (all in segment
@@ -864,18 +809,6 @@ fn put_name(out: &mut Vec<u8>, name: &str) {
     let mut field = [0u8; 16];
     field[..name.len()].copy_from_slice(name.as_bytes());
     out.extend_from_slice(&field);
-}
-
-fn put16(out: &mut Vec<u8>, value: u16) {
-    out.extend_from_slice(&value.to_le_bytes());
-}
-
-fn put32(out: &mut Vec<u8>, value: u32) {
-    out.extend_from_slice(&value.to_le_bytes());
-}
-
-fn put64(out: &mut Vec<u8>, value: u64) {
-    out.extend_from_slice(&value.to_le_bytes());
 }
 
 #[cfg(test)]
@@ -1347,15 +1280,30 @@ mod tests {
             arm64(&object(vec![main(), Atom::new("_big", SectionKind::Data, 0x2000, vec![0; 8]).keep()], vec![]))
                 .is_ok()
         );
-        for target in [Target::X86_64Linux, Target::Aarch64Linux] {
-            assert!(unsupported(link(&object(vec![main()], vec![]), &LinkOptions::new(target, "_main", "test"))));
-        }
         assert_eq!(
             x86(&object(vec![main(), Atom::new(MH_EXECUTE_HEADER, SectionKind::Data, 1, vec![0])], vec![])).err(),
             Some(LinkError::Duplicate { name: MH_EXECUTE_HEADER.to_string() })
         );
         let unnamed = LinkOptions::new(Target::X86_64Darwin, "_main", "");
         assert!(matches!(link(&object(vec![main()], vec![]), &unnamed), Err(LinkError::Malformed(_))));
+    }
+
+    #[test]
+    fn header_symbol_can_be_referenced() {
+        let header = MH_EXECUTE_HEADER;
+        let main = Atom::new("_main", SectionKind::Text, 1, vec![0; 8]);
+        let main = main.reloc(0, X86Pc32, header, -4).reloc(4, X86GotPc32, header, -4);
+        let base = Atom::new("_base", SectionKind::Data, 8, vec![0; 8]).keep().reloc(0, Abs64, header, 0);
+        let image = x86(&object(vec![main, base], vec![])).unwrap();
+        let file = &image.bytes;
+        let main = image.symbols["_main"];
+        let at = (main - IMAGE_BASE) as usize;
+        assert_eq!(i64::from(u32_at(file, at) as i32), IMAGE_BASE as i64 - (main as i64 + 4));
+        let got = &segments(file)[2].sections[0];
+        assert_eq!(got.name, "__got");
+        assert_eq!(u64_at(file, got.offset as usize), IMAGE_BASE, "GOT slot, rebased");
+        assert_eq!(u64_at(file, (image.symbols["_base"] - IMAGE_BASE) as usize), IMAGE_BASE);
+        assert!(!image.symbols.contains_key(MH_EXECUTE_HEADER), "only atoms and labels are listed");
     }
 
     #[test]
@@ -1406,16 +1354,6 @@ mod tests {
             ..misaligned[0].clone()
         }];
         assert_eq!(arm64(&misaligned).err(), Some(out_of_range));
-    }
-
-    #[test]
-    fn placement() {
-        let (start, addrs, end, align) = place(0x1003, [(1, 3), (16, 5), (4, 0), (4, 4)].into_iter(), 1);
-        assert_eq!((start, align), (0x1010, 16));
-        assert_eq!(addrs, [0x1010, 0x1020, 0x1028, 0x1028]);
-        assert_eq!(end, 0x102c);
-        let (start, addrs, end, align) = place(0x1003, std::iter::empty(), 8);
-        assert_eq!((start, addrs.len(), end, align), (0x1008, 0, 0x1008, 8));
     }
 
     #[test]

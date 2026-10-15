@@ -2,10 +2,11 @@
 // Copyright (c) 2026 Syams Ideris
 //! Symbol resolution and smart linking, independent of the output format.
 //!
-//! Atom names, labels and imports share one namespace across the link. Only
-//! atoms reachable from the entry symbol or marked `keep` survive; undefined
-//! names are reported only when a surviving atom refers to them, so dead code
-//! may mention symbols the link does not provide.
+//! Atom names, labels, imports and the output format's synthetic symbols
+//! share one namespace across the link. Only atoms reachable from the entry
+//! symbol or marked `keep` survive; undefined names are reported only when a
+//! surviving atom refers to them, so dead code may mention symbols the link
+//! does not provide.
 
 use std::collections::HashMap;
 
@@ -21,6 +22,10 @@ pub(crate) enum Sym {
     Local { atom: usize, offset: u64 },
     /// The import with this index in [`Resolved::imports`].
     Import(usize),
+    /// A name the output format defines itself (the header symbols
+    /// `__mh_execute_header` and `__ehdr_start`), with its index in the list
+    /// given to [`resolve`].
+    Synthetic(usize),
 }
 
 /// The input after symbol resolution and smart linking.
@@ -37,6 +42,8 @@ pub(crate) struct Resolved<'a> {
     defined: HashMap<&'a str, (usize, u64)>,
     /// Indices into `imports`.
     import_index: HashMap<&'a str, usize>,
+    /// Names the output format defines.
+    synthetic: &'static [&'static str],
 }
 
 impl<'a> Resolved<'a> {
@@ -46,23 +53,26 @@ impl<'a> Resolved<'a> {
         if let Some(&(atom, offset)) = self.defined.get(name) {
             return Some(Sym::Local { atom, offset });
         }
-        self.import_index.get(name).map(|&index| Sym::Import(index))
+        if let Some(&index) = self.import_index.get(name) {
+            return Some(Sym::Import(index));
+        }
+        self.synthetic.iter().position(|&s| s == name).map(Sym::Synthetic)
     }
 
     /// Indices of the live atoms, in input order.
     pub fn live_atoms(&self) -> impl Iterator<Item = usize> + '_ {
         (0..self.atoms.len()).filter(|&i| self.live[i])
     }
-
-    /// Whether some atom or label is called `name`.
-    pub fn defines(&self, name: &str) -> bool {
-        self.defined.contains_key(name)
-    }
 }
 
 /// Resolves names across `objects` and marks the atoms reachable from
-/// `entry`.
-pub(crate) fn resolve<'a>(objects: &'a [Object], entry: &str) -> Result<Resolved<'a>, LinkError> {
+/// `entry`. `synthetic` lists the names the output format defines itself:
+/// atoms may refer to them, but no atom, label or import may take them.
+pub(crate) fn resolve<'a>(
+    objects: &'a [Object],
+    entry: &str,
+    synthetic: &'static [&'static str],
+) -> Result<Resolved<'a>, LinkError> {
     let mut atoms: Vec<&Atom> = Vec::new();
     let mut defined: HashMap<&str, (usize, u64)> = HashMap::new();
     for object in objects {
@@ -73,7 +83,7 @@ pub(crate) fn resolve<'a>(objects: &'a [Object], entry: &str) -> Result<Resolved
             let names =
                 std::iter::once((atom.name.as_str(), 0)).chain(atom.labels.iter().map(|(n, o)| (n.as_str(), *o)));
             for (name, offset) in names {
-                if defined.insert(name, (index, offset)).is_some() {
+                if defined.insert(name, (index, offset)).is_some() || synthetic.contains(&name) {
                     return Err(LinkError::Duplicate { name: name.to_string() });
                 }
             }
@@ -82,7 +92,7 @@ pub(crate) fn resolve<'a>(objects: &'a [Object], entry: &str) -> Result<Resolved
 
     let mut declared: HashMap<&str, &Import> = HashMap::new();
     for import in objects.iter().flat_map(|o| &o.imports) {
-        if defined.contains_key(import.name.as_str()) {
+        if defined.contains_key(import.name.as_str()) || synthetic.contains(&import.name.as_str()) {
             return Err(LinkError::Duplicate { name: import.name.clone() });
         }
         match declared.get(import.name.as_str()) {
@@ -123,7 +133,7 @@ pub(crate) fn resolve<'a>(objects: &'a [Object], entry: &str) -> Result<Resolved
     for index in (0..atoms.len()).filter(|&i| live[i]) {
         for reloc in &atoms[index].relocs {
             let name = reloc.target.as_str();
-            if defined.contains_key(name) || import_index.contains_key(name) {
+            if defined.contains_key(name) || import_index.contains_key(name) || synthetic.contains(&name) {
                 continue;
             }
             let Some(import) = declared.get(name) else {
@@ -144,6 +154,7 @@ pub(crate) fn resolve<'a>(objects: &'a [Object], entry: &str) -> Result<Resolved
         entry: Sym::Local { atom: entry_atom, offset: entry_offset },
         defined,
         import_index,
+        synthetic,
     })
 }
 
@@ -226,7 +237,7 @@ mod tests {
                 vec![import("_write")],
             ),
         ];
-        let resolved = resolve(&objects, "_main").unwrap();
+        let resolved = resolve(&objects, "_main", &[]).unwrap();
         assert_eq!(live_names(&resolved), ["_main", "_a", "_b", "_table", "_c"]);
         assert_eq!(resolved.imports, [&import("_write")]);
         assert_eq!(resolved.entry, Sym::Local { atom: 0, offset: 0 });
@@ -238,13 +249,13 @@ mod tests {
     #[test]
     fn entry_may_be_a_label() {
         let objects = [object("m", vec![Atom { labels: vec![("start".to_string(), 4)], ..code("_main") }], vec![])];
-        let resolved = resolve(&objects, "start").unwrap();
+        let resolved = resolve(&objects, "start", &[]).unwrap();
         assert_eq!(resolved.entry, Sym::Local { atom: 0, offset: 4 });
     }
 
     #[test]
     fn duplicates_are_errors() {
-        let dup = |objects: &[Object]| match resolve(objects, "_main") {
+        let dup = |objects: &[Object]| match resolve(objects, "_main", &[]) {
             Err(LinkError::Duplicate { name }) => name,
             other => panic!("expected a duplicate, got {:?}", other.err()),
         };
@@ -259,7 +270,8 @@ mod tests {
         assert_eq!(dup(&[object("a", vec![code("_main")], vec![import("_write"), other_lib])]), "_write");
         // The same import declared twice is fine.
         assert!(
-            resolve(&[object("a", vec![code("_main")], vec![import("_write"), import("_write")])], "_main").is_ok()
+            resolve(&[object("a", vec![code("_main")], vec![import("_write"), import("_write")])], "_main", &[])
+                .is_ok()
         );
     }
 
@@ -275,21 +287,24 @@ mod tests {
             vec![],
         )];
         assert_eq!(
-            resolve(&objects, "_main").err(),
+            resolve(&objects, "_main", &[]).err(),
             Some(LinkError::Undefined { name: "_nowhere".to_string(), referenced_from: "_helper".to_string() })
         );
         assert_eq!(
-            resolve(&objects, "_start").err(),
+            resolve(&objects, "_start", &[]).err(),
             Some(LinkError::Undefined { name: "_start".to_string(), referenced_from: "(entry point)".to_string() })
         );
         let dead_only = [object("a", vec![code("_main"), code("_dead").reloc(0, X86Pc32, "_missing", -4)], vec![])];
-        assert!(resolve(&dead_only, "_main").is_ok());
+        assert!(resolve(&dead_only, "_main", &[]).is_ok());
     }
 
     #[test]
     fn malformed_atoms_are_rejected() {
         let malformed = |atom: Atom| {
-            matches!(resolve(&[object("a", vec![code("_main"), atom], vec![])], "_main"), Err(LinkError::Malformed(_)))
+            matches!(
+                resolve(&[object("a", vec![code("_main"), atom], vec![])], "_main", &[]),
+                Err(LinkError::Malformed(_))
+            )
         };
         assert!(malformed(Atom { align: 3, ..code("_x") }));
         assert!(malformed(Atom { size: 17, ..code("_x") }));
@@ -300,5 +315,30 @@ mod tests {
         assert!(malformed(Atom { relocs: code("_y").reloc(0, Abs64, "_main", 0).relocs, ..Atom::bss("_x", 8, 8) }));
         assert!(!malformed(Atom { labels: vec![("_end".to_string(), 16)], ..code("_x") }));
         assert!(!malformed(code("_x").reloc(12, X86Pc32, "_main", 0)));
+    }
+
+    #[test]
+    fn synthetic_names_resolve_but_cannot_be_defined() {
+        const SYNTHETIC: &[&str] = &["__header", "__other"];
+        let main = || code("_main").reloc(0, X86Pc32, "__other", -4);
+        let objects = [object("a", vec![main()], vec![])];
+        let resolved = resolve(&objects, "_main", SYNTHETIC).unwrap();
+        assert_eq!(resolved.lookup("__other"), Some(Sym::Synthetic(1)));
+        assert_eq!(resolved.lookup("__header"), Some(Sym::Synthetic(0)));
+        assert!(resolved.imports.is_empty());
+        // Without the format's help the name is just undefined.
+        assert!(matches!(
+            resolve(&[object("a", vec![main()], vec![])], "_main", &[]),
+            Err(LinkError::Undefined { .. })
+        ));
+        let duplicate = Some(LinkError::Duplicate { name: "__header".to_string() });
+        let as_atom = [object("a", vec![main(), code("__header")], vec![])];
+        assert_eq!(resolve(&as_atom, "_main", SYNTHETIC).err(), duplicate);
+        let as_label = [object("a", vec![Atom { labels: vec![("__header".to_string(), 4)], ..main() }], vec![])];
+        assert_eq!(resolve(&as_label, "_main", SYNTHETIC).err(), duplicate);
+        let as_import = [object("a", vec![main()], vec![import("__header")])];
+        assert_eq!(resolve(&as_import, "_main", SYNTHETIC).err(), duplicate);
+        // A synthetic name is not code to start from.
+        assert!(matches!(resolve(&as_import[..0], "__header", SYNTHETIC), Err(LinkError::Undefined { .. })));
     }
 }
