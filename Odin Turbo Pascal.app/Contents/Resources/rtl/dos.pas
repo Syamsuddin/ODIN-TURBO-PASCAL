@@ -195,17 +195,19 @@ type
     BSize, Blocks, BFree, BAvail: Int64;
   end;
 
-  { struct __finddata64_t of the UCRT }
+  { WIN32_FIND_DATAA }
   TFindData = record
-    Attrib, Pad: LongInt;
-    Created, Accessed, Written, Size: Int64;
+    Attrib: LongInt;
+    Created, Accessed, Written: array[0..1] of LongInt;
+    SizeHigh, SizeLow, Reserved0, Reserved1: LongInt;
     Name: array[0..259] of Char;
+    ShortName: array[0..13] of Char;
   end;
 
-  { A directory being read: the UCRT's find handle and the entry that
-    _findfirst64 already returned. }
+  { A directory being read: the Win32 find handle and the entry that
+    FindFirstFileA already returned. }
   TDirHandle = record
-    Handle: Int64;
+    Handle: Pointer;
     Pending: Boolean;
     Data: TFindData;
     Ent: TCDirent;
@@ -273,12 +275,15 @@ function c_getenv(Name: PChar): PChar; cdecl; external 'c' name 'getenv';
 function c_mktime(var Tm: TCTm): Int64; cdecl; external 'c' name '_mktime64';
 function c_environ: PEnviron; external 'odinrtl' name 'ODIN_NSGETENVIRON';
 function c_errno: PLongInt; cdecl; external 'c' name '_errno';
-function w_findfirst(Spec: PChar; var Data: TFindData): Int64; cdecl; external 'c' name '_findfirst64';
-function w_findnext(Handle: Int64; var Data: TFindData): LongInt; cdecl; external 'c' name '_findnext64';
-function w_findclose(Handle: Int64): LongInt; cdecl; external 'c' name '_findclose';
+{ FindFirstFile itself, as FPC uses: its DOS pattern matching ('*.', '*.*')
+  is the one programs expect. }
+function w_findfirst(Spec: PChar; var Data: TFindData): Pointer; external 'kernel32' name 'FindFirstFileA';
+function w_findnext(Handle: Pointer; var Data: TFindData): LongInt; external 'kernel32' name 'FindNextFileA';
+function w_findclose(Handle: Pointer): LongInt; external 'kernel32' name 'FindClose';
 function w_localtime(var Tm: TCTm; var T: Int64): LongInt; cdecl; external 'c' name '_localtime64_s';
 function w_utime(Path: PChar; Times: Pointer): LongInt; cdecl; external 'c' name '_utime64';
-function w_spawnve(Mode: LongInt; Path: PChar; Argv, Envp: Pointer): Int64; cdecl; external 'c' name '_spawnve';
+function w_spawnvpe(Mode: LongInt; Path: PChar; Argv, Envp: Pointer): Int64; cdecl; external 'c' name '_spawnvpe';
+function GetLastError: LongInt; external 'kernel32' name 'GetLastError';
 function GetDiskFreeSpaceExA(Dir: PChar; var Avail, Total, Free: Int64): LongInt;
   external 'kernel32' name 'GetDiskFreeSpaceExA';
 procedure GetSystemTimeAsFileTime(var Time: Int64); external 'kernel32' name 'GetSystemTimeAsFileTime';
@@ -336,13 +341,28 @@ begin
   c_statfs := 0;
 end;
 
-function c_opendir(Path: PChar): Pointer;
+{ A search for Spec (folder and DOS pattern, matched by Windows itself), or nil. }
+function OpenFind(Spec: PChar): Pointer;
 var
   D: PDirHandle;
+begin
+  OpenFind := nil;
+  New(D);
+  D^.Handle := w_findfirst(Spec, D^.Data);
+  if Int64(D^.Handle) = -1 then
+  begin
+    Dispose(D);
+    Exit;
+  end;
+  D^.Pending := True;
+  OpenFind := D;
+end;
+
+function c_opendir(Path: PChar): Pointer;
+var
   Spec: CName;
   I: Integer;
 begin
-  c_opendir := nil;
   I := 0;
   while (Path[I] <> #0) and (I < 1000) do
   begin
@@ -356,15 +376,7 @@ begin
   end;
   Spec[I] := '*';
   Spec[I + 1] := #0;
-  New(D);
-  D^.Handle := w_findfirst(@Spec, D^.Data);
-  if D^.Handle = -1 then
-  begin
-    Dispose(D);
-    Exit;
-  end;
-  D^.Pending := True;
-  c_opendir := D;
+  c_opendir := OpenFind(@Spec);
 end;
 
 function c_readdir(Dir: Pointer): PCDirent;
@@ -373,7 +385,7 @@ var
 begin
   c_readdir := nil;
   D := Dir;
-  if not D^.Pending and (w_findnext(D^.Handle, D^.Data) <> 0) then
+  if not D^.Pending and (w_findnext(D^.Handle, D^.Data) = 0) then
     Exit;
   D^.Pending := False;
   Move(D^.Data.Name, D^.Ent.Name, SizeOf(D^.Data.Name));
@@ -664,6 +676,15 @@ var
 begin
   Name := FileName(F);
   ToCName(Name, Path);
+{$IFDEF WINDOWS}
+  { Like FPC: the Windows error, 2 (file) or 3 (path) not found. }
+  if GetFileAttributesA(@Path) = -1 then
+  begin
+    Attr := 0;
+    DosError := GetLastError;
+    Exit;
+  end;
+{$ENDIF}
   if c_stat(@Path, St) <> 0 then
   begin
     Attr := 0;
@@ -715,6 +736,14 @@ var
   TV: array[0..1] of TCTimeVal;
   Path: CName;
 begin
+{$IFDEF WINDOWS}
+  { FPC on Windows sets the time through the file's handle: it must be open. }
+  if FileRec(F).Mode = fmClosed then
+  begin
+    DosError := 6;
+    Exit;
+  end;
+{$ENDIF}
   UnpackTime(Time, DT);
   FillChar(Tm, SizeOf(Tm), 0);
   Tm.Year := DT.Year - 1900;
@@ -806,6 +835,11 @@ procedure FindNext(var F: SearchRec);
 var
   E: PCDirent;
 begin
+{$IFDEF WINDOWS}
+  { After a failed FindFirst, its error stays, as with FPC. }
+  if F.FindHandle = nil then
+    Exit;
+{$ENDIF}
   DosError := 18;
   if F.FindHandle = nil then
     Exit;
@@ -817,7 +851,12 @@ begin
       FindClose(F);
       Exit;
     end;
+{$IFDEF WINDOWS}
+    { Windows already matched the pattern, the DOS way (case, '*.*', '*.'). }
+    if Fill(F, FromCName(@E^.Name)) then
+{$ELSE}
     if Matches(F.FindPattern, FromCName(@E^.Name)) and Fill(F, FromCName(@E^.Name)) then
+{$ENDIF}
     begin
       DosError := 0;
       Exit;
@@ -842,6 +881,30 @@ begin
     Dec(I);
   F.FindDir := Copy(Path, 1, I);
   F.FindPattern := Copy(Path, I + 1, 255);
+{$IFDEF WINDOWS}
+  { Windows matches the pattern itself; the errors are FPC's: 13 for a folder
+    name ending in a separator, 3 for a folder that is not there. }
+  if F.FindPattern = '' then
+  begin
+    DosError := 13;
+    Exit;
+  end;
+  ToCName(Path, Dir);
+  F.FindHandle := OpenFind(@Dir);
+  if F.FindHandle = nil then
+  begin
+    DosError := 18;
+    if F.FindDir <> '' then
+    begin
+      ToCName(Copy(F.FindDir, 1, Length(F.FindDir) - 1), Dir);
+      if (Length(F.FindDir) > 1) and (F.FindDir[Length(F.FindDir) - 1] <> ':') and (GetFileAttributesA(@Dir) = -1) then
+        DosError := 3;
+    end;
+    Exit;
+  end;
+  FindNext(F);
+  Exit;
+{$ENDIF}
   if (Pos('*', F.FindPattern) = 0) and (Pos('?', F.FindPattern) = 0) then
   begin
     { A plain name: report that one file, if it exists. }
@@ -965,10 +1028,21 @@ begin
     if S[I] = '/' then
       S[I] := '\';
   GetDir(0, Dir);
+  if S = '' then
+  begin
+    { Like FPC: the current directory, with a final separator. }
+    if Dir[Length(Dir)] <> '\' then
+      Dir := Dir + '\';
+    FExpand := Dir;
+    Exit;
+  end;
   if (Length(S) >= 2) and (S[1] = '\') and (S[2] = '\') then
   begin
-    Prefix := '\\';
-    S := Copy(S, 3, 255);
+    { \\server\share names are kept as written, like FPC, but for a final separator. }
+    if (Length(S) > 3) and (S[Length(S)] = '\') then
+      Delete(S, Length(S), 1);
+    FExpand := S;
+    Exit;
   end
   else
   begin
@@ -988,7 +1062,8 @@ begin
         S := Copy(Dir, 3, 255) + '\' + S;
     end;
   end;
-  Trailing := (Length(S) > 0) and (S[Length(S)] = '\');
+  { Like FPC on Windows, no separator at the end (but for the root, X:\). }
+  Trailing := False;
   Count := 0;
   Start := 1;
   for I := 1 to Length(S) + 1 do
@@ -1082,6 +1157,10 @@ begin
   for I := 1 to Length(Path) do
     if Path[I] = '\' then
       Path[I] := '/';
+{$ELSE}
+  for I := 1 to Length(Path) do
+    if Path[I] = '/' then
+      Path[I] := '\';
 {$ENDIF}
   Slash := Length(Path);
   while (Slash > 0) and not IsSep(Path[Slash]) do
@@ -1181,12 +1260,13 @@ begin
   end;
   Argv[Argc] := nil;
 {$IFDEF WINDOWS}
-  { _spawnve joins the arguments with blanks: Add quoted those with blanks. }
-  R := w_spawnve(0, Argv[0], @Argv, c_environ^);
+  { _spawnvpe joins the arguments with blanks (Add quoted those with blanks)
+    and, like CreateProcess under FPC, searches PATH for a bare name. A program
+    that cannot start is DosError 2; DosExitCode keeps its last value. }
+  R := w_spawnvpe(0, Argv[0], @Argv, c_environ^);
   if R = -1 then
   begin
-    LastExitCode := 127;
-    DosError := 8;
+    DosError := 2;
     Exit;
   end;
   LastExitCode := Word(R and $FFFF);
