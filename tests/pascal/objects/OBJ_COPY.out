@@ -1,0 +1,10 @@
+copy 1 base
+from derived 2 derived typeof base FALSE
+by value: 101 base
+after by value 1
+by var: 2 base
+by var: 3 derived
+after by var 2 3 3
+pair base derived 3
+10 20 30 
+pointer derived 3 same TRUE

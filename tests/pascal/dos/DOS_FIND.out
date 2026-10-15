@@ -1,0 +1,36 @@
+[w/*] attr 63 first 0: ../18 ./18 .dot/2 .hdir/18 a.txt/0 b.TXT/0 data.bin/0 noext/0 sp ace.t/0 sub/16 x.y.z/0 | end 18
+[w/*.*] attr 63 first 0: ../18 ./18 .dot/2 .hdir/18 a.txt/0 b.TXT/0 data.bin/0 sp ace.t/0 x.y.z/0 | end 18
+[w/*] attr 0 first 0: a.txt/0 b.TXT/0 data.bin/0 noext/0 sp ace.t/0 x.y.z/0 | end 18
+[w/*] attr 16 first 0: a.txt/0 b.TXT/0 data.bin/0 noext/0 sp ace.t/0 sub/16 x.y.z/0 | end 18
+[w/*] attr 2 first 0: .dot/2 a.txt/0 b.TXT/0 data.bin/0 noext/0 sp ace.t/0 x.y.z/0 | end 18
+[w/*] attr 1 first 0: a.txt/0 b.TXT/0 data.bin/0 noext/0 sp ace.t/0 x.y.z/0 | end 18
+[w/*.txt] attr 63 first 0: a.txt/0 | end 18
+[w/*.TXT] attr 63 first 0: b.TXT/0 | end 18
+[w/?.txt] attr 63 first 0: a.txt/0 | end 18
+[w/a.*] attr 63 first 0: a.txt/0 | end 18
+[w/*.] attr 63 first 0: ../18 ./18 | end 18
+[w/noext] attr 63 first 0: noext/0 | end 18
+[w/a.txt] attr 0 first 0: a.txt/0 | end 18
+[w/sub] attr 16 first 0: sub/16 | end 18
+[w/sub] attr 0 first 18: | end 18
+[w/nothing*] attr 63 first 18: | end 18
+[nodir/*] attr 63 first 18: | end 18
+[w/*.y] attr 63 first 18: | end 18
+[w/*z] attr 63 first 0: x.y.z/0 | end 18
+[w/x*] attr 63 first 0: x.y.z/0 | end 18
+[w/[ab]*] attr 63 first 18: | end 18
+[w/] attr 63 first 0: /16 | end 18
+[w] attr 63 first 0: w/16 | end 18
+[] attr 63 first 3: | end 3
+size 12 time set TRUE name data.bin
+next after single 18
+next again 18
+attr file 0 err 0
+attr dir 16 err 0
+attr dot 0 err 0
+attr missing 0 err 3
+SetFAttr changes nothing: err 0 attr 0
+GetFTime closed: err 6 time 0
+SetFTime by name: err 0
+GetFTime open: err 0 same TRUE
+SearchRec time same TRUE

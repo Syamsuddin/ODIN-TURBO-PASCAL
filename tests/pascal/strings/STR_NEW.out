@@ -1,0 +1,17 @@
+new copy original 8
+new is a copy TRUE 0
+new independent original Original
+new writable oRiginal Original
+new literal literal
+new of new literal TRUE
+other copy survives literal
+new empty is nil TRUE
+new nil is nil TRUE
+dispose nil ok
+new one char x 1
+new stops at null ab 2
+new high 200 255 0
+new 299 299 AM 0
+list total length 400 first 7riginal last 350ginal
+list distinct pointers TRUE
+churn 2000 failures 0

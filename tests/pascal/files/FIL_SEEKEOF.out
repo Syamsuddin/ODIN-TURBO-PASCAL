@@ -1,0 +1,14 @@
+got 1 seekeoln=FALSE eoln=FALSE
+got 2 seekeoln=TRUE eoln=TRUE
+got 3 seekeoln=TRUE eoln=TRUE
+got 4 seekeoln=FALSE eoln=FALSE
+got 5 seekeoln=TRUE eoln=TRUE
+sum=15 eof=TRUE seekeof again=TRUE
+line 1 numbers=2
+line 2 numbers=1
+line 3 numbers=2
+start: seekeoln=FALSE
+seekeoln skipped the blank, char=1
+after 2: eoln=FALSE seekeoln=TRUE eoln=TRUE
+next char code=10
+empty: seekeof=TRUE seekeoln=TRUE

@@ -3,6 +3,7 @@
 """Document, settings, diagnostics and native Free Pascal build services."""
 from __future__ import annotations
 
+import bisect
 import functools
 import hashlib
 import json
@@ -92,6 +93,7 @@ DEFAULTS = {
     "overflow_checks": True, "debug_info": True,
     "unit_paths": [], "include_paths": [], "arguments": "",
     "recent": [], "geometry": "1120x740", "main_file": "",
+    "backend": "odin",
 }
 
 
@@ -111,6 +113,8 @@ class Settings:
         self.values["tab_width"] = min(8, max(1, self.values["tab_width"]))
         if self.values["mode"] not in ("tp", "objfpc", "delphi"):
             self.values["mode"] = "tp"
+        if self.values["backend"] not in ("fpc", "odin"):
+            self.values["backend"] = "odin"
 
     def __getitem__(self, key):
         return self.values[key]
@@ -187,10 +191,130 @@ class BuildResult:
     diagnostics: list[Diagnostic]
     executable: Path | None
     source: Path
+    # Odin backend: NAME.odbg next to the executable (line table; for debug
+    # builds also everything the debugger needs).
+    debug_info: Path | None = None
+    debug: bool = False
 
 
-def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = None) -> BuildResult:
+PACKAGE_ROOT = Path(__file__).resolve().parent.parent
+
+
+def odin_supported() -> bool:
+    """odinpc generates x86-64 macOS code only; arm64 comes in a later stage."""
+    return sys.platform == "darwin" and platform.machine() == "x86_64"
+
+
+def locate_toolchain() -> str | None:
+    """The odinpc binary: $ODIN_TOOLCHAIN, the app bundle, then a developer build in the repo."""
+    candidates = [os.environ.get("ODIN_TOOLCHAIN", ""), PACKAGE_ROOT / "toolchain" / "odinpc",
+                  PACKAGE_ROOT / "toolchain" / "target" / "release" / "odinpc",
+                  PACKAGE_ROOT / "toolchain" / "target" / "debug" / "odinpc"]
+    for value in candidates:
+        if value and Path(value).is_file() and os.access(value, os.X_OK):
+            return str(Path(value).absolute())
+    return None
+
+
+SEVERITY = {"fatal": "Fatal", "error": "Error", "warning": "Warning", "note": "Note", "hint": "Hint"}
+
+
+def build_odin(source: Path, settings: Settings, rebuild=False, cache: Path | None = None, debug=False) -> BuildResult:
+    toolchain = locate_toolchain()
+    if not toolchain:
+        return BuildResult(False, [], "Toolchain Odin (odinpc) belum ditemukan. Pilih backend Free Pascal di Options > Compiler.", [], None, source)
+    stat = Path(toolchain).stat()
+    options = {k: settings[k] for k in ("unit_paths", "include_paths", "range_checks", "overflow_checks", "debug_info")}
+    # Debug builds (with debugger hooks) live apart from Run builds.
+    options["debug_build"] = debug
+    key = hashlib.sha256((str(source) + json.dumps(options) + f"odin:{toolchain}:{stat.st_mtime_ns}:{stat.st_size}").encode()).hexdigest()[:16]
+    output_dir = (cache or data_dir() / "build") / key
+    output_dir.mkdir(parents=True, exist_ok=True)
+    exe = output_dir / source.stem
+    # A failed rebuild must never launch an older executable.
+    exe.unlink(missing_ok=True)
+    command = [toolchain, "build", str(source), "--out", str(exe), "--cache", str((cache or data_dir() / "build") / "units"),
+               "--rtl", str(PACKAGE_ROOT / "rtl"), "--diag-format", "json",
+               "--range-checks" if settings["range_checks"] else "--no-range-checks",
+               "--overflow-checks" if settings["overflow_checks"] else "--no-overflow-checks"]
+    if rebuild:
+        command.append("--build-all")
+    if debug:
+        command.append("--debug")
+    for key, flag in (("unit_paths", "--unit-path"), ("include_paths", "--include-path")):
+        for p in settings[key]:
+            if p:
+                command += [flag, str(Path(p).expanduser().resolve())]
+    try:
+        result = subprocess.run(command, cwd=source.parent, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
+    except subprocess.TimeoutExpired:
+        return BuildResult(False, command, "Kompilasi melewati batas 120 detik.", [], None, source)
+    except OSError as error:
+        return BuildResult(False, command, str(error), [], None, source)
+    diagnostics, lines, summary, success, odbg = [], [], None, False, None
+    for line in result.stdout.decode("utf-8", errors="replace").splitlines():
+        try:
+            item = json.loads(line)
+        except ValueError:
+            lines.append(line)
+            continue
+        if item.get("type") == "diagnostic":
+            kind = SEVERITY.get(item.get("severity"), "Error")
+            diagnostics.append(Diagnostic(item["file"], int(item["line"]), int(item["column"]), kind, item["message"]))
+            lines.append(f"{item['file']}({item['line']},{item['column']}) {kind} {item.get('code', '')}: {item['message']}")
+        elif item.get("type") == "result":
+            success = bool(item.get("success")) and result.returncode == 0
+            summary = f"{item.get('lines', 0)} baris, {item.get('elapsed_ms', 0)} ms."
+            odbg = Path(item["debug_info"]) if item.get("debug_info") else None
+    stderr = result.stderr.decode("utf-8", errors="replace").strip()
+    if stderr:
+        lines.append(stderr if result.returncode != 2 else "Kesalahan internal compiler:\n" + stderr)
+    if summary:
+        lines.append(("Kompilasi berhasil: " if success else "Kompilasi gagal: ") + summary)
+    executable = exe if success and exe.exists() else None
+    return BuildResult(success, command, "\n".join(lines), diagnostics, executable, source,
+                       odbg if executable and odbg and odbg.exists() else None, debug)
+
+
+def runtime_error_location(debug_info: Path, report: str):
+    """Maps the RTL's $ODIN_ERROR_FILE report ("code address header") to (code, source path, line).
+    The line is None when the address is not in the program's code."""
+    try:
+        code, address, header = (int(v) for v in report.split()[:3])
+        info = json.loads(Path(debug_info).read_text())
+        link = address - header + int(info["image_base"])
+        starts = [entry[0] for entry in info["addresses"]]
+        i = bisect.bisect_right(starts, link) - 1
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    if i < 0:
+        return code, None, None
+    _, file, line = info["addresses"][i]
+    return code, Path(info["files"][file]), line
+
+
+DEBUG_NEEDS_ODIN = "Debugger memerlukan backend Odin. Pilih Odin native di Options > Compiler."
+
+
+def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = None, debug=False) -> BuildResult:
+    """Compiles source. debug=True makes a build for the debugger (Odin backend only)."""
     source = source.resolve()
+    note = ""
+    if settings["backend"] == "odin":
+        usable = locate_toolchain() and odin_supported()
+        if usable or not locate_compiler(settings["compiler"]):
+            return build_odin(source, settings, rebuild, cache, debug)
+        if debug:
+            return BuildResult(False, [], DEBUG_NEEDS_ODIN, [], None, source)
+        # Without a usable odinpc (a bundle built without it, or a Mac it
+        # cannot generate code for yet) the IDE still works: Free Pascal
+        # compiles, and the output says so.
+        if locate_toolchain():
+            note = f"Backend Odin belum mendukung {platform.machine()}; memakai Free Pascal.\n"
+        else:
+            note = "Toolchain Odin (odinpc) tidak ditemukan; memakai Free Pascal.\n"
+    if debug:
+        return BuildResult(False, [], DEBUG_NEEDS_ODIN, [], None, source)
     compiler = locate_compiler(settings["compiler"])
     if not compiler:
         return BuildResult(False, [], "Free Pascal belum ditemukan. Jalankan Install.command atau atur Options > Compiler.", [], None, source)
@@ -234,6 +358,7 @@ def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = 
         output, success = "Kompilasi melewati batas 120 detik.", False
     except OSError as error:
         output, success = str(error), False
+    output = note + output
     return BuildResult(success, command, output, parse_diagnostics(output), exe if success and exe.exists() else None, source)
 
 

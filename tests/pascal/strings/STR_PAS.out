@@ -1,0 +1,19 @@
+pas literal Turbo 5
+pas empty 0
+pas embedded null ab 2
+pas pchar pointer value value
+pas concat pointer value! 14
+pas compare TRUE TRUE
+pas high 3 200 201 x
+pas control 2 13 10
+pas 299 truncated 255 atu
+pas exactly 255 255 u
+pas 256 truncated 255 u
+pas 254 254 t
+pas to string[10] 10 abcdefghij
+pas short to string[10] 3 abc
+pcopy all chars length 255 255 0
+round trip 255 differences 0
+round trip equal TRUE
+pas after edit some|
+pas two parts sometext

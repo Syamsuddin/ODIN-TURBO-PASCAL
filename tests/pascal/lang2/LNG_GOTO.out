@@ -1,0 +1,12 @@
+found 12 at 3,4
+not found 7
+found 25 at 5,5
+first 56 -1
+classify bbppkpkpkkkpk
+leave 1 leave 2 leave 3 inner done
+with exit 24
+with exit -1
+escaped at 2 3 4 steps 124
+again1 again2 again3 
+label 99 with I=2 J=3
+main 1 main 2 exit main

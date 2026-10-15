@@ -1,0 +1,13 @@
+stored 71 bytes, status 0
+loaded (1,2,3) nil home(4,5,6) collection of 1
+inner (7,8,9)
+pchar stream 45
+names alpha mu zeta
+trailer trailer then nil TRUE
+copy 45 status 0
+  [stream error -6 info 0]
+put unregistered: status -6 size -1
+get unknown nil   [stream error -3 info 0]
+TRUE status -3 info 0
+  [stream error -7 info 1000]
+seek beyond: status -7 pos -1 errors 3

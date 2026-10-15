@@ -1,0 +1,21 @@
+len literal 12
+len empty 0
+len one char 1
+len embedded null 2
+len control chars 3
+len high chars 3
+len signed result -7
+len array empty 0
+len array 7 7
+len array full prefix 7
+len array 31 31
+len pchar 5
+len pchar+2 3
+len pchar+5 0
+len via @S[1] 13
+end empty 0 TRUE
+end xy 2 0
+end from middle 2
+end literal 6 TRUE
+end of end 6
+end high 0 201 200

@@ -1,0 +1,18 @@
+    L3 C=1 D=2 A=7 B=11 P=49 V=1107 W=1107
+    L3 C=2 D=4 A=33 B=12 P=48 V=2207 W=2207
+  L2 B=12 W=2207
+ L1 A=33 P=48 V=2207 S=bc*
+    L3 C=1 D=2 A=1035 B=11 P=47 V=2307 W=1035
+    L3 C=2 D=4 A=6117 B=12 P=46 V=2407 W=6117
+  L2 B=12 W=6117
+ L1 A=6117 P=46 V=2407 S=bc*bc*
+X=2407 G=4
+12345 calls=5 sum=15
+7 calls=1 sum=7
+[3:30][2:20][1:10][1:10][2:20][3:30]
+towers 3 moves=7 log=AC AB CB AC BA BC AC 
+towers 5 moves=31 log=AC AB CB AC BA BC AC 
+even(5)=FALSE trace=eoeoeo
+even(4)=TRUE trace=eoeoe
+triple 42
+depth 15

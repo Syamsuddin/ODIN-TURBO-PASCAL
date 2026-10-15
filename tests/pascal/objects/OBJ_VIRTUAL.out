@@ -1,0 +1,12 @@
+init rect area now 6.00
+init rect area now 16.00
+init circle area now 3.14
+init plain area now 0.00
+[report] rect: area 6.00
+[report] a square! square: area 16.00
+[report] circle with radius 1.0 and area 3.142
+[report] plain: area 0.00
+total 25.142
+init rect area now 25.00
+a square! square: area 25.00
+typeof TRUE TRUE FALSE FALSE

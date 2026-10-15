@@ -1,0 +1,23 @@
+Input:  fmInput
+Output: fmOutput
+text assigned: fmClosed
+text rewrite:  fmOutput
+text closed:   fmClosed
+text reset:    fmInput
+text append:   fmOutput
+text closed:   fmClosed
+untyped name [modes.txt] length 9
+untyped assigned: fmClosed
+untyped reset 1:  fmInOut RecSize 1
+untyped closed:   fmClosed
+untyped reset:    RecSize 128
+untyped rewrite 16: fmInOut RecSize 16
+typed name [ints.dat] length 8
+typed rewrite: fmInOut RecSize 2
+typed closed:  fmClosed
+typed reset FileMode=0: fmInput
+typed reset FileMode=1: fmOutput
+typed reset FileMode=2: fmInOut
+typed rewrite FileMode=0: fmInOut
+text reset FileMode=0: fmInput
+file of LongInt RecSize 4

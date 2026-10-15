@@ -1,0 +1,28 @@
+2
+2
+2
+103
+104
+105
+int 12 0
+int at eof 0
+106
+char at eof 26 0
+str at eof [] 0
+mkdir 0
+5
+2
+3
+2
+2
+size 2 pos 2
+first 7 pos 1 eof FALSE
+seek past 0
+100
+2
+blockread 7 got 2 0
+partial got 2 0
+100
+reset default recsize filesize 0
+empty name rewrite 0
+eof input TRUE

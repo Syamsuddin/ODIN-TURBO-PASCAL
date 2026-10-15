@@ -1,0 +1,24 @@
+pos World 7 [World]
+pos start 0 [Hello, World]
+pos end 10 [ld]
+pos one char 5 [, World]
+pos whole 0 [Hello, World]
+pos absent nil
+pos case nil
+pos longer nil
+pos first of two 4 [o, World]
+pos from middle 8 [orld]
+pos backtrack 1 [aab]
+pos overlap 1 [anana]
+pos second 3 [ana]
+pos nana 2 [nana]
+pos near miss nil
+pos stops at null nil
+pos null in pattern 1 [bc]
+pos empty pattern 3 []
+pos in empty nil
+pos empty in empty 0 []
+pos high 4 [» ]
+pos high nil TRUE
+count the 2
+pos literal text

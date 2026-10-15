@@ -1,0 +1,14 @@
+upper HELLO, WORLD 42 TRUE
+lower hello, world 42 TRUE
+upper as value MIXED
+lower as value mixed
+upper empty 0 TRUE
+upper tail abcDEF
+upper stops at null AB c
+lower stops at null zy X
+upper length 255
+upper changed 97>65 98>66 99>67 total 26
+lower length 255
+lower changed 65>97 66>98 67>99 total 26
+upper high 224 196 X 233
+lower high 224 196 x 233

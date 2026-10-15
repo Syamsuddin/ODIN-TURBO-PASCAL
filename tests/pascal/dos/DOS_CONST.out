@@ -1,0 +1,29 @@
+ReadOnly  = 1
+Hidden    = 2
+SysFile   = 4
+VolumeID  = 8
+Directory = 16
+Archive   = 32
+AnyFile   = 63
+AnyFile is every attribute: TRUE
+fmClosed  = $D7B0
+fmInput   = $D7B1
+fmOutput  = $D7B2
+fmInOut   = $D7B3
+fm sequence: TRUE
+FCarry    = 1
+FParity   = 4
+FAuxiliary= 16
+FZero     = 64
+FSign     = 128
+FOverflow = 2048
+SizeOf PathStr=256 DirStr=256 NameStr=256 ExtStr=256 ComStr=256
+NameStr keeps 17 chars, ExtStr keeps 10 chars
+DirStr keeps 70 chars, PathStr keeps 97 chars
+ComStr keeps 11 chars
+SizeOf DateTime=12 field=2
+DateTime fields: 2026 10 15 23 59 58
+SearchRec Attr=1 Time=4 Size=4 Name=256
+SearchRec fields: 18 1557095516 123456 a_name_longer_than_twelve_characters.text
+SizeOf DosError=2 initial=0
+DosError assigned=18

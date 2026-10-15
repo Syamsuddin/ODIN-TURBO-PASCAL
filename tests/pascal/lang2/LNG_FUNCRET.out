@@ -1,0 +1,14 @@
+mk 3 4 d2=25
+nested d2=712
+swapped 4 3
+self 6 8
+pts 1:1 4:10 3:9
+big 7 70 seven 385 -55
+cba-def-xxx 11 2 432
+TRUE FALSE trunc 5
+98765xy
+avg 6.000 4.00
+poly 9.00 6 10 TRUE
+cmp TRUE FALSE 3.0000
+02468 TRUE FALSE TRUE TRUE
+ptr 99 100

@@ -28,6 +28,51 @@ ukuran pointer, ABI, sistem berkas, dan unit tetap berlaku. Jangan menganggap
 layout record/binary file DOS atau aritmetika pointer identik pada macOS 64-bit.
 Lihat referensi resmi sebelum memindahkan program DOS dengan asumsi 16-bit.
 
+BACKEND COMPILER (VERSI PENGEMBANGAN SESUDAH 1.0.0)
+
+Backend bawaan versi pengembangan adalah toolchain Odin: compiler odinpc
+(Rust) dan runtime library sendiri di rtl/. Free Pascal tetap bisa dipilih
+di Options > Compiler, dan dipakai otomatis bila odinpc tidak ditemukan atau
+CPU belum didukung. Bagian unit di bawah menjelaskan backend Free Pascal.
+
+Diuji 15 Oktober 2026 pada Mac Intel x86_64 (Darwin 24.6) dengan FPC 3.2.2
+sebagai pembanding: kesepuluh contoh, 77 program uji diferensial, dan layar
+Crt (jendela, scroll, warna) memberi hasil yang sama. Belum didukung di Apple
+Silicon; di sana Odin memakai Free Pascal.
+
+Unit di backend Odin: System, Crt, Dos, Strings, Printer, Objects, dan Odin
+Vision (Turbo Vision milik Odin): Drivers, Memory, HistList, Views, Menus,
+Validate, Dialogs, App, MsgBox, StdDlg, Editors, Outline. Tipe object TP7
+didukung. ColorSel dan TextView belum tersedia; pilih backend Free Pascal
+untuk program yang memakainya.
+Perbedaan yang disengaja dari FPC dicatat di tests/pascal/DEVIATIONS.md.
+
+Odin Vision mengikuti API Turbo Vision TP7, tetapi tampilan dan beberapa
+detailnya milik Odin sendiri (rincian di rtl/vision/SPEC.md):
+- Warna palet dirancang sendiri. Tata letak indeks palet sama dengan TP7.
+- Ukuran data dialog mengikuti TP7: check box dan radio button 2 byte,
+  TMultiCheckBoxes 4 byte, input line MaxLen+1. TListBoxRec 16 byte dan
+  parameter TParamText/FormatStr berukuran PtrInt (8 byte). Seperti di FPC,
+  record biasa disejajarkan, jadi record data dialog harus packed record.
+- Dialog berkas memakai path macOS ('/'), menyembunyikan nama berawalan
+  titik, dan menerima nama sampai 255 karakter (datanya PathStr).
+- Editor menyimpan akhir baris apa adanya; Enter menyisipkan LF. Undo hanya
+  satu langkah, seperti TP. Pasang EditorDialog := StdEditorDialog supaya
+  editor bisa bertanya "simpan?".
+- Pesan validator, judul MessageBox, dan label tombol bawaan berbahasa
+  Inggris, seperti Turbo Vision.
+- Ukuran layar mengikuti terminal (di User screen 80x25). Mouse berjalan di
+  User screen dan di terminal yang mendukung laporan mouse SGR (xterm,
+  Terminal.app, iTerm2). Alt+huruf dikirim sebagai Esc + huruf; di User
+  screen macOS, Option dipakai sebagai Alt (tata letak keyboard US). Option
+  pada keyboard Mac sungguhan belum diuji, hanya dengan event sintetis.
+- Memory tidak membatasi heap: LowMemory selalu False. DosShell menjalankan
+  $SHELL.
+
+Executable dari backend Odin memuat runtime library Odin, yang berlisensi
+GNU GPL v3 atau yang lebih baru tanpa pengecualian runtime. Bila executable
+itu dibagikan, ketentuan GPL berlaku untuk executable tersebut.
+
 UNIT STANDAR TURBO PASCAL 7
 
 Diuji 13 Oktober 2026 pada Mac Intel x86_64 (Darwin 24.6) dengan FPC 3.2.2,

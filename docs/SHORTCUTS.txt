@@ -6,17 +6,18 @@ F2                  Save
 F3                  Open
 F5                  Zoom editor
 F6                  Next editor
-F7                  LLDB step / trace into
-F8                  LLDB next / step over
+F4                  Go to cursor (debugger)
+F7                  Trace into (debugger)
+F8                  Step over (debugger)
 F9                  Make
 F10                 File menu
-Ctrl+F9             Compile and run
+Ctrl+F9             Compile and run; continue in the debugger
 Alt+F9              Compile
 Ctrl+F2             Stop program/debugger
 Alt+F3              Close editor
 Alt+F5              User screen
 Ctrl+F8             Toggle breakpoint
-Ctrl+F7             Evaluate through LLDB
+Ctrl+F7             Evaluate/Modify (debugger)
 Alt+F8              Next diagnostic
 Alt+X               Exit
 Alt+Backspace       Undo
@@ -50,10 +51,13 @@ USER SCREEN
 Enter              Input newline
 Arrow/Home/End      Terminal navigation
 F1..F12, Insert    Diteruskan ke program (ReadKey, Turbo Vision)
+Option+huruf       Alt+huruf untuk program (Esc + huruf), misalnya Alt+X
+Mouse              Diteruskan ke program Turbo Vision yang memintanya
 Ctrl+C             Interrupt process group
 Ctrl+F2            Stop
 Alt+F5             Hide User screen
-F7/F8              LLDB stepping saat sesi LLDB aktif, selain itu ke program
+F7/F8              Langkah debugger saat program berhenti, selain itu ke program
+Ctrl+C             Saat debugging: hentikan sementara di statement berikutnya
 Copy screen        Menyalin layar teks 80x25 ke clipboard
 
 Ctrl+Insert/Shift+Insert dan Shift+Delete mengikuti binding clipboard Tk pada

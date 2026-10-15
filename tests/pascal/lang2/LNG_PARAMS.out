@@ -1,0 +1,13 @@
+sum8 204
+nested sum8 279
+mixed -100 200 -30000 60000 -2000000000 z TRUE 12345 2147483647 255
+rsum10 385.0
+rweights 987654321
+rsum10 nested 5.2500
+big 4528 412.50 first/second/! second
+withrec 213236 2 caller
+constrec 9 3 caller 60000
+single/double 258.4375
+deep 43.75
+procvar 9 reals 5.0
+converted 1114.0

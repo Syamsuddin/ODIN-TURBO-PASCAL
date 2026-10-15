@@ -1,0 +1,28 @@
+(program CRTDemo
+  (uses Crt)
+  (var (I) Integer)
+  (var (Tombol) Char)
+  (begin
+    (do (call TextBackground Blue))
+    (do ClrScr)
+    (do (call TextColor Yellow))
+    (do (call GotoXY 23 3))
+    (do (call Write 'ODIN TURBO PASCAL'))
+    (do (call TextColor White))
+    (do (call GotoXY 18 6))
+    (do (call Write 'Demo CRT: warna, posisi, dan ReadKey.'))
+    (for I 1 to 15
+      (begin
+        (do (call TextColor I))
+        (do (call GotoXY 20 (+ I 7)))
+        (do (call Write 'Warna nomor ' I:2 '  Pascal native'))
+        (empty)))
+    (do (call TextColor Yellow))
+    (do (call GotoXY 18 24))
+    (do (call Write 'Tekan sembarang tombol untuk selesai...'))
+    (:= Tombol ReadKey)
+    (do (call TextColor LightGray))
+    (do (call TextBackground Black))
+    (do ClrScr)
+    (do (call WriteLn 'Demo selesai.'))
+    (empty)))

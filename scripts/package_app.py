@@ -21,6 +21,16 @@ resources.mkdir()
 for folder in ("odin", "examples", "docs", "assets"):
     shutil.copytree(ROOT / folder, resources / folder,
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+# The Odin toolchain: the RTL sources and a release build of odinpc
+# (cargo build --release in toolchain/). Without odinpc the IDE falls back
+# to Free Pascal.
+shutil.copytree(ROOT / "rtl", resources / "rtl")
+odinpc = ROOT / "toolchain" / "target" / "release" / "odinpc"
+if odinpc.is_file():
+    (resources / "toolchain").mkdir()
+    shutil.copy2(odinpc, resources / "toolchain" / "odinpc")
+else:
+    print("Peringatan: toolchain/target/release/odinpc belum ada; bundle memakai Free Pascal.")
 for name in ("main.py", "LICENSE", "THIRD_PARTY.txt"):
     shutil.copy2(ROOT / name, resources / name)
 icon = ROOT / "assets" / "odin.icns"

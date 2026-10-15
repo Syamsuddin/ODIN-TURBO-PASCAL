@@ -1,0 +1,10 @@
+assign: (2,3)-(12,8) empty FALSE
+moved copy: (7,2)-(17,7) empty FALSE
+equals FALSE TRUE
+intersect: (7,3)-(12,7) empty FALSE
+union: (0,0)-(12,8) empty FALSE
+shrunk: (4,4)-(10,7) empty FALSE
+collapsed: (0,0)-(0,0) empty TRUE
+contains (2,2) TRUE (3,2) FALSE
+disjoint: (0,0)-(0,0) empty TRUE
+sizes 8 16 8 32 40 24 36

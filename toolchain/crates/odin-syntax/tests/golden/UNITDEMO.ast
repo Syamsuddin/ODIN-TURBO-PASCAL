@@ -1,0 +1,7 @@
+(program UnitDemo
+  (uses UMath)
+  (var (I) Integer)
+  (begin
+    (for I 1 to 5
+      (do (call WriteLn I ' kuadrat = ' (call Kuadrat I))))
+    (empty)))

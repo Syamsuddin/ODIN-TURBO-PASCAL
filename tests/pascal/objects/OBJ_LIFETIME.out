@@ -1,0 +1,26 @@
+item 1 up, live 1
+sizeof 16 16
+item 1 down, live 0
+item 2 up, live 1
+sizeof through PItem 56 56
+big 2 sum 22
+item 2 down, live 0
+item 3 up, live 1
+big 3 sum 33
+item 3 down, live 0
+item 4 up, live 1
+picky 4 TRUE
+item 4 down, live 0
+item 5 up, live 1
+picky refuses 5
+picky 5 nil TRUE
+item 7 up, live 1
+picky refuses 7
+picky 7 nil TRUE
+item 9 up, live 1
+picky refuses 9
+static picky FALSE id 9
+static item item 10 up, live 1
+TRUE
+item 10 down, live 0
+live at end 0

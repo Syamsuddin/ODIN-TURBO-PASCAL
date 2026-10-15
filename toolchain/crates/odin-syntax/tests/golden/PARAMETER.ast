@@ -1,0 +1,7 @@
+(program Parameter
+  (var (I) Integer)
+  (begin
+    (do (call WriteLn 'Jumlah argumen: ' ParamCount))
+    (for I 1 to ParamCount
+      (do (call WriteLn I ': ' (call ParamStr I))))
+    (empty)))

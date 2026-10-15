@@ -1,0 +1,12 @@
+[one] len=3
+[two] len=3 eoln=TRUE
+blank [] len=0
+ints 5 6 eoln=TRUE
+char 120 eoln=TRUE
+char 13 eoln=TRUE
+char 10 eoln=FALSE
+[lone] len=4
+[cr] len=2
+[end] len=3 eof=TRUE
+lines=8
+sum over crlf lines=24
