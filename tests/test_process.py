@@ -234,6 +234,19 @@ class WindowsConPtyTests(unittest.TestCase):
             os.close(r)
             os.close(w)
 
+    def test_conpty_background_colors_report(self):
+        """Diagnostic: how conhost passes background colors on to the User screen. It prints what
+        came out for each way of asking for a bright background; it fails only if nothing arrives."""
+        code = ("import sys\n"
+                "for name, seq in [('10x','\\x1b[107m'),('48;5','\\x1b[48;5;15m'),('rgb','\\x1b[48;2;255;255;255m'),"
+                "('blink','\\x1b[37;5m'),('bold4x','\\x1b[1;47m'),('plain','\\x1b[47m')]:\n"
+                "    sys.stdout.write('<' + name + '>' + seq + ' X \\x1b[0m|')\n"
+                "sys.stdout.write('\\nend\\n'); sys.stdout.flush()\n")
+        run = Run(code)
+        self.assertIsNotNone(run.expect("end"), run.output)
+        sys.stderr.write("\nCONPTY COLORS: " + repr(run.output) + "\n")
+        run.wait_exit()
+
     def test_debugger_without_odinpc_fails_cleanly(self):
         from odin.debugger import DebugSession
         with self.assertRaises(OSError):
