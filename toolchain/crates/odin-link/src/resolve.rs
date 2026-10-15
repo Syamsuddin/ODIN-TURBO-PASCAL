@@ -63,9 +63,25 @@ impl<'a> Resolved<'a> {
 /// Resolves names across `objects` and marks the atoms reachable from
 /// `entry`.
 pub(crate) fn resolve<'a>(objects: &'a [Object], entry: &str) -> Result<Resolved<'a>, LinkError> {
+    resolve_with(objects, entry, |a, b| a == b)
+}
+
+/// [`resolve`] over any sequence of objects (so a format writer can add a
+/// synthetic one, such as PE's `__ImageBase`), with `same_library` deciding
+/// whether two library names mean one library: Windows compares DLL names
+/// case-insensitively, so `KERNEL32.dll` and `kernel32.dll` must not make
+/// one import a duplicate.
+pub(crate) fn resolve_with<'a, I>(
+    objects: I,
+    entry: &str,
+    same_library: impl Fn(&str, &str) -> bool,
+) -> Result<Resolved<'a>, LinkError>
+where
+    I: IntoIterator<Item = &'a Object> + Clone,
+{
     let mut atoms: Vec<&Atom> = Vec::new();
     let mut defined: HashMap<&str, (usize, u64)> = HashMap::new();
-    for object in objects {
+    for object in objects.clone() {
         for atom in &object.atoms {
             validate(object, atom)?;
             let index = atoms.len();
@@ -81,12 +97,12 @@ pub(crate) fn resolve<'a>(objects: &'a [Object], entry: &str) -> Result<Resolved
     }
 
     let mut declared: HashMap<&str, &Import> = HashMap::new();
-    for import in objects.iter().flat_map(|o| &o.imports) {
+    for import in objects.into_iter().flat_map(|o| &o.imports) {
         if defined.contains_key(import.name.as_str()) {
             return Err(LinkError::Duplicate { name: import.name.clone() });
         }
         match declared.get(import.name.as_str()) {
-            Some(seen) if seen.library != import.library => {
+            Some(seen) if !same_library(&seen.library, &import.library) => {
                 return Err(LinkError::Duplicate { name: import.name.clone() });
             }
             Some(_) => {}
@@ -261,6 +277,21 @@ mod tests {
         assert!(
             resolve(&[object("a", vec![code("_main")], vec![import("_write"), import("_write")])], "_main").is_ok()
         );
+    }
+
+    #[test]
+    fn library_names_compare_by_the_given_rule() {
+        let upper = Import { name: "ExitProcess".to_string(), library: "KERNEL32.dll".to_string() };
+        let lower = Import { name: "ExitProcess".to_string(), library: "kernel32.dll".to_string() };
+        let main = code("_main").reloc(0, X86GotPc32, "ExitProcess", -4);
+        let objects = [object("a", vec![main], vec![upper.clone()]), object("b", vec![], vec![lower])];
+        assert!(matches!(resolve(&objects, "_main"), Err(LinkError::Duplicate { .. })));
+        let resolved = resolve_with(&objects, "_main", |a, b| a.eq_ignore_ascii_case(b)).unwrap();
+        assert_eq!(resolved.imports, [&upper], "the first declaration wins");
+        // Extra objects can be chained on.
+        let extra = object("extra", vec![code("_extra").keep()], vec![]);
+        let resolved = resolve_with(objects.iter().chain([&extra]), "_main", |a, b| a.eq_ignore_ascii_case(b)).unwrap();
+        assert_eq!(live_names(&resolved), ["_main", "_extra"]);
     }
 
     #[test]
