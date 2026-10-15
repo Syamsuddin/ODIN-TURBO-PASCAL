@@ -6,7 +6,7 @@
 
 **Layar biru Turbo Pascal yang Anda kenal, dengan compiler dan debugger yang menghasilkan program native.**
 
-[![Versi](https://img.shields.io/badge/rilis-2.0.0--alpha.2-0000aa?style=flat-square)](CHANGELOG.md)
+[![Versi](https://img.shields.io/badge/rilis-2.0.0-0000aa?style=flat-square)](CHANGELOG.md)
 [![Pengembangan](https://img.shields.io/badge/pengembangan-toolchain%20Odin-00aaaa?style=flat-square)](IMPLEMENTATION_PLAN.md)
 [![Lisensi GPL v3](https://img.shields.io/badge/lisensi-GPL--3.0--or--later-ffff55?style=flat-square)](LICENSE)
 [![macOS](https://img.shields.io/badge/macOS-11%2B%20Intel%20%7C%20Apple%20Silicon-000000?style=flat-square&logo=apple&logoColor=white)](#persyaratan-sistem)
@@ -27,21 +27,21 @@
 
 Odin punya dua backend compiler:
 
-- **Odin native.** Ini toolchain Odin sendiri: compiler Pascal, assembler, linker, runtime library, Odin Vision (Turbo Vision milik Odin), dan debugger, semuanya ditulis dari nol. Statusnya alfa dan baru berjalan di Mac Intel. Di sana backend ini menjadi bawaan.
+- **Odin native.** Ini toolchain Odin sendiri: compiler Pascal, assembler, linker, runtime library, Odin Vision (Turbo Vision milik Odin), dan debugger, semuanya ditulis dari nol. Di rilis 2.0.0 toolchain ini baru berjalan di Mac Intel. Di sana backend ini menjadi bawaan.
 - **Free Pascal.** Compiler yang dipakai rilis 1.0.0, tersedia untuk Mac Intel dan Apple Silicon. Di Apple Silicon, Odin otomatis memakainya.
 
 > [!NOTE]
 > **Rilis.**
 >
-> - **2.0.0-alpha.2** (rilis ini) membawa toolchain Odin native, debugger terpadu, Odin Vision, dan logo baru. Semuanya ikut terpasang lewat `Install.command`, tetapi toolchain Odin baru berjalan di Mac Intel. Di Apple Silicon, Odin memakai Free Pascal dan belum punya debugger.
-> - **2.0.0-alpha.1** memperkenalkan toolchain Odin native sebagai backend bawaan.
+> - **2.0.0** (rilis ini) membawa toolchain Odin native, debugger terpadu, Odin Vision, dan logo baru. Semuanya ikut terpasang lewat `Install.command`, tetapi toolchain Odin baru berjalan di Mac Intel. Di Apple Silicon, Odin memakai Free Pascal dan belum punya debugger.
+> - **2.0.0-alpha.1** dan **2.0.0-alpha.2** adalah rilis alfa yang memperkenalkan toolchain Odin native dan logo baru.
 > - **1.0.0** mengompilasi dengan Free Pascal dan men-debug lewat LLDB.
 >
-> Rilis final 2.0.0 menunggu dukungan Apple Silicon dan Linux untuk toolchain Odin, serta pelepasan Free Pascal sepenuhnya. Kemajuan per tahap tercatat di [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
+> Dukungan Apple Silicon dan Linux untuk toolchain Odin, serta pelepasan Free Pascal sepenuhnya, direncanakan untuk rilis 2.1.0. Kemajuan per tahap tercatat di [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
 
 Cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, guru yang mengajar Pascal di kelas, dan siapa saja yang rindu menekan `Ctrl+F9` lalu melihat programnya berjalan.
 
-> **English summary.** Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS. Programs compile into native binaries and run in a built-in 80×25 terminal with Crt and Turbo Vision support, including the mouse. Release 2.0.0-alpha.2 ships Odin's own toolchain as the default backend on Intel Macs, written from scratch in Rust and Pascal: compiler, assembler, Mach-O linker, runtime library, Odin Vision (a Turbo Vision–compatible library), and an integrated Turbo Pascal–style debugger with Watches, Locals and Call stack windows. Free Pascal remains available as an alternative backend and is used on Apple Silicon. Release 1.0.0 compiled with Free Pascal and debugged through LLDB. Messages and documentation are in Indonesian. Licensed under the GNU GPL v3 or later.
+> **English summary.** Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS. Programs compile into native binaries and run in a built-in 80×25 terminal with Crt and Turbo Vision support, including the mouse. Release 2.0.0 ships Odin's own toolchain as the default backend on Intel Macs, written from scratch in Rust and Pascal: compiler, assembler, Mach-O linker, runtime library, Odin Vision (a Turbo Vision–compatible library), and an integrated Turbo Pascal–style debugger with Watches, Locals and Call stack windows. Free Pascal remains available as an alternative backend and is used on Apple Silicon. Release 1.0.0 compiled with Free Pascal and debugged through LLDB. Messages and documentation are in Indonesian. Licensed under the GNU GPL v3 or later.
 
 <div align="center">
 
@@ -151,7 +151,7 @@ Pemasang dapat memasang dependensi yang belum ada melalui Homebrew. Di Linux, Od
 
 ## Instalasi
 
-Pemasang ini memasang **rilis 2.0.0-alpha.2**: IDE, toolchain Odin untuk Mac Intel, dan runtime library-nya. Free Pascal tetap dipasang, karena dipakai pemeriksaan pemasang, di Apple Silicon, dan bila backend Free Pascal dipilih.
+Pemasang ini memasang **rilis 2.0.0**: IDE, toolchain Odin untuk Mac Intel, dan runtime library-nya. Free Pascal tetap dipasang, karena dipakai pemeriksaan pemasang, di Apple Silicon, dan bila backend Free Pascal dipilih.
 
 1. **Unduh** repositori ini (**Code › Download ZIP**), lalu ekstrak seluruhnya. Jangan menjalankan pemasang dari pratinjau ZIP.
 2. **Buka `Install.command`.** Pemasang berjalan di Terminal dan akan:
@@ -295,7 +295,7 @@ Catatan arsitektur:
 | Lingkungan | Hasil |
 |---|---|
 | Linux x86_64, Python 3.12, Tk 9.0, FPC 3.2.2, Xvfb (rilis 1.0.0) | Seluruh suite saat itu lulus. Lihat [`docs/TEST_REPORT.txt`](docs/TEST_REPORT.txt) |
-| Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, FPC 3.2.2, Rust 1.99 (rilis 2.0.0-alpha.2) | 56 tes Python lulus, termasuk 17 tes GUI dengan jendela Tk sungguhan dan sesi debugger nyata, serta 4 tes Odin Vision (snapshot layar dan dialog berkas). 110 tes Rust juga lulus. Korpus diferensial 77 program (termasuk tipe `object` dan unit `Objects`) memberi keluaran dan kode keluar yang sama dengan FPC 3.2.2, baik dengan build biasa maupun build debug |
+| Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, FPC 3.2.2, Rust 1.99 (rilis 2.0.0) | 56 tes Python lulus, termasuk 17 tes GUI dengan jendela Tk sungguhan dan sesi debugger nyata, serta 4 tes Odin Vision (snapshot layar dan dialog berkas). 110 tes Rust juga lulus. Korpus diferensial 77 program (termasuk tipe `object` dan unit `Objects`) memberi keluaran dan kode keluar yang sama dengan FPC 3.2.2, baik dengan build biasa maupun build debug |
 | Belum diverifikasi langsung | Pemasangan di Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, LLDB di paket rilis 1.0.0, dan pencetakan lewat `Printer`. Backend Odin belum mendukung Apple Silicon |
 
 ## Privasi dan Lokasi Data

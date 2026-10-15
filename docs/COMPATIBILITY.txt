@@ -1,4 +1,4 @@
-KOMPATIBILITAS DAN CAKUPAN VERSI 2.0.0-alpha.2
+KOMPATIBILITAS DAN CAKUPAN VERSI 2.0.0
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Implementasi baru dengan penampilan terinspirasi IDE Turbo Pascal era DOS.
@@ -30,7 +30,7 @@ Lihat referensi resmi sebelum memindahkan program DOS dengan asumsi 16-bit.
 
 BACKEND COMPILER ODIN (BAWAAN DI MAC INTEL SEJAK 2.0.0-alpha.1)
 
-Backend bawaan versi pengembangan adalah toolchain Odin: compiler odinpc
+Backend bawaan adalah toolchain Odin: compiler odinpc
 (Rust) dan runtime library sendiri di rtl/. Free Pascal tetap bisa dipilih
 di Options > Compiler, dan dipakai otomatis bila odinpc tidak ditemukan atau
 CPU belum didukung. Bagian unit di bawah menjelaskan backend Free Pascal.

@@ -4,7 +4,7 @@ Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Status: pelaksanaan berjalan di cabang `toolchain/tahap-0`. Rencana disusun 15 Oktober 2026 dari kondisi repo pada commit `e7702a8`; ringkasan kemajuan ada di bagian 0.
 
-Rilis **2.0.0-alpha.1** (15 Oktober 2026) memuat Tahap 0–7 (gerbang G1–G7). **2.0.0-alpha.2** di hari yang sama menambahkan logo baru dari proyek OTP v2.0 dan README yang diperbarui. Rilis final 2.0.0 tetap dijadwalkan sesudah Tahap 9.
+Rilis **2.0.0-alpha.1** (15 Oktober 2026) memuat Tahap 0–7 (gerbang G1–G7). **2.0.0-alpha.2** di hari yang sama menambahkan logo baru dari proyek OTP v2.0 dan README yang diperbarui. Rilis **2.0.0** (juga 15 Oktober 2026) dimajukan oleh pemilik proyek: isinya sama dengan 2.0.0-alpha.2, jadi backend Odin tetap hanya untuk Mac Intel. Tahap 8–9 (AArch64, Linux, dan pelepasan FPC) menjadi rilis 2.1.0.
 
 ## 0. Status pelaksanaan (per 15 Oktober 2026)
 
@@ -766,7 +766,7 @@ Python (`terminal.py`):
 
 **Gerbang G8:** seluruh korpus, tes debugger, dan tes Vision hijau di macOS arm64 (perangkat asli atau CI) dan di Linux x86_64.
 
-### Tahap 9 — Melepas FPC, LLDB, dan Xcode, lalu merilis 2.0.0
+### Tahap 9 — Melepas FPC, LLDB, dan Xcode, lalu merilis 2.1.0
 
 **Python — hapus kode yang terkait FPC:**
 
@@ -793,7 +793,7 @@ Python (`terminal.py`):
 
 **Dokumen:** perbarui `README.md` (termasuk alt text `assets/banner.svg`), `README.txt`, `docs/HELP.txt`, `docs/SHORTCUTS.txt`, `docs/PASCAL.txt`, `docs/COMPATIBILITY.txt` (tabel baru dengan kolom "diuji di"), `docs/TEST_REPORT.txt`, `THIRD_PARTY.txt` (hapus FPC, LLDB, dan Xcode; tambahkan pustaka standar Rust), `CHANGELOG.md`, `CLAUDE.md`, serta teks About ("Python / Tk + Odin native toolchain").
 
-**Versi 2.0.0** diperbarui di semua tempat yang ditulis langsung:
+**Versi 2.1.0** diperbarui di semua tempat yang ditulis langsung:
 
 - `odin/__init__.py`;
 - `package_app.py` (Info.plist);
@@ -891,7 +891,7 @@ Totalnya sekitar 65–95 ribu baris kode produk, atau 40–60 kali ukuran Odin 1
 | 3 | Akses perangkat atau CI arm64 | Tahap 0 (S2) | Runner CI macOS arm64 |
 | 4 | `Round` dan format Real: tetap seperti FPC 1.0 (pembulatan ke genap) atau seperti TP7 (menjauhi nol) | Tahap 4 | Tetap seperti FPC demi kompatibilitas dengan 1.0; perbedaan dicatat di dokumen |
 | 5 | Shortcut debug: tetap seperti 1.0 (Ctrl+F7 = Evaluate) atau diselaraskan ke TP7 (Ctrl+F4 = Evaluate, Ctrl+F7 = Add watch) | Tahap 5 | Tetap seperti 1.0 sampai ada uji bentrok shortcut di Mac |
-| 6 | Nomor versi rilis | Tahap 9 | 2.0.0 |
+| 6 | Nomor versi rilis | **Diputuskan 15 Oktober 2026** | 2.0.0 dirilis sesudah Tahap 7 (backend Odin hanya Mac Intel); Tahap 9 merilis 2.1.0 |
 
 ---
 
