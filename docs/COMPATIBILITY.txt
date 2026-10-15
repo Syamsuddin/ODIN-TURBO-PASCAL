@@ -1,4 +1,4 @@
-KOMPATIBILITAS DAN CAKUPAN VERSI 2.2.0-alpha.1
+KOMPATIBILITAS DAN CAKUPAN VERSI 2.2.0
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Implementasi baru dengan penampilan terinspirasi IDE Turbo Pascal era DOS.
@@ -33,7 +33,7 @@ layout record/binary file DOS atau aritmetika pointer identik pada macOS 64-bit.
 Lihat referensi resmi sebelum memindahkan program DOS dengan asumsi 16-bit.
 
 BACKEND COMPILER ODIN (BAWAAN DI MAC INTEL SEJAK 2.0.0-alpha.1, DI APPLE
-SILICON DAN LINUX SEJAK 2.1.0-alpha.1, DI WINDOWS SEJAK 2.2.0-alpha.1)
+SILICON DAN LINUX SEJAK 2.1.0-alpha.1, DI WINDOWS SEJAK 2.2.0)
 
 Backend bawaan adalah toolchain Odin: compiler odinpc (Rust) dan runtime
 library sendiri di rtl/. Target: x86_64-darwin, aarch64-darwin (Mach-O),

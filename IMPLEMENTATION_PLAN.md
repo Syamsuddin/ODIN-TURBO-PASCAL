@@ -38,6 +38,7 @@ Perbedaan dari rencana yang sudah terjadi:
 - Trek Pascal Odin Vision tidak dikembangkan dengan FPC sejak G0. Unit-unitnya ditulis setelah G6 dan langsung dikompilasi `odinpc`. `rtl/vision/SPEC.md` ditulis bersamaan dengan kode, bukan sebelumnya.
 - Ukuran data dialog mengikuti TP7 (cluster 2 byte), bukan Free Vision. Seperti di FPC, record biasa disejajarkan, jadi record data dialog sebaiknya `packed record`.
 - `ColorSel` dan `TextView` (opsional) belum dibuat. Pesan galat `odinpc` menyebutkannya.
+- Rilis Tahap 8 dipadatkan atas permintaan pemilik proyek: sesudah 2.1.0-alpha.1 (8b dan 8c), Windows (8d) langsung dirilis sebagai 2.2.0, tanpa 2.1.0 final dan tanpa 2.2.0-alpha.N. Pemasang Apple Silicon dan Windows tetap belum diuji di perangkat fisik.
 - Perbaikan compiler yang dibutuhkan Odin Vision: konstanta bertipe object (VMT ikut diisi), simbol konstanta lokal di metode bernama sama pada object berbeda, `Dispose` dengan typecast variabel, dan siklus unit lewat `uses` di bagian implementation. Semuanya punya program korpus (`OBJ_TCONST`, `LNG_UCYCLE`).
 - `Printer` hanya diuji tanpa isi (tidak ada pekerjaan cetak yang dikirim ke `lpr`), supaya tes tidak mencetak ke printer pengembang.
 - `Write` ke berkas dengan hook (misalnya `Crt`) di-flush per pernyataan lewat `ODIN_WRITE_END`, bukan per item, sama dengan TP dan FPC.

@@ -6,9 +6,9 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
-## [2.2.0-alpha.1] - 2026-10-15
+## [2.2.0] - 2026-10-15
 
-Rilis alfa pertama menuju 2.2.0. IDE, toolchain Odin, debugger terpadu, dan Odin Vision kini juga berjalan di Windows 10 1809 atau lebih baru (x86_64).
+Rilis 2.2.0. IDE, toolchain Odin, debugger terpadu, dan Odin Vision kini juga berjalan di Windows 10 1809 atau lebih baru (x86_64). Rilis ini juga membawa dukungan Apple Silicon dan Linux (x86_64 dan arm64) dari 2.1.0-alpha.1 (rinciannya di entri itu); tidak ada rilis 2.1.0 terpisah.
 
 ### Ditambahkan
 
@@ -243,8 +243,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.2.0-alpha.1...HEAD
-[2.2.0-alpha.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.1.0-alpha.1...v2.2.0-alpha.1
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.1.0-alpha.1...v2.2.0
 [2.1.0-alpha.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.1...v2.1.0-alpha.1
 [2.0.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.2...v2.0.0

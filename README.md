@@ -6,7 +6,7 @@
 
 **Layar biru Turbo Pascal yang Anda kenal, dengan compiler dan debugger yang menghasilkan program native.**
 
-[![Versi](https://img.shields.io/badge/rilis-2.2.0--alpha.1-0000aa?style=flat-square)](CHANGELOG.md)
+[![Versi](https://img.shields.io/badge/rilis-2.2.0-0000aa?style=flat-square)](CHANGELOG.md)
 [![Pengembangan](https://img.shields.io/badge/pengembangan-toolchain%20Odin-00aaaa?style=flat-square)](IMPLEMENTATION_PLAN.md)
 [![Lisensi GPL v3](https://img.shields.io/badge/lisensi-GPL--3.0--or--later-ffff55?style=flat-square)](LICENSE)
 [![macOS](https://img.shields.io/badge/macOS-11%2B%20Intel%20%7C%20Apple%20Silicon-000000?style=flat-square&logo=apple&logoColor=white)](#persyaratan-sistem)
@@ -36,18 +36,18 @@ Odin punya dua backend compiler:
 > [!NOTE]
 > **Rilis.**
 >
-> - **2.2.0-alpha.1** (rilis ini) membawa IDE, toolchain Odin, debugger terpadu, dan Odin Vision ke **Windows** (x86_64, Windows 10 1809 atau lebih baru), dengan pemasang `Install.cmd`. Windows diuji di runner GitHub Actions (Windows Server 2025), belum di PC Windows fisik.
+> - **2.2.0** (rilis ini) membawa IDE, toolchain Odin, debugger terpadu, dan Odin Vision ke **Windows** (x86_64, Windows 10 1809 atau lebih baru), dengan pemasang `Install.cmd`. Rilis ini juga mencakup dukungan Apple Silicon dan Linux dari 2.1.0-alpha.1; tidak ada rilis 2.1.0 terpisah. Windows diuji di runner GitHub Actions (Windows Server 2025), belum di PC Windows fisik.
 > - **2.1.0-alpha.1** membawa toolchain Odin, debugger terpadu, dan Odin Vision ke **Apple Silicon** dan **Linux** (x86_64 dan arm64). Bundel macOS berisi `odinpc` universal (Intel dan Apple Silicon). Apple Silicon dan Linux diuji di runner GitHub Actions, belum di perangkat fisik pengembang.
 > - **2.0.1** menampilkan tag versi di desktop, About, dan contoh `HELLO.PAS`.
 > - **2.0.0** membawa toolchain Odin native, debugger terpadu, Odin Vision, dan logo baru untuk Mac Intel.
 > - **2.0.0-alpha.1** dan **2.0.0-alpha.2** adalah rilis alfa yang memperkenalkan toolchain Odin native dan logo baru.
 > - **1.0.0** mengompilasi dengan Free Pascal dan men-debug lewat LLDB.
 >
-> Rilis 2.1.0 dan 2.2.0 menyusul setelah pemasang diuji di Mac Apple Silicon dan PC Windows sungguhan. Kemajuan per tahap tercatat di [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
+> Pemasang di Mac Apple Silicon dan di PC Windows sungguhan belum diuji langsung (lihat [Status Pengujian](#status-pengujian)). Kemajuan per tahap tercatat di [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
 
 Cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, guru yang mengajar Pascal di kelas, dan siapa saja yang rindu menekan `Ctrl+F9` lalu melihat programnya berjalan.
 
-> **English summary.** Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS, Linux and Windows. Programs compile into native binaries and run in a built-in 80×25 terminal with Crt and Turbo Vision support, including the mouse. Odin's own toolchain, written from scratch in Rust and Pascal (compiler with x86-64 and AArch64 code generators, assembler, Mach-O, ELF and PE linkers, runtime library, Odin Vision, and an integrated Turbo Pascal–style debugger with Watches, Locals and Call stack windows), is the default backend on Intel and Apple Silicon Macs and on x86_64 and arm64 Linux since release 2.1.0-alpha.1, and on x86_64 Windows since 2.2.0-alpha.1; Apple Silicon, Linux and Windows are verified on GitHub Actions runners. Free Pascal remains available as an alternative backend. Messages and documentation are in Indonesian. Licensed under the GNU GPL v3 or later.
+> **English summary.** Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS, Linux and Windows. Programs compile into native binaries and run in a built-in 80×25 terminal with Crt and Turbo Vision support, including the mouse. Odin's own toolchain, written from scratch in Rust and Pascal (compiler with x86-64 and AArch64 code generators, assembler, Mach-O, ELF and PE linkers, runtime library, Odin Vision, and an integrated Turbo Pascal–style debugger with Watches, Locals and Call stack windows), is the default backend on Intel and Apple Silicon Macs and on x86_64 and arm64 Linux since release 2.1.0-alpha.1, and on x86_64 Windows since 2.2.0; Apple Silicon, Linux and Windows are verified on GitHub Actions runners. Free Pascal remains available as an alternative backend. Messages and documentation are in Indonesian. Licensed under the GNU GPL v3 or later.
 
 <div align="center">
 
@@ -120,7 +120,7 @@ Cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, guru yan
 - **Jendela Watches, Local variables, dan Call stack.** Ketiganya ikut diatur Tile dan Cascade. Pilih frame di Call stack untuk melihat variabel pemanggil.
 - **Evaluate/Modify** (`Ctrl+F7`) untuk ekspresi Pascal: variabel, field, indeks dengan cek batas, `^`, `@`, aritmetika, typecast, `Ord`/`Chr`/`Length`/`High`/`Low`/`SizeOf`. Nilai ditampilkan seperti di Turbo Pascal, misalnya `'abc'`, `(1, 2, 3)`, `(X:1; Y:2)`, `[1, 3..5]`, dan nama enumerasi.
 
-Rilis 1.0.0 memakai konsol LLDB di User screen untuk breakpoint, step, variabel lokal, dan call stack. Sejak 2.0.0-alpha.1 debugger terpadu menggantikannya, dan sejak 2.1.0-alpha.1 debugger ini juga tersedia di Apple Silicon dan Linux, lalu di Windows sejak 2.2.0-alpha.1.
+Rilis 1.0.0 memakai konsol LLDB di User screen untuk breakpoint, step, variabel lokal, dan call stack. Sejak 2.0.0-alpha.1 debugger terpadu menggantikannya, dan sejak 2.1.0-alpha.1 debugger ini juga tersedia di Apple Silicon dan Linux, lalu di Windows sejak 2.2.0.
 
 ### Berkas dan sesi
 - Contoh bawaan diperlakukan sebagai template: **Save** otomatis menjadi **Save as**, sehingga contoh asli tidak tertimpa.
@@ -159,7 +159,7 @@ Pemasang macOS dapat memasang dependensi yang belum ada melalui Homebrew, dan pe
 
 ## Instalasi
 
-Pemasang ini memasang **rilis 2.2.0-alpha.1**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Free Pascal tetap dipasang, karena dipakai pemeriksaan pemasang dan bila backend Free Pascal dipilih.
+Pemasang ini memasang **rilis 2.2.0**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Free Pascal tetap dipasang, karena dipakai pemeriksaan pemasang dan bila backend Free Pascal dipilih.
 
 1. **Unduh** repositori ini (**Code › Download ZIP**), lalu ekstrak seluruhnya. Jangan menjalankan pemasang dari pratinjau ZIP.
 2. **Buka `Install.command`.** Pemasang berjalan di Terminal dan akan:
@@ -333,10 +333,10 @@ Catatan arsitektur:
 | Lingkungan | Hasil |
 |---|---|
 | Linux x86_64, Python 3.12, Tk 9.0, FPC 3.2.2, Xvfb (rilis 1.0.0) | Seluruh suite saat itu lulus. Lihat [`docs/TEST_REPORT.txt`](docs/TEST_REPORT.txt) |
-| Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, FPC 3.2.2, Rust 1.99 (rilis 2.2.0-alpha.1) | 92 tes Python lulus (6 tes khusus Windows dilewati), termasuk tes GUI dengan jendela Tk sungguhan, sesi debugger nyata, dan snapshot Odin Vision. 185 tes Rust juga lulus. Korpus diferensial 77 program (termasuk tipe `object` dan unit `Objects`) memberi keluaran dan kode keluar yang sama dengan FPC 3.2.2, baik dengan build biasa maupun build debug |
+| Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, FPC 3.2.2, Rust 1.99 (rilis 2.2.0) | 92 tes Python lulus (6 tes khusus Windows dilewati), termasuk tes GUI dengan jendela Tk sungguhan, sesi debugger nyata, dan snapshot Odin Vision. 185 tes Rust juga lulus. Korpus diferensial 77 program (termasuk tipe `object` dan unit `Objects`) memberi keluaran dan kode keluar yang sama dengan FPC 3.2.2, baik dengan build biasa maupun build debug |
 | VM Ubuntu 24.04 (Lima di Mac Intel), Python 3.12, Tk 8.6 (rilis 2.1.0-alpha.1) | Korpus diferensial lulus untuk x86_64 dan untuk aarch64 lewat qemu-user; 92 tes Python dengan backend Odin lulus di x86_64 |
-| GitHub Actions: macOS 15 Apple Silicon, Ubuntu 24.04 x86_64 dan arm64, macOS 15 Intel (rilis 2.2.0-alpha.1) | Korpus diferensial berjalan native dan lulus; tes Python dengan backend Odin (GUI, debugger, Odin Vision) lulus. Lihat [CI](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml) |
-| GitHub Actions: Windows Server 2025 x86_64, Python 3.12, FPC 3.2.2 i386-win32 (rilis 2.2.0-alpha.1) | Korpus diferensial 77 program (biasa dan debug) identik dengan FPC untuk Windows; 92 tes Python lulus (2 tes khusus Unix dilewati), termasuk GUI, debugger, dan Odin Vision di ConPTY; pemeriksaan kompilasi dan penyalinan pemasang lulus |
+| GitHub Actions: macOS 15 Apple Silicon, Ubuntu 24.04 x86_64 dan arm64, macOS 15 Intel (rilis 2.2.0) | Korpus diferensial berjalan native dan lulus; tes Python dengan backend Odin (GUI, debugger, Odin Vision) lulus. Lihat [CI](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml) |
+| GitHub Actions: Windows Server 2025 x86_64, Python 3.12, FPC 3.2.2 i386-win32 (rilis 2.2.0) | Korpus diferensial 77 program (biasa dan debug) identik dengan FPC untuk Windows; 92 tes Python lulus (2 tes khusus Unix dilewati), termasuk GUI, debugger, dan Odin Vision di ConPTY; pemeriksaan kompilasi dan penyalinan pemasang lulus |
 | Belum diverifikasi langsung | Mac Apple Silicon dan PC Linux fisik (hanya runner CI dan VM), pemasangan lewat `Install.command` di Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, LLDB di paket rilis 1.0.0, dan pencetakan lewat `Printer`. PC Windows fisik, `Install.cmd` lengkap (winget, pintasan, menu Start), dan Windows on ARM |
 
 ## Privasi dan Lokasi Data
