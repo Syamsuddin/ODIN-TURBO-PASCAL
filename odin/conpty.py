@@ -25,6 +25,7 @@ import codecs
 import ctypes
 import os
 import subprocess
+import sys
 import threading
 import time
 
@@ -427,6 +428,8 @@ class ConPtyProcess:
 
     def write(self, value):
         """Sends bytes to the program; b"\\x03" becomes Ctrl-C (CTRL_C_EVENT) in conhost."""
+        if value == b"\x03" and self._ctrl_c_event():
+            return
         if value == b"\x03" and self._win32_input:
             value = b"\x1b[67;46;3;1;8;1_\x1b[67;46;3;0;8;1_"
         with self._input_lock:
@@ -441,10 +444,28 @@ class ConPtyProcess:
                     return
                 view = view[written.value:]
 
+    def _ctrl_c_event(self):
+        """Ctrl-C as a real console might: a helper without a console of its own attaches to the
+        program's pseudoconsole and raises CTRL_C_EVENT there. Input bytes are not enough: newer
+        conhost asks for win32-input-mode and then reads 0x03 as plain text. True on success."""
+        if self.closed or self.child.poll() is not None:
+            return False
+        code = ("import ctypes,sys;k=ctypes.windll.kernel32;"
+                "ok=k.AttachConsole(int(sys.argv[1])) and k.SetConsoleCtrlHandler(None,1) "
+                "and k.GenerateConsoleCtrlEvent(0,0);sys.exit(0 if ok else 1)")
+        try:
+            return subprocess.run([sys.executable, "-c", code, str(self.child.pid)],
+                                  creationflags=0x00000008, timeout=10,  # DETACHED_PROCESS
+                                  stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL).returncode == 0
+        except (OSError, subprocess.SubprocessError):
+            return False
+
     def interrupt(self):
-        # Under win32-input-mode, write() sends Ctrl+C down and up as key
-        # records: ESC [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _ with VK 'C', scan code
-        # 46, character 3 and LEFT_CTRL_PRESSED.
+        # A CTRL_C_EVENT through a helper (see _ctrl_c_event); failing that, Ctrl+C as input,
+        # as a win32-input-mode key record when conhost asked for that mode:
+        # ESC [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _ with VK 'C', scan code 46, character 3 and
+        # LEFT_CTRL_PRESSED.
         self.write(b"\x03")
 
     def resize(self, cols, rows):
