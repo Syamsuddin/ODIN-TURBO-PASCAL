@@ -1,5 +1,5 @@
-ODIN TURBO PASCAL 2.0.1
-Paket aplikasi desktop untuk Mac Intel dan Apple Silicon
+ODIN TURBO PASCAL 2.1.0-alpha.1
+Paket aplikasi desktop untuk Mac Intel dan Apple Silicon; berjalan dari source di Linux
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 MULAI DI SINI
@@ -45,20 +45,30 @@ scripts/              Pemeriksaan macOS, pembentukan ulang bundel .app, dan
 BENTUK DISTRIBUSI
 
 Ini adalah aplikasi Python/Tk dengan bundel .app yang memakai runtime lokal.
-Bundel membawa toolchain Odin (odinpc, executable Mac Intel) dan runtime
-library-nya, tetapi tidak menyertakan Python, Free Pascal, atau SDK Apple. Karena itu,
+Bundel membawa toolchain Odin (odinpc universal untuk Intel dan Apple
+Silicon) dan runtime library-nya, tetapi tidak menyertakan Python, Free Pascal, atau SDK Apple. Karena itu,
 paket bukan installer offline mandiri dan bukan DMG/PKG bertanda tangan Apple.
 Setelah dependensi tersedia, penggunaan editor, kompilasi, dan menjalankan
 program tidak memerlukan internet. Tidak ada API key, server, atau telemetri.
 
 TARGET MAC
 
-Intel x86_64: Python dan compiler menghasilkan program Intel native. Backend
-bawaan adalah toolchain Odin; Free Pascal bisa dipilih di Options > Compiler.
-Apple Silicon arm64: pemasang mendeteksi chip, memilih eksekusi arm64, dan
-compiler diarahkan ke AArch64. Toolchain Odin belum mendukung arm64, jadi di
-sini Odin memakai Free Pascal dan belum punya debugger terpadu. Rosetta tidak diperlukan bila dependensi native
-tersedia. Runtime Python universal2 juga didukung.
+Intel x86_64 dan Apple Silicon arm64: backend bawaan adalah toolchain Odin,
+yang menghasilkan program native untuk CPU Mac, lengkap dengan debugger
+terpadu dan Odin Vision. Free Pascal bisa dipilih di Options > Compiler.
+Di Apple Silicon pemasang memilih eksekusi arm64; Rosetta tidak diperlukan
+bila dependensi native tersedia. Runtime Python universal2 juga didukung.
+Apple Silicon diuji di runner GitHub Actions (macOS 15 arm64), belum di Mac
+fisik milik pengembang.
+
+LINUX
+
+Odin berjalan dari source di Linux x86_64 dan arm64 dengan glibc 2.34 atau
+lebih baru (Ubuntu 22.04+, Debian 12+, Fedora 35+); musl tidak didukung.
+Pasang python3-tk dan Rust, lalu:
+  cd toolchain && cargo build --release && cd .. && python3 main.py
+Backend Odin, debugger, dan Odin Vision langsung tersedia. Diuji di VM
+Ubuntu 24.04 dan di runner GitHub Actions (x86_64 dan arm64).
 
 Target bundel macOS 11 atau lebih baru, Python 3.10 atau lebih baru dengan Tk,
 Free Pascal 3.2.2 atau lebih baru, dan Xcode Command Line Tools. Target ini
@@ -86,7 +96,7 @@ Antarmuka biru, teks kuning, menu abu-abu, jendela editor, status bar, dan
 pintasan fungsi klasik. File/Edit/Search/Run/Compile/Debug/Options/Window/Help.
 Editor beberapa berkas dengan tile, cascade, zoom, undo/redo, clipboard,
 find/replace, go-to-line, indentasi, mode insert/overwrite, warna sintaks opsional.
-Toolchain Odin (Mac Intel): compiler TP7 dengan tipe object, runtime library
+Toolchain Odin (macOS dan Linux): compiler TP7 dengan tipe object, runtime library
 dengan Crt, Dos, Strings, Printer, Objects, dan Odin Vision (Turbo Vision).
 Free Pascal asli sebagai backend alternatif, mode TP/ObjFPC/Delphi, primary
 file, unit/include paths, range/overflow checks, build ulang, pesan compiler
@@ -106,29 +116,34 @@ Odin merupakan implementasi baru yang mengikuti antarmuka dan alur klasik,
 bukan salinan identik setiap piksel, dialog, font, compiler, debugger, atau
 perilaku DOS. Tidak menyertakan perangkat lunak, logo, atau berkas Borland.
 Free Pascal mode TP mendekatkan kompatibilitas sumber. Hasil kompilasi berupa
-program macOS native, bukan EXE DOS 16-bit. Kode BGI/Graph, interrupt DOS,
+program native macOS atau Linux, bukan EXE DOS 16-bit. Kode BGI/Graph, interrupt DOS,
 Port/Mem, assembler x86 16-bit, serta pointer berbasis segment memerlukan
 porting. Tidak ada emulator DOS di dalam paket ini.
-Debugger terpadu hanya tersedia di backend Odin (Mac Intel). Konsol LLDB dari
-rilis 1.0.0 tidak dipakai lagi.
+Debugger terpadu hanya tersedia di backend Odin. Konsol LLDB dari rilis 1.0.0
+tidak dipakai lagi. Windows belum didukung (direncanakan untuk 2.2.0).
 Lihat docs/COMPATIBILITY.txt untuk rincian.
 
 PENGUJIAN
 
-Rilis 2.0.1 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
-Free Pascal 3.2.2): 58 tes Python (termasuk 17 tes GUI dengan jendela Tk
-sungguhan), 110 tes Rust, dan 77 program uji yang keluarannya sama dengan
-Free Pascal. Rilis 1.0.0 diuji di Linux dengan Free Pascal 3.2.2 dan display
-virtual untuk Tk; lihat docs/TEST_REPORT.txt.
-Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan pemasang
-Homebrew belum diuji langsung.
+Rilis 2.1.0-alpha.1 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
+Free Pascal 3.2.2): 92 tes Python (termasuk tes GUI dengan jendela Tk
+sungguhan), 185 tes Rust, dan 77 program uji yang keluarannya sama dengan
+Free Pascal. Korpus yang sama juga lulus di VM Ubuntu 24.04 (x86_64, dan
+aarch64 lewat qemu) dan, bersama tes Python dengan backend Odin, di runner
+GitHub Actions untuk macOS Apple Silicon, Linux x86_64, dan Linux arm64.
+Rilis 1.0.0 diuji di Linux dengan Free Pascal 3.2.2 dan display virtual untuk
+Tk; lihat docs/TEST_REPORT.txt.
+Mac Apple Silicon dan PC Linux fisik, Install.command di Apple Silicon,
+peluncuran lewat Finder/LaunchServices, Gatekeeper, dan pemasang Homebrew
+belum diuji langsung.
 Tidak ada klaim bahwa bundel telah ditandatangani atau dinotarisasi Apple.
 
 PENYIMPANAN
 
 Sumber Pascal tersimpan pada lokasi yang Anda pilih melalui Save as.
 Pengaturan, build cache, recovery, dan log:
-  ~/Library/Application Support/OdinTurboPascal/
+  ~/Library/Application Support/OdinTurboPascal/ (macOS)
+  ~/.local/share/OdinTurboPascal/ (Linux)
 Program berjalan dengan working directory folder sumber program utama.
 Untuk contoh baca-tulis berkas, simpan dahulu salinan ke folder kerja sendiri.
 File bawaan aplikasi diperlakukan sebagai template saat disimpan dari editor.
@@ -138,9 +153,10 @@ MENJALANKAN SOURCE CODE
 
 Mac/Linux dengan Python/Tk dan Free Pascal:
   python3 main.py
-Toolchain Odin (Mac Intel, Rust 1.85 atau lebih baru):
+Toolchain Odin (macOS dan Linux, Rust 1.85 atau lebih baru):
   cd toolchain && cargo build --release
-IDE memakai toolchain/target/release/odinpc bila ada.
+IDE memakai toolchain/target/release/odinpc bila ada. Untuk bundel macOS
+universal: python3 scripts/build_toolchain.py lalu scripts/package_app.py.
 
 Pengujian:
   python3 -m unittest discover -s tests -v

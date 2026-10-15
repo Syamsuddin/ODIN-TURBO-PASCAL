@@ -102,6 +102,9 @@ class Screen:
         self.grid = [[self.blank() for _ in range(cols)] for _ in range(rows)]
         self.mouse = set()        # xterm mouse tracking modes the program turned on
         self.sgr_mouse = False    # mode 1006: SGR mouse reports
+        # Answers the program asked for (status and cursor reports), for the
+        # owner of the process to send back as input.
+        self.replies = []
         self.alternate = None     # main screen saved while the alternate screen (1049) is on
 
     def blank(self):
@@ -294,6 +297,13 @@ class Screen:
             for _ in range(min(n, self.bottom - self.y + 1)):
                 del self.grid[self.y]
                 self.grid.insert(self.bottom, [self.blank()] * self.cols)
+        elif final == "n" and not private:
+            # Device status report: FPC's Crt on Linux waits for the cursor
+            # position before it draws anything.
+            if p[0] == 5:
+                self.replies.append(b"\x1b[0n")
+            elif p[0] == 6:
+                self.replies.append(b"\x1b[%d;%dR" % (self.y + 1, self.x + 1))
 
     def text(self):
         return "\n".join("".join(c[0] for c in row) for row in self.grid)
@@ -313,9 +323,12 @@ class PtyProcess:
                                           env=env, start_new_session=True, close_fds=True, pass_fds=tuple(pass_fds))
         except BaseException:
             os.close(self.master)
-            raise
-        finally:
             os.close(slave)
+            raise
+        # The slave stays open here until the program has exited: on macOS the
+        # last close of the slave throws away output the master has not read
+        # yet, which lost all of a quick program's output.
+        self.slave = slave
         self.emit = emit
         self.closed = False
         threading.Thread(target=self._read, daemon=True).start()
@@ -336,6 +349,15 @@ class PtyProcess:
                         break
                     self.emit("output", decoder.decode(raw))
                 elif self.child.poll() is not None:
+                    # The program is gone: take what it left buffered, then stop.
+                    while select.select([self.master], [], [], 0)[0]:
+                        try:
+                            raw = os.read(self.master, 16384)
+                        except OSError:
+                            break
+                        if not raw:
+                            break
+                        self.emit("output", decoder.decode(raw))
                     break
             tail = decoder.decode(b"", final=True)
             if tail:
@@ -343,6 +365,7 @@ class PtyProcess:
         except OSError:
             pass
         finally:
+            os.close(self.slave)
             os.close(self.master)
             self.closed = True
             self.emit("exit", self.child.wait())
@@ -490,6 +513,8 @@ class TerminalView(tk.Text):
 
     def feed(self, data):
         self.screen.feed(data)
+        while self.screen.replies:
+            self.send(self.screen.replies.pop(0))
 
     def render(self):
         self.delete("1.0", "end")

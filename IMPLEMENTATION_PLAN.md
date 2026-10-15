@@ -2,13 +2,13 @@
 
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
-Status: pelaksanaan berjalan di cabang `toolchain/tahap-0`. Rencana disusun 15 Oktober 2026 dari kondisi repo pada commit `e7702a8`; ringkasan kemajuan ada di bagian 0.
+Status: Tahap 0–7 dikerjakan di cabang `toolchain/tahap-0`, Tahap 8 di `platform/tahap-8`. Rencana disusun 15 Oktober 2026 dari kondisi repo pada commit `e7702a8`; ringkasan kemajuan ada di bagian 0.
 
 Rilis **2.0.0-alpha.1** (15 Oktober 2026) memuat Tahap 0–7 (gerbang G1–G7). **2.0.0-alpha.2** di hari yang sama menambahkan logo baru dari proyek OTP v2.0 dan README yang diperbarui. Rilis **2.0.0** (juga 15 Oktober 2026) dimajukan oleh pemilik proyek: isinya sama dengan 2.0.0-alpha.2, jadi backend Odin tetap hanya untuk Mac Intel. Tahap 8–9 (AArch64, Linux, dan pelepasan FPC) menjadi rilis 2.1.0.
 
 ## 0. Status pelaksanaan (per 15 Oktober 2026)
 
-Semua angka di bawah diukur di Mac pengembang: Intel x86_64, macOS 15.7, FPC 3.2.2 sebagai pembanding.
+Angka G0–G7 diukur di Mac pengembang: Intel x86_64, macOS 15.7, FPC 3.2.2 sebagai pembanding. G8 juga diukur di VM Lima dan di runner GitHub Actions.
 
 | Gerbang | Status | Bukti |
 | --- | --- | --- |
@@ -20,6 +20,10 @@ Semua angka di bawah diukur di Mac pengembang: Intel x86_64, macOS 15.7, FPC 3.2
 | G5 | Lolos | Menu Debug tidak lagi memanggil `lldb`. `tests/test_debugger.py` lolos: DebugSession tanpa Tk menjalankan REKURSI, berhenti di breakpoint (yang dipindah dari baris 8 ke 9), step into/over/out, mengevaluasi `N` di dua frame, membaca call stack tiga frame, lalu Modify `N := 5` yang mengubah keluaran (`3! = 360`). Tes juga memeriksa pause, Go to cursor, dan runtime error 216 di baris yang tepat. Tes GUI baru lolos: Tile dengan Watches/Call stack/Local variables, penanda `exec`, breakpoint yang bergeser saat baris disisipkan, recovery breakpoint, sesi debug nyata lewat IDE, dan Find error setelah Run biasa. Semua tes GUI lama tetap hijau. Korpus diferensial juga dijalankan dengan build `--debug`, dan hasilnya identik. |
 | G6 | Lolos | Tipe `object` lengkap: pewarisan, `private`, VMT, constructor (`Fail`), destructor, `virtual`, `inherited`, `Self`, `TypeOf`, `New(P, Init)`, `New(PT, Init)`, `Dispose(P, Done)`, dan polimorfisme lewat pointer serta parameter `var`. Unit `rtl/objects.pas`: TObject, TPoint/TRect, TCollection/TSortedCollection/TStringCollection/TStrCollection, TStream/TDosStream/TBufStream/TMemoryStream, `RegisterType`, `Get`/`Put` polimorfik, NewStr/DisposeStr. Korpus `tests/pascal/objects/` (13 program, termasuk TStringCollection dan TBufStream) identik dengan FPC dalam build biasa dan build debug. Format stream (byte demi byte) dan ukuran tipe sama dengan Objects milik FPC. `test_object_fields_and_self` memeriksa tampilan field object di debugger. |
 | G7 | Lolos | Odin Vision di `rtl/vision/`: Drivers, Memory, HistList, Views, Menus, Validate, Dialogs, App, MsgBox, StdDlg, Editors, Outline, dengan spesifikasi perilaku di `rtl/vision/SPEC.md`. Program uji Turbo Vision dari 1.0 (`uses Objects, Drivers, Views, Menus, Dialogs, App, MsgBox, StdDlg`) dibangun dan berjalan dengan backend `odin` (`OdinCompilerTests.test_standard_units_and_turbo_vision`). `tests/test_vision.py` lolos: tiga demo snapshot (menu lewat F10 dan mouse, Tile/Cascade, klik ke jendela belakang, dialog dengan validator picture, check box, radio button, klik mouse, MessageBox, editor, outline, prompt simpan saat Alt-X) dibandingkan sel demi sel (karakter dan warna) dengan snapshot yang sudah ditinjau, plus `TFileDialog` dan `TChDirDialog` di direktori sementara. `examples/VISION.PAS` berjalan di User screen IDE (`test_vision_example_in_user_screen`: klik mouse membuka menu Help, Alt+X keluar, layar sebelum program kembali), dan juga dikompilasi dengan backend FPC/Free Vision. `TerminalView` mengirim laporan mouse SGR dan urutan Alt/modifier. Korpus diferensial 77 program identik dengan FPC. **Belum:** Alt/Option dari keyboard Mac sungguhan (S5) baru diuji dengan event sintetis. |
+| G8a | Lolos | CI GitHub Actions di lima runner (macOS Intel, macOS arm64, Ubuntu x86_64, Ubuntu arm64, Windows); VM Lima `odin-linux` (Ubuntu 24.04, dengan qemu-user dan Wine). Plumbing target di `odinpc`; korpus untuk target lain (`ODIN_CORPUS_TARGET`/`ODIN_CORPUS_RUNNER`). |
+| G8b | Lolos | Linker ELF (PIE dinamis, glibc). Korpus 77 program (biasa dan debug) dan 92 tes Python dengan backend Odin lulus di VM dan di runner Ubuntu 24.04 x86_64. |
+| G8c | Lolos (CI) | Encoder AArch64 (575 golden dari clang) dan codegen AArch64. Korpus lulus di aarch64 Linux (qemu dan runner Ubuntu arm64) dan native di runner macOS 15 Apple Silicon, bersama tes GUI, debugger, dan Odin Vision. Mac Apple Silicon fisik dan `Install.command` di sana belum diuji. |
+| G8d | Sebagian | Konvensi Win64 di codegen, linker PE32+, RTL Windows (korpus 63 dari 77 lulus lewat Wine), IDE ConPTY (86 dari 92 tes Python lulus di runner Windows). Belum: `odinpc` untuk Windows (odin-debug memakai Unix socket), debugger TCP, sisa korpus (Exec, path, berkas teks), FPC di runner Windows. |
 
 Perbedaan dari rencana yang sudah terjadi:
 

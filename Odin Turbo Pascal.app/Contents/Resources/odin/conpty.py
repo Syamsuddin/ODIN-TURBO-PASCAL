@@ -286,6 +286,9 @@ class ConPtyProcess:
         self._input_lock = threading.Lock()   # the input pipe
         self._console = self._input = self._output = self._job = None
         self._last_output = time.monotonic()
+        # conhost asked for win32-input-mode (ESC [?9001h): it then reads a
+        # bare 0x03 as text, so Ctrl-C has to arrive as a key event.
+        self._win32_input = False
         args = [os.fspath(a) for a in argv]
         environment = merge_environment(os.environ, env or {}, {"TERM": "xterm", "COLUMNS": str(cols), "LINES": str(rows)})
         try:
@@ -364,6 +367,10 @@ class ConPtyProcess:
                 if count.value:
                     self._last_output = time.monotonic()
                     text = decoder.decode(ctypes.string_at(buffer, count.value))
+                    if "\x1b[?9001h" in text:
+                        self._win32_input = True
+                    if "\x1b[?9001l" in text:
+                        self._win32_input = False
                     if text:
                         self.emit("output", text)
             tail = decoder.decode(b"", final=True)
@@ -420,6 +427,8 @@ class ConPtyProcess:
 
     def write(self, value):
         """Sends bytes to the program; b"\\x03" becomes Ctrl-C (CTRL_C_EVENT) in conhost."""
+        if value == b"\x03" and self._win32_input:
+            value = b"\x1b[67;46;3;1;8;1_\x1b[67;46;3;0;8;1_"
         with self._input_lock:
             if self.closed or not self._input:
                 return
@@ -433,6 +442,9 @@ class ConPtyProcess:
                 view = view[written.value:]
 
     def interrupt(self):
+        # Under win32-input-mode, write() sends Ctrl+C down and up as key
+        # records: ESC [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _ with VK 'C', scan code
+        # 46, character 3 and LEFT_CTRL_PRESSED.
         self.write(b"\x03")
 
     def resize(self, cols, rows):
