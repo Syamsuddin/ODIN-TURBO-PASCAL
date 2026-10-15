@@ -94,8 +94,9 @@ def main():
                 continue
             stdin = src.with_suffix(".in").read_bytes() if src.with_suffix(".in").exists() else b""
             argv = src.with_suffix(".args").read_text().split() if src.with_suffix(".args").exists() else []
-            work = tmp / "work"
-            shutil.rmtree(work, ignore_errors=True)
+            # One folder per program: Windows cannot always remove what the last one left
+            # (read-only attributes set by the Dos tests).
+            work = tmp / f"work-{src.stem}"
             work.mkdir()
             run = subprocess.run([str(exe), *argv], input=stdin, capture_output=True, cwd=work, timeout=20)
             suffix = f".{args.os}" if args.os else ""

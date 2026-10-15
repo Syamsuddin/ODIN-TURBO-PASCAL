@@ -4,7 +4,7 @@
 # Expected outputs of the Pascal corpus made by Free Pascal on another OS
 # (scripts/oracle.py --os). It runs when this file changes on a work branch
 # (edit NAMES to regenerate other programs); the files come back as an
-# artifact to review and commit.
+# artifact to review and commit. Run 2: one work folder per program.
 name: Oracle
 
 on:

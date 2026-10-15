@@ -134,6 +134,7 @@ SIGNATURES = (
     ("CreatePseudoConsole", HRESULT, (COORD, HANDLE, HANDLE, DWORD, ctypes.POINTER(HANDLE))),
     ("ResizePseudoConsole", HRESULT, (HANDLE, COORD)),
     ("ClosePseudoConsole", None, (HANDLE,)),
+    ("SetConsoleCtrlHandler", BOOL, (LPVOID, BOOL)),
     ("InitializeProcThreadAttributeList", BOOL, (LPVOID, DWORD, DWORD, ctypes.POINTER(SIZE_T))),
     ("UpdateProcThreadAttribute", BOOL, (LPVOID, DWORD, SIZE_T, LPVOID, SIZE_T, LPVOID, ctypes.POINTER(SIZE_T))),
     ("DeleteProcThreadAttributeList", None, (LPVOID,)),
@@ -338,6 +339,9 @@ class ConPtyProcess:
             block = ctypes.create_string_buffer(environment_block(environment).encode("utf-16-le"))
             directory = os.path.abspath(os.fspath(cwd)) if cwd else None
             flags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT | CREATE_SUSPENDED
+            # Children inherit "ignore Ctrl-C" (CI runners and some launchers start us that way);
+            # clear it so the program reacts to Ctrl-C like in a console window.
+            k.SetConsoleCtrlHandler(None, False)
             if not k.CreateProcessW(None, command, None, None, False, flags, block, directory,
                                     ctypes.byref(startup), ctypes.byref(info)):
                 raise last_error()
