@@ -18,9 +18,17 @@ ROOT = Path(__file__).resolve().parent.parent
 FOLDERS = ("odin", "examples", "docs", "assets", "rtl")
 FILES = ("main.py", "LICENSE", "THIRD_PARTY.txt", "README.txt", "Uninstall.ps1", "Uninstall.cmd")
 # The logo master is only a source for render_logo.py; odin.icns is the macOS icon.
-IGNORE = shutil.ignore_patterns("__pycache__", "*.pyc", "odin-logo-master.png", "odin.icns")
+SKIP = shutil.ignore_patterns("__pycache__", "*.pyc", "odin-logo-master.png", "odin.icns")
 TOOLCHAIN = (ROOT / "toolchain" / "odinpc.exe", ROOT / "toolchain" / "target" / "release" / "odinpc.exe")
 PNG = b"\x89PNG\r\n\x1a\n"
+
+
+def ignore(directory, names):
+    """copytree filter: as SKIP, and only the Pascal sources from examples/, where the tutorial
+    programs (Bab 17, Bab 20) write their data files."""
+    if Path(directory).name == "examples":
+        return {name for name in names if not name.lower().endswith(".pas")}
+    return SKIP(directory, names)
 
 
 def icns_pngs(data):
@@ -64,7 +72,7 @@ def stage(target):
         raise SystemExit(f"{target} sudah ada. Pindahkan dulu pemasangan lama.")
     target.mkdir(parents=True)
     for folder in FOLDERS:
-        shutil.copytree(ROOT / folder, target / folder, ignore=IGNORE)
+        shutil.copytree(ROOT / folder, target / folder, ignore=ignore)
     for name in FILES:
         shutil.copy2(ROOT / name, target / name)
     shutil.copy2(ROOT / "scripts" / "launcher_windows.pyw", target / "OdinTurboPascal.pyw")

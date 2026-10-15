@@ -85,7 +85,7 @@ class WindowsInstallTests(unittest.TestCase):
         stage = load_script("stage_windows")
         target = stage.stage(self.root / "Programs" / "OdinTurboPascal")
         for name in ("main.py", "LICENSE", "THIRD_PARTY.txt", "README.txt", "Uninstall.ps1", "Uninstall.cmd",
-                     "OdinTurboPascal.pyw", "odin.ico", "odin/app.py", "odin/conpty.py", "examples/HELLO.PAS",
+                     "OdinTurboPascal.pyw", "odin.ico", "odin/app.py", "odin/conpty.py", "examples/bab01_01_halo_dunia.pas", "examples/matematika.pas",
                      "docs/HELP.txt", "assets/odin.png", "assets/odin-logo.png", "rtl"):
             with self.subTest(name=name):
                 self.assertTrue((target / name).exists())

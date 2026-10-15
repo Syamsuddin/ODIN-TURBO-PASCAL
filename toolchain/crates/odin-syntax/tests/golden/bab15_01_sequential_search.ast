@@ -1,0 +1,33 @@
+(program bab15_01_sequential_search
+  (const N = 10)
+  (const Data : (array [(.. 1 N)] Integer) = (34, 7, 23, 32, 5, 62, 32, 18, 9, 41))
+  (var (Dicari I Langkah) Integer)
+  (var (Ketemu) Boolean)
+  (begin
+    (do (call Write 'Data: '))
+    (for I 1 to N
+      (do (call Write (index Data I) ' ')))
+    (do WriteLn)
+    (do (call Write 'Bilangan yang dicari: '))
+    (do (call ReadLn Dicari))
+    (:= I 1)
+    (:= Ketemu False)
+    (:= Langkah 0)
+    (while (and (<= I N) (not Ketemu))
+      (begin
+        (:= Langkah (+ Langkah 1))
+        (if (= (index Data I) Dicari)
+          (:= Ketemu True)
+          (else
+            (:= I (+ I 1))))
+        (empty)))
+    (if Ketemu
+      (do (call WriteLn Dicari ' ditemukan di posisi ' I ' setelah ' Langkah ' perbandingan.'))
+      (else
+        (do (call WriteLn Dicari ' tidak ada. Semua ' Langkah ' data sudah diperiksa.'))))
+    (do (call Write 'Semua posisi: '))
+    (for I 1 to N
+      (if (= (index Data I) Dicari)
+        (do (call Write I ' '))))
+    (do WriteLn)
+    (empty)))

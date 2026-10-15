@@ -1,0 +1,29 @@
+(program bab11_03_array_dua_dimensi
+  (const JumlahSiswa = 3)
+  (const JumlahMapel = 4)
+  (const Nilai : (array [(.. 1 JumlahSiswa) (.. 1 JumlahMapel)] Integer) = ((80, 75, 90, 85), (65, 70, 60, 75), (95, 88, 92, 90)))
+  (var (Baris Kolom) Integer)
+  (var (Total) Integer)
+  (begin
+    (do (call WriteLn 'Siswa   MTK  IPA  IND  ING   Rata'))
+    (for Baris 1 to JumlahSiswa
+      (begin
+        (do (call Write '  ' Baris '   '))
+        (:= Total 0)
+        (for Kolom 1 to JumlahMapel
+          (begin
+            (do (call Write (index Nilai Baris Kolom):5))
+            (:= Total (+ Total (index Nilai Baris Kolom)))
+            (empty)))
+        (do (call WriteLn (/ Total JumlahMapel):7:2))
+        (empty)))
+    (do (call Write 'Rata  '))
+    (for Kolom 1 to JumlahMapel
+      (begin
+        (:= Total 0)
+        (for Baris 1 to JumlahSiswa
+          (:= Total (+ Total (index Nilai Baris Kolom))))
+        (do (call Write (/ Total JumlahSiswa):5:0))
+        (empty)))
+    (do WriteLn)
+    (empty)))

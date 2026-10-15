@@ -56,7 +56,7 @@ fn every_example_parses() {
             count += 1;
         }
     }
-    assert_eq!(count, 11);
+    assert_eq!(count, 90);
 }
 
 #[test]

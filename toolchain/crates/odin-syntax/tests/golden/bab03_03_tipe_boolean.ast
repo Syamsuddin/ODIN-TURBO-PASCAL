@@ -1,0 +1,19 @@
+(program bab03_03_tipe_boolean
+  (var (Umur) Integer)
+  (var (SudahDewasa) Boolean)
+  (var (PunyaKTP) Boolean)
+  (var (Hujan) Boolean)
+  (begin
+    (:= Umur 19)
+    (:= SudahDewasa (>= Umur 17))
+    (:= PunyaKTP True)
+    (:= Hujan False)
+    (do (call WriteLn 'Umur          : ' Umur))
+    (do (call WriteLn 'Sudah dewasa? : ' SudahDewasa))
+    (do (call WriteLn 'Punya KTP?    : ' PunyaKTP))
+    (do (call WriteLn 'Hujan?        : ' Hujan))
+    (if SudahDewasa
+      (do (call WriteLn 'Boleh membuat SIM.')))
+    (if (not Hujan)
+      (do (call WriteLn 'Tidak perlu membawa payung.')))
+    (empty)))

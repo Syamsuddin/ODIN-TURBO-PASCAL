@@ -6,6 +6,14 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Diubah
+
+- Contoh bawaan di **File › Examples** diganti total dengan tutorial Pascal untuk pemula: 90 berkas dalam 20 bab dan enam bagian (fondasi, alur kendali, modularisasi, struktur data, algoritma dasar, lanjutan ringan), yaitu 89 program `babNN_MM_topik.pas` dan unit `matematika.pas` untuk Bab 19. Setiap kode penting diberi komentar penjelasan singkat. Program Bab 17 dan Bab 20 menulis berkas data yang namanya ditetapkan sebagai konstanta, dan menampilkan folder tempat berkas itu dibuat.
+- Halaman bawaan IDE yang membawa tag versi kini `examples/bab01_01_halo_dunia.pas` (sebelumnya `HELLO.PAS`). `scripts/package_app.py` dan `scripts/set_version.py` menyamakan tag di berkas itu.
+- Dialog **Examples** memakai scrollbar bila daftarnya lebih dari 15 baris, dan mengenali nama berkas `.pas` huruf kecil.
+- `HELLO.PAS`, `INPUT.PAS`, `KALKULATOR.PAS`, `PARAMETER.PAS`, `ARRAY.PAS`, `BERKAS.PAS`, `CRTDEMO.PAS`, `UNITDEMO.PAS`, dan `UMATH.PAS` dihapus. `VISION.PAS` pindah ke `tests/pascal/vision/` dan `REKURSI.PAS` ke `tests/pascal/debug/`, karena tes Odin Vision dan tes debugger memakainya.
+- `scripts/package_app.py` dan `scripts/stage_windows.py` hanya menyalin berkas `.pas` dari `examples/`, sehingga berkas data yang dibuat saat mencoba tutorial dari repositori tidak ikut terbawa ke paket.
+
 ### Diperbaiki
 
 - Windows: program tidak lagi sesekali berhenti dengan runtime error 216 saat `Exec` menjalankan program lewat PATH. Handler pengecualian hanya menangani pelanggaran akses di kode program sendiri; pelanggaran akses di DLL sistem (yang bisa ditangani DLL itu sendiri) diteruskan, dan yang tidak tertangani tetap menjadi runtime error lewat filter terakhir.

@@ -1,0 +1,36 @@
+(program bab16_04_urut_record
+  (type TSiswa = (record (Nama: string[15]) (Nilai: Integer)))
+  (const N = 7)
+  (const Awal : (array [(.. 1 N)] TSiswa) = ((Nama: 'Dimas'; Nilai: 78), (Nama: 'Ayu'; Nilai: 92), (Nama: 'Fajar'; Nilai: 85), (Nama: 'Citra'; Nilai: 92), (Nama: 'Bayu'; Nilai: 70), (Nama: 'Eka'; Nilai: 85), (Nama: 'Gita'; Nilai: 88)))
+  (function LebihDulu (A B: TSiswa) : Boolean
+    (begin
+      (if (<> (. A Nilai) (. B Nilai))
+        (:= LebihDulu (> (. A Nilai) (. B Nilai)))
+        (else
+          (:= LebihDulu (< (. A Nama) (. B Nama)))))
+      (empty)))
+  (var (Siswa) (array [(.. 1 N)] TSiswa))
+  (var (Kunci) TSiswa)
+  (var (I J Peringkat) Integer)
+  (begin
+    (for I 1 to N
+      (:= (index Siswa I) (index Awal I)))
+    (for I 2 to N
+      (begin
+        (:= Kunci (index Siswa I))
+        (:= J (- I 1))
+        (while (and (>= J 1) (call LebihDulu Kunci (index Siswa J)))
+          (begin
+            (:= (index Siswa (+ J 1)) (index Siswa J))
+            (:= J (- J 1))
+            (empty)))
+        (:= (index Siswa (+ J 1)) Kunci)
+        (empty)))
+    (do (call WriteLn 'Peringkat  Nama           Nilai'))
+    (for I 1 to N
+      (begin
+        (if (or (= I 1) (<> (. (index Siswa I) Nilai) (. (index Siswa (- I 1)) Nilai)))
+          (:= Peringkat I))
+        (do (call WriteLn Peringkat:5 '      ' (. (index Siswa I) Nama) '':(- 15 (call Length (. (index Siswa I) Nama))) (. (index Siswa I) Nilai):5))
+        (empty)))
+    (empty)))

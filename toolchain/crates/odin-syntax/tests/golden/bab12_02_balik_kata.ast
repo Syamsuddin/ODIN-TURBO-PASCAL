@@ -1,0 +1,43 @@
+(program bab12_02_balik_kata
+  (function BalikHuruf (S: string) : string
+    (var (I) Integer)
+    (var (Hasil) string)
+    (begin
+      (:= Hasil '')
+      (for I (call Length S) downto 1
+        (:= Hasil (+ Hasil (index S I))))
+      (:= BalikHuruf Hasil)
+      (empty)))
+  (function BalikUrutanKata (S: string) : string
+    (var (Spasi) Integer)
+    (var (Hasil Kata) string)
+    (begin
+      (:= Hasil '')
+      (while (<> S '')
+        (begin
+          (:= Spasi (call Pos ' ' S))
+          (if (= Spasi 0)
+            (begin
+              (:= Kata S)
+              (:= S '')
+              (empty))
+            (else
+              (begin
+                (:= Kata (call Copy S 1 (- Spasi 1)))
+                (do (call Delete S 1 Spasi))
+                (empty))))
+          (if (<> Kata '')
+            (if (= Hasil '')
+              (:= Hasil Kata)
+              (else
+                (:= Hasil (+ (+ Kata ' ') Hasil)))))
+          (empty)))
+      (:= BalikUrutanKata Hasil)
+      (empty)))
+  (var (Kalimat) string)
+  (begin
+    (do (call Write 'Ketik sebuah kalimat: '))
+    (do (call ReadLn Kalimat))
+    (do (call WriteLn 'Huruf dibalik : ' (call BalikHuruf Kalimat)))
+    (do (call WriteLn 'Kata dibalik  : ' (call BalikUrutanKata Kalimat)))
+    (empty)))

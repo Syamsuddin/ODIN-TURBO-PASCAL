@@ -23,13 +23,108 @@ from odin.terminal import ALT_MASKS, KEYS, Process, Screen, color_256, modified_
 
 ROOT=Path(__file__).resolve().parent.parent
 FPC=locate_compiler(os.environ.get("ODIN_FPC",""))
+# The IDE's default page, which carries the release tag.
+FIRST_EXAMPLE="bab01_01_halo_dunia.pas"
+
+# Standard input and expected output for every tutorial program in examples/ except the Crt ones
+# (bab19_02, bab19_03), which need a terminal. They run in name order in one folder, so
+# bab17_02 reads the catatan.txt that bab17_01 wrote.
+EXAMPLE_RUNS={
+    "bab01_01_halo_dunia":("",["Halo, Dunia!"]),
+    "bab01_02_cek_kompiler":("",["Integer  : 2 byte","Kompiler siap dipakai."]),
+    "bab02_01_struktur_dasar":("",["Total bayar      : 100000"]),
+    "bab02_02_komentar":("",["Luas = 40"]),
+    "bab02_03_blok_begin_end":("",["Satu pernyataan: Lulus","  Blok dalam"]),
+    "bab03_01_tipe_integer_real":("",["100 / 32     = 3.1250","Round(165.9)        : 166"]),
+    "bab03_02_tipe_char_string":("",["Kode huruf A   : 65","Kota  : Kandangan (dipotong","Jum'at"]),
+    "bab03_03_tipe_boolean":("",["Sudah dewasa? : TRUE","Boleh membuat SIM."]),
+    "bab03_04_konstanta":("",["Bayar      : Rp 121500"]),
+    "bab03_05_batas_tipe_data":("",["Integer     2        -32768         32767","MaxLongInt = 2147483647"]),
+    "bab04_01_write_writeln":("",["Satu baris yang sama.","Hasil 7 x 6 = 42"]),
+    "bab04_02_read_readln":("Syams\n40\n170.5\n3 4\n",["Tahun depan umur Anda 41 tahun.","Tinggi Anda 170.5 cm.","3 + 4 = 7"]),
+    "bab04_03_format_keluaran":("",["[    42]","    3.1416"," 2  Buku tulis       5    6000.00"]),
+    "bab04_04_biodata_sederhana":("Syams\nKandangan\n1986\n170\n65.5\nMembaca\n",["Umur   : 40 tahun","Berat  : 65.5 kg"]),
+    "bab05_01_operator_aritmetika":("",["A / B = 3.40","Sqrt(81) = 9.0"]),
+    "bab05_02_div_mod":("3725\n47\n",["3725 detik = 1 jam 2 menit 5 detik","Angka satuan = 7"]),
+    "bab05_03_operator_relasional":("",["A <> B : TRUE","'Ani' < 'Budi' : TRUE"]),
+    "bab05_04_operator_logika":("",[" TRUE  FALSE    FALSE    TRUE     TRUE","Boleh masuk (umur >= 13 dan punya tiket)? TRUE"]),
+    "bab05_05_prioritas_operator":("",["2 + 3 * 4       = 14","(2 + 3) * 4     = 20"]),
+    "bab05_06_luas_keliling":("8\n5\n7\n",["Keliling = 26.00 cm","Luas     = 153.94 cm2"]),
+    "bab06_01_if_then":("38\n",["Anda demam.","Pemeriksaan selesai."]),
+    "bab06_02_if_else":("7\n60\n",["7 adalah bilangan ganjil","Kurang 15 poin lagi."]),
+    "bab06_03_if_bersarang":("17\ny\n",["Harga tiket: Rp 20000"]),
+    "bab06_04_case_of":("7\nk\n",["Sabtu","Hari libur akhir pekan.","Huruf konsonan"]),
+    "bab06_05_nilai_huruf":("72\n",["Nilai huruf: B"]),
+    "bab06_06_tahun_kabisat":("1900\n",["1900 bukan tahun kabisat"]),
+    "bab07_01_for_to":("7\n",["1 + 2 + ... + 7 = 28","  7 x 10 =   70"]),
+    "bab07_02_for_downto":("",["10 9 8 7 6 5 4 3 2 1 Mulai!","ZYXWVUTSRQPONMLKJIHGFEDCBA"]),
+    "bab07_03_while_do":("9875\n4\n6\n-2\n0\n",["Jumlah digit 9875 = 29","Banyak bilangan: 3, jumlahnya: 8"]),
+    "bab07_04_repeat_until":("150\n80\ny\nt\n",["Nilai tidak sah","Nilai diterima: 80","Selesai setelah 2 putaran."]),
+    "bab07_05_perulangan_bersarang":("",[" 9 |   9  18  27  36  45  54  63  72  81"]),
+    "bab07_06_menu_berulang":("1\n100\n3\n42.195\n9\n0\n",["212.0 F","26.22 mil","Pilihan tidak tersedia.","Terima kasih!"]),
+    "bab08_01_bilangan_prima":("97\n",["97 adalah bilangan prima.","Ada 25 bilangan prima."]),
+    "bab08_02_fpb_kpk":("84\n36\n",["FPB(84, 36) = 12","KPK(84, 36) = 252"]),
+    "bab08_03_deret_fibonacci":("50\n40\n",["Suku 40:  102334155"]),
+    "bab08_04_segitiga_bintang":("4\n",["\n   *\n  ***\n *****\n*******"]),
+    "bab08_05_bilangan_sempurna":("",["28 = 1 + 2 + 4 + 7 + 14","8128 = 1 + 2 + 4"]),
+    "bab08_06_tebak_angka":("".join(f"{i}\n" for i in range(1,101)),["Benar! Angkanya"]),
+    "bab09_01_prosedur_dasar":("",["DAFTAR MENU KANTIN SEKOLAH","Selamat makan!"]),
+    "bab09_02_fungsi_dasar":("",["Kuadrat 3 + 4    = 25","Luas lingkaran r=7: 153.94"]),
+    "bab09_03_parameter_nilai":("",["Di dalam prosedur, X = 10","Sesudah dipanggil, Angka = 5"]),
+    "bab09_04_parameter_var":("",["Sesudah ditukar: X = 8, Y = 3","luas 24.0, keliling 20.0"]),
+    "bab09_05_lokal_global":("",["Hitungan lokal = 100","Kembali di program utama, Hitungan = 2"]),
+    "bab09_06_kalkulator_modular":("4\n12\n0\n4\n12\n4\n0\n",["Pembagi tidak boleh nol.","Hasil: 3.00","Sampai jumpa!"]),
+    "bab10_01_faktorial_rekursif":("",["    masuk Faktorial(2)","Faktorial(4) = 24","12! =  479001600"]),
+    "bab10_02_fibonacci_rekursif":("",["25         75025             150049"]),
+    "bab10_03_pangkat_rekursif":("2\n10\n",["Cara biasa : 1024.00  (11 pemanggilan)","Cara cepat : 1024.00  (5 pemanggilan)"]),
+    "bab10_04_menara_hanoi":("9\n3\n",["   4. Cakram 3: A -> C","Selesai dalam 7 langkah"]),
+    "bab11_01_array_satu_dimensi":("70\n85\n90\n60\n75\n",["Urutan terbalik: 75 60 90 85 70"]),
+    "bab11_02_maks_min_rata":("4\n12\n45\n7\n30\n",["Terbesar  : 45 (data ke-2)","Rata-rata : 23.50"]),
+    "bab11_03_array_dua_dimensi":("",["  3      95   88   92   90  91.25"]),
+    "bab11_04_penjumlahan_matriks":("",["A + B:\n   10   10   10"]),
+    "bab11_05_perkalian_matriks":("",["    58    64\n   139   154"]),
+    "bab12_01_fungsi_string":("",["Pos \"itu\" : 16","Kapital   : PASCAL ITU SANGAT MENYENANGKAN"]),
+    "bab12_02_balik_kata":("saya  suka pascal\n",["Huruf dibalik : lacsap akus  ayas","Kata dibalik  : pascal suka saya"]),
+    "bab12_03_palindrom":("Kasur ini rusak\nPascal\n\n",["\"Kasur ini rusak\" adalah palindrom.","\"Pascal\" bukan palindrom."]),
+    "bab12_04_hitung_vokal":("Odin Turbo Pascal 2026!\n",["Vokal    : 6","Konsonan : 9","Angka    : 4"]),
+    "bab12_05_konversi_angka_string":("12a50\n-5\n1250000\n",["salah di karakter ke-3","tidak boleh negatif","Harga      : Rp 1.250.000"]),
+    "bab13_01_record_dasar":("",["harga diskon Rp 75000","Asli   : harga tetap Rp 85000"]),
+    "bab13_02_array_of_record":("2\nAni\nX-A\n88\nBudi\nX-B\n92\n",[" 2  Budi                  X-B       92","Nilai tertinggi: Budi (92)"]),
+    "bab13_03_record_bersarang":("",["Lahir     : 17-8-1995","            Kandangan 71211"]),
+    "bab13_04_data_mahasiswa":("1\n2601004\nDewi\n3.91\n3\n2601002\n4\n0\n",["Bunga Lestari","IPK tertinggi : Dewi (3.91)"]),
+    "bab14_01_tipe_enumerasi":("",["6. Minggu : libur","Besok       : Kamis"]),
+    "bab14_02_tipe_subrange":("2\n150\n5\n",["Bulan 2 punya 28 hari","Nilai harus 0 sampai 100.","Inisial harus berupa huruf.","Hari kerja: 5 hari"]),
+    "bab14_03_tipe_set":("",["Andi * Budi   : Rabu Jumat","Andi sekarang : Rabu Jumat Minggu"]),
+    "bab14_04_validasi_huruf_set":("Rahasia#2026\n081234567890\n",["Kekuatan: KUAT (5/5)","Nomor HP sah."]),
+    "bab15_01_sequential_search":("32\n",["32 ditemukan di posisi 4 setelah 4 perbandingan.","Semua posisi: 4 7"]),
+    "bab15_02_binary_search":("68\n",["68 ditemukan di posisi 13.","Jumlah langkah: 4"]),
+    "bab15_03_cari_data_record":("b001\npensil\n",["B001  Buku gambar","2 barang cocok."]),
+    "bab16_01_bubble_sort":("",["Putaran 6 :","Hasil     :   5  10  13  14  21  29  37  42"]),
+    "bab16_02_selection_sort":("",["Putaran 7 :","Hasil     :   5  10  13  14  21  29  37  42"]),
+    "bab16_03_insertion_sort":("",["Sisip 21  :","Hasil     :   5  10  13  14  21  29  37  42"]),
+    "bab16_04_urut_record":("",["    1      Citra             92","    3      Gita              88"]),
+    "bab16_05_banding_jumlah_langkah":("",["Selection sort  190/  18  190/   0  190/  10"]),
+    "bab17_01_tulis_file_teks":("Belajar\nPascal\nOdin\n",["Tersimpan ke file catatan.txt"]),
+    "bab17_02_baca_file_teks":("",["  5 | 3. Odin","Jumlah baris: 5"]),
+    "bab17_03_tambah_file_teks":("Tambahan\n",["  + Tambahan","catatan.txt kini berisi 6 baris."]),
+    "bab17_04_file_bertipe":("",["Elemen nomor 4 berisi 25","1000 4 9 16 25 36 49 64 81 100"]),
+    "bab17_05_simpan_baca_record":("Ani\nX-A\n88\n\n",["Data tersimpan saat ini: 0 siswa."," 1  Ani"]),
+    "bab18_01_pointer_dasar":("",["Setelah Q^ := Q^ + 1, X = 100, P^ = 100"]),
+    "bab18_02_new_dispose":("",["Isi memori baru: 2026","Sari: 81"]),
+    "bab18_03_linked_list_tambah":("",["Awal -> 1 -> 5 -> 12 -> 8 -> nil"]),
+    "bab18_04_linked_list_hapus":("",["Hapus 99: tidak ditemukan","Hapus 40:\n  nil"]),
+    "bab19_01_pakai_unit_sendiri":("",["KPK(4, 6)       = 12","matematika.Kuadrat(12) = 144"]),
+    "bab20_01_kasir_sederhana":("b01\n2\nx99\nb05\n3\n\n100\n200000\n",["Kode tidak dikenal.","Diskon 10%","Kembali                        Rp 50.150"]),
+    "bab20_02_nilai_siswa":("2\nAni\n80\n85\n90\nBudi\n60\n70\n65\n",[" 1  Ani","Tuntas          : 1 dari 2 siswa"]),
+    "bab20_03_buku_telepon":("2\nSiti\n08123456789\ns@x.id\n0\n",["1 kontak disimpan ke kontak.dat."]),
+}
 
 
 class VersionTests(unittest.TestCase):
-    def test_hello_example_carries_release_tag(self):
+    def test_first_example_carries_release_tag(self):
         # scripts/package_app.py restamps this comment on every build; a stale tag fails here.
         self.assertEqual(__version_tag__,f"v{__version__}")
-        self.assertIn(f"{{ Odin Turbo Pascal {__version_tag__} - program pertama }}",(ROOT/"examples"/"HELLO.PAS").read_text(encoding="utf-8"))
+        self.assertIn(f"{{ Odin Turbo Pascal {__version_tag__} - program pertama }}",(ROOT/"examples"/FIRST_EXAMPLE).read_text(encoding="utf-8"))
 
     def test_set_version_rewrites_every_copy(self):
         # Runs the real bump on copies of the real files, so a reworded README or doc fails here, not at release time.
@@ -58,7 +153,7 @@ class VersionTests(unittest.TestCase):
             self.assertIn(f"KOMPATIBILITAS DAN CAKUPAN VERSI {new}\n",read("docs/COMPATIBILITY.txt"))
             self.assertIn("badge/rilis-9.8.7--rc.1-",read("README.md"))
             self.assertIn(f"Pemasang ini memasang **rilis {new}**",read("README.md"))
-            self.assertIn(f"{{ Odin Turbo Pascal v{new} - program pertama }}",read("examples/HELLO.PAS"))
+            self.assertIn(f"{{ Odin Turbo Pascal v{new} - program pertama }}",read(f"examples/{FIRST_EXAMPLE}"))
             self.assertIn(f"## [Unreleased]\n\n## [{new}] - 2030-01-02\n\n### Diubah\n\n- Uji.\n",read("CHANGELOG.md"))
             self.assertIn(f"compare/v{__version__}...v{new}",read("CHANGELOG.md"))
 
@@ -378,25 +473,38 @@ class CompilerTests(unittest.TestCase):
         self.assertTrue(r.success,r.output)
         return r
 
-    def test_compile_every_example(self):
-        for path in (ROOT/"examples").glob("*.PAS"):
-            with self.subTest(path=path.name):self.compile_example(path.name)
+    def run_example(self,name,input_data=""):
+        """Runs an example in self.root, where its data files land (the IDE runs a program in its source folder)."""
+        r=self.compile_example(name)
+        result=subprocess.run([str(r.executable)],input=input_data,capture_output=True,text=True,timeout=20,cwd=self.root)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        return result.stdout
 
-    def test_actual_output_and_parameters(self):
-        for name,input_data,expected,args in [
-            ("HELLO.PAS","","Selamat datang",[]),
-            ("INPUT.PAS","Syams\n40\n","41 tahun",[]),
-            ("KALKULATOR.PAS","12\n4\n4\n","Hasil: 3.00",[]),
-            ("KALKULATOR.PAS","12\n0\n4\n","Pembagi tidak boleh nol",[]),
-            ("ARRAY.PAS","","75.00",[]),
-            ("REKURSI.PAS","","3628800",[]),
-            ("UNITDEMO.PAS","","5 kuadrat = 25",[]),
-            ("PARAMETER.PAS","","1: hello world",["hello world","$(no shell)"])] :
-            with self.subTest(name=name,input=input_data):
-                r=self.compile_example(name)
-                result=subprocess.run([str(r.executable),*args],input=input_data,capture_output=True,text=True,timeout=5,cwd=self.root)
-                self.assertEqual(result.returncode,0,result.stderr)
-                self.assertIn(expected,result.stdout)
+    def test_every_example_compiles_and_runs(self):
+        # The tutorial: 89 programs bab01_01..bab20_03 and the unit matematika.pas (Bab 19).
+        paths=sorted(p for p in (ROOT/"examples").iterdir() if p.suffix.lower()==".pas")
+        self.assertEqual(len(paths),90)
+        self.assertLessEqual(set(EXAMPLE_RUNS),{p.stem for p in paths})
+        for path in paths:
+            with self.subTest(path=path.name):
+                r=self.compile_example(path.name)
+                # A unit builds no executable.
+                self.assertEqual(r.executable is None,path.stem=="matematika")
+                if path.stem in EXAMPLE_RUNS:
+                    input_data,expected=EXAMPLE_RUNS[path.stem]
+                    output=self.run_example(path.name,input_data)
+                    for text in expected:self.assertIn(text,output)
+
+    def test_program_parameters_without_shell(self):
+        source=self.root/"params.pas"
+        source.write_text("program Params;\nvar I: Integer;\nbegin\n  WriteLn('Jumlah argumen: ', ParamCount);\n"
+                          "  for I := 1 to ParamCount do\n    WriteLn(I, ': ', ParamStr(I));\nend.\n")
+        r=build(source,self.settings,cache=self.root/"build")
+        self.assertTrue(r.success,r.output)
+        result=subprocess.run([str(r.executable),"hello world","$(no shell)"],capture_output=True,text=True,timeout=5,cwd=self.root)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertIn("1: hello world",result.stdout)
+        self.assertIn("2: $(no shell)",result.stdout)
 
     def test_no_stale_executable_after_failed_build(self):
         source=self.root/"program with spaces.pas"
@@ -410,63 +518,83 @@ class CompilerTests(unittest.TestCase):
         self.assertFalse(first.executable.exists())
         self.assertTrue(any(d.kind=="Error" for d in second.diagnostics))
 
-    def test_file_io_without_overwriting_existing_file(self):
-        r=self.compile_example("BERKAS.PAS")
-        output=subprocess.run([str(r.executable)],input="catatan.txt\n",text=True,capture_output=True,cwd=self.root,timeout=5)
-        self.assertEqual(output.returncode,0)
-        self.assertIn("Belajar Pascal",(self.root/"catatan.txt").read_text())
-        second=subprocess.run([str(r.executable)],input="catatan.txt\n",text=True,capture_output=True,cwd=self.root,timeout=5)
-        self.assertEqual(second.returncode,1)
 
-    def test_interactive_pty_readln(self):
-        r=self.compile_example("INPUT.PAS")
+    def test_file_examples_keep_their_data(self):
+        self.assertIn("belum ada",self.run_example("bab17_02_baca_file_teks.pas"))
+        self.run_example("bab17_01_tulis_file_teks.pas","satu\ndua\ntiga\n")
+        self.assertEqual((self.root/"catatan.txt").read_text().splitlines()[2:],["1. satu","2. dua","3. tiga"])
+        self.assertIn("Jumlah baris: 5",self.run_example("bab17_02_baca_file_teks.pas"))
+        self.assertIn("kini berisi 6 baris",self.run_example("bab17_03_tambah_file_teks.pas","empat\n"))
+        # Rewrite starts the file over.
+        self.run_example("bab17_01_tulis_file_teks.pas","a\nb\nc\n")
+        self.assertEqual(len((self.root/"catatan.txt").read_text().splitlines()),5)
+        # Typed files keep their records from one run to the next.
+        self.run_example("bab17_05_simpan_baca_record.pas","Ani\nX-A\n88\n\n")
+        output=self.run_example("bab17_05_simpan_baca_record.pas","Budi\nX-B\n75\n\n")
+        self.assertIn("Data tersimpan saat ini: 1 siswa.",output)
+        self.assertIn(" 2  Budi",output)
+        self.run_example("bab20_03_buku_telepon.pas","2\nSiti\n08123456789\ns@x.id\n2\nAndi\n0811111111\n\n0\n")
+        output=self.run_example("bab20_03_buku_telepon.pas","1\n0\n")
+        self.assertIn("2 kontak dimuat",output)
+        self.assertLess(output.index("Andi"),output.index("Siti"))
+        self.assertIn("Tidak ada perubahan.",output)
+
+    def pty_session(self,name,steps):
+        """Runs an example on a PTY. steps: (text to wait for, keys to send then).
+        Returns the output, the final screen, and a copy of the screen grid at each step."""
+        r=self.compile_example(name)
         q=queue.Queue()
         p=Process([str(r.executable)],self.root,lambda k,v:q.put((k,v)))
         output=""
         # ConPTY (Windows) may repaint with cursor moves between words: also check the rendered screen.
         screen=Screen()
-        sent=False
-        deadline=time.monotonic()+10
+        steps,grids=list(steps),[]
+        deadline=time.monotonic()+20
         while time.monotonic()<deadline:
-            k,v=q.get(timeout=10)
+            k,v=q.get(timeout=20)
             if k=="output":
                 output+=v
                 screen.feed(v)
-                if "Nama Anda:" in output+screen.text() and not sent:
-                    p.write(b"Syams\r40\r")
-                    sent=True
-            else:
-                self.assertEqual(v,0)
-                break
-        else:
-            p.stop()
-            self.fail("ReadLn hung")
-        self.assertIn("41 tahun",output+screen.text())
-
-    def test_crt_cursor_and_readkey(self):
-        r=self.compile_example("CRTDEMO.PAS")
-        q=queue.Queue()
-        p=Process([str(r.executable)],self.root,lambda k,v:q.put((k,v)))
-        screen=Screen()
-        sent=False
-        deadline=time.monotonic()+10
-        while time.monotonic()<deadline:
-            k,v=q.get(timeout=10)
-            if k=="output":
-                screen.feed(v)
-                if "Tekan sembarang" in screen.text() and not sent:
-                    self.assertIn("ODIN TURBO PASCAL",screen.text())
-                    self.assertEqual(screen.grid[2][22][0],"O")
-                    p.write(b"x")
-                    sent=True
+                # Answer cursor-position requests as TerminalView does (FPC's Crt asks for WhereX).
+                while screen.replies:p.write(screen.replies.pop(0))
+                if steps and steps[0][0] in output+screen.text():
+                    grids.append([row[:] for row in screen.grid])
+                    for key in steps.pop(0)[1]:
+                        p.write(key)
+                        time.sleep(.05)
             elif k=="exit":
                 self.assertEqual(v,0)
                 break
         else:
             p.stop()
-            self.fail("ReadKey hung")
-        self.assertTrue(sent)
-        self.assertIn("Demo selesai",screen.text())
+            self.fail(f"{name} hung waiting for {steps[0][0] if steps else 'exit'}")
+        self.assertFalse(steps,f"{name} never showed {steps[0][0] if steps else ''}")
+        return output+screen.text(),screen,grids
+
+    def test_interactive_pty_readln(self):
+        output,_,_=self.pty_session("bab04_02_read_readln.pas",[("Nama Anda",[b"Syams\r40\r170.5\r3 4\r"])])
+        self.assertIn("41 tahun",output)
+
+    def test_crt_cursor_and_readkey(self):
+        output,screen,grids=self.pty_session("bab19_02_unit_crt.pas",[("Tekan sembarang",[b"x"])])
+        # GotoXY(32, 2): column 32 of row 2, in Yellow on Blue (ANSI colours 11 and 4 in Screen).
+        self.assertEqual("".join(cell[0] for cell in grids[0][1][31:47]),"BELAJAR UNIT CRT")
+        self.assertEqual(grids[0][1][31][1:],(11,4))
+        self.assertIn("Kursor ada di kolom 5, baris 16",output)
+        self.assertIn('Anda menekan tombol "x"',screen.text())
+        self.assertIn("Program selesai",screen.text())
+
+    def test_crt_menu_with_arrow_keys(self):
+        down,up=KEYS["Down"],KEYS["Up"]
+        # Down twice to Pengumuman, Up to Jadwal, then Up twice wraps round to Keluar.
+        output,screen,grids=self.pty_session("bab19_03_menu_berwarna.pas",[
+            ("MENU UTAMA SEKOLAH",[down,down,b"\r"]),
+            ("Ujian semester",[up,b"\r"]),
+            ("Senin-Jumat",[up,up,b"\r"])])
+        # The active item (row 13, Pengumuman) has a Cyan background (ANSI colour 6 in Screen).
+        self.assertEqual(grids[1][12][30][0],"P")
+        self.assertEqual(grids[1][12][30][2],6)
+        self.assertIn("Terima kasih telah memakai menu.",screen.text())
 
     def test_standard_units_and_turbo_vision(self):
         source=self.root/"units.pas"

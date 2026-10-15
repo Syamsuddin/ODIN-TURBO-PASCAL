@@ -1,0 +1,20 @@
+(program bab07_01_for_to
+  (var (I N) Integer)
+  (var (Jumlah) LongInt)
+  (begin
+    (for I 1 to 10
+      (do (call Write I ' ')))
+    (do WriteLn)
+    (do (call Write 'Jumlahkan 1 sampai berapa? '))
+    (do (call ReadLn N))
+    (:= Jumlah 0)
+    (for I 1 to N
+      (:= Jumlah (+ Jumlah I)))
+    (do (call WriteLn '1 + 2 + ... + ' N ' = ' Jumlah))
+    (do (call WriteLn 'Tabel perkalian ' N ':'))
+    (for I 1 to 10
+      (begin
+        (do (call Write N:3 ' x ' I:2 ' = '))
+        (do (call WriteLn (* N I):4))
+        (empty)))
+    (empty)))

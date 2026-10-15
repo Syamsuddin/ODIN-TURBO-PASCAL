@@ -1,0 +1,23 @@
+(program bab08_05_bilangan_sempurna
+  (const Batas = 10000)
+  (var (N Pembagi) Integer)
+  (var (Jumlah) LongInt)
+  (begin
+    (do (call WriteLn 'Mencari bilangan sempurna dari 2 sampai ' Batas '...'))
+    (for N 2 to Batas
+      (begin
+        (:= Jumlah 0)
+        (for Pembagi 1 to (div N 2)
+          (if (= (mod N Pembagi) 0)
+            (:= Jumlah (+ Jumlah Pembagi))))
+        (if (= Jumlah N)
+          (begin
+            (do (call Write N ' = 1'))
+            (for Pembagi 2 to (div N 2)
+              (if (= (mod N Pembagi) 0)
+                (do (call Write ' + ' Pembagi))))
+            (do WriteLn)
+            (empty)))
+        (empty)))
+    (do (call WriteLn 'Selesai.'))
+    (empty)))

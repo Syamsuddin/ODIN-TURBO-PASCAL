@@ -1,0 +1,8 @@
+(program bab02_02_komentar
+  (var (Panjang Lebar) Integer)
+  (begin
+    (:= Panjang 8)
+    (:= Lebar 5)
+    (do (call WriteLn 'Luas = ' (* Panjang Lebar)))
+    (do (call WriteLn 'Selesai. Hanya dua baris yang tampil di layar.'))
+    (empty)))

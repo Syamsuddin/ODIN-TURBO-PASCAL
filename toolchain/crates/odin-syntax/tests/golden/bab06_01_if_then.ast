@@ -1,0 +1,14 @@
+(program bab06_01_if_then
+  (var (Suhu) Integer)
+  (begin
+    (do (call Write 'Suhu badan hari ini (derajat Celsius): '))
+    (do (call ReadLn Suhu))
+    (if (>= Suhu 38)
+      (do (call WriteLn 'Anda demam. Istirahatlah.')))
+    (if (< Suhu 35)
+      (begin
+        (do (call WriteLn 'Suhu terlalu rendah.'))
+        (do (call WriteLn 'Segera hubungi petugas kesehatan.'))
+        (empty)))
+    (do (call WriteLn 'Pemeriksaan selesai.'))
+    (empty)))

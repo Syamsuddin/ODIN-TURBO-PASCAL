@@ -5,7 +5,7 @@
 
 This is not a frozen standalone executable. Runtime installation belongs to
 Install.command. Only the build bundle beside this repository is replaced,
-apart from the version tag comment in examples/HELLO.PAS.
+apart from the version tag comment in examples/bab01_01_halo_dunia.pas.
 """
 import plistlib
 import re
@@ -18,13 +18,13 @@ VERSION = re.search(r'__version__ = "([^"]+)"', (ROOT / "odin" / "__init__.py").
 # becomes the build version 2.0.0a1 (Apple's development/alpha/beta form).
 SHORT_VERSION = VERSION.split("-")[0]
 BUILD_VERSION = re.sub(r"-(alpha|beta|rc)\.?(\d*)", lambda m: {"alpha": "a", "beta": "b", "rc": "fc"}[m.group(1)] + (m.group(2) or "1"), VERSION)
-# HELLO.PAS is the IDE's default page. Its comment carries the release tag
-# (v2.0.0), brought in step with odin/__init__.py on every build.
-hello = ROOT / "examples" / "HELLO.PAS"
+# bab01_01_halo_dunia.pas is the IDE's default page. Its comment carries the
+# release tag (v2.0.0), brought in step with odin/__init__.py on every build.
+hello = ROOT / "examples" / "bab01_01_halo_dunia.pas"
 source = hello.read_bytes()
 stamped, found = re.subn(rb"(\{ Odin Turbo Pascal )v\S+( - program pertama \})", b"\\g<1>v" + VERSION.encode() + b"\\g<2>", source)
 if found != 1:
-    raise SystemExit("examples/HELLO.PAS: komentar tag versi '{ Odin Turbo Pascal vX.Y.Z - program pertama }' tidak ditemukan.")
+    raise SystemExit("examples/bab01_01_halo_dunia.pas: komentar tag versi '{ Odin Turbo Pascal vX.Y.Z - program pertama }' tidak ditemukan.")
 if stamped != source:
     hello.write_bytes(stamped)
 APP = ROOT / "Odin Turbo Pascal.app"
@@ -35,9 +35,19 @@ if APP.exists():
 resources = CONTENTS / "Resources"
 resources.mkdir()
 # The logo master (odin-logo-master.png) is only a source for scripts/render_logo.py.
+skip = shutil.ignore_patterns("__pycache__", "*.pyc", "odin-logo-master.png")
+
+
+def ignore(directory, names):
+    # The tutorial programs (Bab 17, Bab 20) write data files next to
+    # themselves; only the Pascal sources go into the bundle.
+    if Path(directory).name == "examples":
+        return {name for name in names if not name.lower().endswith(".pas")}
+    return skip(directory, names)
+
+
 for folder in ("odin", "examples", "docs", "assets"):
-    shutil.copytree(ROOT / folder, resources / folder,
-                    ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "odin-logo-master.png"))
+    shutil.copytree(ROOT / folder, resources / folder, ignore=ignore)
 # The Odin toolchain: the RTL sources and odinpc, preferably the universal
 # x86_64 + arm64 build of scripts/build_toolchain.py, else the release build
 # for this Mac (cargo build --release in toolchain/). Without odinpc the IDE

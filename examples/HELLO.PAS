@@ -1,9 +1,0 @@
-{ Odin Turbo Pascal - GNU GPL v3 or later, Copyright (c) 2026 Syams Ideris }
-program Hello;
-
-{ Odin Turbo Pascal v2.2.0 - program pertama }
-
-begin
-  WriteLn('Selamat datang di Odin Turbo Pascal!');
-  WriteLn('Pascal berjalan secara native di komputer Anda.');
-end.

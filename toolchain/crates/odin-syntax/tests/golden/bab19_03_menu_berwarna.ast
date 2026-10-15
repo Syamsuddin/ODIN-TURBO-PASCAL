@@ -1,0 +1,108 @@
+(program bab19_03_menu_berwarna
+  (uses Crt)
+  (const JumlahMenu = 4)
+  (const Menu : (array [(.. 1 JumlahMenu)] string[20]) = ('Profil sekolah', 'Jadwal pelajaran', 'Pengumuman', 'Keluar'))
+  (procedure Kotak (X1 Y1 X2 Y2: Integer)
+    (var (I) Integer)
+    (begin
+      (do (call GotoXY X1 Y1))
+      (do (call Write '+'))
+      (for I (+ X1 1) to (- X2 1)
+        (do (call Write '-')))
+      (do (call Write '+'))
+      (for I (+ Y1 1) to (- Y2 1)
+        (begin
+          (do (call GotoXY X1 I))
+          (do (call Write '|'))
+          (do (call GotoXY X2 I))
+          (do (call Write '|'))
+          (empty)))
+      (do (call GotoXY X1 Y2))
+      (do (call Write '+'))
+      (for I (+ X1 1) to (- X2 1)
+        (do (call Write '-')))
+      (do (call Write '+'))
+      (empty)))
+  (procedure GambarMenu (Aktif: Integer)
+    (var (I) Integer)
+    (begin
+      (for I 1 to JumlahMenu
+        (begin
+          (do (call GotoXY 30 (+ 7 (* I 2))))
+          (if (= I Aktif)
+            (begin
+              (do (call TextBackground Cyan))
+              (do (call TextColor Black))
+              (empty))
+            (else
+              (begin
+                (do (call TextBackground Blue))
+                (do (call TextColor White))
+                (empty))))
+          (do (call Write ' ' (index Menu I) '':(- 20 (call Length (index Menu I))) ' '))
+          (empty)))
+      (do (call TextBackground Blue))
+      (empty)))
+  (procedure TampilkanIsi (Nomor: Integer)
+    (begin
+      (do (call TextColor Yellow))
+      (do (call GotoXY 10 20))
+      (case Nomor
+        (arm 1
+          (do (call Write 'SMA Negeri Pelita, berdiri tahun 1985.            ')))
+        (arm 2
+          (do (call Write 'Senin-Jumat 07.30-14.00, Sabtu kegiatan ekstra.   ')))
+        (arm 3
+          (do (call Write 'Ujian semester dimulai tanggal 1 Desember.        '))))
+      (empty)))
+  (var (Aktif) Integer)
+  (var (Tombol) Char)
+  (var (Selesai) Boolean)
+  (begin
+    (do (call TextBackground Blue))
+    (do ClrScr)
+    (do (call TextColor White))
+    (do (call Kotak 25 4 56 18))
+    (do (call TextColor Yellow))
+    (do (call GotoXY 32 6))
+    (do (call Write 'MENU UTAMA SEKOLAH'))
+    (do (call TextColor LightGray))
+    (do (call GotoXY 14 23))
+    (do (call Write 'Panah atas/bawah: pilih    Enter: buka    Esc: keluar'))
+    (:= Aktif 1)
+    (:= Selesai False)
+    (repeat-until Selesai
+      (do (call GambarMenu Aktif))
+      (:= Tombol ReadKey)
+      (if (= Tombol #0)
+        (begin
+          (:= Tombol ReadKey)
+          (case Tombol
+            (arm 'H'
+              (if (> Aktif 1)
+                (:= Aktif (- Aktif 1))
+                (else
+                  (:= Aktif JumlahMenu))))
+            (arm 'P'
+              (if (< Aktif JumlahMenu)
+                (:= Aktif (+ Aktif 1))
+                (else
+                  (:= Aktif 1)))))
+          (empty))
+        (else
+          (if (= Tombol #13)
+            (begin
+              (if (= Aktif JumlahMenu)
+                (:= Selesai True)
+                (else
+                  (do (call TampilkanIsi Aktif))))
+              (empty))
+            (else
+              (if (= Tombol #27)
+                (:= Selesai True))))))
+      (empty))
+    (do (call TextColor LightGray))
+    (do (call TextBackground Black))
+    (do ClrScr)
+    (do (call WriteLn 'Terima kasih telah memakai menu.'))
+    (empty)))

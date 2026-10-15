@@ -1,0 +1,36 @@
+(program bab12_04_hitung_vokal
+  (var (Kalimat) string)
+  (var (I) Integer)
+  (var (C) Char)
+  (var (Vokal Konsonan Angka Spasi Lainnya) Integer)
+  (begin
+    (do (call Write 'Ketik sebuah kalimat: '))
+    (do (call ReadLn Kalimat))
+    (:= Vokal 0)
+    (:= Konsonan 0)
+    (:= Angka 0)
+    (:= Spasi 0)
+    (:= Lainnya 0)
+    (for I 1 to (call Length Kalimat)
+      (begin
+        (:= C (call UpCase (index Kalimat I)))
+        (case C
+          (arm 'A' 'I' 'U' 'E' 'O'
+            (:= Vokal (+ Vokal 1)))
+          (arm 'B'..'D' 'F'..'H' 'J'..'N' 'P'..'T' 'V'..'Z'
+            (:= Konsonan (+ Konsonan 1)))
+          (arm '0'..'9'
+            (:= Angka (+ Angka 1)))
+          (arm ' '
+            (:= Spasi (+ Spasi 1)))
+          (else
+            (:= Lainnya (+ Lainnya 1))
+            (empty)))
+        (empty)))
+    (do (call WriteLn 'Panjang  : ' (call Length Kalimat)))
+    (do (call WriteLn 'Vokal    : ' Vokal))
+    (do (call WriteLn 'Konsonan : ' Konsonan))
+    (do (call WriteLn 'Angka    : ' Angka))
+    (do (call WriteLn 'Spasi    : ' Spasi))
+    (do (call WriteLn 'Lainnya  : ' Lainnya))
+    (empty)))

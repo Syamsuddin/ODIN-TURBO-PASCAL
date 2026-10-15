@@ -1,0 +1,22 @@
+(program bab08_02_fpb_kpk
+  (var (A B X Y Sisa FPB KPK) LongInt)
+  (begin
+    (do (call Write 'Bilangan pertama: '))
+    (do (call ReadLn A))
+    (do (call Write 'Bilangan kedua  : '))
+    (do (call ReadLn B))
+    (:= X A)
+    (:= Y B)
+    (do (call WriteLn 'Langkah algoritma Euclid:'))
+    (while (<> Y 0)
+      (begin
+        (:= Sisa (mod X Y))
+        (do (call WriteLn '  ' X ' mod ' Y ' = ' Sisa))
+        (:= X Y)
+        (:= Y Sisa)
+        (empty)))
+    (:= FPB X)
+    (:= KPK (* (div A FPB) B))
+    (do (call WriteLn 'FPB(' A ', ' B ') = ' FPB))
+    (do (call WriteLn 'KPK(' A ', ' B ') = ' KPK))
+    (empty)))

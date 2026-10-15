@@ -1,0 +1,28 @@
+(program bab13_03_record_bersarang
+  (type TTanggal = (record (Hari Bulan Tahun: Integer)))
+  (type TAlamat = (record (Jalan: string[40]) (Kota: string[20]) (KodePos: string[5])))
+  (type TPegawai = (record (Nama: string[30]) (Lahir: TTanggal) (Alamat: TAlamat) (Gaji: LongInt)))
+  (const TahunIni = 2026)
+  (var (Pegawai) TPegawai)
+  (begin
+    (:= (. Pegawai Nama) 'Rina Maharani')
+    (:= (. (. Pegawai Lahir) Hari) 17)
+    (:= (. (. Pegawai Lahir) Bulan) 8)
+    (:= (. (. Pegawai Lahir) Tahun) 1995)
+    (with (. Pegawai Alamat)
+      (begin
+        (:= Jalan 'Jl. Pangeran Antasari No. 12')
+        (:= Kota 'Kandangan')
+        (:= KodePos '71211')
+        (empty)))
+    (:= (. Pegawai Gaji) 4750000)
+    (with Pegawai
+      (begin
+        (do (call WriteLn 'Nama      : ' Nama))
+        (do (call WriteLn 'Lahir     : ' (. Lahir Hari) '-' (. Lahir Bulan) '-' (. Lahir Tahun)))
+        (do (call WriteLn 'Umur      : sekitar ' (- TahunIni (. Lahir Tahun)) ' tahun'))
+        (do (call WriteLn 'Alamat    : ' (. Alamat Jalan)))
+        (do (call WriteLn '            ' (. Alamat Kota) ' ' (. Alamat KodePos)))
+        (do (call WriteLn 'Gaji      : Rp ' Gaji))
+        (empty)))
+    (empty)))

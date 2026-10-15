@@ -21,6 +21,20 @@ Jendela terminal yang ditutup hanya disembunyikan. Program yang sedang berjalan
 tetap aktif sampai selesai atau dihentikan dengan tombol Stop / Ctrl+F2.
 Ctrl+C pada terminal mengirim interupsi ke grup proses.
 
+TUTORIAL PASCAL
+
+File > Examples berisi tutorial Pascal untuk pemula: 20 bab, dari
+bab01_01_halo_dunia.pas sampai proyek akhir bab20_03_buku_telepon.pas.
+Nama berkas mengikuti pola babNN_MM_topik.pas, jadi urut sendiri.
+Bab 1-5 fondasi, Bab 6-8 alur kendali, Bab 9-10 prosedur dan rekursi,
+Bab 11-14 struktur data, Bab 15-16 pencarian dan pengurutan, Bab 17-20
+file, pointer, unit, dan proyek akhir.
+
+Program Bab 17 dan Bab 20 membuat berkas data, misalnya catatan.txt atau
+kontak.dat, di folder kerja program, yaitu folder berkas .pas-nya. Nama
+berkas itu ditulis sebagai konstanta di awal program. Simpan dulu salinan
+contoh ke folder sendiri (File > Save as) supaya berkas data mudah dicari.
+
 EDITOR
 
 File > Open menerima .pas, .pp, .inc dan berkas teks lain. Satu berkas dibuka
@@ -34,7 +48,8 @@ CP437 perlu dikonversi ke UTF-8 terlebih dahulu.
 
 File > Save as membuat salinan. Contoh bawaan diarahkan ke Save as agar source
 di dalam aplikasi tidak diubah. Untuk proyek dengan beberapa unit, salin seluruh
-folder examples ke folder kerja sendiri sebelum mengubah UNITDEMO dan UMATH.
+folder examples ke folder kerja sendiri sebelum mengubah
+bab19_01_pakai_unit_sendiri dan unit matematika.
 
 Enter melanjutkan indentasi baris sebelumnya. Tab memasukkan spasi sesuai
 pengaturan. Shift+Tab mengurangi indentasi baris aktif. Insert mengganti mode
@@ -93,7 +108,7 @@ PROGRAM PARAMETERS
 
 Run > Parameters menerima argumen dengan aturan kutip seperti:
   "hello world" 123
-Contoh PARAMETER.PAS akan membaca dua argumen melalui ParamStr.
+Program membacanya dengan ParamCount dan ParamStr(1), ParamStr(2), dst.
 Argumen diteruskan sebagai daftar, tanpa menjalankan shell.
 
 USER SCREEN

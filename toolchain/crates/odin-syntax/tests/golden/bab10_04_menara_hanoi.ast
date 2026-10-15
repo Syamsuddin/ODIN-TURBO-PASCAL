@@ -1,0 +1,21 @@
+(program bab10_04_menara_hanoi
+  (var (JumlahLangkah) LongInt)
+  (procedure Hanoi (N: Integer; Asal Tujuan Bantu: Char)
+    (begin
+      (if (= N 0)
+        (do Exit))
+      (do (call Hanoi (- N 1) Asal Bantu Tujuan))
+      (:= JumlahLangkah (+ JumlahLangkah 1))
+      (do (call WriteLn JumlahLangkah:4 '. Cakram ' N ': ' Asal ' -> ' Tujuan))
+      (do (call Hanoi (- N 1) Bantu Tujuan Asal))
+      (empty)))
+  (var (N) Integer)
+  (begin
+    (repeat-until (and (>= N 1) (<= N 8))
+      (do (call Write 'Jumlah cakram (1-8): '))
+      (do (call ReadLn N))
+      (empty))
+    (:= JumlahLangkah 0)
+    (do (call Hanoi N 'A' 'C' 'B'))
+    (do (call WriteLn 'Selesai dalam ' JumlahLangkah ' langkah (2^N - 1).'))
+    (empty)))

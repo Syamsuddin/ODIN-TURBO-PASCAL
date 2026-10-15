@@ -1,0 +1,28 @@
+(program bab09_05_lokal_global
+  (var (Hitungan) Integer)
+  (procedure Tambah
+    (begin
+      (:= Hitungan (+ Hitungan 1))
+      (empty)))
+  (procedure Coba
+    (var (Hitungan) Integer)
+    (begin
+      (:= Hitungan 100)
+      (do (call WriteLn '  Di dalam Coba, Hitungan lokal = ' Hitungan))
+      (empty)))
+  (procedure Sapa
+    (var (Kali) Integer)
+    (begin
+      (:= Kali 1)
+      (do (call WriteLn '  Halo! Variabel lokal Kali selalu mulai dari ' Kali))
+      (empty)))
+  (begin
+    (:= Hitungan 0)
+    (do Tambah)
+    (do Tambah)
+    (do (call WriteLn 'Setelah dua kali Tambah, Hitungan = ' Hitungan))
+    (do Coba)
+    (do (call WriteLn 'Kembali di program utama, Hitungan = ' Hitungan))
+    (do Sapa)
+    (do Sapa)
+    (empty)))

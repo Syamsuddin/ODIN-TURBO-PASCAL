@@ -1,0 +1,66 @@
+(unit matematika
+  (interface
+    (const VersiUnit = '1.0')
+    (function Kuadrat (X: LongInt) : LongInt
+      declaration)
+    (function Pangkat (A: LongInt; N: Integer) : LongInt
+      declaration)
+    (function Faktorial (N: Integer) : LongInt
+      declaration)
+    (function Prima (N: LongInt) : Boolean
+      declaration)
+    (function FPB (A B: LongInt) : LongInt
+      declaration)
+    (function KPK (A B: LongInt) : LongInt
+      declaration))
+  (implementation
+    (function Kuadrat (X: LongInt) : LongInt
+      (begin
+        (:= Kuadrat (* X X))
+        (empty)))
+    (function Pangkat (A: LongInt; N: Integer) : LongInt
+      (var (I) Integer)
+      (var (Hasil) LongInt)
+      (begin
+        (:= Hasil 1)
+        (for I 1 to N
+          (:= Hasil (* Hasil A)))
+        (:= Pangkat Hasil)
+        (empty)))
+    (function Faktorial (N: Integer) : LongInt
+      (begin
+        (if (<= N 1)
+          (:= Faktorial 1)
+          (else
+            (:= Faktorial (* N (call Faktorial (- N 1))))))
+        (empty)))
+    (function Prima (N: LongInt) : Boolean
+      (var (Pembagi) LongInt)
+      (begin
+        (:= Prima (>= N 2))
+        (:= Pembagi 2)
+        (while (<= (* Pembagi Pembagi) N)
+          (begin
+            (if (= (mod N Pembagi) 0)
+              (begin
+                (:= Prima False)
+                (do Exit)
+                (empty)))
+            (:= Pembagi (+ Pembagi 1))
+            (empty)))
+        (empty)))
+    (function FPB (A B: LongInt) : LongInt
+      (var (Sisa) LongInt)
+      (begin
+        (while (<> B 0)
+          (begin
+            (:= Sisa (mod A B))
+            (:= A B)
+            (:= B Sisa)
+            (empty)))
+        (:= FPB A)
+        (empty)))
+    (function KPK (A B: LongInt) : LongInt
+      (begin
+        (:= KPK (* (div A (call FPB A B)) B))
+        (empty)))))

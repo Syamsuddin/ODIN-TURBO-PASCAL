@@ -1,0 +1,9 @@
+(program bab01_02_cek_kompiler
+  (begin
+    (do (call WriteLn 'PEMERIKSAAN KOMPILER'))
+    (do (call WriteLn '===================='))
+    (do (call WriteLn 'Integer  : ' (call SizeOf Integer) ' byte'))
+    (do (call WriteLn 'Uji hitung 2 + 3 = ' (+ 2 3)))
+    (do WriteLn)
+    (do (call WriteLn 'Kompiler siap dipakai.'))
+    (empty)))

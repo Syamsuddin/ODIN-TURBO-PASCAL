@@ -1,0 +1,27 @@
+(program bab10_01_faktorial_rekursif
+  (function Faktorial (N: Integer) : LongInt
+    (begin
+      (if (<= N 1)
+        (:= Faktorial 1)
+        (else
+          (:= Faktorial (* N (call Faktorial (- N 1))))))
+      (empty)))
+  (function FaktorialJejak (N Tingkat: Integer) : LongInt
+    (var (Hasil) LongInt)
+    (begin
+      (do (call WriteLn '':(* Tingkat 2) 'masuk Faktorial(' N ')'))
+      (if (<= N 1)
+        (:= Hasil 1)
+        (else
+          (:= Hasil (* N (call FaktorialJejak (- N 1) (+ Tingkat 1))))))
+      (do (call WriteLn '':(* Tingkat 2) 'Faktorial(' N ') = ' Hasil))
+      (:= FaktorialJejak Hasil)
+      (empty)))
+  (var (I) Integer)
+  (var (Hasil) LongInt)
+  (begin
+    (:= Hasil (call FaktorialJejak 4 0))
+    (do WriteLn)
+    (for I 0 to 12
+      (do (call WriteLn I:2 '! = ' (call Faktorial I):10)))
+    (empty)))

@@ -86,6 +86,17 @@ class GuiTests(unittest.TestCase):
         self.app.clear_breakpoints()
         self.assertFalse(editor.document.breakpoints)
 
+    def test_examples_dialog_lists_the_tutorial(self):
+        self.app.examples()
+        self.root.update()
+        dialog=self.toplevels()[-1]
+        names=self.widgets(dialog,tk.Listbox)[0].get(0,"end")
+        self.assertEqual(len(names),90)
+        self.assertEqual((names[0],names[-1]),("bab01_01_halo_dunia.pas","matematika.pas"))
+        # 90 names do not fit the 15 rows of the list.
+        self.assertTrue(self.widgets(dialog,tk.Scrollbar))
+        dialog.destroy()
+
     def test_menus_dialogs_and_terminal(self):
         self.assertEqual(set(self.app.menus),set("File Edit Search Run Compile Debug Options Window Help".split()))
         for action in (self.app.compiler_options,self.app.directory_options,self.app.editor_options,
@@ -158,7 +169,7 @@ class GuiTests(unittest.TestCase):
         self.assertTrue(all(a[3]<=b[1] for a,b in zip(boxes,boxes[1:])),"plaque lines overlap")
         self.assertLess(plaque.bbox("tagline")[2],plaque.bbox("version")[0])
         self.assertIn("Created by Syams Ideris",self.app.status.cget("text"))
-        # The release tag on the desktop, the startup status bar, the default HELLO.PAS page and About.
+        # The release tag on the desktop, the startup status bar, the default page (bab01_01_halo_dunia.pas) and About.
         self.assertEqual(plaque.itemcget("version","text"),__version_tag__)
         self.assertIn(f"Odin Turbo Pascal {__version_tag__}",self.app.status.cget("text"))
         self.assertIn(f"Odin Turbo Pascal {__version_tag__} - program pertama",self.app.active_editor.text.get("1.0","end"))
@@ -221,7 +232,7 @@ class GuiTests(unittest.TestCase):
         self.root.update()
         dialog=self.toplevels()[-1]
         listing=self.widgets(dialog,tk.Listbox)[0]
-        self.assertEqual(listing.get(0,"end"),("HELLO.PAS","NONAME2","WATCH"))
+        self.assertEqual(listing.get(0,"end"),("bab01_01_halo_dunia.pas","NONAME2","WATCH"))
         listing.selection_clear(0,"end")
         listing.selection_set(2)
         [b for b in self.widgets(dialog,tk.Button) if b.cget("text")==" Open "][0].invoke()
@@ -313,7 +324,7 @@ class GuiTests(unittest.TestCase):
         self.app.write_session()
         items=json.loads(self.app.session.read_text(encoding="utf-8"))
         self.assertEqual(len(items),len(self.app.editors))
-        self.assertEqual(Path(items[0]["path"]).name,"HELLO.PAS")
+        self.assertEqual(Path(items[0]["path"]).name,"bab01_01_halo_dunia.pas")
 
     @unittest.skipUnless(locate_compiler(os.environ.get("ODIN_FPC", "")), "Needs FPC")
     def test_real_gui_compile_and_run(self):
@@ -355,11 +366,11 @@ class GuiTests(unittest.TestCase):
 
     @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
     def test_vision_example_in_user_screen(self):
-        # examples/VISION.PAS (Odin Vision) in the User screen: a mouse click opens the Help
+        # tests/pascal/vision/VISION.PAS (Odin Vision) in the User screen: a mouse click opens the Help
         # menu, Esc closes it, Alt+X quits and the screen before the program comes back.
         self.settings["backend"]="odin"
         root=Path(__file__).resolve().parent.parent
-        self.app.open_file(root/"examples"/"VISION.PAS")
+        self.app.open_file(root/"tests"/"pascal"/"vision"/"VISION.PAS")
         self.app.run()
 
         def wait(text,seconds=10):
@@ -441,7 +452,7 @@ class GuiTests(unittest.TestCase):
         self.app.window_list()
         self.root.update()
         listing=self.widgets(self.toplevels()[-1],tk.Listbox)[0]
-        self.assertEqual(listing.get(0,"end"),("HELLO.PAS","Watches","Call stack","Local variables"))
+        self.assertEqual(listing.get(0,"end"),("bab01_01_halo_dunia.pas","Watches","Call stack","Local variables"))
         self.toplevels()[-1].destroy()
         watch.close_label.event_generate("<Button-1>")
         self.assertIsNone(self.app.watch_window)
@@ -462,7 +473,7 @@ class GuiTests(unittest.TestCase):
     def test_real_gui_debug_session(self):
         self.settings["backend"]="odin"
         source=self.path/"REKURSI.PAS"
-        source.write_text((Path(__file__).resolve().parent.parent/"examples"/"REKURSI.PAS").read_text())
+        source.write_text((Path(__file__).resolve().parent/"pascal"/"debug"/"REKURSI.PAS").read_text())
         editor=self.app.open_file(source)
         editor.toggle_breakpoint(9)
         self.app.watches=["N"]

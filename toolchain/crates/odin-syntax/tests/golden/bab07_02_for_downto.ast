@@ -1,0 +1,19 @@
+(program bab07_02_for_downto
+  (var (I) Integer)
+  (var (Huruf) Char)
+  (begin
+    (do (call Write 'Hitung mundur: '))
+    (for I 10 downto 1
+      (do (call Write I ' ')))
+    (do (call WriteLn 'Mulai!'))
+    (do (call Write 'Abjad terbalik: '))
+    (for Huruf 'Z' downto 'A'
+      (do (call Write Huruf)))
+    (do WriteLn)
+    (for I 1 downto 5
+      (do (call WriteLn 'Baris ini tidak pernah tampil')))
+    (do (call Write 'Kelipatan 5: '))
+    (for I 10 downto 1
+      (do (call Write (* I 5) ' ')))
+    (do WriteLn)
+    (empty)))

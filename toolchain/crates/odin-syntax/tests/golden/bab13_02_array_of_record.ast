@@ -1,0 +1,34 @@
+(program bab13_02_array_of_record
+  (const MaksSiswa = 30)
+  (type TSiswa = (record (Nama: string[20]) (Kelas: string[5]) (Nilai: Integer)))
+  (var (Siswa) (array [(.. 1 MaksSiswa)] TSiswa))
+  (var (N I Terbaik) Integer)
+  (begin
+    (repeat-until (and (>= N 1) (<= N MaksSiswa))
+      (do (call Write 'Jumlah siswa (1-' MaksSiswa '): '))
+      (do (call ReadLn N))
+      (empty))
+    (for I 1 to N
+      (begin
+        (do (call WriteLn 'Siswa ke-' I))
+        (do (call Write '  Nama  : '))
+        (do (call ReadLn (. (index Siswa I) Nama)))
+        (do (call Write '  Kelas : '))
+        (do (call ReadLn (. (index Siswa I) Kelas)))
+        (do (call Write '  Nilai : '))
+        (do (call ReadLn (. (index Siswa I) Nilai)))
+        (empty)))
+    (do WriteLn)
+    (do (call WriteLn 'No  Nama                  Kelas  Nilai'))
+    (do (call WriteLn '--------------------------------------'))
+    (:= Terbaik 1)
+    (for I 1 to N
+      (begin
+        (with (index Siswa I)
+          (do (call WriteLn I:2 '  ' Nama '':(- 22 (call Length Nama)) Kelas '':(- 7 (call Length Kelas)) Nilai:5)))
+        (if (> (. (index Siswa I) Nilai) (. (index Siswa Terbaik) Nilai))
+          (:= Terbaik I))
+        (empty)))
+    (do (call WriteLn '--------------------------------------'))
+    (do (call WriteLn 'Nilai tertinggi: ' (. (index Siswa Terbaik) Nama) ' (' (. (index Siswa Terbaik) Nilai) ')'))
+    (empty)))

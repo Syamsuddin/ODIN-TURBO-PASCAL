@@ -1,0 +1,74 @@
+(program bab18_04_linked_list_hapus
+  (type PSimpul = (^ TSimpul))
+  (type TSimpul = (record (Data: Integer) (Berikut: PSimpul)))
+  (procedure TambahBelakang (var Awal: PSimpul; Nilai: Integer)
+    (var (Baru P) PSimpul)
+    (begin
+      (do (call New Baru))
+      (:= (. (^ Baru) Data) Nilai)
+      (:= (. (^ Baru) Berikut) nil)
+      (if (= Awal nil)
+        (:= Awal Baru)
+        (else
+          (begin
+            (:= P Awal)
+            (while (<> (. (^ P) Berikut) nil)
+              (:= P (. (^ P) Berikut)))
+            (:= (. (^ P) Berikut) Baru)
+            (empty))))
+      (empty)))
+  (procedure Tampilkan (Awal: PSimpul)
+    (begin
+      (do (call Write '  '))
+      (while (<> Awal nil)
+        (begin
+          (do (call Write (. (^ Awal) Data) ' -> '))
+          (:= Awal (. (^ Awal) Berikut))
+          (empty)))
+      (do (call WriteLn 'nil'))
+      (empty)))
+  (function Hapus (var Awal: PSimpul; Nilai: Integer) : Boolean
+    (var (Sebelum P) PSimpul)
+    (begin
+      (:= Sebelum nil)
+      (:= P Awal)
+      (while (and (<> P nil) (<> (. (^ P) Data) Nilai))
+        (begin
+          (:= Sebelum P)
+          (:= P (. (^ P) Berikut))
+          (empty)))
+      (if (= P nil)
+        (:= Hapus False)
+        (else
+          (begin
+            (if (= Sebelum nil)
+              (:= Awal (. (^ P) Berikut))
+              (else
+                (:= (. (^ Sebelum) Berikut) (. (^ P) Berikut))))
+            (do (call Dispose P))
+            (:= Hapus True)
+            (empty))))
+      (empty)))
+  (procedure Coba (var Awal: PSimpul; Nilai: Integer)
+    (begin
+      (if (call Hapus Awal Nilai)
+        (do (call WriteLn 'Hapus ' Nilai ':'))
+        (else
+          (do (call WriteLn 'Hapus ' Nilai ': tidak ditemukan'))))
+      (do (call Tampilkan Awal))
+      (empty)))
+  (var (Daftar) PSimpul)
+  (var (I) Integer)
+  (begin
+    (:= Daftar nil)
+    (for I 1 to 5
+      (do (call TambahBelakang Daftar (* I 10))))
+    (do (call WriteLn 'List awal:'))
+    (do (call Tampilkan Daftar))
+    (do (call Coba Daftar 30))
+    (do (call Coba Daftar 10))
+    (do (call Coba Daftar 50))
+    (do (call Coba Daftar 99))
+    (do (call Coba Daftar 20))
+    (do (call Coba Daftar 40))
+    (empty)))

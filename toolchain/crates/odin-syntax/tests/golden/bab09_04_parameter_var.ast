@@ -1,0 +1,24 @@
+(program bab09_04_parameter_var
+  (procedure Tukar (var A B: Integer)
+    (var (Sementara) Integer)
+    (begin
+      (:= Sementara A)
+      (:= A B)
+      (:= B Sementara)
+      (empty)))
+  (procedure HitungPersegi (Panjang Lebar: Real; var Luas Keliling: Real)
+    (begin
+      (:= Luas (* Panjang Lebar))
+      (:= Keliling (* 2 (+ Panjang Lebar)))
+      (empty)))
+  (var (X Y) Integer)
+  (var (L K) Real)
+  (begin
+    (:= X 3)
+    (:= Y 8)
+    (do (call WriteLn 'Sebelum ditukar: X = ' X ', Y = ' Y))
+    (do (call Tukar X Y))
+    (do (call WriteLn 'Sesudah ditukar: X = ' X ', Y = ' Y))
+    (do (call HitungPersegi 6 4 L K))
+    (do (call WriteLn 'Persegi panjang 6 x 4: luas ' L:0:1 ', keliling ' K:0:1))
+    (empty)))

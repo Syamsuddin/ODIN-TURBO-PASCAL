@@ -30,8 +30,8 @@ Install.command       Deteksi CPU, pemasangan dependensi, compile/run check,
 Uninstall.command     Memindahkan aplikasi ke Trash, mempertahankan data.
 CHANGELOG.md          Riwayat perubahan per versi.
 main.py, odin/        Source code aplikasi yang dapat dipelajari dan diubah.
-examples/             Sebelas berkas contoh Pascal, termasuk satu unit dan
-                      demo Turbo Vision (VISION.PAS).
+examples/             Tutorial Pascal untuk pemula: 90 berkas dalam 20 bab,
+                      yaitu 89 program dan unit matematika.pas (Bab 19).
 rtl/                  Runtime library Odin dan Odin Vision (Pascal).
 toolchain/            Source toolchain Odin: compiler, assembler, linker,
                       dan debugger (Rust).

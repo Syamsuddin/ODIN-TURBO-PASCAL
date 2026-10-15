@@ -1,0 +1,23 @@
+(program bab06_02_if_else
+  (var (Bilangan) Integer)
+  (var (Nilai) Integer)
+  (begin
+    (do (call Write 'Masukkan bilangan bulat: '))
+    (do (call ReadLn Bilangan))
+    (if (= (mod Bilangan 2) 0)
+      (do (call WriteLn Bilangan ' adalah bilangan genap'))
+      (else
+        (do (call WriteLn Bilangan ' adalah bilangan ganjil'))))
+    (do (call Write 'Masukkan nilai ujian: '))
+    (do (call ReadLn Nilai))
+    (if (>= Nilai 75)
+      (begin
+        (do (call WriteLn 'Selamat, Anda LULUS.'))
+        (do (call WriteLn 'Nilai Anda melewati KKM 75.'))
+        (empty))
+      (else
+        (begin
+          (do (call WriteLn 'Anda belum lulus.'))
+          (do (call WriteLn 'Kurang ' (- 75 Nilai) ' poin lagi.'))
+          (empty))))
+    (empty)))

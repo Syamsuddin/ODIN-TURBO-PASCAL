@@ -1,0 +1,43 @@
+(program bab06_04_case_of
+  (var (NomorHari) Integer)
+  (var (Huruf) Char)
+  (begin
+    (do (call Write 'Nomor hari (1 = Minggu ... 7 = Sabtu): '))
+    (do (call ReadLn NomorHari))
+    (case NomorHari
+      (arm 1
+        (do (call WriteLn 'Minggu')))
+      (arm 2
+        (do (call WriteLn 'Senin')))
+      (arm 3
+        (do (call WriteLn 'Selasa')))
+      (arm 4
+        (do (call WriteLn 'Rabu')))
+      (arm 5
+        (do (call WriteLn 'Kamis')))
+      (arm 6
+        (do (call WriteLn 'Jumat')))
+      (arm 7
+        (do (call WriteLn 'Sabtu')))
+      (else
+        (do (call WriteLn 'Nomor hari harus 1 sampai 7.'))
+        (empty)))
+    (case NomorHari
+      (arm 1 7
+        (do (call WriteLn 'Hari libur akhir pekan.')))
+      (arm 2..6
+        (do (call WriteLn 'Hari sekolah.'))))
+    (do (call Write 'Ketik sebuah huruf: '))
+    (do (call ReadLn Huruf))
+    (:= Huruf (call UpCase Huruf))
+    (case Huruf
+      (arm 'A' 'I' 'U' 'E' 'O'
+        (do (call WriteLn 'Huruf vokal')))
+      (arm 'B'..'D' 'F'..'H' 'J'..'N' 'P'..'T' 'V'..'Z'
+        (do (call WriteLn 'Huruf konsonan')))
+      (arm '0'..'9'
+        (do (call WriteLn 'Itu angka, bukan huruf')))
+      (else
+        (do (call WriteLn 'Bukan huruf'))
+        (empty)))
+    (empty)))

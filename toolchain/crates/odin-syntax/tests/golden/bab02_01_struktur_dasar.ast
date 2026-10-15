@@ -1,0 +1,12 @@
+(program bab02_01_struktur_dasar
+  (const HargaTiket = 25000)
+  (type TJumlah = Integer)
+  (var (JumlahOrang) TJumlah)
+  (var (TotalBayar) LongInt)
+  (begin
+    (:= JumlahOrang 4)
+    (:= TotalBayar (* HargaTiket JumlahOrang))
+    (do (call WriteLn 'Harga satu tiket : ' HargaTiket))
+    (do (call WriteLn 'Jumlah orang     : ' JumlahOrang))
+    (do (call WriteLn 'Total bayar      : ' TotalBayar))
+    (empty)))

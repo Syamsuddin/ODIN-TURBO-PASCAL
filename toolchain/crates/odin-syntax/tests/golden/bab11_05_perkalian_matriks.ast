@@ -1,0 +1,25 @@
+(program bab11_05_perkalian_matriks
+  (const BarisA = 2)
+  (const KolomA = 3)
+  (const KolomB = 2)
+  (const A : (array [(.. 1 BarisA) (.. 1 KolomA)] Integer) = ((1, 2, 3), (4, 5, 6)))
+  (const B : (array [(.. 1 KolomA) (.. 1 KolomB)] Integer) = ((7, 8), (9, 10), (11, 12)))
+  (var (C) (array [(.. 1 BarisA) (.. 1 KolomB)] Integer))
+  (var (I J K) Integer)
+  (begin
+    (for I 1 to BarisA
+      (for J 1 to KolomB
+        (begin
+          (:= (index C I J) 0)
+          (for K 1 to KolomA
+            (:= (index C I J) (+ (index C I J) (* (index A I K) (index B K J)))))
+          (empty))))
+    (do (call WriteLn 'Hasil A x B:'))
+    (for I 1 to BarisA
+      (begin
+        (for J 1 to KolomB
+          (do (call Write (index C I J):6)))
+        (do WriteLn)
+        (empty)))
+    (do (call WriteLn 'C[1,1] = 1x7 + 2x9 + 3x11 = ' (index C 1 1)))
+    (empty)))

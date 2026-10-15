@@ -110,7 +110,7 @@ class App:
         self.bind_keys()
         self.restore_session()
         if not self.editors:
-            example = ASSETS / "examples" / "HELLO.PAS"
+            example = ASSETS / "examples" / "bab01_01_halo_dunia.pas"
             self.new_document(Document.read(example) if example.exists() else Document(TEMPLATE))
         self.update_status()
         root.after(40, self.poll)
@@ -454,8 +454,15 @@ class App:
 
     def choose(self,title,items,callback):
         win,body=self.dialog(title)
-        listing=tk.Listbox(body,width=65,height=min(15,max(4,len(items))),bg=BLUE,fg=WHITE,selectbackground=CYAN,selectforeground=BLACK)
-        listing.pack(fill="both",expand=True)
+        box=tk.Frame(body,bg=GRAY)
+        box.pack(fill="both",expand=True)
+        listing=tk.Listbox(box,width=65,height=min(15,max(4,len(items))),bg=BLUE,fg=WHITE,selectbackground=CYAN,selectforeground=BLACK)
+        if len(items)>15:
+            # The tutorial alone has 90 examples.
+            bar=tk.Scrollbar(box,orient="vertical",command=listing.yview)
+            listing.configure(yscrollcommand=bar.set)
+            bar.pack(side="right",fill="y")
+        listing.pack(side="left",fill="both",expand=True)
         for label,value in items:listing.insert("end",label)
         def accept(e=None):
             indices=listing.curselection()
@@ -471,7 +478,7 @@ class App:
 
     def recent(self):self.choose("Recent files",[(p,p) for p in self.settings["recent"]],self.open_file)
     def window_list(self):self.choose("Windows",[(w.list_label(),w) for w in self.windows],self.activate)
-    def examples(self):self.choose("Examples",[(p.name,p) for p in sorted((ASSETS/"examples").glob("*.PAS"))],self.open_file)
+    def examples(self):self.choose("Examples",[(p.name,p) for p in sorted((ASSETS/"examples").iterdir()) if p.suffix.lower()==".pas"],self.open_file)
 
     def change_directory(self):
         path=filedialog.askdirectory(parent=self.root,title="Working directory")

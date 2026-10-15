@@ -1,0 +1,23 @@
+(program bab17_01_tulis_file_teks
+  (const NamaFile = 'catatan.txt')
+  (var (F) Text)
+  (var (Folder Catatan) string)
+  (var (I) Integer)
+  (begin
+    (do (call Assign F NamaFile))
+    (do (call Rewrite F))
+    (do (call WriteLn F 'CATATAN HARIAN'))
+    (do (call WriteLn F '=============='))
+    (for I 1 to 3
+      (begin
+        (do (call Write 'Catatan ke-' I ': '))
+        (do (call ReadLn Catatan))
+        (do (call WriteLn F I '. ' Catatan))
+        (empty)))
+    (do (call Close F))
+    (do (call GetDir 0 Folder))
+    (do WriteLn)
+    (do (call WriteLn 'Tersimpan ke file ' NamaFile))
+    (do (call WriteLn 'di folder ' Folder))
+    (do (call WriteLn 'Jalankan bab17_02_baca_file_teks untuk membacanya.'))
+    (empty)))

@@ -1,0 +1,35 @@
+(program bab16_02_selection_sort
+  (const N = 8)
+  (const Awal : (array [(.. 1 N)] Integer) = (29, 10, 14, 37, 13, 5, 42, 21))
+  (type TData = (array [(.. 1 N)] Integer))
+  (procedure Tampilkan (Judul: string; D: TData)
+    (var (I) Integer)
+    (begin
+      (do (call Write Judul))
+      (for I 1 to N
+        (do (call Write (index D I):4)))
+      (do WriteLn)
+      (empty)))
+  (var (Data) TData)
+  (var (I J PosisiMin Sementara) Integer)
+  (begin
+    (for I 1 to N
+      (:= (index Data I) (index Awal I)))
+    (do (call Tampilkan 'Awal      :' Data))
+    (for I 1 to (- N 1)
+      (begin
+        (:= PosisiMin I)
+        (for J (+ I 1) to N
+          (if (< (index Data J) (index Data PosisiMin))
+            (:= PosisiMin J)))
+        (if (<> PosisiMin I)
+          (begin
+            (:= Sementara (index Data I))
+            (:= (index Data I) (index Data PosisiMin))
+            (:= (index Data PosisiMin) Sementara)
+            (empty)))
+        (do (call Write 'Putaran ' I ' :'))
+        (do (call Tampilkan '' Data))
+        (empty)))
+    (do (call Tampilkan 'Hasil     :' Data))
+    (empty)))

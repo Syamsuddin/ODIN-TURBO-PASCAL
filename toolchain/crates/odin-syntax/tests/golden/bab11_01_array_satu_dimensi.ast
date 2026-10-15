@@ -1,0 +1,21 @@
+(program bab11_01_array_satu_dimensi
+  (const Banyak = 5)
+  (var (Nilai) (array [(.. 1 Banyak)] Integer))
+  (var (I) Integer)
+  (begin
+    (for I 1 to Banyak
+      (begin
+        (do (call Write 'Nilai siswa ke-' I ': '))
+        (do (call ReadLn (index Nilai I)))
+        (empty)))
+    (do WriteLn)
+    (do (call WriteLn 'Isi array:'))
+    (for I 1 to Banyak
+      (do (call WriteLn '  Nilai[' I '] = ' (index Nilai I))))
+    (do (call Write 'Urutan terbalik: '))
+    (for I Banyak downto 1
+      (do (call Write (index Nilai I) ' ')))
+    (do WriteLn)
+    (:= (index Nilai 1) (+ (index Nilai 1) 5))
+    (do (call WriteLn 'Nilai pertama setelah ditambah 5: ' (index Nilai 1)))
+    (empty)))

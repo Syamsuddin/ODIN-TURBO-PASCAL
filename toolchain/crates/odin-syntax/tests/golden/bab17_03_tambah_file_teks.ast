@@ -1,0 +1,28 @@
+(program bab17_03_tambah_file_teks
+  (const NamaFile = 'catatan.txt')
+  (var (F) Text)
+  (var (Catatan Baris) string)
+  (var (Jumlah) Integer)
+  (begin
+    (do (call Write 'Catatan baru: '))
+    (do (call ReadLn Catatan))
+    (do (call Assign F NamaFile))
+    (do (call Append F))
+    (if (<> IOResult 0)
+      (begin
+        (do (call WriteLn '(' NamaFile ' belum ada, dibuat baru)'))
+        (do (call Rewrite F))
+        (empty)))
+    (do (call WriteLn F '+ ' Catatan))
+    (do (call Close F))
+    (do (call Reset F))
+    (:= Jumlah 0)
+    (while (not (call Eof F))
+      (begin
+        (do (call ReadLn F Baris))
+        (do (call WriteLn '  ' Baris))
+        (:= Jumlah (+ Jumlah 1))
+        (empty)))
+    (do (call Close F))
+    (do (call WriteLn NamaFile ' kini berisi ' Jumlah ' baris.'))
+    (empty)))
