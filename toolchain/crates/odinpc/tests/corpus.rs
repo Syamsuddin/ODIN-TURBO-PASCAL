@@ -131,10 +131,15 @@ fn pascal_corpus_matches_fpc() {
         let want_code: i32 =
             std::fs::read_to_string(src.with_extension("code")).map(|s| s.trim().parse().unwrap()).unwrap_or(0);
         let code = run.status.code().unwrap_or(-1);
-        if run.stdout != want_out || code != want_code {
+        let mut got_out = run.stdout.clone();
+        if target.ends_with("windows") {
+            // WriteLn ends lines with CR LF on Windows; the expectations come from FPC on Unix.
+            got_out = String::from_utf8_lossy(&got_out).replace("\r\n", "\n").into_bytes();
+        }
+        if got_out != want_out || code != want_code {
             failures.push(format!(
                 "{name}: exit {code} (want {want_code})\n--- got\n{}--- want\n{}--- stderr\n{}",
-                String::from_utf8_lossy(&run.stdout),
+                String::from_utf8_lossy(&got_out),
                 String::from_utf8_lossy(&want_out),
                 String::from_utf8_lossy(&run.stderr)
             ));

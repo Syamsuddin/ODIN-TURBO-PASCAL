@@ -323,16 +323,16 @@ pub fn build(map: &SourceMap, options: &Options, checked: &Checked) -> Result<Bu
     let (os, target) = match options.target.as_str() {
         "x86_64-darwin" => (Os::Darwin, odin_link::Target::X86_64Darwin),
         "x86_64-linux" => (Os::Linux, odin_link::Target::X86_64Linux),
+        "x86_64-windows" => (Os::Windows, odin_link::Target::X86_64Windows),
         other => {
             let hint = match other {
                 "aarch64-darwin" | "aarch64-linux" => "; arm64 menyusul di Tahap 8c",
-                "x86_64-windows" => "; Windows menyusul di Tahap 8d",
                 _ => "",
             };
             return Err(Diagnostic::error_with(
                 code::NOT_SUPPORTED,
                 Span::default(),
-                format!(": target {other} (yang tersedia: x86_64-darwin, x86_64-linux{hint})"),
+                format!(": target {other} (yang tersedia: x86_64-darwin, x86_64-linux, x86_64-windows{hint})"),
             ));
         }
     };
@@ -364,9 +364,14 @@ pub fn build(map: &SourceMap, options: &Options, checked: &Checked) -> Result<Bu
         .and_then(|p| p.file_name())
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| "program".into());
-    // On Linux the process starts in the shim's `_start`, which hands the
-    // code generator's `main` to glibc's __libc_start_main.
-    let entry = if os == Os::Linux { "_start" } else { out.entry.as_str() };
+    // On Linux and Windows the process starts in the shim (`_start`,
+    // `mainCRTStartup`), which sets up the C library and calls the code
+    // generator's `main`.
+    let entry = match os {
+        Os::Linux => "_start",
+        Os::Windows => "mainCRTStartup",
+        Os::Darwin => out.entry.as_str(),
+    };
     let link_options = odin_link::LinkOptions::new(target, entry, &identifier);
     let object = std::mem::take(&mut out.object);
     let image = odin_link::link(&[object, shim], &link_options).map_err(|e| {
