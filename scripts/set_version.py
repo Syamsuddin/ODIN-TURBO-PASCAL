@@ -101,7 +101,7 @@ def main(argv=None):
     print(f"""
 Tinjau dan tulis sendiri (klaim pengujian dan prosa rilis):
   CHANGELOG.md            ringkasan dan hasil pengujian entri [{new}]
-  README.md               blok "Rilis." dan baris Status Pengujian
+  README.md               kotak rilis di atas, Riwayat Rilis, dan Status Pengujian
   README.txt              bagian PENGUJIAN
 
 Langkah berikutnya:
