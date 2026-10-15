@@ -1,4 +1,4 @@
-KOMPATIBILITAS DAN CAKUPAN VERSI 1.0
+KOMPATIBILITAS DAN CAKUPAN VERSI 2.0.0-alpha.1
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Implementasi baru dengan penampilan terinspirasi IDE Turbo Pascal era DOS.
@@ -28,7 +28,7 @@ ukuran pointer, ABI, sistem berkas, dan unit tetap berlaku. Jangan menganggap
 layout record/binary file DOS atau aritmetika pointer identik pada macOS 64-bit.
 Lihat referensi resmi sebelum memindahkan program DOS dengan asumsi 16-bit.
 
-BACKEND COMPILER (VERSI PENGEMBANGAN SESUDAH 1.0.0)
+BACKEND COMPILER ODIN (BAWAAN DI MAC INTEL SEJAK 2.0.0-alpha.1)
 
 Backend bawaan versi pengembangan adalah toolchain Odin: compiler odinpc
 (Rust) dan runtime library sendiri di rtl/. Free Pascal tetap bisa dipilih

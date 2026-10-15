@@ -6,6 +6,10 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.0.0-alpha.1] - 2026-10-15
+
+Rilis alfa pertama menuju 2.0.0. Toolchain Pascal milik Odin sendiri (compiler, assembler, linker, runtime library, debugger, dan Odin Vision) menjadi backend bawaan di Mac Intel. Free Pascal tetap tersedia, dan dipakai otomatis di Apple Silicon. Backend Odin untuk arm64 dan Linux, serta pelepasan Free Pascal, LLDB, dan Xcode sepenuhnya, menyusul sebelum 2.0.0 (lihat `IMPLEMENTATION_PLAN.md`, Tahap 8-10).
+
 ### Ditambahkan
 
 - Toolchain Pascal milik Odin sendiri (`toolchain/`, Rust, tanpa crate pihak ketiga), sebagai backend eksperimental di Options > Compiler. Isinya:
@@ -45,14 +49,32 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 ### Diubah
 
 - Kerangka jendela editor dipisah menjadi `DesktopWindow` (`odin/windows.py`), supaya jendela debug nanti bisa ikut diatur Tile, Cascade, dan Window > List. Perilaku IDE tidak berubah.
-- Menu Debug tidak lagi memakai LLDB. Debugging memerlukan backend Odin.
 - Backend bawaan sekarang toolchain Odin. Free Pascal tetap bisa dipilih di Options > Compiler, dan otomatis dipakai bila `odinpc` tidak ditemukan.
-- `scripts/package_app.py` menyertakan `rtl/` dan, bila sudah dibangun, `toolchain/target/release/odinpc` di dalam bundle.
+- `scripts/package_app.py` menyertakan `rtl/` dan, bila sudah dibangun, `toolchain/target/release/odinpc` di dalam bundle. Nomor versi bundle diambil dari `odin/__init__.py`.
+- Paket pemasang membawa toolchain Odin (`odinpc` untuk Mac Intel) dan runtime library-nya.
+
+### Dihapus
+
+- Konsol LLDB di menu Debug. Debugger terpadu menggantikannya, tetapi hanya tersedia di backend Odin. Di Apple Silicon, untuk sementara Odin tidak punya debugger.
 
 ### Belum tersedia di backend Odin
 
 - arm64 dan Linux.
 - Unit Turbo Vision opsional `ColorSel` dan `TextView`. Untuk program yang memakainya, pilih backend Free Pascal; pesan galatnya menyebutkan hal ini.
+
+### Lisensi
+
+Runtime library Odin (`rtl/`) berlisensi GNU GPL v3 atau yang lebih baru tanpa pengecualian runtime, jadi executable yang dibagikan ikut terikat GPL. `odinpc` di dalam bundle memuat pustaka standar Rust (MIT); lihat `THIRD_PARTY.txt`.
+
+### Pengujian
+
+Di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2, Rust 1.99):
+
+- 56 tes Python lulus, termasuk 17 tes GUI dengan jendela Tk sungguhan, sesi debugger nyata, dan 4 tes snapshot Odin Vision;
+- 110 tes Rust lulus;
+- korpus diferensial 77 program memberi keluaran dan kode keluar yang sama dengan Free Pascal 3.2.2, baik dengan build biasa maupun build debug.
+
+Yang belum diverifikasi langsung: Apple Silicon, Gatekeeper, Option sebagai Alt di keyboard Mac sungguhan (baru diuji dengan event sintetis), dan pencetakan lewat `Printer`.
 
 ## [1.0.0] - 2026-10-13
 
@@ -102,4 +124,6 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.1...HEAD
+[2.0.0-alpha.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/releases/tag/v2.0.0-alpha.1
 [1.0.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/releases/tag/v1.0.0

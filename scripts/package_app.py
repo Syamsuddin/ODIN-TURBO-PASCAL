@@ -7,10 +7,16 @@ This is not a frozen standalone executable. Runtime installation belongs to
 Install.command. Only the build bundle beside this repository is replaced.
 """
 import plistlib
+import re
 import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+VERSION = re.search(r'__version__ = "([^"]+)"', (ROOT / "odin" / "__init__.py").read_text()).group(1)
+# Info.plist: the short version is numeric; a pre-release such as 2.0.0-alpha.1
+# becomes the build version 2.0.0a1 (Apple's development/alpha/beta form).
+SHORT_VERSION = VERSION.split("-")[0]
+BUILD_VERSION = re.sub(r"-(alpha|beta|rc)\.?(\d*)", lambda m: {"alpha": "a", "beta": "b", "rc": "fc"}[m.group(1)] + (m.group(2) or "1"), VERSION)
 APP = ROOT / "Odin Turbo Pascal.app"
 CONTENTS = APP / "Contents"
 if APP.exists():
@@ -43,8 +49,8 @@ metadata = {
     "CFBundleName": "Odin Turbo Pascal",
     "CFBundleDisplayName": "Odin Turbo Pascal",
     "CFBundleIdentifier": "id.digitalkab.odin-turbo-pascal",
-    "CFBundleVersion": "1.0.0",
-    "CFBundleShortVersionString": "1.0.0",
+    "CFBundleVersion": BUILD_VERSION,
+    "CFBundleShortVersionString": SHORT_VERSION,
     "CFBundleExecutable": "OdinTurboPascal",
     "CFBundleIconFile": "odin.icns",
     "CFBundlePackageType": "APPL",

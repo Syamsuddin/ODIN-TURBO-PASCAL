@@ -1,4 +1,4 @@
-ODIN TURBO PASCAL 1.0.0
+ODIN TURBO PASCAL 2.0.0-alpha.1
 Paket aplikasi desktop untuk Mac Intel dan Apple Silicon
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
@@ -30,7 +30,11 @@ Install.command       Deteksi CPU, pemasangan dependensi, compile/run check,
 Uninstall.command     Memindahkan aplikasi ke Trash, mempertahankan data.
 CHANGELOG.md          Riwayat perubahan per versi.
 main.py, odin/        Source code aplikasi yang dapat dipelajari dan diubah.
-examples/             Sepuluh berkas contoh Pascal, termasuk satu unit.
+examples/             Sebelas berkas contoh Pascal, termasuk satu unit dan
+                      demo Turbo Vision (VISION.PAS).
+rtl/                  Runtime library Odin dan Odin Vision (Pascal).
+toolchain/            Source toolchain Odin: compiler, assembler, linker,
+                      dan debugger (Rust).
 docs/                 Panduan, referensi Pascal, pintasan, kompatibilitas,
                       laporan pengujian, serta pratinjau antarmuka.
 assets/               Logo dan ikon: sumber SVG serta PNG/ICNS hasil render.
@@ -41,16 +45,19 @@ scripts/              Pemeriksaan macOS, pembentukan ulang bundel .app, dan
 BENTUK DISTRIBUSI
 
 Ini adalah aplikasi Python/Tk dengan bundel .app yang memakai runtime lokal.
-Bundel ini tidak menyertakan Python, Free Pascal, atau SDK Apple. Karena itu,
+Bundel membawa toolchain Odin (odinpc, executable Mac Intel) dan runtime
+library-nya, tetapi tidak menyertakan Python, Free Pascal, atau SDK Apple. Karena itu,
 paket bukan installer offline mandiri dan bukan DMG/PKG bertanda tangan Apple.
 Setelah dependensi tersedia, penggunaan editor, kompilasi, dan menjalankan
 program tidak memerlukan internet. Tidak ada API key, server, atau telemetri.
 
 TARGET MAC
 
-Intel x86_64: Python dan compiler menghasilkan program Intel native.
+Intel x86_64: Python dan compiler menghasilkan program Intel native. Backend
+bawaan adalah toolchain Odin; Free Pascal bisa dipilih di Options > Compiler.
 Apple Silicon arm64: pemasang mendeteksi chip, memilih eksekusi arm64, dan
-compiler diarahkan ke AArch64. Rosetta tidak diperlukan bila dependensi native
+compiler diarahkan ke AArch64. Toolchain Odin belum mendukung arm64, jadi di
+sini Odin memakai Free Pascal dan belum punya debugger terpadu. Rosetta tidak diperlukan bila dependensi native
 tersedia. Runtime Python universal2 juga didukung.
 
 Target bundel macOS 11 atau lebih baru, Python 3.10 atau lebih baru dengan Tk,
@@ -79,11 +86,17 @@ Antarmuka biru, teks kuning, menu abu-abu, jendela editor, status bar, dan
 pintasan fungsi klasik. File/Edit/Search/Run/Compile/Debug/Options/Window/Help.
 Editor beberapa berkas dengan tile, cascade, zoom, undo/redo, clipboard,
 find/replace, go-to-line, indentasi, mode insert/overwrite, warna sintaks opsional.
-Free Pascal asli, mode TP/ObjFPC/Delphi, primary file, unit/include paths,
-range/overflow checks, build ulang, pesan compiler dan navigasi baris error.
-Terminal PTY 80x25: ReadLn, ReadKey, warna CRT, GotoXY, ClrScr, dan input tombol.
+Toolchain Odin (Mac Intel): compiler TP7 dengan tipe object, runtime library
+dengan Crt, Dos, Strings, Printer, Objects, dan Odin Vision (Turbo Vision).
+Free Pascal asli sebagai backend alternatif, mode TP/ObjFPC/Delphi, primary
+file, unit/include paths, range/overflow checks, build ulang, pesan compiler
+dan navigasi baris error.
+Terminal PTY 80x25: ReadLn, ReadKey, warna CRT, GotoXY, ClrScr, input tombol,
+dan mouse untuk program Turbo Vision.
 Argumen program, penghentian proses, ekspor executable native.
-LLDB console: breakpoint sumber, step/next/continue, frame variable, backtrace.
+Debugger terpadu (backend Odin): breakpoint, Trace into, Step over, Go to
+cursor, jendela Watches, Local variables, dan Call stack, Evaluate/Modify,
+serta Search > Find error untuk runtime error.
 Penyimpanan atomik, deteksi perubahan dari luar, CP437/UTF-8, LF/CRLF,
 daftar berkas terakhir, pengaturan, pemulihan sesi setiap 10 detik.
 
@@ -96,17 +109,19 @@ Free Pascal mode TP mendekatkan kompatibilitas sumber. Hasil kompilasi berupa
 program macOS native, bukan EXE DOS 16-bit. Kode BGI/Graph, interrupt DOS,
 Port/Mem, assembler x86 16-bit, serta pointer berbasis segment memerlukan
 porting. Tidak ada emulator DOS di dalam paket ini.
-LLDB memakai antarmuka perintah di User screen, tidak memiliki watch window
-dan source stepping terpadu seperti debugger Borland. Evaluasi ekspresi
-Pascal bergantung dukungan LLDB. Breakpoint dipasang ketika sesi LLDB dimulai.
+Debugger terpadu hanya tersedia di backend Odin (Mac Intel). Konsol LLDB dari
+rilis 1.0.0 tidak dipakai lagi.
 Lihat docs/COMPATIBILITY.txt untuk rincian.
 
 PENGUJIAN
 
-Pengujian otomatis dijalankan di Linux dengan Free Pascal 3.2.2 dan display
-virtual untuk Tk. Lihat docs/TEST_REPORT.txt untuk hasil dan cakupan aktual.
-LaunchServices, Gatekeeper, pemasang Homebrew, LLDB macOS, serta tampilan Tk
-native pada Mac Intel/Apple Silicon belum diuji langsung di lingkungan ini.
+Rilis 2.0.0-alpha.1 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
+Free Pascal 3.2.2): 56 tes Python (termasuk 17 tes GUI dengan jendela Tk
+sungguhan), 110 tes Rust, dan 77 program uji yang keluarannya sama dengan
+Free Pascal. Rilis 1.0.0 diuji di Linux dengan Free Pascal 3.2.2 dan display
+virtual untuk Tk; lihat docs/TEST_REPORT.txt.
+Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan pemasang
+Homebrew belum diuji langsung.
 Tidak ada klaim bahwa bundel telah ditandatangani atau dinotarisasi Apple.
 
 PENYIMPANAN
@@ -123,6 +138,9 @@ MENJALANKAN SOURCE CODE
 
 Mac/Linux dengan Python/Tk dan Free Pascal:
   python3 main.py
+Toolchain Odin (Mac Intel, Rust 1.85 atau lebih baru):
+  cd toolchain && cargo build --release
+IDE memakai toolchain/target/release/odinpc bila ada.
 
 Pengujian:
   python3 -m unittest discover -s tests -v

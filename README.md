@@ -6,7 +6,7 @@
 
 **Layar biru Turbo Pascal yang Anda kenal, dengan compiler dan debugger yang menghasilkan program native.**
 
-[![Versi](https://img.shields.io/badge/rilis-1.0.0-0000aa?style=flat-square)](CHANGELOG.md)
+[![Versi](https://img.shields.io/badge/rilis-2.0.0--alpha.1-0000aa?style=flat-square)](CHANGELOG.md)
 [![Pengembangan](https://img.shields.io/badge/pengembangan-toolchain%20Odin-00aaaa?style=flat-square)](IMPLEMENTATION_PLAN.md)
 [![Lisensi GPL v3](https://img.shields.io/badge/lisensi-GPL--3.0--or--later-ffff55?style=flat-square)](LICENSE)
 [![macOS](https://img.shields.io/badge/macOS-11%2B%20Intel%20%7C%20Apple%20Silicon-000000?style=flat-square&logo=apple&logoColor=white)](#persyaratan-sistem)
@@ -25,20 +25,20 @@
 
 Odin punya dua backend compiler:
 
-- **Odin native.** Ini toolchain Odin sendiri: compiler Pascal, assembler, linker, runtime library, dan debugger, ditulis dari nol. Statusnya masih versi pengembangan dan baru berjalan di Mac Intel.
-- **Free Pascal.** Compiler yang dipakai rilis 1.0.0, tersedia untuk Mac Intel dan Apple Silicon.
+- **Odin native.** Ini toolchain Odin sendiri: compiler Pascal, assembler, linker, runtime library, dan debugger, ditulis dari nol. Statusnya alfa (rilis 2.0.0-alpha.1), dan baru berjalan di Mac Intel. Di sana backend ini menjadi bawaan.
+- **Free Pascal.** Compiler yang dipakai rilis 1.0.0, tersedia untuk Mac Intel dan Apple Silicon. Di Apple Silicon, Odin otomatis memakainya.
 
 > [!NOTE]
-> **Rilis dan versi pengembangan.**
+> **Rilis.**
 >
-> - **Paket rilis 1.0.0**, yang dipasang lewat `Install.command`, mengompilasi dengan Free Pascal dan men-debug lewat LLDB.
-> - **Repositori ini** sedang mengerjakan versi berikutnya, yaitu toolchain Odin native beserta debugger terpadu. Bagian yang ditandai *versi pengembangan* belum ada di paket pemasang. Untuk mencobanya, jalankan Odin dari source ([petunjuk](#mencoba-versi-pengembangan)).
+> - **2.0.0-alpha.1** (rilis ini), yang dipasang lewat `Install.command`, sudah membawa toolchain Odin native, debugger terpadu, dan Odin Vision. Bagian yang ditandai *versi pengembangan* termasuk di dalamnya, tetapi baru berjalan di Mac Intel. Di Apple Silicon, Odin memakai Free Pascal dan belum punya debugger.
+> - **1.0.0** mengompilasi dengan Free Pascal dan men-debug lewat LLDB.
 >
 > Kemajuan per tahap tercatat di [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
 
 Cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, guru yang mengajar Pascal di kelas, dan siapa saja yang rindu menekan `Ctrl+F9` lalu melihat programnya berjalan.
 
-> **English summary.** Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS. Release 1.0.0 compiles with the real Free Pascal compiler into native binaries and runs them in a built-in 80×25 terminal with Crt support. The development version adds Odin's own toolchain, written from scratch in Rust and Pascal: compiler, assembler, Mach-O linker, runtime library, and an integrated Turbo Pascal–style debugger with Watches, Locals and Call stack windows. It currently targets Intel Macs. Messages and documentation are in Indonesian. Licensed under the GNU GPL v3 or later.
+> **English summary.** Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS. Release 1.0.0 compiled with the real Free Pascal compiler into native binaries and ran them in a built-in 80×25 terminal with Crt support. Release 2.0.0-alpha.1 adds Odin's own toolchain as the default backend on Intel Macs (Free Pascal remains available, and is used on Apple Silicon), written from scratch in Rust and Pascal: compiler, assembler, Mach-O linker, runtime library, Odin Vision (a Turbo Vision–compatible library), and an integrated Turbo Pascal–style debugger with Watches, Locals and Call stack windows. It currently targets Intel Macs. Messages and documentation are in Indonesian. Licensed under the GNU GPL v3 or later.
 
 <div align="center">
 
@@ -97,7 +97,7 @@ Cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, guru yan
 - **Jendela Watches, Local variables, dan Call stack.** Ketiganya ikut diatur Tile dan Cascade. Pilih frame di Call stack untuk melihat variabel pemanggil.
 - **Evaluate/Modify** (`Ctrl+F7`) untuk ekspresi Pascal: variabel, field, indeks dengan cek batas, `^`, `@`, aritmetika, typecast, `Ord`/`Chr`/`Length`/`High`/`Low`/`SizeOf`. Nilai ditampilkan seperti di Turbo Pascal, misalnya `'abc'`, `(1, 2, 3)`, `(X:1; Y:2)`, `[1, 3..5]`, dan nama enumerasi.
 
-Paket rilis 1.0.0 memakai konsol LLDB di User screen untuk breakpoint, step, variabel lokal, dan call stack.
+Rilis 1.0.0 memakai konsol LLDB di User screen untuk breakpoint, step, variabel lokal, dan call stack. Sejak 2.0.0-alpha.1 debugger terpadu menggantikannya, sehingga di Apple Silicon (backend Free Pascal) belum ada debugger.
 
 ### Berkas dan sesi
 - Contoh bawaan diperlakukan sebagai template: **Save** otomatis menjadi **Save as**, sehingga contoh asli tidak tertimpa.
@@ -134,7 +134,7 @@ Pemasang dapat memasang dependensi yang belum ada melalui Homebrew. Di Linux, Od
 
 ## Instalasi
 
-Pemasang ini memasang **paket rilis 1.0.0** (backend Free Pascal).
+Pemasang ini memasang **rilis 2.0.0-alpha.1**: IDE, toolchain Odin untuk Mac Intel, dan runtime library-nya. Free Pascal tetap dipasang, karena dipakai pemeriksaan pemasang, di Apple Silicon, dan bila backend Free Pascal dipilih.
 
 1. **Unduh** repositori ini (**Code › Download ZIP**), lalu ekstrak seluruhnya. Jangan menjalankan pemasang dari pratinjau ZIP.
 2. **Buka `Install.command`.** Pemasang berjalan di Terminal dan akan:
@@ -266,7 +266,7 @@ Catatan arsitektur:
   - mendukung tipe `object` TP7, unit `Objects`, dan Turbo Vision lewat Odin Vision (tanpa `ColorSel` dan `TextView`). Record data dialog harus `packed record`, seperti di Free Vision;
   - `Extended` sama dengan `Double`;
   - fungsi seperti `Exp` dan `Sin` dihitung dalam `Double`.
-- Debugger terpadu hanya tersedia di backend Odin. Paket rilis 1.0.0 memakai konsol LLDB.
+- Debugger terpadu hanya tersedia di backend Odin (Mac Intel). Rilis 1.0.0 memakai konsol LLDB.
 - User screen tidak menyediakan scrollback maupun true color. Mouse diteruskan ke program yang memintanya. Option sebagai Alt di keyboard Mac sungguhan belum diuji.
 
 ## Status Pengujian

@@ -4,6 +4,8 @@ Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Status: pelaksanaan berjalan di cabang `toolchain/tahap-0`. Rencana disusun 15 Oktober 2026 dari kondisi repo pada commit `e7702a8`; ringkasan kemajuan ada di bagian 0.
 
+Rilis **2.0.0-alpha.1** (15 Oktober 2026) memuat Tahap 0–7 (gerbang G1–G7). Rilis final 2.0.0 tetap dijadwalkan sesudah Tahap 9.
+
 ## 0. Status pelaksanaan (per 15 Oktober 2026)
 
 Semua angka di bawah diukur di Mac pengembang: Intel x86_64, macOS 15.7, FPC 3.2.2 sebagai pembanding.
