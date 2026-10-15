@@ -23,7 +23,7 @@ Angka G0–G7 diukur di Mac pengembang: Intel x86_64, macOS 15.7, FPC 3.2.2 seba
 | G8a | Lolos | CI GitHub Actions di lima runner (macOS Intel, macOS arm64, Ubuntu x86_64, Ubuntu arm64, Windows); VM Lima `odin-linux` (Ubuntu 24.04, dengan qemu-user dan Wine). Plumbing target di `odinpc`; korpus untuk target lain (`ODIN_CORPUS_TARGET`/`ODIN_CORPUS_RUNNER`). |
 | G8b | Lolos | Linker ELF (PIE dinamis, glibc). Korpus 77 program (biasa dan debug) dan 92 tes Python dengan backend Odin lulus di VM dan di runner Ubuntu 24.04 x86_64. |
 | G8c | Lolos (CI) | Encoder AArch64 (575 golden dari clang) dan codegen AArch64. Korpus lulus di aarch64 Linux (qemu dan runner Ubuntu arm64) dan native di runner macOS 15 Apple Silicon, bersama tes GUI, debugger, dan Odin Vision. Mac Apple Silicon fisik dan `Install.command` di sana belum diuji. |
-| G8d | Sebagian | Konvensi Win64 di codegen, linker PE32+, RTL Windows (korpus 63 dari 77 lulus lewat Wine), IDE ConPTY (86 dari 92 tes Python lulus di runner Windows). Belum: `odinpc` untuk Windows (odin-debug memakai Unix socket), debugger TCP, sisa korpus (Exec, path, berkas teks), FPC di runner Windows. |
+| G8d | Lolos (CI) | Konvensi Win64 di codegen, linker PE32+, RTL Windows (UCRT, Win32, konsol VT, vectored exception handler), `odinpc.exe`, debugger lewat TCP 127.0.0.1, IDE dengan User screen ConPTY (Ctrl-C lewat helper yang menempel ke pseudoconsole). Di runner Windows Server 2025: korpus 77 program (biasa dan debug) identik dengan FPC 3.2.2 untuk Windows (`oracle.yml`), 93 tes Python lulus (GUI, debugger, Odin Vision), dan pemeriksaan pemasang (`check_windows.py`, `stage_windows.py`) lulus. `Install.ps1` lengkap belum dijalankan di PC Windows sungguhan. |
 
 Perbedaan dari rencana yang sudah terjadi:
 

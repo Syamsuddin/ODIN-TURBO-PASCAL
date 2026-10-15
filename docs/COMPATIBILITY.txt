@@ -1,4 +1,4 @@
-KOMPATIBILITAS DAN CAKUPAN VERSI 2.1.0-alpha.1
+KOMPATIBILITAS DAN CAKUPAN VERSI 2.2.0-alpha.1
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Implementasi baru dengan penampilan terinspirasi IDE Turbo Pascal era DOS.
@@ -17,7 +17,8 @@ LLDB                              Integrasi tersedia, belum diuji macOS
 Mac Intel / Apple Silicon         Backend Odin diuji (Apple Silicon di runner CI),
                                   installer belum diuji di hardware Apple Silicon
 Linux x86_64 / arm64              Backend Odin diuji (VM dan runner CI), dari source
-Windows                           Belum didukung (direncanakan untuk 2.2.0)
+Windows 10 1809+ x86_64           Backend Odin diuji (runner CI), installer
+                                  belum diuji di PC Windows sungguhan
 Signing / notarization Apple      Belum tersedia
 BGI/Graph DOS                     Tidak diimplementasikan
 Interrupt/port/mem DOS            Tidak diemulasi
@@ -32,13 +33,15 @@ layout record/binary file DOS atau aritmetika pointer identik pada macOS 64-bit.
 Lihat referensi resmi sebelum memindahkan program DOS dengan asumsi 16-bit.
 
 BACKEND COMPILER ODIN (BAWAAN DI MAC INTEL SEJAK 2.0.0-alpha.1, DI APPLE
-SILICON DAN LINUX SEJAK 2.1.0-alpha.1)
+SILICON DAN LINUX SEJAK 2.1.0-alpha.1, DI WINDOWS SEJAK 2.2.0-alpha.1)
 
 Backend bawaan adalah toolchain Odin: compiler odinpc (Rust) dan runtime
 library sendiri di rtl/. Target: x86_64-darwin, aarch64-darwin (Mach-O),
-x86_64-linux dan aarch64-linux (ELF dinamis, glibc 2.34 atau lebih baru).
+x86_64-linux dan aarch64-linux (ELF dinamis, glibc 2.34 atau lebih baru),
+x86_64-windows (PE32+ dengan kernel32 dan UCRT).
 Free Pascal tetap bisa dipilih di Options > Compiler, dan dipakai otomatis
-bila odinpc tidak ditemukan atau sistemnya belum didukung (Windows).
+bila odinpc tidak ditemukan atau sistemnya belum didukung (misalnya Windows
+on ARM).
 Bagian unit di bawah menjelaskan backend Free Pascal.
 
 Diuji 15 Oktober 2026 pada Mac Intel x86_64 (Darwin 24.6) dengan FPC 3.2.2
@@ -47,7 +50,15 @@ Crt (jendela, scroll, warna) memberi hasil yang sama. Korpus yang sama juga
 lulus di VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu-user) dan di runner
 GitHub Actions untuk macOS 15 Apple Silicon, Ubuntu 24.04 x86_64, dan Ubuntu
 24.04 arm64, bersama tes IDE, debugger, dan Odin Vision dengan backend Odin.
-Mac Apple Silicon dan PC Linux fisik belum diuji langsung.
+Di runner Windows Server 2025, korpus dibandingkan dengan keluaran Free Pascal
+3.2.2 untuk Windows (i386-win32), juga bersama tes IDE, debugger, dan Odin
+Vision. Mac Apple Silicon, PC Linux, dan PC Windows fisik belum diuji
+langsung.
+
+Di Windows, berkas teks memakai CRLF (WriteLn menulis CRLF seperti FPC),
+path memakai '\' dan huruf drive, Exec memakai _spawnvpe, dan Printer
+mencetak lewat notepad /p. User screen IDE memakai ConPTY, dan debugger
+berbicara dengan program lewat TCP 127.0.0.1.
 
 Di arm64, prosesor tidak menghentikan program saat operasi real gagal.
 Kode hasil kompilasi membaca bendera FPSR sesudah operasi real dan

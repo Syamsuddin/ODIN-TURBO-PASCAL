@@ -101,6 +101,14 @@ jobs:
           if [ "$RUNNER_OS" = Windows ]; then export ODIN_CORPUS_TMP="$TEMP/odin-corpus"; fi
           cargo test --workspace
 
+      # The installer gate (Install.ps1) and the install folder it stages.
+      - name: Windows installer check
+        if: runner.os == 'Windows'
+        run: |
+          "$PYTHON" scripts/check_windows.py "$(cygpath -w "$(command -v fpc)")"
+          "$PYTHON" scripts/stage_windows.py "$RUNNER_TEMP/odin-install"
+          test -f "$RUNNER_TEMP/odin-install/toolchain/odinpc.exe"
+
       - name: Python tests
         run: |
           if [ "$RUNNER_OS" = Linux ]; then
