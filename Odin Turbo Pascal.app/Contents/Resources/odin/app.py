@@ -19,7 +19,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox
 from tkinter import font as tkfont
 
-from . import __author__, __copyright__, __version__
+from . import __author__, __copyright__, __version_tag__
 from .core import (PACKAGE_ROOT, Document, Settings, atomic_write, build, data_dir, locate_compiler,
                    locate_toolchain, runtime_error_location)
 from .debugger import DebugSession
@@ -94,10 +94,10 @@ class App:
         self.desktop = tk.Frame(root, bg=BLUE)
         self.desktop.pack(fill="both", expand=True)
         if self.logo:
-            self.watermark = tk.Label(self.desktop, image=self.logo, text=f"{__version__.replace('-alpha.', ' alpha ').upper()}  •  NATIVE PASCAL IDE", compound="top",
+            self.watermark = tk.Label(self.desktop, image=self.logo, text=f"{__version_tag__}  •  NATIVE PASCAL IDE", compound="top",
                                       bg=BLUE, fg=CYAN, font=(family, 14, "bold"))
         else:
-            self.watermark = tk.Label(self.desktop, text=f"ODIN\nTURBO PASCAL\n\n{__version__.replace('-alpha.', ' alpha ').upper()}  •  NATIVE PASCAL IDE",
+            self.watermark = tk.Label(self.desktop, text=f"ODIN\nTURBO PASCAL\n\n{__version_tag__}  •  NATIVE PASCAL IDE",
                                       bg=BLUE, fg=CYAN, font=(family, 24, "bold"), justify="center")
         self.watermark.place(relx=.5, rely=.5, y=-34, anchor="center")
         self.author = tk.Label(self.desktop, text=f"Created by {__author__}", bg=BLUE, fg=WHITE, font=(family, 16, "bold"))
@@ -335,7 +335,7 @@ class App:
             self.status.configure(text=" " + self.notice)
         elif self.banner or not self.active_editor:
             # Turbo Pascal style startup banner, kept until the first key or click in an editor.
-            self.status.configure(text=f" Odin Turbo Pascal {__version__}   |   Created by {__author__}   |   F1 Help")
+            self.status.configure(text=f" Odin Turbo Pascal {__version_tag__}   |   Created by {__author__}   |   F1 Help")
         else:
             editor = self.active_editor
             line,col = editor.text.index("insert").split(".")
@@ -1120,10 +1120,10 @@ class App:
 
     def reference(self):self.help("PASCAL.txt")
     def about(self):
-        self.show_text("About Odin Turbo Pascal",f"ODIN TURBO PASCAL\nVersion {__version__}\nCreated by {__author__}\n\nIndependent classic Pascal IDE.\nPython / Tk + Odin native toolchain; Free Pascal as alternative backend.\n\nInterface inspired by the DOS-era Turbo Pascal IDE.\nThis software is not Borland Turbo Pascal and is not affiliated with Borland.\nNo Borland binaries, logos, fonts, or help files are included.\n\nNative Pascal compilation for the host CPU.\nIntel x86_64 and Apple Silicon arm64 use the same application sources.\n\n{__copyright__}.\nThis program is free software: you can redistribute it and/or modify it\nunder the terms of the GNU General Public License, version 3 or later.\nIt comes with ABSOLUTELY NO WARRANTY. See LICENSE and THIRD_PARTY.txt.\n",self.logo_small)
+        self.show_text("About Odin Turbo Pascal",f"ODIN TURBO PASCAL\nVersion {__version_tag__}\nCreated by {__author__}\n\nIndependent classic Pascal IDE.\nPython / Tk + Odin native toolchain; Free Pascal as alternative backend.\n\nInterface inspired by the DOS-era Turbo Pascal IDE.\nThis software is not Borland Turbo Pascal and is not affiliated with Borland.\nNo Borland binaries, logos, fonts, or help files are included.\n\nNative Pascal compilation for the host CPU.\nIntel x86_64 and Apple Silicon arm64 use the same application sources.\n\n{__copyright__}.\nThis program is free software: you can redistribute it and/or modify it\nunder the terms of the GNU General Public License, version 3 or later.\nIt comes with ABSOLUTELY NO WARRANTY. See LICENSE and THIRD_PARTY.txt.\n",self.logo_small)
 
     def environment(self):
-        self.show_text("Environment",f"Odin {__version__}\n\nOS: {platform.platform()}\nCPU: {platform.machine()}\nPython: {sys.version}\nRuntime: {sys.executable}\nTk: {self.root.tk.call('info','patchlevel')}\nBackend: {self.settings['backend']}\nOdin toolchain: {locate_toolchain() or 'NOT FOUND'}\nCompiler: {locate_compiler(self.settings['compiler']) or 'NOT FOUND'}\nMode: {self.settings['mode']}\nPrimary file: {self.settings['main_file'] or '(active editor)'}\nSettings: {self.settings.path}\n")
+        self.show_text("Environment",f"Odin {__version_tag__}\n\nOS: {platform.platform()}\nCPU: {platform.machine()}\nPython: {sys.version}\nRuntime: {sys.executable}\nTk: {self.root.tk.call('info','patchlevel')}\nBackend: {self.settings['backend']}\nOdin toolchain: {locate_toolchain() or 'NOT FOUND'}\nCompiler: {locate_compiler(self.settings['compiler']) or 'NOT FOUND'}\nMode: {self.settings['mode']}\nPrimary file: {self.settings['main_file'] or '(active editor)'}\nSettings: {self.settings.path}\n")
 
     def recover_tick(self):
         if self.closed:return
