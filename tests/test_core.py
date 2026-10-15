@@ -188,12 +188,12 @@ class DocumentTests(unittest.TestCase):
     def test_settings_invalid_input_is_recoverable(self):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)/"settings.json"
-            p.write_text('{"font_size":999,"tab_width":0,"syntax":"wrong","mode":"unsafe","backend":"gcc"}')
+            p.write_text('{"font_size":999,"tab_width":0,"syntax":false,"syntax_colors":"wrong","mode":"unsafe","backend":"gcc"}')
             s=Settings(p)
             self.assertEqual(s["backend"],"odin")
             self.assertEqual(s["font_size"],30)
             self.assertEqual(s["tab_width"],1)
-            self.assertFalse(s["syntax"])
+            self.assertTrue(s["syntax_colors"])   # the old "syntax" key no longer turns colors off
             self.assertEqual(s["mode"],"tp")
 
     def test_diagnostic_path_with_parentheses(self):
@@ -206,7 +206,28 @@ class DocumentTests(unittest.TestCase):
     def test_lexer_comments_and_escaped_quote(self):
         text="begin { end } WriteLn('it''s a string'); end."
         spans=[(kind,text[a:b]) for kind,a,b in syntax_spans(text)]
-        self.assertEqual(spans,[("keyword","begin"),("comment","{ end }"),("string","'it''s a string'"),("keyword","end")])
+        self.assertEqual(spans,[("reserved","begin"),("comment","{ end }"),("builtin","WriteLn"),("operator","("),
+                                ("string","'it''s a string'"),("operator",")"),("operator",";"),("reserved","end"),
+                                ("operator",".")])
+
+    def test_lexer_kinds(self):
+        text=("{$R+} (* catatan *) // baris\n"
+              "function Luas(P: Real): Real; forward;\n"
+              "const N = $0E; S = #13#10'ok'; X = 1.5e3;\n"
+              "begin Luas(N); ClrScr; if Ada = nil then Ok := True; for I := 1 to 10 do; end.\n"
+              "Teks := 'belum ditutup\n"
+              "BEGIN")
+        spans=[(kind,text[a:b]) for kind,a,b in syntax_spans(text)]
+        for expected in [("directive","{$R+}"),("comment","(* catatan *)"),("comment","// baris"),
+                         ("reserved","function"),("routine","Luas"),("type","Real"),("number","$0E"),
+                         ("string","#13"),("string","#10"),("string","'ok'"),("number","1.5e3"),
+                         ("builtin","ClrScr"),("identifier","Ada"),("constant","nil"),("constant","True"),
+                         ("operator",":="),("operator","="),("number","1"),("number","10"),
+                         ("string","'belum ditutup"),("reserved","BEGIN")]:
+            self.assertIn(expected,spans)
+        self.assertEqual(spans.count(("routine","Luas")),2)   # the declaration and the call
+        self.assertEqual([s for s in spans if s[0]=="string" and "\n" in s[1]],[])
+        self.assertIn(("operator",".."),[(kind,"1..9"[a:b]) for kind,a,b in syntax_spans("1..9")])
 
 
 class TerminalTests(unittest.TestCase):

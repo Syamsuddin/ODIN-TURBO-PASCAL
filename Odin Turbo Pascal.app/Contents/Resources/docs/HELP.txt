@@ -54,7 +54,18 @@ bab19_01_pakai_unit_sendiri dan unit matematika.
 Enter melanjutkan indentasi baris sebelumnya. Tab memasukkan spasi sesuai
 pengaturan. Shift+Tab mengurangi indentasi baris aktif. Insert mengganti mode
 insert/overwrite. Options > Editor mengatur font, tab, dan warna sintaks.
-Mode warna sintaks nonaktif secara bawaan untuk menyerupai teks klasik.
+
+Warna sintaks Odin Gelap aktif secara bawaan, dengan latar gelap:
+  biru         kata tercadang (begin, if, var) dan True, False, nil
+  biru muda    variabel dan nama buatan sendiri lainnya
+  kuning pucat prosedur dan fungsi, buatan sendiri maupun bawaan (WriteLn)
+  hijau toska  tipe bawaan (Integer, Real, Boolean)
+  hijau muda   angka, termasuk heksadesimal ($0E)
+  jingga       string dan konstanta karakter (#13)
+  abu terang   operator dan simbol (:= + ; .)
+  hijau        komentar
+  ungu         direktif kompiler ({$R+})
+Matikan Syntax colors untuk kembali ke teks kuning klasik di latar biru.
 
 Window > List menampilkan editor yang terbuka. F6 mengganti jendela aktif.
 Window > Tile membagi layar. Cascade menyusun jendela bertumpuk. F5 memperbesar

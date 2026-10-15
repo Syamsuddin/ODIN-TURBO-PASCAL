@@ -6,7 +6,14 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Ditambahkan
+
+- Warna sintaks **Odin Gelap** di editor, dengan palet VS Code Dark+ di atas latar `#1E1E1E`. Warnanya: kata tercadang dan konstanta bawaan (`True`, `False`, `nil`) biru; variabel dan nama buatan sendiri lainnya biru muda; prosedur dan fungsi kuning pucat, baik buatan sendiri maupun bawaan seperti `WriteLn`; tipe bawaan hijau toska; angka, termasuk heksadesimal (`$0E`), hijau muda; string dan konstanta karakter (`#13`) jingga; operator abu terang; komentar hijau; direktif kompiler (`{$R+}`) ungu. Sebelumnya hanya empat jenis token yang diwarnai.
+
 ### Diubah
+
+- Warna sintaks kini aktif secara bawaan. Pengaturannya pindah ke kunci `syntax_colors` di `settings.json`, sehingga nilai `"syntax": false` yang tersimpan dari versi lama tidak lagi mematikannya. Mematikan **Syntax colors** di **Options › Editor** mengembalikan teks kuning klasik di latar biru.
+- Pewarnaan sintaks sekitar 30 kali lebih cepat pada berkas besar (4.666 baris: sekitar 0,12 detik, sebelumnya 3,6 detik), karena tag dipasang sekaligus per jenis token dengan indeks baris.kolom. String yang belum ditutup kini hanya diwarnai sampai akhir baris.
 
 - Contoh bawaan di **File › Examples** diganti total dengan tutorial Pascal untuk pemula: 90 berkas dalam 20 bab dan enam bagian (fondasi, alur kendali, modularisasi, struktur data, algoritma dasar, lanjutan ringan), yaitu 89 program `babNN_MM_topik.pas` dan unit `matematika.pas` untuk Bab 19. Setiap kode penting diberi komentar penjelasan singkat. Program Bab 17 dan Bab 20 menulis berkas data yang namanya ditetapkan sebagai konstanta, dan menampilkan folder tempat berkas itu dibuat.
 - Halaman bawaan IDE yang membawa tag versi kini `examples/bab01_01_halo_dunia.pas` (sebelumnya `HELLO.PAS`). `scripts/package_app.py` dan `scripts/set_version.py` menyamakan tag di berkas itu.

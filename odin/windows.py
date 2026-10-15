@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 import tkinter as tk
+from bisect import bisect_right
 
 from .core import syntax_spans
 
@@ -13,6 +14,15 @@ CYAN = "#00aaaa"
 WHITE = "#ffff55"
 GRAY = "#aaaaaa"
 BLACK = "#000000"
+
+# Editor colors: background, text, cursor, selection background, selection text. CLASSIC is Turbo Pascal's yellow
+# on blue, shown with Syntax colors off. ODIN_GELAP, shown with them on, is VS Code's Dark+ theme.
+CLASSIC = (BLUE, WHITE, WHITE, GRAY, BLUE)
+ODIN_GELAP = ("#1e1e1e", "#d4d4d4", "#aeafad", "#264f78", "#ffffff")
+# Dark+ token colors for each kind syntax_spans() yields.
+SYNTAX_COLORS = {"reserved": "#569cd6", "constant": "#569cd6", "type": "#4ec9b0", "routine": "#dcdcaa",
+                 "builtin": "#dcdcaa", "identifier": "#9cdcfe", "number": "#b5cea8", "string": "#ce9178",
+                 "operator": "#d4d4d4", "comment": "#6a9955", "directive": "#c586c0"}
 
 
 class DesktopWindow:
@@ -73,13 +83,13 @@ class Editor(DesktopWindow):
         super().__init__(app)
         self.document, self.number = document, number
         content = self.body
-        self.gutter = tk.Canvas(content, width=17, bg=BLUE, highlightthickness=0)
+        # Colors come from apply_options().
+        self.gutter = tk.Canvas(content, width=17, highlightthickness=0)
         self.gutter.pack(side="left", fill="y")
-        self.text = tk.Text(content, bg=BLUE, fg=WHITE, insertbackground=WHITE, selectbackground=GRAY,
-                            selectforeground=BLUE, font=app.font, wrap="none", undo=True, maxundo=500,
+        self.text = tk.Text(content, font=app.font, wrap="none", undo=True, maxundo=500,
                             borderwidth=0, highlightthickness=0, padx=3, pady=3, exportselection=False,
                             insertwidth=2, insertontime=550, insertofftime=350)
-        scrollbar = tk.Scrollbar(content, command=self.text.yview, bg=CYAN, troughcolor=BLUE, width=16)
+        self.scrollbar = scrollbar = tk.Scrollbar(content, command=self.text.yview, bg=CYAN, width=16)
         scrollbar.pack(side="right", fill="y")
         self.text.configure(yscrollcommand=lambda a,b: (scrollbar.set(a,b), self.draw_breakpoints()))
         self.text.pack(fill="both", expand=True)
@@ -89,7 +99,8 @@ class Editor(DesktopWindow):
         self.text.insert("1.0", document.text)
         self.text.edit_reset()
         self.text.edit_modified(False)
-        for name, color in (("keyword", "#ffffff"), ("string", "#55ffff"), ("comment", "#aaaaaa"), ("number", "#55ff55")):
+        # Configured first, so error, found and exec below take priority over syntax colors.
+        for name, color in SYNTAX_COLORS.items():
             self.text.tag_configure(name, foreground=color)
         self.text.tag_configure("error", background="#aa0000", foreground="#ffffff")
         self.text.tag_configure("found", background=CYAN, foreground=BLACK)
@@ -127,6 +138,10 @@ class Editor(DesktopWindow):
 
     def apply_options(self):
         self.text.configure(tabs=(self.app.font.measure(" " * self.app.settings["tab_width"]),))
+        bg, fg, cursor, select_bg, select_fg = ODIN_GELAP if self.app.settings["syntax_colors"] else CLASSIC
+        self.text.configure(bg=bg, fg=fg, insertbackground=cursor, selectbackground=select_bg, selectforeground=select_fg)
+        self.gutter.configure(bg=bg)
+        self.scrollbar.configure(troughcolor=bg)
         self.highlight()
 
     def update_title(self):
@@ -152,11 +167,20 @@ class Editor(DesktopWindow):
 
     def highlight(self):
         self.highlight_job = None
-        for name in ("keyword", "string", "comment", "number"):
+        for name in SYNTAX_COLORS:
             self.text.tag_remove(name, "1.0", "end")
-        if self.app.settings["syntax"]:
-            for name, start, end in syntax_spans(self.text.get("1.0", "end-1c")):
-                self.text.tag_add(name, f"1.0+{start}c", f"1.0+{end}c")
+        if self.app.settings["syntax_colors"]:
+            # One tag_add per kind, with line.column indices: a "1.0+Nc" index makes Tk count from the top each time.
+            text = self.text.get("1.0", "end-1c")
+            starts = [0] + [match.end() for match in re.finditer("\n", text)]
+            def index(offset):
+                line = bisect_right(starts, offset)
+                return f"{line}.{offset - starts[line - 1]}"
+            ranges = {}
+            for name, start, end in syntax_spans(text):
+                ranges.setdefault(name, []).extend((index(start), index(end)))
+            for name, indices in ranges.items():
+                self.text.tag_add(name, *indices)
         self.text.tag_raise("sel")
 
     def newline(self, event=None):

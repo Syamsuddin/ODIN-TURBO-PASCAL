@@ -1119,8 +1119,8 @@ class App:
         win,body=self.dialog("Editor options")
         size,_=self.field(body,"Font size (10..30)",str(self.settings["font_size"]))
         tab,_=self.field(body,"Tab width (1..8)",str(self.settings["tab_width"]))
-        syntax=tk.BooleanVar(value=self.settings["syntax"])
-        tk.Checkbutton(body,text="Syntax colors (off = classic yellow text)",variable=syntax,bg=GRAY,selectcolor=GRAY).pack(pady=12)
+        syntax=tk.BooleanVar(value=self.settings["syntax_colors"])
+        tk.Checkbutton(body,text="Syntax colors: Odin Gelap (off = classic yellow on blue)",variable=syntax,bg=GRAY,selectcolor=GRAY).pack(pady=12)
         def save():
             try:
                 font_size,tab_width=int(size.get()),int(tab.get())
@@ -1130,7 +1130,7 @@ class App:
                 return
             self.settings["font_size"]=font_size
             self.settings["tab_width"]=tab_width
-            self.settings["syntax"]=syntax.get()
+            self.settings["syntax_colors"]=syntax.get()
             self.font.configure(size=font_size)
             for editor in self.editors:editor.apply_options()
             self.settings.save()

@@ -89,7 +89,7 @@ Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS, Linux and Wi
 - Layar biru klasik dengan menu **File · Edit · Search · Run · Compile · Debug · Options · Window · Help**, status bar, dan baris tombol fungsi.
 - Beberapa jendela sekaligus: tile, cascade, zoom, dan daftar jendela.
 - Undo/redo, clipboard, find/replace, go to line, hapus baris, indentasi otomatis, serta mode insert/overwrite.
-- Warna sintaks opsional. Bawaannya teks kuning klasik.
+- Warna sintaks **Odin Gelap** (palet VS Code Dark+) aktif secara bawaan dan membedakan kata tercadang, variabel, prosedur/fungsi, tipe bawaan, konstanta, angka, string, operator, komentar, dan direktif kompiler. Teks kuning klasik di latar biru tetap tersedia lewat **Options › Editor**.
 - Desktop menampilkan logo Odin dengan plakat bergaya dialog Turbo Vision di bawahnya: tag versi (misalnya `v2.2.0`), kredit penulis, hak cipta, dan lisensi. Tag yang sama tampil di baris status, About, dan halaman bawaan `bab01_01_halo_dunia.pas`.
 - Encoding CP437 dan UTF-8 (termasuk BOM), serta akhir baris LF dan CRLF, dipertahankan apa adanya saat menyimpan.
 
