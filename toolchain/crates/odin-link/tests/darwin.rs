@@ -5,6 +5,7 @@
 //! tools (`codesign`, `otool`, `dyld_info`) when they are installed.
 
 use std::io::ErrorKind;
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -28,6 +29,8 @@ fn write_executable(name: &str, image: &LinkedImage) -> PathBuf {
     // so rewriting a signed binary in place can get it killed.
     let _ = std::fs::remove_file(&path);
     std::fs::write(&path, &image.bytes).unwrap();
+    // Only unix has execute bits; the file is merely written elsewhere.
+    #[cfg(unix)]
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
     path
 }
@@ -236,6 +239,8 @@ fn hello_arm64() -> Vec<Object> {
     }]
 }
 
+// Used by the x86-64 run tests (macOS only) and the arm64 one.
+#[cfg(any(target_os = "macos", target_arch = "aarch64"))]
 fn run(path: &Path) -> Output {
     let output = Command::new(path).output().unwrap_or_else(|e| panic!("cannot start {}: {e}", path.display()));
     eprintln!("{}: status {:?}, stdout {:?}", path.display(), output.status, String::from_utf8_lossy(&output.stdout));
