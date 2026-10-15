@@ -6,10 +6,18 @@
   variabel lingkungan itu, program berjalan biasa. }
 
 type
+{$IFDEF DARWIN}
   TSockAddrUn = record
     Len, Family: Byte;
     Path: array[0..103] of Char;
   end;
+{$ELSE}
+  { Linux has no sun_len: the family is 16 bits and the path 108 bytes. }
+  TSockAddrUn = record
+    Family: Word;
+    Path: array[0..107] of Char;
+  end;
+{$ENDIF}
 
 function c_getenv(Name: PChar): PChar; cdecl; external 'c' name 'getenv';
 function c_socket(Domain, Kind, Protocol: LongInt): LongInt; cdecl; external 'c' name 'socket';
@@ -230,7 +238,11 @@ end;
 
 procedure ODIN_DBG_INIT(LineCount: LongInt);
 const
+{$IFDEF DARWIN}
   O_NONBLOCK = 4;
+{$ELSE}
+  O_NONBLOCK = $800;
+{$ENDIF}
   F_SETFL = 4;
   PROT_RW = 3;
   MAP_SHARED = 1;
@@ -258,7 +270,9 @@ begin
   if Int64(Map) = -1 then
     Exit;
   FillChar(Addr, SizeOf(Addr), 0);
+{$IFDEF DARWIN}
   Addr.Len := SizeOf(Addr);
+{$ENDIF}
   Addr.Family := AF_UNIX;
   I := 0;
   while (SockPath[I] <> #0) and (I < 103) do
@@ -311,6 +325,8 @@ end;
 
 {$IFDEF DARWIN}
 function c_image_header(Index: LongInt): Pointer; cdecl; external 'c' name '_dyld_get_image_header';
+{$ELSE}
+function ODIN_IMAGEBASE: Pointer; external 'odinrtl' name 'ODIN_IMAGEBASE';
 {$ENDIF}
 
 { Called by RunErrorAt. When $ODIN_ERROR_FILE names a file (the IDE sets it
@@ -328,9 +344,10 @@ begin
   Path := c_getenv(@ErrorVar);
   if Path = nil then
     Exit;
-  Header := 0;
 {$IFDEF DARWIN}
   Header := Int64(c_image_header(0));
+{$ELSE}
+  Header := Int64(ODIN_IMAGEBASE);
 {$ENDIF}
   IntToStr(Code, S);
   IntToStr(Int64(Addr), T);

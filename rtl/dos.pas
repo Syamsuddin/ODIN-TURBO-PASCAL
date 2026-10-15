@@ -89,6 +89,7 @@ type
   PEnviron = ^PPCharArray;
   CName = array[0..1023] of Char;
 
+{$IFDEF DARWIN}
   { struct stat (64-bit inode) }
   TCStat = record
     Dev: LongInt;
@@ -124,6 +125,55 @@ type
     Rest: array[0..4095] of Byte;
   end;
 
+  TCUtsName = record
+    SysName, NodeName, Release, Version, Machine: array[0..255] of Char;
+  end;
+{$ENDIF}
+{$IFDEF LINUX}
+{$IFDEF CPUX86_64}
+  { struct stat, x86-64 Linux }
+  TCStat = record
+    Dev, Ino, NLink: Int64;
+    Mode, Uid, Gid, Pad0: LongInt;
+    RDev, Size, BlkSize, Blocks: Int64;
+    ATime, ATimeNs, MTime, MTimeNs, CTime, CTimeNs: Int64;
+    Reserved: array[0..2] of Int64;
+  end;
+{$ELSE}
+  { struct stat, the generic Linux layout that aarch64 uses }
+  TCStat = record
+    Dev, Ino: Int64;
+    Mode, NLink, Uid, Gid: LongInt;
+    RDev, Pad1, Size: Int64;
+    BlkSize, Pad2: LongInt;
+    Blocks: Int64;
+    ATime, ATimeNs, MTime, MTimeNs, CTime, CTimeNs: Int64;
+    Unused: array[0..1] of LongInt;
+  end;
+{$ENDIF}
+
+  { struct dirent (64-bit) }
+  TCDirent = record
+    Ino: Int64;
+    Off: Int64;
+    RecLen: Word;
+    DType: Byte;
+    Name: CName;
+  end;
+  PCDirent = ^TCDirent;
+
+  { struct statfs (64-bit) }
+  TCStatFs = record
+    FType, BSize: Int64;
+    Blocks, BFree, BAvail, Files, FFree: Int64;
+    Rest: array[0..4095] of Byte;
+  end;
+
+  TCUtsName = record
+    SysName, NodeName, Release, Version, Machine, DomainName: array[0..64] of Char;
+  end;
+{$ENDIF}
+
   TCTm = record
     Sec, Min, Hour, MDay, Mon, Year, WDay, YDay, IsDst: LongInt;
     GmtOff: Int64;
@@ -136,10 +186,7 @@ type
     Pad: LongInt;
   end;
 
-  TCUtsName = record
-    SysName, NodeName, Release, Version, Machine: array[0..255] of Char;
-  end;
-
+{$IFDEF DARWIN}
 {$IFDEF CPUX86_64}
 function c_stat(Path: PChar; var St: TCStat): LongInt; cdecl; external 'c' name 'stat$INODE64';
 function c_fstat(Fd: LongInt; var St: TCStat): LongInt; cdecl; external 'c' name 'fstat$INODE64';
@@ -153,10 +200,22 @@ function c_statfs(Path: PChar; var St: TCStatFs): LongInt; cdecl; external 'c' n
 function c_opendir(Path: PChar): Pointer; cdecl; external 'c' name 'opendir';
 function c_readdir(Dir: Pointer): PCDirent; cdecl; external 'c' name 'readdir';
 {$ENDIF}
+function c_environ: PEnviron; cdecl; external 'c' name '_NSGetEnviron';
+function c_errno: PLongInt; cdecl; external 'c' name '__error';
+{$ENDIF}
+{$IFDEF LINUX}
+{ glibc 2.33 and later export stat and fstat as functions. }
+function c_stat(Path: PChar; var St: TCStat): LongInt; cdecl; external 'c' name 'stat';
+function c_fstat(Fd: LongInt; var St: TCStat): LongInt; cdecl; external 'c' name 'fstat';
+function c_statfs(Path: PChar; var St: TCStatFs): LongInt; cdecl; external 'c' name 'statfs';
+function c_opendir(Path: PChar): Pointer; cdecl; external 'c' name 'opendir';
+function c_readdir(Dir: Pointer): PCDirent; cdecl; external 'c' name 'readdir';
+function c_environ: PEnviron; external 'odinrtl' name 'ODIN_NSGETENVIRON';
+function c_errno: PLongInt; cdecl; external 'c' name '__errno_location';
+{$ENDIF}
 function c_closedir(Dir: Pointer): LongInt; cdecl; external 'c' name 'closedir';
 function c_access(Path: PChar; Mode: LongInt): LongInt; cdecl; external 'c' name 'access';
 function c_getenv(Name: PChar): PChar; cdecl; external 'c' name 'getenv';
-function c_environ: PEnviron; cdecl; external 'c' name '_NSGetEnviron';
 function c_gettimeofday(var TV: TCTimeVal; TZ: Pointer): LongInt; cdecl; external 'c' name 'gettimeofday';
 function c_localtime_r(var T: Int64; var Tm: TCTm): Pointer; cdecl; external 'c' name 'localtime_r';
 function c_mktime(var Tm: TCTm): Int64; cdecl; external 'c' name 'mktime';
@@ -165,7 +224,6 @@ function c_uname(var U: TCUtsName): LongInt; cdecl; external 'c' name 'uname';
 function c_posix_spawn(var Pid: LongInt; Path: PChar; Actions, Attr: Pointer; Argv, Envp: Pointer): LongInt;
   cdecl; external 'c' name 'posix_spawn';
 function c_waitpid(Pid: LongInt; var Status: LongInt; Options: LongInt): LongInt; cdecl; external 'c' name 'waitpid';
-function c_errno: PLongInt; cdecl; external 'c' name '__error';
 
 const
   S_IFMT = $F000;

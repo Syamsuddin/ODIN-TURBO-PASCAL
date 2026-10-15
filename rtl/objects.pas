@@ -256,14 +256,23 @@ function c_read(Fd: LongInt; Buf: Pointer; Count: Int64): Int64; cdecl; external
 function c_write(Fd: LongInt; Buf: Pointer; Count: Int64): Int64; cdecl; external 'c' name 'write';
 function c_lseek(Fd: LongInt; Offset: Int64; Whence: LongInt): Int64; cdecl; external 'c' name 'lseek';
 function c_ftruncate(Fd: LongInt; Length: Int64): LongInt; cdecl; external 'c' name 'ftruncate';
+{$IFDEF DARWIN}
 function c_errno: PLongInt; cdecl; external 'c' name '__error';
+{$ELSE}
+function c_errno: PLongInt; cdecl; external 'c' name '__errno_location';
+{$ENDIF}
 
 const
   O_RDONLY = 0;
   O_WRONLY = 1;
   O_RDWR = 2;
+{$IFDEF DARWIN}
   O_CREAT = $200;
   O_TRUNC = $400;
+{$ELSE}
+  O_CREAT = $40;
+  O_TRUNC = $200;
+{$ENDIF}
 
 var
   StreamTypes: PStreamRec;

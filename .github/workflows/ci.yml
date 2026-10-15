@@ -52,7 +52,10 @@ jobs:
       - name: Python, Tk and Free Pascal (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install python-tk@3.13 fpc
+          # The Intel image ships python.org's 3.13 in /usr/local/bin, so
+          # `brew link` fails after a good install; the keg path below does
+          # not need the link, and the next step proves Python + Tk work.
+          brew install python-tk@3.13 fpc || brew list python-tk@3.13 fpc
           echo "PYTHON=$(brew --prefix python@3.13)/bin/python3.13" >> "$GITHUB_ENV"
 
       - name: Python, Tk and Free Pascal (Linux)

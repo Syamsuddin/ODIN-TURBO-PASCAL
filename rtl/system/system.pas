@@ -184,7 +184,11 @@ function c_rmdir(Path: PChar): LongInt; cdecl; external 'c' name 'rmdir';
 function c_chdir(Path: PChar): LongInt; cdecl; external 'c' name 'chdir';
 function c_getcwd(Buf: PChar; Size: Int64): PChar; cdecl; external 'c' name 'getcwd';
 function c_time(T: Pointer): Int64; cdecl; external 'c' name 'time';
+{$IFDEF DARWIN}
 function c_errno: PLongInt; cdecl; external 'c' name '__error';
+{$ELSE}
+function c_errno: PLongInt; cdecl; external 'c' name '__errno_location';
+{$ENDIF}
 function c_sin(X: Double): Double; cdecl; external 'c' name 'sin';
 function c_cos(X: Double): Double; cdecl; external 'c' name 'cos';
 function c_atan(X: Double): Double; cdecl; external 'c' name 'atan';
@@ -447,6 +451,7 @@ end;
   205. A bad memory access is 216, a stack overflow 202. }
 
 type
+{$IFDEF DARWIN}
   TSigAction = record
     Handler: Pointer;
     Mask: LongInt;
@@ -458,12 +463,33 @@ type
     Size: Int64;
     Flags: LongInt;
   end;
+{$ENDIF}
+{$IFDEF LINUX}
+  { glibc's struct sigaction: the mask is a 1024-bit sigset_t. }
+  TSigAction = record
+    Handler: Pointer;
+    Mask: array[0..127] of Byte;
+    Flags: LongInt;
+    Pad: LongInt;
+    Restorer: Pointer;
+  end;
+
+  TSigStack = record
+    Sp: Pointer;
+    Flags: LongInt;
+    Pad: LongInt;
+    Size: Int64;
+  end;
+{$ENDIF}
 
 const
   SIGILL = 4;
   SIGFPE = 8;
-  SIGBUS = 10;
   SIGSEGV = 11;
+  MxcsrDefault = $1F80;
+  MxcsrTraps = $1900;
+{$IFDEF DARWIN}
+  SIGBUS = 10;
   SA_ONSTACK = $1;
   SA_SIGINFO = $40;
   FPE_FLTDIV = 1;
@@ -471,16 +497,52 @@ const
   FPE_FLTUND = 3;
   FPE_INTDIV = 7;
   FPE_INTOVF = 8;
-  MxcsrDefault = $1F80;
-  MxcsrTraps = $1900;
-  { Offsets in the macOS x86-64 signal context. }
-  CtxMContext = 48;
   SiCode = 8;
   SiAddr = 24;
-  StateRdi = 48;
-  StateRsi = 56;
-  StateRsp = 72;
-  StateRip = 144;
+  { ucontext: uc_mcontext is a pointer to the machine state. }
+  CtxMContext = 48;
+{$IFDEF CPUX86_64}
+  { __darwin_mcontext64: exception state (16 bytes), then rax.. rip }
+  StateArg0 = 48;     { rdi }
+  StateArg1 = 56;     { rsi }
+  StateSp = 72;       { rsp }
+  StatePc = 144;      { rip }
+{$ELSE}
+  { __darwin_mcontext64 (arm64): exception state (16 bytes), then x0..x28, fp, lr, sp, pc }
+  StateArg0 = 16;     { x0 }
+  StateArg1 = 24;     { x1 }
+  StateSp = 264;
+  StatePc = 272;
+{$ENDIF}
+{$ENDIF}
+{$IFDEF LINUX}
+  SIGBUS = 7;
+  SA_ONSTACK = $08000000;
+  SA_SIGINFO = 4;
+  FPE_INTDIV = 1;
+  FPE_INTOVF = 2;
+  FPE_FLTDIV = 3;
+  FPE_FLTOVF = 4;
+  FPE_FLTUND = 5;
+  SiCode = 8;
+  SiAddr = 16;
+{$IFDEF CPUX86_64}
+  { ucontext_t: uc_mcontext.gregs[] sits inline after uc_stack. }
+  CtxMContext = 40;
+  StateArg0 = 64;     { gregs[REG_RDI] }
+  StateArg1 = 72;     { gregs[REG_RSI] }
+  StateSp = 120;      { gregs[REG_RSP] }
+  StatePc = 128;      { gregs[REG_RIP] }
+{$ELSE}
+  { ucontext_t (aarch64): uc_mcontext (struct sigcontext) at 176, after the
+    1024-bit uc_sigmask: fault_address, regs[31], sp, pc }
+  CtxMContext = 176;
+  StateArg0 = 8;      { x0 }
+  StateArg1 = 16;     { x1 }
+  StateSp = 256;
+  StatePc = 264;
+{$ENDIF}
+{$ENDIF}
 
 var
   SignalStack: array[0..65535] of Byte;
@@ -503,11 +565,15 @@ procedure FaultHandler(Sig: LongInt; Info, Ctx: PByteArray);
 var
   Code: LongInt;
   State: PByteArray;
-  Rip, Rsp, Fault, Top: Int64;
+  Pc, Sp, Fault, Top: Int64;
 begin
+{$IFDEF DARWIN}
   State := PByteArray(Pointer(PInt64(@Ctx^[CtxMContext])^));
-  Rip := PInt64(@State^[StateRip])^;
-  Rsp := PInt64(@State^[StateRsp])^;
+{$ELSE}
+  State := PByteArray(@Ctx^[CtxMContext]);
+{$ENDIF}
+  Pc := PInt64(@State^[StatePc])^;
+  Sp := PInt64(@State^[StateSp])^;
   Fault := PInt64(@Info^[SiAddr])^;
   Code := 216;
   if Sig = SIGFPE then
@@ -519,13 +585,18 @@ begin
     else
       Code := 207;
     end
-  else if (Sig = SIGSEGV) and (Fault < Rsp + 4096) and (Fault > Rsp - 65536) then
+  else if (Sig = SIGSEGV) and (Fault < Sp + 4096) and (Fault > Sp - 65536) then
     Code := 202;
   Top := (Int64(@FaultStack) + SizeOf(FaultStack)) and not Int64(15);
-  PInt64(@State^[StateRdi])^ := Code;
-  PInt64(@State^[StateRsi])^ := Rip;
-  PInt64(@State^[StateRsp])^ := Top - 8;
-  PInt64(@State^[StateRip])^ := Int64(@FaultEntry);
+  PInt64(@State^[StateArg0])^ := Code;
+  PInt64(@State^[StateArg1])^ := Pc;
+{$IFDEF CPUX86_64}
+  { FaultEntry starts as if called: its return address slot is below Top. }
+  PInt64(@State^[StateSp])^ := Top - 8;
+{$ELSE}
+  PInt64(@State^[StateSp])^ := Top;
+{$ENDIF}
+  PInt64(@State^[StatePc])^ := Int64(@FaultEntry);
 end;
 
 procedure InstallFaultHandlers;
@@ -533,12 +604,13 @@ var
   SS: TSigStack;
   Act: TSigAction;
 begin
+  FillChar(SS, SizeOf(SS), 0);
   SS.Sp := @SignalStack;
   SS.Size := SizeOf(SignalStack);
   SS.Flags := 0;
   c_sigaltstack(@SS, nil);
+  FillChar(Act, SizeOf(Act), 0);
   Act.Handler := @FaultHandler;
-  Act.Mask := 0;
   Act.Flags := SA_SIGINFO or SA_ONSTACK;
   c_sigaction(SIGFPE, @Act, nil);
   c_sigaction(SIGSEGV, @Act, nil);

@@ -73,12 +73,22 @@ procedure NoSound;
 implementation
 
 type
+{$IFDEF DARWIN}
   { struct termios (macOS 64-bit: tcflag_t and speed_t are 8 bytes) }
   TTermios = record
     IFlag, OFlag, CFlag, LFlag: Int64;
     CC: array[0..19] of Byte;
     ISpeed, OSpeed: Int64;
   end;
+{$ELSE}
+  { struct termios (glibc): 32-bit flags, c_line, 32 control characters }
+  TTermios = record
+    IFlag, OFlag, CFlag, LFlag: LongInt;
+    Line: Byte;
+    CC: array[0..31] of Byte;
+    ISpeed, OSpeed: LongInt;
+  end;
+{$ENDIF}
 
   TWinSize = record
     Row, Col, XPixel, YPixel: Word;
@@ -103,7 +113,11 @@ function c_poll(var Fds: TPollFd; NFds: LongInt; Timeout: LongInt): LongInt; cde
 function c_nanosleep(var Req: TTimeSpec; Rem: Pointer): LongInt; cdecl; external 'c' name 'nanosleep';
 function c_signal(Sig: LongInt; Handler: Pointer): Pointer; cdecl; external 'c' name 'signal';
 function c_raise(Sig: LongInt): LongInt; cdecl; external 'c' name 'raise';
+{$IFDEF DARWIN}
 function c_errno: PLongInt; cdecl; external 'c' name '__error';
+{$ELSE}
+function c_errno: PLongInt; cdecl; external 'c' name '__errno_location';
+{$ENDIF}
 
 const
   MaxCols = 255;
@@ -111,15 +125,25 @@ const
   QueueSize = 256;
 
   ICRNL = $100;
-  IXON = $200;
   ECHO = $8;
+  TCSANOW = 0;
+{$IFDEF DARWIN}
+  IXON = $200;
   ISIG = $80;
   ICANON = $100;
   IEXTEN = $400;
   VMIN = 16;
   VTIME = 17;
-  TCSANOW = 0;
   TIOCGWINSZ = $40087468;
+{$ELSE}
+  IXON = $400;
+  ISIG = $1;
+  ICANON = $2;
+  IEXTEN = $8000;
+  VMIN = 6;
+  VTIME = 5;
+  TIOCGWINSZ = $5413;
+{$ENDIF}
   POLLIN = 1;
   EINTR = 4;
   SIGHUP = 1;
