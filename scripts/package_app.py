@@ -38,11 +38,15 @@ resources.mkdir()
 for folder in ("odin", "examples", "docs", "assets"):
     shutil.copytree(ROOT / folder, resources / folder,
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "odin-logo-master.png"))
-# The Odin toolchain: the RTL sources and a release build of odinpc
-# (cargo build --release in toolchain/). Without odinpc the IDE falls back
-# to Free Pascal.
+# The Odin toolchain: the RTL sources and odinpc, preferably the universal
+# x86_64 + arm64 build of scripts/build_toolchain.py, else the release build
+# for this Mac (cargo build --release in toolchain/). Without odinpc the IDE
+# falls back to Free Pascal.
 shutil.copytree(ROOT / "rtl", resources / "rtl")
-odinpc = ROOT / "toolchain" / "target" / "release" / "odinpc"
+odinpc = ROOT / "toolchain" / "target" / "universal" / "odinpc"
+if not odinpc.is_file():
+    odinpc = ROOT / "toolchain" / "target" / "release" / "odinpc"
+    print("Peringatan: odinpc universal belum dibangun (scripts/build_toolchain.py); bundle hanya untuk CPU Mac ini.")
 if odinpc.is_file():
     (resources / "toolchain").mkdir()
     shutil.copy2(odinpc, resources / "toolchain" / "odinpc")

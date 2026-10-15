@@ -2,7 +2,7 @@
 # Copyright (c) 2026 Syams Ideris
 [package]
 name = "odin-link"
-description = "Whole-program linker writing Mach-O and ELF executables"
+description = "Whole-program linker writing Mach-O, ELF and PE executables"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

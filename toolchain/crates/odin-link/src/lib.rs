@@ -7,11 +7,28 @@
 //! Darwin targets produce a position-independent Mach-O `MH_EXECUTE` that
 //! reaches libSystem through a GOT bound by dyld, with an ad-hoc,
 //! linker-signed code signature computed here (no `codesign`, no SDK).
-//! Linux targets (static ELF) arrive in Tahap 8.
+//!
+//! Linux targets produce a dynamically linked, position-independent ELF
+//! executable (`ET_DYN`, `DF_1_PIE`) for glibc: ld-linux loads libc.so.6 and
+//! libm.so.6 and fills a GOT through which every import is reached, all
+//! before the program starts (`BIND_NOW`, no PLT). Nothing from the system
+//! is needed to write it either: no crt files, no `ld`. The entry point is
+//! usually the RTL's `_start`, which hands `main` to `__libc_start_main`.
+//!
+//! The Windows target produces a PE32+ console executable that imports DLL
+//! functions by name through its IAT, with base relocations for ASLR (see
+//! `pe.rs`).
+//!
+//! Each writer defines the address of its own header for atoms to refer to:
+//! `__mh_execute_header` on Darwin, `__ehdr_start` on Linux, `__ImageBase`
+//! on Windows.
 
 mod codesign;
+mod elf;
+mod layout;
 mod leb;
 mod macho;
+mod pe;
 mod reloc;
 mod resolve;
 mod trie;
@@ -28,6 +45,9 @@ pub enum Target {
     Aarch64Darwin,
     X86_64Linux,
     Aarch64Linux,
+    /// PE32+ console executable for 64-bit Windows 10 1809 or later,
+    /// importing from DLLs such as `kernel32.dll` and `ucrtbase.dll`.
+    X86_64Windows,
 }
 
 impl Target {
@@ -38,11 +58,16 @@ impl Target {
             Target::Aarch64Darwin => "aarch64-darwin",
             Target::X86_64Linux => "x86_64-linux",
             Target::Aarch64Linux => "aarch64-linux",
+            Target::X86_64Windows => "x86_64-windows",
         }
     }
 
     pub fn is_darwin(self) -> bool {
         matches!(self, Target::X86_64Darwin | Target::Aarch64Darwin)
+    }
+
+    pub fn is_windows(self) -> bool {
+        matches!(self, Target::X86_64Windows)
     }
 
     pub fn is_arm64(self) -> bool {
@@ -58,12 +83,16 @@ pub const DEFAULT_MIN_OS: (u16, u8, u8) = (11, 0, 0);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LinkOptions {
     pub target: Target,
-    /// Symbol where execution starts, e.g. `_main`. Must name a code atom or
-    /// a label inside one.
+    /// Symbol where execution starts, e.g. `_main` on Darwin (called by
+    /// dyld like a C `main`) or `_start` on Linux (entered from ld-linux
+    /// with the initial process stack). Must name a code atom or a label
+    /// inside one.
     pub entry: String,
-    /// Code-signing identifier, usually the executable's file name.
+    /// Code-signing identifier, usually the executable's file name. Darwin
+    /// only.
     pub identifier: String,
-    /// Minimum OS version as (major, minor, patch).
+    /// Minimum OS version as (major, minor, patch). Darwin only: Windows
+    /// images always declare 6.0 (see `pe.rs`).
     pub min_os: (u16, u8, u8),
 }
 
@@ -79,7 +108,10 @@ impl LinkOptions {
 pub struct LinkedImage {
     /// The whole file.
     pub bytes: Vec<u8>,
-    /// Unslid address of the Mach-O header.
+    /// Unslid address of the Mach-O or ELF header (0 for a Linux PIE), or of
+    /// the DOS header, i.e. ImageBase and `__ImageBase` (Windows). At run
+    /// time, an address minus the header's runtime address plus this is the
+    /// link-time address.
     pub image_base: u64,
     /// Unslid address of every placed atom and label. Atoms dropped by smart
     /// linking are absent.
@@ -124,12 +156,14 @@ impl std::error::Error for LinkError {}
 
 /// Links `objects` into an executable for `options.target`.
 pub fn link(objects: &[Object], options: &LinkOptions) -> Result<LinkedImage, LinkError> {
-    if !options.target.is_darwin() {
-        return Err(LinkError::Unsupported(format!(
-            "{} executables (static ELF) arrive in Tahap 8",
-            options.target.triple()
-        )));
+    if options.target.is_windows() {
+        return pe::link(objects, options);
     }
-    let resolved = resolve::resolve(objects, &options.entry)?;
-    macho::write(&resolved, options)
+    if options.target.is_darwin() {
+        let resolved = resolve::resolve(objects, &options.entry, macho::SYNTHETIC)?;
+        macho::write(&resolved, options)
+    } else {
+        let resolved = resolve::resolve(objects, &options.entry, elf::SYNTHETIC)?;
+        elf::write(&resolved, options)
+    }
 }

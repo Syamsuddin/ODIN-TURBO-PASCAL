@@ -10,19 +10,105 @@ import json
 import os
 import platform
 import re
+import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# Compiler runs from the IDE (pythonw.exe on Windows has no console) must not flash a console window.
+NO_WINDOW = {"creationflags": 0x08000000} if os.name == "nt" else {}   # CREATE_NO_WINDOW
+
 
 def data_dir() -> Path:
-    base = Path.home() / ("Library/Application Support" if sys.platform == "darwin" else ".local/share")
+    if sys.platform == "win32":
+        base = Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming")
+    else:
+        base = Path.home() / ("Library/Application Support" if sys.platform == "darwin" else ".local/share")
     path = base / "OdinTurboPascal"
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def executable_name(stem: str) -> str:
+    """The file name of a native program: NAME.exe on Windows, NAME elsewhere."""
+    return stem + ".exe" if sys.platform == "win32" else stem
+
+
+def installer_name() -> str:
+    return "Install.ps1" if sys.platform == "win32" else "Install.command"
+
+
+def split_arguments(text: str) -> list[str]:
+    """Run > Parameters as an argv list (never a shell). Quotes group words; on Windows a
+    backslash is a path separator, not an escape character."""
+    if sys.platform != "win32":
+        return shlex.split(text)
+    lexer = shlex.shlex(text, posix=True)
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    lexer.escape = ""
+    return list(lexer)
+
+
+def join_command(argv) -> str:
+    """argv as the platform's shell would show it (Compiler messages)."""
+    return subprocess.list2cmdline(argv) if sys.platform == "win32" else shlex.join(argv)
+
+
+def lock_instance(path: Path):
+    """Opens and locks path for this IDE; None when another instance holds the lock.
+
+    flock on POSIX. On Windows msvcrt.locking on the first byte: no other handle can lock it
+    until this one unlocks or closes (unlock_instance)."""
+    handle = path.open("a")
+    if sys.platform == "win32":
+        import errno
+        import msvcrt
+        try:
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+        except OSError as error:
+            handle.close()
+            if error.errno in (errno.EACCES, errno.EDEADLK):
+                return None
+            raise
+        return handle
+    import fcntl
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.close()
+        return None
+    return handle
+
+
+def unlock_instance(handle) -> None:
+    if sys.platform == "win32":
+        import msvcrt
+        try:
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
+    handle.close()
+
+
+def replace_file(source, target) -> None:
+    """os.replace. On Windows a virus scanner or the search indexer can hold the target for a
+    moment, which makes it fail with PermissionError, so it tries again for up to a second."""
+    attempts = 20 if os.name == "nt" else 1
+    for attempt in range(attempts):
+        try:
+            os.replace(source, target)
+            return
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(.05)
 
 
 def atomic_write(path: Path, content: bytes) -> None:
@@ -37,7 +123,7 @@ def atomic_write(path: Path, content: bytes) -> None:
             os.fsync(handle.fileno())
         if path.exists():
             os.chmod(name, path.stat().st_mode & 0o777)
-        os.replace(name, path)
+        replace_file(name, path)
     finally:
         if os.path.exists(name):
             os.unlink(name)
@@ -103,7 +189,7 @@ class Settings:
         self.values = dict(DEFAULTS)
         self.values["recent"] = []
         try:
-            saved = json.loads(self.path.read_text())
+            saved = json.loads(self.path.read_text(encoding="utf-8"))
             for key, default in DEFAULTS.items():
                 if key in saved and type(saved[key]) is type(default):
                     self.values[key] = saved[key]
@@ -153,8 +239,32 @@ def parse_diagnostics(output: str) -> list[Diagnostic]:
     return result
 
 
+def version_key(path: Path):
+    """Sorts install folders such as FPC/3.2.2 by their version numbers."""
+    return tuple(int(n) for n in re.findall(r"\d+", path.name))
+
+
+def windows_fpc_candidates() -> list[Path]:
+    """fpc.exe in the usual Windows install folders, newest version first: the freepascal.org
+    installer and winget (C:\\FPC\\<version>), Lazarus (C:\\lazarus\\fpc\\<version>) and
+    Chocolatey (C:\\tools\\freepascal). A native 64-bit compiler comes before a 32-bit one."""
+    drive = Path(os.environ.get("SystemDrive", "C:") + os.sep)
+    tools = Path(os.environ.get("ChocolateyToolsLocation") or drive / "tools")
+    roots = []
+    for parent in (drive / "FPC", drive / "lazarus" / "fpc"):
+        try:
+            roots += sorted((p for p in parent.iterdir() if p.is_dir()), key=version_key, reverse=True)
+        except OSError:
+            pass
+    roots.append(tools / "freepascal")
+    return [root / "bin" / target / "fpc.exe" for root in roots for target in ("x86_64-win64", "i386-win32")]
+
+
 def locate_compiler(preferred="") -> str | None:
-    candidates = [preferred, shutil.which("fpc"), "/opt/homebrew/bin/fpc", "/usr/local/bin/fpc"]
+    if sys.platform == "win32":
+        candidates = [preferred, shutil.which("fpc"), *windows_fpc_candidates()]
+    else:
+        candidates = [preferred, shutil.which("fpc"), "/opt/homebrew/bin/fpc", "/usr/local/bin/fpc"]
     for value in candidates:
         if value and Path(value).is_file() and os.access(value, os.X_OK):
             return str(Path(value).absolute())
@@ -169,15 +279,21 @@ def free_vision_dir(compiler: str, cpu: str | None = None) -> str | None:
     is found before Free Vision's Menus, so `uses App` fails with "Can't find unit".
     """
     try:
-        info = subprocess.run([compiler, "-iVTPTO"], capture_output=True, text=True, timeout=10).stdout.split()
+        info = subprocess.run([compiler, "-iVTPTO"], capture_output=True, text=True, timeout=10, **NO_WINDOW).stdout.split()
     except (OSError, subprocess.TimeoutExpired):
         return None
     if len(info) != 3:
         return None
     version, default_cpu, target_os = info
     binary = Path(compiler)
-    for prefix in dict.fromkeys((binary.parent.parent, binary.resolve().parent.parent)):
-        path = prefix / "lib" / "fpc" / version / "units" / f"{cpu or default_cpu}-{target_os}" / "fv"
+    target = f"{cpu or default_cpu}-{target_os}"
+    if sys.platform == "win32":
+        # <root>\bin\x86_64-win64\fpc.exe next to <root>\units\x86_64-win64\fv.
+        candidates = [b.parent.parent.parent / "units" / target / "fv" for b in (binary, binary.resolve())]
+    else:
+        candidates = [prefix / "lib" / "fpc" / version / "units" / target / "fv"
+                      for prefix in (binary.parent.parent, binary.resolve().parent.parent)]
+    for path in dict.fromkeys(candidates):
         if path.is_dir():
             return str(path)
     return None
@@ -200,16 +316,24 @@ class BuildResult:
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 
 
+# Hosts whose native programs odinpc generates (IMPLEMENTATION_PLAN.md, Tahap 8).
+# Elsewhere the IDE builds with Free Pascal.
+ODIN_HOSTS = {("darwin", "x86_64"), ("darwin", "aarch64"), ("linux", "x86_64"), ("linux", "aarch64")}
+
+
 def odin_supported() -> bool:
-    """odinpc generates x86-64 macOS code only; arm64 comes in a later stage."""
-    return sys.platform == "darwin" and platform.machine() == "x86_64"
+    """odinpc generates native programs for this machine (see ODIN_HOSTS)."""
+    machine = {"amd64": "x86_64", "arm64": "aarch64"}.get(platform.machine().lower(), platform.machine().lower())
+    return (sys.platform, machine) in ODIN_HOSTS
 
 
 def locate_toolchain() -> str | None:
-    """The odinpc binary: $ODIN_TOOLCHAIN, the app bundle, then a developer build in the repo."""
-    candidates = [os.environ.get("ODIN_TOOLCHAIN", ""), PACKAGE_ROOT / "toolchain" / "odinpc",
-                  PACKAGE_ROOT / "toolchain" / "target" / "release" / "odinpc",
-                  PACKAGE_ROOT / "toolchain" / "target" / "debug" / "odinpc"]
+    """The odinpc binary (odinpc.exe on Windows): $ODIN_TOOLCHAIN, the app bundle or install
+    folder, then a developer build in the repo."""
+    name = executable_name("odinpc")
+    candidates = [os.environ.get("ODIN_TOOLCHAIN", ""), PACKAGE_ROOT / "toolchain" / name,
+                  PACKAGE_ROOT / "toolchain" / "target" / "release" / name,
+                  PACKAGE_ROOT / "toolchain" / "target" / "debug" / name]
     for value in candidates:
         if value and Path(value).is_file() and os.access(value, os.X_OK):
             return str(Path(value).absolute())
@@ -230,7 +354,7 @@ def build_odin(source: Path, settings: Settings, rebuild=False, cache: Path | No
     key = hashlib.sha256((str(source) + json.dumps(options) + f"odin:{toolchain}:{stat.st_mtime_ns}:{stat.st_size}").encode()).hexdigest()[:16]
     output_dir = (cache or data_dir() / "build") / key
     output_dir.mkdir(parents=True, exist_ok=True)
-    exe = output_dir / source.stem
+    exe = output_dir / executable_name(source.stem)
     # A failed rebuild must never launch an older executable.
     exe.unlink(missing_ok=True)
     command = [toolchain, "build", str(source), "--out", str(exe), "--cache", str((cache or data_dir() / "build") / "units"),
@@ -246,7 +370,7 @@ def build_odin(source: Path, settings: Settings, rebuild=False, cache: Path | No
             if p:
                 command += [flag, str(Path(p).expanduser().resolve())]
     try:
-        result = subprocess.run(command, cwd=source.parent, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
+        result = subprocess.run(command, cwd=source.parent, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120, **NO_WINDOW)
     except subprocess.TimeoutExpired:
         return BuildResult(False, command, "Kompilasi melewati batas 120 detik.", [], None, source)
     except OSError as error:
@@ -281,7 +405,7 @@ def runtime_error_location(debug_info: Path, report: str):
     The line is None when the address is not in the program's code."""
     try:
         code, address, header = (int(v) for v in report.split()[:3])
-        info = json.loads(Path(debug_info).read_text())
+        info = json.loads(Path(debug_info).read_text(encoding="utf-8"))
         link = address - header + int(info["image_base"])
         starts = [entry[0] for entry in info["addresses"]]
         i = bisect.bisect_right(starts, link) - 1
@@ -317,12 +441,12 @@ def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = 
         return BuildResult(False, [], DEBUG_NEEDS_ODIN, [], None, source)
     compiler = locate_compiler(settings["compiler"])
     if not compiler:
-        return BuildResult(False, [], "Free Pascal belum ditemukan. Jalankan Install.command atau atur Options > Compiler.", [], None, source)
+        return BuildResult(False, [], f"Free Pascal belum ditemukan. Jalankan {installer_name()} atau atur Options > Compiler.", [], None, source)
     # Isolate outputs by source AND compiler settings. Never overwrite user files.
     key = hashlib.sha256((str(source) + json.dumps({k: settings[k] for k in ("mode", "compiler", "unit_paths", "include_paths", "range_checks", "overflow_checks", "debug_info")})).encode()).hexdigest()[:16]
     output_dir = (cache or data_dir() / "build") / key
     output_dir.mkdir(parents=True, exist_ok=True)
-    exe = output_dir / source.stem
+    exe = output_dir / executable_name(source.stem)
     # A failed rebuild must never launch an older executable.
     exe.unlink(missing_ok=True)
     command = [compiler, "-M" + settings["mode"], "-FE" + str(output_dir), "-FU" + str(output_dir), "-o" + str(exe)]
@@ -337,6 +461,12 @@ def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = 
     for key, flag in (("unit_paths", "-Fu"), ("include_paths", "-Fi")):
         command += [flag + str(Path(p).expanduser().resolve()) for p in settings[key] if p]
     cpu = ("aarch64" if platform.machine() == "arm64" else "x86_64") if sys.platform == "darwin" else None
+    # An FPC install without fpc.cfg next to the compiler (some Windows
+    # packages) knows no unit folders at all: add the RTL's, as fpc.cfg would.
+    if sys.platform == "win32" and not (Path(compiler).parent / "fpc.cfg").is_file():
+        vision_dir = free_vision_dir(compiler)
+        if vision_dir:
+            command.append("-Fu" + str(Path(vision_dir).parent / "*"))
     # FPC searches -Fu in order: the user's own units still win over Free Vision.
     vision = free_vision_dir(compiler, cpu)
     if vision:
@@ -351,7 +481,7 @@ def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = 
             pass
     command.append(str(source))
     try:
-        result = subprocess.run(command, cwd=source.parent, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120)
+        result = subprocess.run(command, cwd=source.parent, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120, **NO_WINDOW)
         output = result.stdout.decode("utf-8", errors="replace")
         success = result.returncode == 0
     except subprocess.TimeoutExpired:

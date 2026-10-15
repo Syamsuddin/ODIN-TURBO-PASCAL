@@ -8,7 +8,6 @@ import os
 import platform
 import queue
 import re
-import shlex
 import shutil
 import subprocess
 import sys
@@ -20,8 +19,8 @@ from tkinter import filedialog, messagebox
 from tkinter import font as tkfont
 
 from . import __author__, __copyright__, __version_tag__
-from .core import (PACKAGE_ROOT, Document, Settings, atomic_write, build, data_dir, locate_compiler,
-                   locate_toolchain, runtime_error_location)
+from .core import (PACKAGE_ROOT, Document, Settings, atomic_write, build, data_dir, join_command, locate_compiler,
+                   locate_toolchain, lock_instance, runtime_error_location, split_arguments, unlock_instance)
 from .debugger import DebugSession
 from .terminal import Process, Screen, TerminalView
 from .windows import BLACK, BLUE, CYAN, GRAY, WHITE, Editor, LocalsWindow, StackWindow, WatchWindow
@@ -30,6 +29,8 @@ ASSETS = Path(__file__).resolve().parent.parent
 TEMPLATE = "program Untitled;\n\nbegin\n  WriteLn('Hello, Pascal!');\nend.\n"
 # Compile actions that need a debug build and run under the debugger.
 DEBUG_ACTIONS = ("debug", "step", "cursor")
+# Monospace fonts in order of preference; Courier when none is installed.
+FONTS = {"darwin": ("Menlo",), "win32": ("Consolas", "Courier New")}
 
 
 class App:
@@ -69,9 +70,8 @@ class App:
         root.configure(bg=BLUE)
         root.protocol("WM_DELETE_WINDOW", self.quit)
         root.report_callback_exception = self.report_error
-        family = "Menlo" if sys.platform == "darwin" else "DejaVu Sans Mono"
-        if family.lower() not in {f.lower() for f in tkfont.families(root)}:
-            family = "Courier"
+        available = {f.lower() for f in tkfont.families(root)}
+        family = next((f for f in FONTS.get(sys.platform, ("DejaVu Sans Mono",)) if f.lower() in available), "Courier")
         self.font = tkfont.Font(family=family, size=self.settings["font_size"])
         root.option_add("*Font", self.font)
         self.icon = self.load_image("odin.png")
@@ -587,7 +587,7 @@ class App:
     def start_process(self,action="run"):
         result=self.last_build
         if not result or not result.executable:return
-        try:arguments=shlex.split(self.settings["arguments"])
+        try:arguments=split_arguments(self.settings["arguments"])
         except ValueError as error:
             messagebox.showerror("Parameters",str(error),parent=self.root)
             return
@@ -966,7 +966,7 @@ class App:
         win,body=self.dialog("Compile successful" if result.success else "Compile failed")
         text=tk.Text(body,width=82,height=18,bg=BLUE,fg=WHITE,wrap="word",font=self.font)
         text.pack(fill="both",expand=True)
-        text.insert("end", "$ "+shlex.join(result.command)+"\n\n"+result.output)
+        text.insert("end", "$ "+join_command(result.command)+"\n\n"+result.output)
         text.configure(state="disabled")
         if result.diagnostics:
             listing=tk.Listbox(body,width=82,height=min(5,len(result.diagnostics)),bg=GRAY,fg="#aa0000",selectbackground=CYAN)
@@ -1024,7 +1024,7 @@ class App:
 
     def parameters(self):
         def accept(value):
-            try:shlex.split(value)
+            try:split_arguments(value)
             except ValueError as error:
                 messagebox.showerror("Parameters",str(error),parent=self.root)
                 return False
@@ -1114,7 +1114,7 @@ class App:
         win.bind("<Escape>",lambda e:win.destroy())
 
     def help(self,name="HELP.txt"):
-        try:content=(ASSETS/"docs"/name).read_text()
+        try:content=(ASSETS/"docs"/name).read_text(encoding="utf-8")
         except OSError:content="Dokumentasi tidak ditemukan. Lihat README.txt."
         self.show_text("Odin Help",content)
 
@@ -1139,7 +1139,7 @@ class App:
 
     def restore_session(self):
         try:
-            items=json.loads(self.session.read_text())
+            items=json.loads(self.session.read_text(encoding="utf-8"))
             if not isinstance(items,list) or not items:return
             if not messagebox.askyesno("Recover session","Sesi sebelumnya belum ditutup normal. Pulihkan isi editor?",parent=self.root):
                 self.session.unlink(missing_ok=True)
@@ -1177,16 +1177,12 @@ class App:
 
 
 def main():
-    import fcntl
     root=tk.Tk(className="OdinTurboPascal")
-    lock = (data_dir() / "instance.lock").open("a")
-    try:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError:
+    lock = lock_instance(data_dir() / "instance.lock")
+    if lock is None:
         root.withdraw()
         messagebox.showinfo("Odin Turbo Pascal", "Odin sudah berjalan. Gunakan File > Open pada jendela yang tersedia.", parent=root)
         root.destroy()
-        lock.close()
         return
     app=App(root)
     for argument in sys.argv[1:]:
@@ -1195,7 +1191,7 @@ def main():
     try:
         root.mainloop()
     finally:
-        lock.close()
+        unlock_instance(lock)
 
 
 if __name__=="__main__":main()

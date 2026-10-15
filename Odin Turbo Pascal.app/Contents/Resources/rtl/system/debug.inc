@@ -2,16 +2,28 @@
 { Bagian unit System: dukungan debugger untuk build --debug. Program
   berbicara dengan `odinpc debug` lewat Unix socket ($ODIN_DEBUG_SOCKET) dan
   berbagi memori ($ODIN_DEBUG_SHM) berisi flag langkah, pause, dan
-  breakpoint. Protokolnya ada di rtl/COMPILER_INTERFACE.md. Tanpa kedua
+  breakpoint. Di Windows kanalnya TCP 127.0.0.1 (variabel itu berisi nomor
+  port) dan memorinya file mapping bernama. Protokolnya ada di rtl/COMPILER_INTERFACE.md. Tanpa kedua
   variabel lingkungan itu, program berjalan biasa. }
 
+{$IFDEF UNIX}
 type
+{$IFDEF DARWIN}
   TSockAddrUn = record
     Len, Family: Byte;
     Path: array[0..103] of Char;
   end;
+{$ELSE}
+  { Linux has no sun_len: the family is 16 bits and the path 108 bytes. }
+  TSockAddrUn = record
+    Family: Word;
+    Path: array[0..107] of Char;
+  end;
+{$ENDIF}
+{$ENDIF}
 
 function c_getenv(Name: PChar): PChar; cdecl; external 'c' name 'getenv';
+{$IFDEF UNIX}
 function c_socket(Domain, Kind, Protocol: LongInt): LongInt; cdecl; external 'c' name 'socket';
 function c_connect(Fd: LongInt; Addr: Pointer; Len: LongInt): LongInt; cdecl; external 'c' name 'connect';
 function c_mmap(Addr: Pointer; Len: Int64; Prot, Flags, Fd: LongInt; Offset: Int64): Pointer; cdecl;
@@ -19,6 +31,21 @@ function c_mmap(Addr: Pointer; Len: Int64; Prot, Flags, Fd: LongInt; Offset: Int
 function c_pipe(Fds: Pointer): LongInt; cdecl; external 'c' name 'pipe';
 function c_fcntl(Fd, Cmd, Arg: LongInt): LongInt; cdecl; external 'c' name 'fcntl';
 function c_dbgsignal(Sig: LongInt; Handler: Pointer): Pointer; cdecl; external 'c' name 'signal';
+{$ENDIF}
+{$IFDEF WINDOWS}
+function WSAStartup(Version: Word; Data: Pointer): LongInt; external 'ws2_32' name 'WSAStartup';
+function w_socket(Family, Kind, Protocol: LongInt): Int64; external 'ws2_32' name 'socket';
+function w_connect(S: Int64; Addr: Pointer; Len: LongInt): LongInt; external 'ws2_32' name 'connect';
+function w_send(S: Int64; Buf: Pointer; Len, Flags: LongInt): LongInt; external 'ws2_32' name 'send';
+function w_recv(S: Int64; Buf: Pointer; Len, Flags: LongInt): LongInt; external 'ws2_32' name 'recv';
+function OpenFileMappingA(Access, Inherit: LongInt; Name: PChar): Pointer; external 'kernel32' name 'OpenFileMappingA';
+function MapViewOfFile(Mapping: Pointer; Access, OffsetHigh, OffsetLow: LongInt; Size: Int64): Pointer;
+  external 'kernel32' name 'MapViewOfFile';
+function GetCurrentProcess: Pointer; external 'kernel32' name 'GetCurrentProcess';
+function WriteProcessMemory(Process, Base, Buf: Pointer; Size: Int64; var Done: Int64): LongInt;
+  external 'kernel32' name 'WriteProcessMemory';
+function SetConsoleCtrlHandler(Handler: Pointer; Add: LongInt): LongInt; external 'kernel32' name 'SetConsoleCtrlHandler';
+{$ENDIF}
 
 const
   { program -> debugger }
@@ -49,11 +76,39 @@ const
 
 var
   DbgActive: Boolean;
-  DbgSocket: LongInt;
+  DbgSocket: Int64;
   DbgPipe: array[0..1] of LongInt;
   DbgMode: Byte;
   DbgTarget: LongInt;
   DbgBuf: array[0..DbgChunk + 15] of Byte;
+
+function DbgSockWrite(P: Pointer; N: Int64): Int64;
+begin
+{$IFDEF WINDOWS}
+  DbgSockWrite := w_send(DbgSocket, P, N, 0);
+{$ELSE}
+  DbgSockWrite := c_write(DbgSocket, P, N);
+{$ENDIF}
+end;
+
+function DbgSockRead(P: Pointer; N: Int64): Int64;
+begin
+{$IFDEF WINDOWS}
+  DbgSockRead := w_recv(DbgSocket, P, N, 0);
+{$ELSE}
+  DbgSockRead := c_read(DbgSocket, P, N);
+{$ENDIF}
+end;
+
+{ A failed socket call worth repeating: interrupted by a signal (Unix). }
+function DbgRetry(R: Int64): Boolean;
+begin
+{$IFDEF UNIX}
+  DbgRetry := (R < 0) and (c_errno^ = EINTR);
+{$ELSE}
+  DbgRetry := False;
+{$ENDIF}
+end;
 
 procedure DbgSendRaw(P: PByteArray; N: Int64);
 var
@@ -62,11 +117,10 @@ begin
   Done := 0;
   while DbgActive and (Done < N) do
   begin
-    R := c_write(DbgSocket, @P^[Done], N - Done);
+    R := DbgSockWrite(@P^[Done], N - Done);
     if R > 0 then
       Done := Done + R
-    else if (R < 0) and (c_errno^ = EINTR) then
-    else
+    else if not DbgRetry(R) then
       DbgActive := False;
   end;
 end;
@@ -90,16 +144,16 @@ begin
   Done := 0;
   while DbgActive and (Done < N) do
   begin
-    R := c_read(DbgSocket, @P^[Done], N - Done);
+    R := DbgSockRead(@P^[Done], N - Done);
     if R > 0 then
       Done := Done + R
-    else if (R < 0) and (c_errno^ = EINTR) then
-    else
+    else if not DbgRetry(R) then
       DbgActive := False;
   end;
   DbgRecv := DbgActive;
 end;
 
+{$IFDEF UNIX}
 { Copies N bytes through a pipe: a bad address makes the kernel answer
   EFAULT instead of crashing the program. }
 function SafeCopy(Src, Dst: Pointer; N: LongInt): Boolean;
@@ -118,6 +172,21 @@ begin
   { The read end does not block: drop whatever an EFAULT left behind. }
   while c_read(DbgPipe[0], @Junk, SizeOf(Junk)) > 0 do;
 end;
+{$ENDIF}
+{$IFDEF WINDOWS}
+{ Copies N bytes through the kernel, which checks both addresses: a bad one
+  fails the call instead of crashing the program. }
+function SafeCopy(Src, Dst: Pointer; N: LongInt): Boolean;
+var
+  Done: Int64;
+begin
+  SafeCopy := N = 0;
+  if N <= 0 then
+    Exit;
+  Done := 0;
+  SafeCopy := (WriteProcessMemory(GetCurrentProcess, Dst, Src, N, Done) <> 0) and (Done = N);
+end;
+{$ENDIF}
 
 { Answers READ and WRITE until the debugger says RESUME. }
 procedure DbgServe;
@@ -228,9 +297,27 @@ begin
     ODIN_DBG_SHARED^[1] := 1;
 end;
 
+{$IFDEF WINDOWS}
+{ Console control handler (its own thread): Ctrl-C and Ctrl-Break pause. }
+function DbgCtrlHandler(Event: LongInt): LongInt;
+begin
+  DbgCtrlHandler := 0;
+  if Event <= 1 then
+  begin
+    DbgInterrupt(Event);
+    DbgCtrlHandler := 1;
+  end;
+end;
+{$ENDIF}
+
+{$IFDEF UNIX}
 procedure ODIN_DBG_INIT(LineCount: LongInt);
 const
+{$IFDEF DARWIN}
   O_NONBLOCK = 4;
+{$ELSE}
+  O_NONBLOCK = $800;
+{$ENDIF}
   F_SETFL = 4;
   PROT_RW = 3;
   MAP_SHARED = 1;
@@ -258,7 +345,9 @@ begin
   if Int64(Map) = -1 then
     Exit;
   FillChar(Addr, SizeOf(Addr), 0);
+{$IFDEF DARWIN}
   Addr.Len := SizeOf(Addr);
+{$ENDIF}
   Addr.Family := AF_UNIX;
   I := 0;
   while (SockPath[I] <> #0) and (I < 103) do
@@ -285,6 +374,70 @@ begin
   { Breakpoints arrive in shared memory; wait for the first RESUME. }
   DbgServe;
 end;
+{$ENDIF}
+{$IFDEF WINDOWS}
+procedure ODIN_DBG_INIT(LineCount: LongInt);
+const
+  FILE_MAP_ALL_ACCESS = $F001F;
+  AF_INET = 2;
+  SOCK_STREAM = 1;
+  IPPROTO_TCP = 6;
+type
+  TSockAddrIn = record
+    Family, Port: Word;
+    Addr: LongInt;
+    Zero: array[0..7] of Byte;
+  end;
+var
+  PortText, ShmName: PChar;
+  Mapping, Map: Pointer;
+  Addr: TSockAddrIn;
+  WsaData: array[0..511] of Byte;
+  Port, I: LongInt;
+  Hello: array[0..17] of Byte;
+  Proto: Word;
+  A: Int64;
+begin
+  PortText := c_getenv(@SocketVar);
+  ShmName := c_getenv(@ShmVar);
+  if (PortText = nil) or (ShmName = nil) then
+    Exit;
+  Mapping := OpenFileMappingA(FILE_MAP_ALL_ACCESS, 0, ShmName);
+  if Mapping = nil then
+    Exit;
+  Map := MapViewOfFile(Mapping, FILE_MAP_ALL_ACCESS, 0, 0, 16 + Int64(LineCount));
+  if Map = nil then
+    Exit;
+  Port := 0;
+  I := 0;
+  while (PortText[I] >= '0') and (PortText[I] <= '9') do
+  begin
+    Port := Port * 10 + Ord(PortText[I]) - Ord('0');
+    Inc(I);
+  end;
+  if WSAStartup($0202, @WsaData) <> 0 then
+    Exit;
+  FillChar(Addr, SizeOf(Addr), 0);
+  Addr.Family := AF_INET;
+  Addr.Port := ((Port and $FF) shl 8) or ((Port shr 8) and $FF);
+  Addr.Addr := $0100007F;   { 127.0.0.1 in network byte order }
+  DbgSocket := w_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if (DbgSocket = -1) or (w_connect(DbgSocket, @Addr, SizeOf(Addr)) <> 0) then
+    Exit;
+  ODIN_DBG_SHARED := Map;
+  DbgActive := True;
+  SetConsoleCtrlHandler(@DbgCtrlHandler, 1);
+  Proto := DbgProtocol;
+  Move(Proto, Hello[0], 2);
+  A := Int64(@ODIN_DBG_LINE);
+  Move(A, Hello[2], 8);
+  A := Int64(@ODIN_DBG_STACK);
+  Move(A, Hello[10], 8);
+  DbgSend(DbgHello, @Hello, 18);
+  { Breakpoints arrive in shared memory; wait for the first RESUME. }
+  DbgServe;
+end;
+{$ENDIF}
 
 { Called by RunErrorAt: tells the debugger where the program failed. }
 procedure DbgRuntimeError(Code: LongInt; Addr: Pointer);
@@ -311,6 +464,8 @@ end;
 
 {$IFDEF DARWIN}
 function c_image_header(Index: LongInt): Pointer; cdecl; external 'c' name '_dyld_get_image_header';
+{$ELSE}
+function ODIN_IMAGEBASE: Pointer; external 'odinrtl' name 'ODIN_IMAGEBASE';
 {$ENDIF}
 
 { Called by RunErrorAt. When $ODIN_ERROR_FILE names a file (the IDE sets it
@@ -328,9 +483,10 @@ begin
   Path := c_getenv(@ErrorVar);
   if Path = nil then
     Exit;
-  Header := 0;
 {$IFDEF DARWIN}
   Header := Int64(c_image_header(0));
+{$ELSE}
+  Header := Int64(ODIN_IMAGEBASE);
 {$ENDIF}
   IntToStr(Code, S);
   IntToStr(Int64(Addr), T);

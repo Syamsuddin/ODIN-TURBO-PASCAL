@@ -118,13 +118,17 @@ impl Atom {
     }
 }
 
-/// A symbol provided by a shared library and bound by the loader (on macOS,
-/// functions from libSystem). Linux executables are static and have none.
+/// A symbol provided by a shared library and bound by the loader: functions,
+/// or data such as `environ`, from libSystem on macOS and from glibc on
+/// Linux.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Import {
-    /// Symbol name as the library exports it, e.g. `_write` on Darwin.
+    /// Symbol name as the library exports it, e.g. `_write` on Darwin and
+    /// `write` on Linux.
     pub name: String,
-    /// Install name of the library, e.g. `/usr/lib/libSystem.B.dylib`.
+    /// On Darwin, the library's install name, e.g.
+    /// `/usr/lib/libSystem.B.dylib`. On Linux, `libc` for glibc (libc.so.6
+    /// together with libm.so.6), `libm`, or a soname such as `libfoo.so.1`.
     pub library: String,
 }
 

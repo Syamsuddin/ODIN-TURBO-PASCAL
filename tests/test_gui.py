@@ -13,9 +13,10 @@ from unittest.mock import patch
 
 from odin import __version_tag__
 from odin.core import Document, Settings, locate_compiler, locate_toolchain, odin_supported
+from odin.terminal import ALT_MASKS
 
 
-@unittest.skipUnless(os.environ.get("DISPLAY") or sys.platform=="darwin", "Needs graphical display")
+@unittest.skipUnless(os.environ.get("DISPLAY") or sys.platform in ("darwin","win32"), "Needs graphical display")
 class GuiTests(unittest.TestCase):
     def setUp(self):
         from odin.app import App
@@ -81,7 +82,7 @@ class GuiTests(unittest.TestCase):
         editor.toggle_breakpoint(3)
         self.assertIn(3,editor.document.breakpoints)
         self.app.write_session()
-        self.assertIn("Hello, Pascal",self.app.session.read_text())
+        self.assertIn("Hello, Pascal",self.app.session.read_text(encoding="utf-8"))
         self.app.clear_breakpoints()
         self.assertFalse(editor.document.breakpoints)
 
@@ -111,11 +112,32 @@ class GuiTests(unittest.TestCase):
         console.event_generate("<ButtonRelease-1>",x=x+1,y=y+1)
         self.assertEqual(sent,[b"\x1b[<0;5;3M",b"\x1b[<0;5;3m"])
         sent.clear()
-        alt=0x10 if console.aqua else 0x08
+        alt=console.alt_mask
         console.key(type("E",(),{"keysym":"Left","state":0x01,"char":""})())
         console.key(type("E",(),{"keysym":"x","state":alt,"char":"x"})())
         console.key(type("E",(),{"keysym":"Tab","state":0x01,"char":"\t"})())
         self.assertEqual(sent,[b"\x1b[1;2D",b"\x1bx",b"\x1b[Z"])
+
+    def test_windows_modifier_keys(self):
+        # On Windows Tk reports Alt as 0x20000 and Num Lock as Mod1 (0x08); AltGr is Ctrl+Alt and types
+        # a character. Checked on every platform by giving the widgets the Windows masks.
+        self.app.show_console()
+        console=self.app.console
+        sent=[]
+        console.send=sent.append
+        console.win32,console.alt_mask=True,ALT_MASKS["win32"]
+        key=lambda keysym,state,char:console.key(type("E",(),{"keysym":keysym,"state":state,"char":char})())
+        key("x",0x20000,"x")
+        key("x",0x08,"x")
+        key("at",0x20004,"@")
+        key("Left",0x20000,"")
+        self.assertEqual(sent,[b"\x1bx",b"x",b"@",b"\x1b[1;3D"])
+        editor=self.app.active_editor or self.app.last_editor
+        editor.win32=True
+        event=lambda state:type("E",(),{"state":state})()
+        self.assertEqual([editor.command_key(event(s)) for s in (0,0x08,0x04,0x20000,0x20004)],[False,False,True,True,False])
+        editor.win32=False
+        self.assertEqual([editor.command_key(event(s)) for s in (0,0x08,0x04,0x0c)],[False,True,True,True])
 
     def test_logo_on_desktop_and_about(self):
         self.assertIsNotNone(self.app.icon)
@@ -276,7 +298,7 @@ class GuiTests(unittest.TestCase):
     def test_recovery_ignores_desktop_windows(self):
         self.add_dummy()
         self.app.write_session()
-        items=json.loads(self.app.session.read_text())
+        items=json.loads(self.app.session.read_text(encoding="utf-8"))
         self.assertEqual(len(items),len(self.app.editors))
         self.assertEqual(Path(items[0]["path"]).name,"HELLO.PAS")
 
@@ -287,18 +309,21 @@ class GuiTests(unittest.TestCase):
         source=self.path/"gui-check.pas"
         source.write_text("program GuiCheck; begin WriteLn('GUI_RUN_OK'); end.")
         self.app.open_file(source)
-        self.app.run()
-        deadline=time.monotonic()+8
-        while time.monotonic()<deadline:
-            self.root.update()
-            if self.app.console and "Process finished" in self.app.console.screen.text():break
-            time.sleep(.02)
+        # A failure to start the program shows an error dialog; record it instead of blocking.
+        with patch("odin.app.messagebox.showerror") as error:
+            self.app.run()
+            deadline=time.monotonic()+8
+            while time.monotonic()<deadline:
+                self.root.update()
+                if self.app.console and "Process finished" in self.app.console.screen.text():break
+                time.sleep(.02)
+        self.assertEqual(error.call_args_list,[])
         self.assertIsNotNone(self.app.last_build)
         self.assertTrue(self.app.last_build.success,self.app.last_build.output)
         self.assertIn("GUI_RUN_OK",self.app.console.screen.text())
 
 
-    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on Intel macOS")
+    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
     def test_real_gui_compile_and_run_odin(self):
         self.settings["backend"]="odin"
         source=self.path/"gui-check.pas"
@@ -315,7 +340,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(self.app.last_build.command[1],"build")
         self.assertIn("GUI_RUN_OK 42",self.app.console.screen.text())
 
-    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on Intel macOS")
+    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
     def test_vision_example_in_user_screen(self):
         # examples/VISION.PAS (Odin Vision) in the User screen: a mouse click opens the Help
         # menu, Esc closes it, Alt+X quits and the screen before the program comes back.
@@ -364,7 +389,7 @@ class GuiTests(unittest.TestCase):
         self.root.update()
         self.assertEqual(editor.document.breakpoints,{5})
         self.app.write_session()
-        items=json.loads(self.app.session.read_text())
+        items=json.loads(self.app.session.read_text(encoding="utf-8"))
         self.assertEqual(items[-1]["breakpoints"],[5])
         count=len(self.app.editors)
         with patch("odin.app.messagebox.askyesno",return_value=True):
@@ -420,7 +445,7 @@ class GuiTests(unittest.TestCase):
             time.sleep(.02)
         self.fail("timed out")
 
-    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on Intel macOS")
+    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
     def test_real_gui_debug_session(self):
         self.settings["backend"]="odin"
         source=self.path/"REKURSI.PAS"
@@ -450,7 +475,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(editor.text.tag_ranges("exec"),())
         self.assertIn("10! =  3628800",self.app.console.screen.text())
 
-    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on Intel macOS")
+    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
     def test_runtime_error_line_after_run(self):
         self.settings["backend"]="odin"
         source=self.path/"crash.pas"

@@ -6,6 +6,42 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.1.0-alpha.1] - 2026-10-15
+
+Rilis alfa pertama menuju 2.1.0. Toolchain Odin, debugger terpadu, dan Odin Vision kini juga berjalan di Apple Silicon dan Linux (x86_64 dan arm64). Windows sedang dikerjakan dan belum didukung.
+
+### Ditambahkan
+
+- Target baru di `odinpc`: `aarch64-darwin` (Apple Silicon), `x86_64-linux`, dan `aarch64-linux`. IDE memakai backend Odin secara bawaan di macOS dan Linux, baik x86_64 maupun arm64 (`core.ODIN_HOSTS`).
+- Codegen AArch64 (`odin-codegen/src/aarch64.rs`), beserta encoder AArch64 dan assembler teks arm64 di `odin-asm` yang diuji terhadap 575 encoding instruksi dari clang. Prosesor arm64 tidak menghentikan program saat operasi real gagal, jadi bendera FPSR diperiksa sesudah operasi real. Runtime error 207/200/205 dihasilkan lewat `ODIN_FPERROR`, seperti di x86-64.
+- Linker ELF: executable PIE dinamis untuk glibc (x86_64 dan aarch64), dengan GOT, relokasi RELATIVE, `.symtab` untuk gdb, dan `__ehdr_start`. Butuh glibc 2.34 atau yang lebih baru; musl tidak didukung.
+- RTL per sistem operasi: layout `stat`, `dirent`, `statfs`, `termios`, `sigaction`, dan konteks sinyal untuk macOS dan Linux, x86-64 dan arm64, serta shim assembly per target.
+- Bundel macOS membawa `odinpc` universal (x86_64 + arm64). `scripts/build_toolchain.py` membangunnya, dan `scripts/package_app.py` memakainya.
+- CI GitHub Actions (`.github/workflows/ci.yml`) menjalankan build `odinpc`, tes Rust (termasuk korpus diferensial yang berjalan native), dan tes Python di macOS Intel, macOS Apple Silicon, Linux x86_64, Linux arm64, dan Windows.
+- Korpus diferensial bisa dijalankan untuk target lain (`ODIN_CORPUS_TARGET`, `ODIN_CORPUS_RUNNER`), misalnya lewat VM atau qemu.
+- Pekerjaan Windows yang sudah masuk, tetapi belum didukung:
+  - konvensi panggil Win64 di codegen x86-64;
+  - linker PE32+;
+  - RTL Windows: UCRT, Win32, konsol VT, dan vectored exception handler;
+  - IDE dengan User screen ConPTY lewat `ctypes`;
+  - pemasang `Install.ps1`.
+
+  Statusnya tercatat di `IMPLEMENTATION_PLAN.md` (Tahap 8d).
+
+### Diubah
+
+- User screen menjawab permintaan status dan posisi kursor (`ESC [5n`, `ESC [6n`). Crt milik Free Pascal di Linux menunggu jawaban ini sebelum menggambar apa pun.
+- Di macOS, keluaran program yang sangat cepat tidak lagi hilang dari User screen: slave pty tetap terbuka sampai program keluar.
+- Parser layar menerima warna 256 dan RGB (`38;5;n`, `38;2;r;g;b`) dan memetakannya ke 16 warna CRT; parameternya tidak lagi terbaca sebagai atribut lain.
+- `.gitattributes` mematikan konversi CRLF Git, sehingga checkout di Windows sama byte demi byte dengan repo.
+
+### Pengujian
+
+- **Mac Intel** (macOS 15.7, Python 3.13, Tk 9.1, FPC 3.2.2, Rust 1.99): 92 tes Python dan 185 tes Rust lulus. Korpus diferensial 77 program (build biasa dan debug) identik dengan FPC 3.2.2.
+- **VM Ubuntu 24.04 (Lima):** korpus lulus untuk x86_64 dan aarch64 (lewat qemu-user), dan 92 tes Python dengan backend Odin lulus di x86_64.
+- **GitHub Actions:** korpus yang berjalan native dan tes Python dengan backend Odin (GUI, debugger, Odin Vision) lulus di macOS 15 Apple Silicon, Ubuntu 24.04 x86_64, dan Ubuntu 24.04 arm64. macOS 15 Intel juga lulus.
+- **Belum diverifikasi langsung:** Mac Apple Silicon dan PC Linux fisik, `Install.command` di Apple Silicon, Gatekeeper, serta seluruh dukungan Windows.
+
 ## [2.0.1] - 2026-10-15
 
 Rilis perbaikan kecil: tag versi yang selalu terbaru di IDE dan alat bantu rilis. Compiler, runtime library, dan debugger sama dengan 2.0.0, jadi backend Odin tetap hanya untuk Mac Intel.
@@ -178,7 +214,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.1...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.1.0-alpha.1...HEAD
+[2.1.0-alpha.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.1...v2.1.0-alpha.1
 [2.0.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.2...v2.0.0
 [2.0.0-alpha.2]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0-alpha.1...v2.0.0-alpha.2

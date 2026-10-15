@@ -189,7 +189,7 @@ pub(crate) fn split_commas(toks: &[Tok]) -> Vec<&[Tok]> {
 /// Splits `toks` into top-level additive terms, each with its sign
 /// (`true` for minus). A `+` or `-` that follows an operator is unary and
 /// stays inside its term.
-fn split_terms(toks: &[Tok]) -> Result<Vec<(bool, &[Tok])>, String> {
+pub(crate) fn split_terms(toks: &[Tok]) -> Result<Vec<(bool, &[Tok])>, String> {
     let mut terms = Vec::new();
     let mut depth = 0i32;
     let mut start = 0;

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 Syams Ideris
-//! Assembler for Intel-syntax `.s` files (the RTL shims in
-//! `rtl/system/arch/*.s`), producing an [`Object`].
+//! Assembler for `.s` files (the RTL shims in `rtl/system/arch/*.s`),
+//! producing an [`Object`]. [`assemble`] reads x86-64 Intel syntax;
+//! [`assemble_for`] also reads AArch64 (see [AArch64 syntax](#aarch64-syntax)).
 //!
-//! The syntax is the one `clang -masm=intel` emits and `.intel_syntax
+//! The x86-64 syntax is the one `clang -masm=intel` emits and `.intel_syntax
 //! noprefix` accepts, for the instructions [`x86_64::Assembler`] encodes:
 //!
 //! ```text
@@ -61,7 +62,48 @@
 //! `;` and `#` start a comment, except inside string and character literals.
 //! Mnemonics, registers and size keywords are case-insensitive; symbol names
 //! are not.
+//!
+//! # AArch64 syntax
+//!
+//! With [`Arch::Aarch64`], instructions are those of
+//! [`aarch64::Assembler`], written as clang
+//! accepts them for `arm64-apple-macos` and `aarch64-linux-gnu`:
+//!
+//! ```text
+//! .text
+//! _odin_start:
+//!     stp x29, x30, [sp, #-16]!
+//!     mov x29, sp
+//!     adrp x8, _odin_argc@PAGE          // Darwin; ELF: adrp x8, odin_argc
+//!     str x0, [x8, _odin_argc@PAGEOFF]  // ELF: [x8, :lo12:odin_argc]
+//!     adrp x16, _exit@GOTPAGE           // ELF: adrp x16, :got:exit
+//!     ldr x16, [x16, _exit@GOTPAGEOFF]  // ELF: [x16, :got_lo12:exit]
+//!     blr x16
+//! .Lloop:
+//!     b .Lloop
+//! ```
+//!
+//! * Immediates take an optional `#`; `fmov` also takes decimal fractions
+//!   (`#1.5`). Shifts and extends follow as their own operand (`add x0, x1,
+//!   x2, lsl #3`, `ldr x0, [x1, w2, sxtw #3]`), as do post-index offsets
+//!   (`ldr x0, [x1], #8`); pre-index is `[x1, #8]!`.
+//! * Symbol operators: Darwin `sym@PAGE`, `sym@PAGEOFF`, `sym@GOTPAGE`,
+//!   `sym@GOTPAGEOFF`, and ELF `sym` (for `adrp`), `:lo12:sym`, `:got:sym`,
+//!   `:got_lo12:sym`, each with an optional `+ constant` (not for GOT).
+//! * `b.cond`, `cbz`/`cbnz`, `tbz`/`tbnz` and `adr` reach `.L` labels only,
+//!   `b`/`bl` reach labels or symbols, and `ldr reg, .Llabel` loads a
+//!   literal. Conditional branches are relaxed like the encoder's; an
+//!   out-of-range `[base, #offset]` is an error, as in clang (the encoder's
+//!   expansions through x16 are not used).
+//! * `//` starts a comment anywhere, `#` only at the start of a line. `;`
+//!   is rejected: clang reads it as a comment on Darwin but as a statement
+//!   separator on Linux.
+//!
+//! Directives, sections, atoms and `.L` labels follow the same rules as for
+//! x86-64. Code atoms are aligned to at least 4 bytes, and `.align` inside
+//! code pads with `nop`.
 
+mod a64;
 mod insn;
 mod lexer;
 mod parse;
@@ -70,10 +112,20 @@ use std::collections::HashMap;
 use std::fmt;
 
 use self::insn::{Ctx, LocalLabel, is_local};
-use self::lexer::{Tok, lex};
+use self::lexer::{Tok, lex, lex_a64};
 use self::parse::{Consts, const_expr, operand, split_commas, sym_value};
+use crate::aarch64;
 use crate::object::{Atom, Import, Object, Reloc, RelocKind, SectionKind};
 use crate::x86_64::{self, Assembler};
+
+/// The instruction set of a `.s` file.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Arch {
+    /// x86-64, Intel syntax.
+    X86_64,
+    /// AArch64, clang syntax (Darwin and ELF relocation operators).
+    Aarch64,
+}
 
 /// An error in a `.s` file, with its location.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -92,10 +144,16 @@ impl fmt::Display for AsmError {
 
 impl std::error::Error for AsmError {}
 
-/// Assembles one Intel-syntax source file. `file_name` is used in error
-/// messages and as [`Object::name`]. Stops at the first error.
+/// Assembles one Intel-syntax (x86-64) source file. `file_name` is used in
+/// error messages and as [`Object::name`]. Stops at the first error.
 pub fn assemble(source: &str, file_name: &str) -> Result<Object, AsmError> {
-    let mut st = State::new();
+    assemble_for(Arch::X86_64, source, file_name)
+}
+
+/// Assembles one source file for `arch`. `file_name` is used in error
+/// messages and as [`Object::name`]. Stops at the first error.
+pub fn assemble_for(arch: Arch, source: &str, file_name: &str) -> Result<Object, AsmError> {
+    let mut st = State::new(arch);
     for (i, text) in source.lines().enumerate() {
         st.line = i as u32 + 1;
         st.statement(text).map_err(|message| AsmError { file: file_name.to_string(), line: st.line, message })?;
@@ -119,6 +177,7 @@ struct AtomState {
 
 enum Body {
     Code { asm: Box<Assembler>, labels: HashMap<String, LocalLabel> },
+    A64 { asm: Box<aarch64::Assembler>, labels: HashMap<String, LocalLabel<aarch64::Label>> },
     Data { bytes: Vec<u8>, relocs: Vec<Reloc>, labels: HashMap<String, (u64, u32)>, refs: Vec<LocalRef> },
     Bss { size: u64, labels: HashMap<String, (u64, u32)> },
 }
@@ -132,6 +191,7 @@ struct LocalRef {
 }
 
 struct State {
+    arch: Arch,
     line: u32,
     section: SectionKind,
     atoms: Vec<AtomState>,
@@ -162,8 +222,9 @@ fn one_ident(args: &[Tok], what: &str) -> Result<String, String> {
 }
 
 impl State {
-    fn new() -> Self {
+    fn new(arch: Arch) -> Self {
         State {
+            arch,
             line: 0,
             section: SectionKind::Text,
             atoms: Vec::new(),
@@ -177,7 +238,8 @@ impl State {
     }
 
     fn statement(&mut self, text: &str) -> Result<(), String> {
-        let toks = lex(text)?;
+        let a64 = self.arch == Arch::Aarch64;
+        let toks = if a64 { lex_a64(text)? } else { lex(text)? };
         let mut rest = toks.as_slice();
         while let [Tok::Ident(name), Tok::Punct(':'), tail @ ..] = rest {
             self.define_label(name)?;
@@ -187,7 +249,7 @@ impl State {
             [] => Ok(()),
             [Tok::Ident(name), Tok::Punct('='), value @ ..] => self.set_const(name, value),
             [Tok::Ident(name), args @ ..] if name.starts_with('.') => self.directive(name, args),
-            [Tok::Ident(prefix), Tok::Ident(mnemonic), args @ ..] if prefix.eq_ignore_ascii_case("rep") => {
+            [Tok::Ident(prefix), Tok::Ident(mnemonic), args @ ..] if !a64 && prefix.eq_ignore_ascii_case("rep") => {
                 self.instruction(Some(prefix), mnemonic, args)
             }
             [Tok::Ident(mnemonic), args @ ..] => self.instruction(None, mnemonic, args),
@@ -220,6 +282,21 @@ impl State {
                         }
                     }
                 }
+                Body::A64 { asm, labels } => {
+                    let entry = labels.entry(name.to_string()).or_insert_with(|| LocalLabel {
+                        label: asm.new_label(),
+                        defined: None,
+                        first_use: line,
+                    });
+                    match entry.defined {
+                        Some(l) => Some(l),
+                        None => {
+                            entry.defined = Some(line);
+                            asm.bind(entry.label);
+                            None
+                        }
+                    }
+                }
                 Body::Data { bytes, labels, .. } => {
                     labels.insert(name.to_string(), (bytes.len() as u64, line)).map(|(_, l)| l)
                 }
@@ -234,8 +311,16 @@ impl State {
             return Err(format!("symbol `{name}` is already defined at line {}", self.atoms[i].line));
         }
         let sec = self.sec();
-        let align = self.pending_align[sec].take().unwrap_or(if self.section == SectionKind::Text { 16 } else { 1 });
+        let mut align =
+            self.pending_align[sec].take().unwrap_or(if self.section == SectionKind::Text { 16 } else { 1 });
         let body = match self.section {
+            SectionKind::Text if self.arch == Arch::Aarch64 => {
+                // Instructions are 4-byte words, whatever `.align` says.
+                align = align.max(4);
+                let mut asm = Box::<aarch64::Assembler>::default();
+                asm.strict = true;
+                Body::A64 { asm, labels: HashMap::new() }
+            }
             SectionKind::Text => Body::Code { asm: Box::default(), labels: HashMap::new() },
             SectionKind::Bss => Body::Bss { size: 0, labels: HashMap::new() },
             _ => Body::Data { bytes: Vec::new(), relocs: Vec::new(), labels: HashMap::new(), refs: Vec::new() },
@@ -258,6 +343,7 @@ impl State {
             atom.align = atom.align.max(align);
             match &mut atom.body {
                 Body::Code { asm, .. } => asm.align(align),
+                Body::A64 { asm, .. } => asm.align(align),
                 Body::Data { bytes, .. } => bytes.resize(bytes.len().next_multiple_of(align as usize), 0),
                 Body::Bss { size, .. } => *size = size.next_multiple_of(align as u64),
             }
@@ -380,6 +466,9 @@ impl State {
                 };
                 self.set_const(cname, value)
             }
+            ".intel_syntax" | ".att_syntax" if self.arch == Arch::Aarch64 => {
+                Err(format!("`{name}` is only for x86-64 files"))
+            }
             ".intel_syntax" => match args {
                 [] => Ok(()),
                 [Tok::Ident(p)] if p.eq_ignore_ascii_case("noprefix") => Ok(()),
@@ -395,6 +484,7 @@ impl State {
         let idx = self.content_atom()?;
         match &mut self.atoms[idx].body {
             Body::Code { asm, .. } => asm.bytes(bytes),
+            Body::A64 { asm, .. } => asm.bytes(bytes),
             Body::Data { bytes: b, .. } => b.extend_from_slice(bytes),
             Body::Bss { .. } => return Err("`.bss` can only hold zeros (use `.zero`)".into()),
         }
@@ -431,6 +521,12 @@ impl State {
                 }
                 asm.abs64(sym, v.value);
             }
+            Body::A64 { asm, .. } => {
+                if is_local(&sym) {
+                    return Err(format!("`.quad {sym}` in code is not supported; put the table in `.rodata`"));
+                }
+                asm.abs64(sym, v.value);
+            }
             Body::Data { bytes, relocs, refs, .. } => {
                 let offset = bytes.len() as u32;
                 if is_local(&sym) {
@@ -448,6 +544,13 @@ impl State {
     fn instruction(&mut self, prefix: Option<&str>, mnemonic: &str, args: &[Tok]) -> Result<(), String> {
         if self.section != SectionKind::Text {
             return Err(format!("instruction `{mnemonic}` outside `.text`"));
+        }
+        if self.arch == Arch::Aarch64 {
+            let idx = self.content_atom()?;
+            let line = self.line;
+            let Body::A64 { asm, labels } = &mut self.atoms[idx].body else { unreachable!() };
+            let mut ctx = a64::Ctx { asm, labels, line, consts: &self.consts };
+            return a64::encode(&mut ctx, mnemonic, args);
         }
         let mut ops = Vec::new();
         for part in split_commas(args) {
@@ -481,6 +584,19 @@ impl State {
                         ));
                     }
                     let code: x86_64::Code = asm.finish().map_err(|e| (a.line, format!("in `{}`: {}", a.name, e)))?;
+                    code.into_atom(a.name, a.align)
+                }
+                Body::A64 { asm, labels } => {
+                    let mut undefined: Vec<(&String, &LocalLabel<aarch64::Label>)> =
+                        labels.iter().filter(|(_, l)| l.defined.is_none()).collect();
+                    undefined.sort_by_key(|(_, l)| l.first_use);
+                    if let Some((name, l)) = undefined.first() {
+                        return Err((
+                            l.first_use,
+                            format!("undefined label `{name}` (`.L` labels are local to their atom, `{}`)", a.name),
+                        ));
+                    }
+                    let code = asm.finish().map_err(|e| (a.line, format!("in `{}`: {}", a.name, e)))?;
                     code.into_atom(a.name, a.align)
                 }
                 Body::Data { bytes, mut relocs, labels, refs } => {

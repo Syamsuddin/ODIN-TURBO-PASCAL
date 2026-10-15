@@ -466,6 +466,10 @@ pub mod rtl {
     pub const OVERFLOW_ERROR: &str = "SYSTEM.ODIN_OVERFLOWERROR";
     /// Runtime error 200.
     pub const DIVZERO_ERROR: &str = "SYSTEM.ODIN_DIVZEROERROR";
+    /// `(Flags: Int64)`: runtime error 207, 200 or 205 for the FPSR flags
+    /// IOC, DZC, OFC (AArch64 has no floating-point traps; the code checks
+    /// the flags after real operations instead).
+    pub const FP_ERROR: &str = "SYSTEM.ODIN_FPERROR";
     /// `(Dest: Pointer; MaxLen: Int64; Src: Pointer)`: copy a string,
     /// truncated to `MaxLen` characters.
     pub const STR_ASSIGN: &str = "SYSTEM.ODIN_STRASSIGN";

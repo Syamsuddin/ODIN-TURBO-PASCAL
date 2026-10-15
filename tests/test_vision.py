@@ -101,7 +101,7 @@ def write_snapshots(path, snapshots):
     path.write_text("\n".join(parts), encoding="utf-8")
 
 
-@unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc (cargo build in toolchain/) on Intel macOS")
+@unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc (cargo build in toolchain/) on a host it supports (core.ODIN_HOSTS)")
 class VisionSnapshotTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="odin vision ")

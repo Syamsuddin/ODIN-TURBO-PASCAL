@@ -11,7 +11,9 @@ Dokumen ini adalah kontrak antara compiler (`toolchain/`, Rust) dan runtime libr
 - Parameter `var`, parameter `const` bertipe terstruktur, dan parameter tanpa tipe dikirim sebagai alamat.
 - Parameter nilai bertipe terstruktur (string, record, array, set) dikirim sebagai alamat lalu disalin oleh rutin yang dipanggil.
 - Fungsi yang hasilnya string, record, array, atau set menerima pointer hasil tersembunyi sebagai argumen pertama.
-- Prosedur bersarang menerima static link di R10 (x86-64).
+- Prosedur bersarang menerima static link di R10 (x86-64) atau X15 (AArch64).
+- AArch64: X16/X17 adalah register sementara encoder dan X18 tidak pernah dipakai (register platform Apple). Di Apple, argumen variadik fungsi C (`open`, `fcntl`, `ioctl`) dikirim lewat stack; codegen juga menaruhnya di stack, jadi RTL memanggilnya seperti fungsi biasa.
+- Windows x86-64 memakai konvensi Win64 untuk semua rutin: argumen posisional di RCX, RDX, R8, R9 atau XMM0–XMM3, shadow space 32 byte, RSI/RDI disimpan rutin, dan stack probe lewat `ODIN_CHKSTK`.
 - Rutin RTL yang ditulis dalam assembly dideklarasikan `external 'odinrtl' name 'NAMA'` dan berada di `rtl/system/arch/<target>.s`.
 - Fungsi C dideklarasikan `cdecl; external 'c' name 'nama'`. Di macOS namanya diberi awalan `_` dan diimpor dari libSystem.
 
@@ -26,6 +28,7 @@ Nama ada di `odin_ir::rtl`.
 | `SYSTEM.ODIN_RANGEERROR` | `()` | Runtime error 201 di alamat pemanggil. |
 | `SYSTEM.ODIN_OVERFLOWERROR` | `()` | Runtime error 215. |
 | `SYSTEM.ODIN_DIVZEROERROR` | `()` | Runtime error 200. |
+| `SYSTEM.ODIN_FPERROR` | `(Flags: Int64)` | Hanya AArch64, yang tidak punya trap FPU. Codegen membaca FPSR sesudah operasi real; bila bit 0 (invalid), 1 (pembagian nol), atau 2 (overflow) menyala, rutin ini menghasilkan runtime error 207, 200, atau 205 seperti trap di x86-64. |
 | `SYSTEM.ODIN_OBJECTERROR` | `()` | Runtime error 210: metode virtual dipanggil pada object tanpa VMT yang sah (constructor belum dipanggil), di bawah `{$R+}`. |
 | `SYSTEM.ODIN_STRASSIGN` | `(Dest: Pointer; MaxLen: Int64; Src: Pointer)` | Salin string, potong ke `MaxLen`. |
 | `SYSTEM.ODIN_STRAPPEND` | `(Dest: Pointer; Src: Pointer)` | Tambahkan ke string 255 karakter. |

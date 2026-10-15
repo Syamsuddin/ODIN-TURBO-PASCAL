@@ -322,11 +322,17 @@ pub struct Built {
 pub fn build(map: &SourceMap, options: &Options, checked: &Checked) -> Result<Built, Diagnostic> {
     let (os, target) = match options.target.as_str() {
         "x86_64-darwin" => (Os::Darwin, odin_link::Target::X86_64Darwin),
+        "x86_64-linux" => (Os::Linux, odin_link::Target::X86_64Linux),
+        "x86_64-windows" => (Os::Windows, odin_link::Target::X86_64Windows),
+        "aarch64-darwin" => (Os::Darwin, odin_link::Target::Aarch64Darwin),
+        "aarch64-linux" => (Os::Linux, odin_link::Target::Aarch64Linux),
         other => {
             return Err(Diagnostic::error_with(
                 code::NOT_SUPPORTED,
                 Span::default(),
-                format!(": target {other} (saat ini hanya x86_64-darwin; aarch64 dan Linux menyusul di Tahap 8)"),
+                format!(
+                    ": target {other} (yang tersedia: x86_64-darwin, x86_64-linux, x86_64-windows, aarch64-darwin, aarch64-linux)"
+                ),
             ));
         }
     };
@@ -343,13 +349,21 @@ pub fn build(map: &SourceMap, options: &Options, checked: &Checked) -> Result<Bu
             }
         }
     }
-    let mut out = odin_codegen::x86_64::generate(&checked.program, &odin_codegen::Options { os, debug_files })
-        .map_err(|e| Diagnostic::error_with(code::CODEGEN_ERROR, e.span, format!(": {}", e.message)))?;
+    let codegen_options = odin_codegen::Options { os, debug_files };
+    let arm64 = target.is_arm64();
+    let generated = if arm64 {
+        odin_codegen::aarch64::generate(&checked.program, &codegen_options)
+    } else {
+        odin_codegen::x86_64::generate(&checked.program, &codegen_options)
+    };
+    let mut out =
+        generated.map_err(|e| Diagnostic::error_with(code::CODEGEN_ERROR, e.span, format!(": {}", e.message)))?;
     let shim_path = rtl.join("system").join("arch").join(format!("{}.s", options.target));
     let shim_text = std::fs::read_to_string(&shim_path).map_err(|e| {
         Diagnostic::error_with(code::FILE_NOT_FOUND, Span::default(), format!(": {} ({e})", shim_path.display()))
     })?;
-    let shim = odin_asm::text::assemble(&shim_text, &shim_path.to_string_lossy())
+    let arch = if arm64 { odin_asm::text::Arch::Aarch64 } else { odin_asm::text::Arch::X86_64 };
+    let shim = odin_asm::text::assemble_for(arch, &shim_text, &shim_path.to_string_lossy())
         .map_err(|e| Diagnostic::error_with(code::INTERNAL, Span::default(), format!(": {e}")))?;
     let _ = c_library(os);
     let identifier = options
@@ -358,7 +372,15 @@ pub fn build(map: &SourceMap, options: &Options, checked: &Checked) -> Result<Bu
         .and_then(|p| p.file_name())
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| "program".into());
-    let link_options = odin_link::LinkOptions::new(target, &out.entry, &identifier);
+    // On Linux and Windows the process starts in the shim (`_start`,
+    // `mainCRTStartup`), which sets up the C library and calls the code
+    // generator's `main`.
+    let entry = match os {
+        Os::Linux => "_start",
+        Os::Windows => "mainCRTStartup",
+        Os::Darwin => out.entry.as_str(),
+    };
+    let link_options = odin_link::LinkOptions::new(target, entry, &identifier);
     let object = std::mem::take(&mut out.object);
     let image = odin_link::link(&[object, shim], &link_options).map_err(|e| {
         let code = match e {
@@ -381,12 +403,18 @@ pub fn debug_info_path(exe: &Path) -> PathBuf {
 /// Writes the executable next to its final name, then renames it into
 /// place, so a failed write never leaves a half-written program.
 pub fn write_executable(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
-    use std::os::unix::fs::PermissionsExt;
     let dir = path.parent().unwrap_or(Path::new("."));
     std::fs::create_dir_all(dir)?;
     let tmp = dir.join(format!(".odinpc-{}.tmp", std::process::id()));
     std::fs::write(&tmp, bytes)?;
-    std::fs::set_permissions(&tmp, std::fs::Permissions::from_mode(0o755))?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&tmp, std::fs::Permissions::from_mode(0o755))?;
+    }
+    // Windows refuses to rename over an existing file.
+    #[cfg(windows)]
+    let _ = std::fs::remove_file(path);
     std::fs::rename(&tmp, path)
 }
 

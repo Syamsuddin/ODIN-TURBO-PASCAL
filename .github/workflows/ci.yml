@@ -1,0 +1,102 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 Syams Ideris
+#
+# Builds odinpc and runs the Rust and Python test suites on every platform
+# Odin targets (IMPLEMENTATION_PLAN.md, Tahap 8). Apple Silicon and Windows
+# are only ever verified here: the development Mac is Intel.
+name: CI
+
+on:
+  push:
+    branches: [main, "platform/**", "toolchain/**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    # Windows support arrives in Tahap 8d; until then the job reports
+    # what fails without failing the workflow.
+    continue-on-error: ${{ matrix.experimental }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: macOS Intel, runner: macos-15-intel, experimental: false }
+          - { name: macOS Apple Silicon, runner: macos-15, experimental: false }
+          - { name: Linux x86_64, runner: ubuntu-24.04, experimental: false }
+          - { name: Linux arm64, runner: ubuntu-24.04-arm, experimental: false }
+          - { name: Windows x86_64, runner: windows-2025, experimental: true }
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustc --version
+
+      - name: Python, Tk and Free Pascal (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # The Intel image ships python.org's 3.13 in /usr/local/bin, so
+          # `brew link` fails after a good install; the keg path below does
+          # not need the link, and the next step proves Python + Tk work.
+          brew install python-tk@3.13 fpc || brew list python-tk@3.13 fpc
+          echo "PYTHON=$(brew --prefix python@3.13)/bin/python3.13" >> "$GITHUB_ENV"
+
+      - name: Python, Tk and Free Pascal (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends python3-tk xvfb xauth fpc
+          echo "PYTHON=python3" >> "$GITHUB_ENV"
+
+      - name: Python and Free Pascal (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install freepascal -y --no-progress
+          echo "C:/tools/freepascal/bin/x86_64-win64" >> "$GITHUB_PATH"
+          echo "PYTHON=python" >> "$GITHUB_ENV"
+
+      - name: Versions
+        run: |
+          "$PYTHON" -c "import sys, tkinter; print(sys.version); print('Tk', tkinter.TkVersion)"
+          fpc -iV || echo "fpc tidak ditemukan"
+          if [ "$RUNNER_OS" = Windows ]; then
+            ls C:/tools/freepascal C:/tools/freepascal/bin C:/tools/freepascal/units 2>&1 | head -40
+            for c in C:/tools/freepascal/bin/*/fpc.cfg; do echo "== $c"; head -30 "$c"; done
+          fi
+
+      # On Windows odinpc does not build yet (odin-debug, Tahap 8d): the
+      # Python tests still run, with the Free Pascal backend.
+      - name: Build odinpc
+        working-directory: toolchain
+        continue-on-error: ${{ runner.os == 'Windows' }}
+        run: cargo build --release
+
+      - name: Rust tests
+        working-directory: toolchain
+        continue-on-error: ${{ runner.os == 'Windows' }}
+        run: cargo test --workspace
+
+      - name: Python tests
+        run: |
+          if [ "$RUNNER_OS" = Linux ]; then
+            xvfb-run -a "$PYTHON" -m unittest discover -s tests -v
+          else
+            "$PYTHON" -m unittest discover -s tests -v
+          fi

@@ -102,6 +102,7 @@ procedure ODIN_STARTUP(ArgC: LongInt; ArgV: Pointer);
 procedure ODIN_DBG_INIT(LineCount: LongInt);
 procedure ODIN_DBG_HOOK(Id: LongInt);
 procedure ODIN_HALT(Code: LongInt);
+procedure ODIN_FPERROR(Flags: Int64);
 procedure ODIN_RUNERROR(Code: LongInt);
 procedure ODIN_RANGEERROR;
 procedure ODIN_OVERFLOWERROR;
@@ -165,8 +166,31 @@ function ODIN_VAL_REAL(const S: String; var Code: LongInt): Real;
 
 implementation
 
-{ ---- libSystem ------------------------------------------------------- }
+{ ---- C library: libSystem, glibc or the Windows UCRT ---------------------- }
 
+{$IFDEF WINDOWS}
+{ The UCRT's POSIX-style functions carry an underscore and take and return
+  32-bit counts; everything else matches the Unix declarations below. }
+function c_write(Fd: LongInt; Buf: Pointer; Count: LongInt): LongInt; cdecl; external 'c' name '_write';
+function c_read(Fd: LongInt; Buf: Pointer; Count: LongInt): LongInt; cdecl; external 'c' name '_read';
+function c_open(Path: PChar; Flags: LongInt; Mode: LongInt): LongInt; cdecl; external 'c' name '_open';
+function c_close(Fd: LongInt): LongInt; cdecl; external 'c' name '_close';
+function c_lseek(Fd: LongInt; Offset: Int64; Whence: LongInt): Int64; cdecl; external 'c' name '_lseeki64';
+function c_ftruncate(Fd: LongInt; Len: Int64): LongInt; cdecl; external 'c' name '_chsize_s';
+procedure c_exit(Code: LongInt); cdecl; external 'c' name 'exit';
+function c_malloc(Size: Int64): Pointer; cdecl; external 'c' name 'malloc';
+procedure c_free(P: Pointer); cdecl; external 'c' name 'free';
+function c_isatty(Fd: LongInt): LongInt; cdecl; external 'c' name '_isatty';
+function c_unlink(Path: PChar): LongInt; cdecl; external 'c' name '_unlink';
+function c_rename(OldPath, NewPath: PChar): LongInt; cdecl; external 'c' name 'rename';
+function c_mkdir(Path: PChar; Mode: LongInt): LongInt; cdecl; external 'c' name '_mkdir';
+function c_rmdir(Path: PChar): LongInt; cdecl; external 'c' name '_rmdir';
+function c_chdir(Path: PChar): LongInt; cdecl; external 'c' name '_chdir';
+function c_getcwd(Buf: PChar; Size: LongInt): PChar; cdecl; external 'c' name '_getcwd';
+function c_time(T: Pointer): Int64; cdecl; external 'c' name '_time64';
+function c_errno: PLongInt; cdecl; external 'c' name '_errno';
+function c_setmode(Fd, Mode: LongInt): LongInt; cdecl; external 'c' name '_setmode';
+{$ELSE}
 function c_write(Fd: LongInt; Buf: Pointer; Count: Int64): Int64; cdecl; external 'c' name 'write';
 function c_read(Fd: LongInt; Buf: Pointer; Count: Int64): Int64; cdecl; external 'c' name 'read';
 function c_open(Path: PChar; Flags: LongInt; Mode: LongInt): LongInt; cdecl; external 'c' name 'open';
@@ -184,7 +208,12 @@ function c_rmdir(Path: PChar): LongInt; cdecl; external 'c' name 'rmdir';
 function c_chdir(Path: PChar): LongInt; cdecl; external 'c' name 'chdir';
 function c_getcwd(Buf: PChar; Size: Int64): PChar; cdecl; external 'c' name 'getcwd';
 function c_time(T: Pointer): Int64; cdecl; external 'c' name 'time';
+{$IFDEF DARWIN}
 function c_errno: PLongInt; cdecl; external 'c' name '__error';
+{$ELSE}
+function c_errno: PLongInt; cdecl; external 'c' name '__errno_location';
+{$ENDIF}
+{$ENDIF}
 function c_sin(X: Double): Double; cdecl; external 'c' name 'sin';
 function c_cos(X: Double): Double; cdecl; external 'c' name 'cos';
 function c_atan(X: Double): Double; cdecl; external 'c' name 'atan';
@@ -195,8 +224,10 @@ function ODIN_RETADDR: Pointer; external 'odinrtl' name 'ODIN_RETADDR';
 {$IFDEF CPUX86_64}
 procedure ODIN_SETMXCSR(Value: LongInt); external 'odinrtl' name 'ODIN_SETMXCSR';
 {$ENDIF}
+{$IFDEF UNIX}
 function c_sigaction(Sig: LongInt; Act: Pointer; Old: Pointer): LongInt; cdecl; external 'c' name 'sigaction';
 function c_sigaltstack(SS: Pointer; Old: Pointer): LongInt; cdecl; external 'c' name 'sigaltstack';
+{$ENDIF}
 
 const
 {$IFDEF DARWIN}
@@ -206,12 +237,24 @@ const
   O_APPEND = $8;
   O_CREAT = $200;
   O_TRUNC = $400;
-{$ELSE}
+{$ENDIF}
+{$IFDEF LINUX}
   O_RDONLY = 0;
   O_WRONLY = 1;
   O_RDWR = 2;
   O_APPEND = $400;
   O_CREAT = $40;
+  O_TRUNC = $200;
+{$ENDIF}
+{$IFDEF WINDOWS}
+  { Every mode carries _O_BINARY ($8000): the UCRT would otherwise turn
+    #10 into #13#10 and stop reading at ^Z. }
+  O_BINARY = $8000;
+  O_RDONLY = O_BINARY;
+  O_WRONLY = O_BINARY or 1;
+  O_RDWR = O_BINARY or 2;
+  O_APPEND = $8;
+  O_CREAT = $100;
   O_TRUNC = $200;
 {$ENDIF}
   TerminalFlag = 1;
@@ -389,6 +432,11 @@ begin
   ErrorAddr := nil;
   ExitProc := nil;
   RandSeed := 0;
+{$IFDEF WINDOWS}
+  c_setmode(0, O_BINARY);
+  c_setmode(1, O_BINARY);
+  c_setmode(2, O_BINARY);
+{$ENDIF}
   InstallFaultHandlers;
 end;
 
@@ -446,7 +494,9 @@ end;
   the FPU are unmasked: they end the program with runtime error 207, 200 or
   205. A bad memory access is 216, a stack overflow 202. }
 
+{$IFDEF UNIX}
 type
+{$IFDEF DARWIN}
   TSigAction = record
     Handler: Pointer;
     Mask: LongInt;
@@ -458,12 +508,33 @@ type
     Size: Int64;
     Flags: LongInt;
   end;
+{$ENDIF}
+{$IFDEF LINUX}
+  { glibc's struct sigaction: the mask is a 1024-bit sigset_t. }
+  TSigAction = record
+    Handler: Pointer;
+    Mask: array[0..127] of Byte;
+    Flags: LongInt;
+    Pad: LongInt;
+    Restorer: Pointer;
+  end;
+
+  TSigStack = record
+    Sp: Pointer;
+    Flags: LongInt;
+    Pad: LongInt;
+    Size: Int64;
+  end;
+{$ENDIF}
 
 const
   SIGILL = 4;
   SIGFPE = 8;
-  SIGBUS = 10;
   SIGSEGV = 11;
+  MxcsrDefault = $1F80;
+  MxcsrTraps = $1900;
+{$IFDEF DARWIN}
+  SIGBUS = 10;
   SA_ONSTACK = $1;
   SA_SIGINFO = $40;
   FPE_FLTDIV = 1;
@@ -471,16 +542,52 @@ const
   FPE_FLTUND = 3;
   FPE_INTDIV = 7;
   FPE_INTOVF = 8;
-  MxcsrDefault = $1F80;
-  MxcsrTraps = $1900;
-  { Offsets in the macOS x86-64 signal context. }
-  CtxMContext = 48;
   SiCode = 8;
   SiAddr = 24;
-  StateRdi = 48;
-  StateRsi = 56;
-  StateRsp = 72;
-  StateRip = 144;
+  { ucontext: uc_mcontext is a pointer to the machine state. }
+  CtxMContext = 48;
+{$IFDEF CPUX86_64}
+  { __darwin_mcontext64: exception state (16 bytes), then rax.. rip }
+  StateArg0 = 48;     { rdi }
+  StateArg1 = 56;     { rsi }
+  StateSp = 72;       { rsp }
+  StatePc = 144;      { rip }
+{$ELSE}
+  { __darwin_mcontext64 (arm64): exception state (16 bytes), then x0..x28, fp, lr, sp, pc }
+  StateArg0 = 16;     { x0 }
+  StateArg1 = 24;     { x1 }
+  StateSp = 264;
+  StatePc = 272;
+{$ENDIF}
+{$ENDIF}
+{$IFDEF LINUX}
+  SIGBUS = 7;
+  SA_ONSTACK = $08000000;
+  SA_SIGINFO = 4;
+  FPE_INTDIV = 1;
+  FPE_INTOVF = 2;
+  FPE_FLTDIV = 3;
+  FPE_FLTOVF = 4;
+  FPE_FLTUND = 5;
+  SiCode = 8;
+  SiAddr = 16;
+{$IFDEF CPUX86_64}
+  { ucontext_t: uc_mcontext.gregs[] sits inline after uc_stack. }
+  CtxMContext = 40;
+  StateArg0 = 64;     { gregs[REG_RDI] }
+  StateArg1 = 72;     { gregs[REG_RSI] }
+  StateSp = 120;      { gregs[REG_RSP] }
+  StatePc = 128;      { gregs[REG_RIP] }
+{$ELSE}
+  { ucontext_t (aarch64): uc_mcontext (struct sigcontext) at 176, after the
+    1024-bit uc_sigmask: fault_address, regs[31], sp, pc }
+  CtxMContext = 176;
+  StateArg0 = 8;      { x0 }
+  StateArg1 = 16;     { x1 }
+  StateSp = 256;
+  StatePc = 264;
+{$ENDIF}
+{$ENDIF}
 
 var
   SignalStack: array[0..65535] of Byte;
@@ -503,11 +610,15 @@ procedure FaultHandler(Sig: LongInt; Info, Ctx: PByteArray);
 var
   Code: LongInt;
   State: PByteArray;
-  Rip, Rsp, Fault, Top: Int64;
+  Pc, Sp, Fault, Top: Int64;
 begin
+{$IFDEF DARWIN}
   State := PByteArray(Pointer(PInt64(@Ctx^[CtxMContext])^));
-  Rip := PInt64(@State^[StateRip])^;
-  Rsp := PInt64(@State^[StateRsp])^;
+{$ELSE}
+  State := PByteArray(@Ctx^[CtxMContext]);
+{$ENDIF}
+  Pc := PInt64(@State^[StatePc])^;
+  Sp := PInt64(@State^[StateSp])^;
   Fault := PInt64(@Info^[SiAddr])^;
   Code := 216;
   if Sig = SIGFPE then
@@ -519,13 +630,18 @@ begin
     else
       Code := 207;
     end
-  else if (Sig = SIGSEGV) and (Fault < Rsp + 4096) and (Fault > Rsp - 65536) then
+  else if (Sig = SIGSEGV) and (Fault < Sp + 4096) and (Fault > Sp - 65536) then
     Code := 202;
   Top := (Int64(@FaultStack) + SizeOf(FaultStack)) and not Int64(15);
-  PInt64(@State^[StateRdi])^ := Code;
-  PInt64(@State^[StateRsi])^ := Rip;
-  PInt64(@State^[StateRsp])^ := Top - 8;
-  PInt64(@State^[StateRip])^ := Int64(@FaultEntry);
+  PInt64(@State^[StateArg0])^ := Code;
+  PInt64(@State^[StateArg1])^ := Pc;
+{$IFDEF CPUX86_64}
+  { FaultEntry starts as if called: its return address slot is below Top. }
+  PInt64(@State^[StateSp])^ := Top - 8;
+{$ELSE}
+  PInt64(@State^[StateSp])^ := Top;
+{$ENDIF}
+  PInt64(@State^[StatePc])^ := Int64(@FaultEntry);
 end;
 
 procedure InstallFaultHandlers;
@@ -533,12 +649,13 @@ var
   SS: TSigStack;
   Act: TSigAction;
 begin
+  FillChar(SS, SizeOf(SS), 0);
   SS.Sp := @SignalStack;
   SS.Size := SizeOf(SignalStack);
   SS.Flags := 0;
   c_sigaltstack(@SS, nil);
+  FillChar(Act, SizeOf(Act), 0);
   Act.Handler := @FaultHandler;
-  Act.Mask := 0;
   Act.Flags := SA_SIGINFO or SA_ONSTACK;
   c_sigaction(SIGFPE, @Act, nil);
   c_sigaction(SIGSEGV, @Act, nil);
@@ -548,10 +665,104 @@ begin
   ODIN_SETMXCSR(MxcsrTraps);
 {$ENDIF}
 end;
+{$ENDIF}
+{$IFDEF WINDOWS}
+function AddVectoredExceptionHandler(First: LongInt; Handler: Pointer): Pointer; external 'kernel32' name 'AddVectoredExceptionHandler';
+function SetThreadStackGuarantee(var Size: LongInt): LongInt; external 'kernel32' name 'SetThreadStackGuarantee';
+
+const
+  MxcsrDefault = $1F80;
+  MxcsrTraps = $1900;
+  { Offsets in the x64 CONTEXT record. }
+  CtxMxCsr = $34;
+  CtxRcx = $80;
+  CtxRdx = $88;
+  CtxRsp = $98;
+  CtxRip = $F8;
+
+var
+  FaultStack: array[0..65535] of Byte;
+
+{ Runs, outside the exception dispatch and on FaultStack, in place of the
+  instruction that faulted. }
+procedure FaultEntry(Code: LongInt; Addr: Pointer);
+begin
+  ODIN_SETMXCSR(MxcsrDefault);
+  RunErrorAt(Code, Addr);
+end;
+
+{ Vectored exception handler: like the Unix signal handler, it rewrites the
+  thread context so that execution resumes in FaultEntry(Code, address of
+  the faulting instruction). Exceptions that are not processor faults
+  (breakpoints, C++ exceptions, ...) go on to the next handler. }
+function FaultHandler(Info: Pointer): LongInt;
+var
+  Rec, Ctx: PByteArray;
+  E, Code, Top, Mx: Int64;
+begin
+  Rec := PByteArray(PPointer(Info)^);
+  Ctx := PByteArray(PPointer(Int64(Info) + 8)^);
+  E := Int64(PLongInt(@Rec^[0])^) and $FFFFFFFF;
+  Mx := PLongInt(@Ctx^[CtxMxCsr])^;
+  case E of
+    $C0000005, $C0000006, $C000001D, $C0000096: Code := 216;  { access, in-page, illegal, privileged }
+    $C00000FD: Code := 202;                                     { stack overflow }
+    $C0000094, $C000008E: Code := 200;                          { integer / real division by zero }
+    $C0000095: Code := 215;                                     { integer overflow }
+    $C0000091: Code := 205;                                     { real overflow }
+    $C0000093: Code := 206;                                     { real underflow }
+    $C000008F, $C0000090, $C0000092: Code := 207;               { inexact, invalid, stack check }
+    $C00002B4, $C00002B5:                                       { SSE: which flag fired }
+      if Mx and 4 <> 0 then
+        Code := 200
+      else if Mx and 8 <> 0 then
+        Code := 205
+      else
+        Code := 207;
+  else
+    begin
+      FaultHandler := 0;
+      Exit;
+    end;
+  end;
+  { Win64 entry state: a return-address slot below 32 bytes of shadow space. }
+  Top := (Int64(@FaultStack) + SizeOf(FaultStack)) and not Int64(15);
+  PInt64(@Ctx^[CtxRcx])^ := Code;
+  PInt64(@Ctx^[CtxRdx])^ := PInt64(@Ctx^[CtxRip])^;
+  PInt64(@Ctx^[CtxRsp])^ := Top - 40;
+  PInt64(@Ctx^[CtxRip])^ := Int64(@FaultEntry);
+  FaultHandler := -1;
+end;
+
+procedure InstallFaultHandlers;
+var
+  Guarantee: LongInt;
+begin
+  { Room for the handler itself once a stack overflow has used the guard page. }
+  Guarantee := 65536;
+  SetThreadStackGuarantee(Guarantee);
+  AddVectoredExceptionHandler(1, @FaultHandler);
+  ODIN_SETMXCSR(MxcsrTraps);
+end;
+{$ENDIF}
 
 procedure ODIN_RANGEERROR;
 begin
   RunErrorAt(201, ODIN_RETADDR);
+end;
+
+{ AArch64 does not trap on floating-point errors: after a real operation the
+  generated code reads the cumulative FPSR flags and comes here when invalid
+  operation (bit 0), division by zero (bit 1) or overflow (bit 2) is set, so
+  the program stops as it does on x86-64. }
+procedure ODIN_FPERROR(Flags: Int64);
+begin
+  if Flags and 1 <> 0 then
+    RunErrorAt(207, ODIN_RETADDR)
+  else if Flags and 2 <> 0 then
+    RunErrorAt(200, ODIN_RETADDR)
+  else
+    RunErrorAt(205, ODIN_RETADDR);
 end;
 
 procedure ODIN_OVERFLOWERROR;
@@ -1170,6 +1381,10 @@ procedure ODIN_WRITELN(var F: Text);
 begin
   if CanWrite(F) then
   begin
+{$IFDEF WINDOWS}
+    { DOS and Windows end a text line with CR LF; ReadLn accepts both. }
+    PutChar(F, #13);
+{$ENDIF}
     PutChar(F, #10);
     if F.Flags and (TerminalFlag or FlushEachWrite) <> 0 then
       FlushText(F);

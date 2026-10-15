@@ -8,6 +8,13 @@
 //! arrays and sets, as an address in RAX. Intermediate values go on the
 //! machine stack. Calls follow the C ABI, plus a static link in R10 for
 //! nested routines. Simple, predictable code that a debugger can follow.
+//!
+//! On Windows the same code follows the Win64 convention instead: the first
+//! four arguments go by position in RCX, RDX, R8, R9 or XMM0-XMM3, the caller
+//! leaves 32 bytes of shadow space above the return address, RSI and RDI
+//! belong to the caller (every routine keeps them in fixed frame slots), and
+//! every prologue probes its frame page by page through ODIN_CHKSTK, since
+//! Windows grows the stack only through its guard page.
 
 use std::collections::{BTreeMap, HashMap};
 
@@ -16,13 +23,22 @@ use odin_asm::{Atom, Import, Object, RelocKind, SectionKind};
 use odin_base::Span;
 use odin_ir::*;
 
-use crate::{CResult, CodegenError, LineEntry, LocalSlot, Options, Os, Output, RTL_ASM_LIBRARY, c_library};
+use crate::{CResult, CodegenError, LineEntry, LocalSlot, Options, Os, Output, RTL_ASM_LIBRARY, import_library};
 
 use Reg::*;
 use Width::*;
 
 const INT_ARGS: [Reg; 6] = [Rdi, Rsi, Rdx, Rcx, R8, R9];
 const FLOAT_ARGS: [Xmm; 8] = [Xmm::Xmm0, Xmm::Xmm1, Xmm::Xmm2, Xmm::Xmm3, Xmm::Xmm4, Xmm::Xmm5, Xmm::Xmm6, Xmm::Xmm7];
+/// Win64: the first four arguments, integer or real, go by position.
+const WIN_INT_ARGS: [Reg; 4] = [Rcx, Rdx, R8, R9];
+/// Win64: stack the caller reserves for the callee's four register arguments.
+const SHADOW: i32 = 32;
+/// Win64: frame slots keeping the caller's RSI and RDI ([rbp-8] is the static link).
+const WIN_SAVE_RSI: i32 = -16;
+const WIN_SAVE_RDI: i32 = -24;
+/// Win64: shim probing the pages of a new frame (size in RAX), like MSVC's __chkstk.
+const CHKSTK: &str = "ODIN_CHKSTK";
 /// Placeholder for the frame size, patched once all temporaries are known.
 const FRAME_PLACEHOLDER: i32 = 0x1000_0000;
 
@@ -144,8 +160,8 @@ impl<'p> Gen<'p> {
     fn layout(&self, id: RoutineId) -> Layout {
         let t = self.types();
         let r = &self.p.routines[id.0 as usize];
-        // [rbp-8] is the static link.
-        let mut off: u32 = 8;
+        // [rbp-8] is the static link; on Windows [rbp-16] and [rbp-24] keep RSI and RDI.
+        let mut off: u32 = if self.os == Os::Windows { 24 } else { 8 };
         let mut slots = Vec::new();
         let mut scratch = Vec::new();
         let place = |size: u32, align: u32, off: &mut u32| -> i32 {
@@ -222,40 +238,44 @@ impl<'p> Gen<'p> {
         name
     }
 
-    /// Symbol to call for an external C function, registering the import.
-    fn import(&mut self, symbol: &str) -> String {
+    /// Symbol to call for an external function of `library` (the resolved
+    /// library name, see [`import_library`]), registering the import.
+    fn import(&mut self, symbol: &str, library: String) -> String {
         let name = match self.os {
             Os::Darwin => format!("_{symbol}"),
-            Os::Linux => symbol.to_string(),
+            Os::Linux | Os::Windows => symbol.to_string(),
         };
-        self.imports
-            .entry(name.clone())
-            .or_insert_with(|| Import { name: name.clone(), library: c_library(self.os).to_string() });
+        self.imports.entry(name.clone()).or_insert_with(|| Import { name: name.clone(), library });
         name
     }
 
     /// `_main`: startup, debugger connection (debug builds), unit
     /// initializations, program, halt.
     fn main_stub(&mut self, debug: bool) -> String {
+        let win64 = self.os == Os::Windows;
+        let arg0 = if win64 { Rcx } else { Rdi };
         let mut a = Assembler::new();
         a.push(Rbp);
         a.mov(W64, Rbp, Rsp);
-        // argc and argv are still in edi/rsi.
+        if win64 {
+            a.sub(W64, Rsp, SHADOW);
+        }
+        // argc and argv are still in the first two argument registers.
         a.call(rtl::STARTUP);
         if debug {
-            a.mov(W32, Rdi, self.debug_points.len() as i32);
+            a.mov(W32, arg0, self.debug_points.len() as i32);
             a.call(rtl::DBG_INIT);
         }
         for id in &self.p.init_order {
             a.call(self.p.routines[id.0 as usize].symbol.as_str());
         }
         a.call(self.p.routines[self.p.main.0 as usize].symbol.as_str());
-        a.xor(W32, Rdi, Rdi);
+        a.xor(W32, arg0, arg0);
         a.call(rtl::HALT);
         a.ud2();
         let name = match self.os {
             Os::Darwin => "_main",
-            Os::Linux => "main",
+            Os::Linux | Os::Windows => "main",
         };
         let code = a.finish().expect("entry stub encodes");
         self.atoms.push(code.into_atom(name, 16).keep());
@@ -399,15 +419,26 @@ impl<'g, 'p> Rg<'g, 'p> {
         }
     }
 
-    /// A call with the stack aligned to 16 bytes.
+    fn win64(&self) -> bool {
+        self.g.os == Os::Windows
+    }
+
+    /// Integer argument register `i` (0-based) of the platform C ABI.
+    fn arg(&self, i: usize) -> Reg {
+        if self.win64() { WIN_INT_ARGS[i] } else { INT_ARGS[i] }
+    }
+
+    /// A call with the stack aligned to 16 bytes (and, on Windows, the
+    /// callee's shadow space reserved).
     fn call_aligned(&mut self, target: impl Into<odin_asm::x86_64::Target>) {
         let pad = self.depth % 2 == 1;
-        if pad {
-            self.a.sub(W64, Rsp, 8);
+        let below = if pad { 8 } else { 0 } + if self.win64() { SHADOW } else { 0 };
+        if below > 0 {
+            self.a.sub(W64, Rsp, below);
         }
         self.a.call(target);
-        if pad {
-            self.a.add(W64, Rsp, 8);
+        if below > 0 {
+            self.a.add(W64, Rsp, below);
         }
     }
 
@@ -894,8 +925,9 @@ impl<'g, 'p> Rg<'g, 'p> {
                 self.address(l)?;
                 self.push(Rax);
                 self.address(r)?;
-                self.a.mov(W64, Rsi, Rax);
-                self.pop(Rdi);
+                let (a0, a1) = (self.arg(0), self.arg(1));
+                self.a.mov(W64, a1, Rax);
+                self.pop(a0);
                 self.call_aligned(rtl::STR_COMPARE);
                 self.a.cmp(W32, Rax, 0);
                 signed_cond(c)
@@ -1057,15 +1089,16 @@ impl<'g, 'p> Rg<'g, 'p> {
             return err("internal: empty concatenation", span);
         };
         let off = self.temp(256, 1);
+        let (a0, a1, a2) = (self.arg(0), self.arg(1), self.arg(2));
         self.address(first)?;
-        self.a.mov(W64, Rdx, Rax);
-        self.a.lea(W64, Rdi, Mem::base(Rbp, off));
-        self.a.mov(W32, Rsi, 255);
+        self.a.mov(W64, a2, Rax);
+        self.a.lea(W64, a0, Mem::base(Rbp, off));
+        self.a.mov(W32, a1, 255);
         self.call_aligned(rtl::STR_ASSIGN);
         for item in rest {
             self.address(item)?;
-            self.a.mov(W64, Rsi, Rax);
-            self.a.lea(W64, Rdi, Mem::base(Rbp, off));
+            self.a.mov(W64, a1, Rax);
+            self.a.lea(W64, a0, Mem::base(Rbp, off));
             self.call_aligned(rtl::STR_APPEND);
         }
         self.a.lea(W64, Rax, Mem::base(Rbp, off));
@@ -1264,12 +1297,22 @@ impl<'g, 'p> Rg<'g, 'p> {
         let n = classes.len() as i32;
         let slot = |i: usize, extra: i32| Mem::base(Rsp, 8 * (n - 1 - i as i32) + 8 * extra);
         let (mut ni, mut nf) = (0, 0);
+        let win64 = self.win64();
+        let mut position = 0;
         let mut int_regs = Vec::new();
         let mut float_regs = Vec::new();
         let mut stack = Vec::new();
         for (i, c) in classes.iter().enumerate() {
             match c {
                 ArgClass::Callee => {}
+                _ if win64 => {
+                    match c {
+                        _ if position >= 4 => stack.push(i),
+                        ArgClass::Float => float_regs.push((FLOAT_ARGS[position], i)),
+                        _ => int_regs.push((WIN_INT_ARGS[position], i)),
+                    }
+                    position += 1;
+                }
                 ArgClass::Int if ni < 6 => {
                     int_regs.push((INT_ARGS[ni], i));
                     ni += 1;
@@ -1292,6 +1335,10 @@ impl<'g, 'p> Rg<'g, 'p> {
             self.a.push(slot(i, extra));
             extra += 1;
         }
+        if win64 {
+            self.a.sub(W64, Rsp, SHADOW);
+            extra += SHADOW / 8;
+        }
         for (r, i) in &int_regs {
             self.a.mov(W64, *r, slot(*i, extra));
         }
@@ -1310,12 +1357,14 @@ impl<'g, 'p> Rg<'g, 'p> {
                         self.a.call(symbol.as_str());
                     }
                     RoutineBody::External { symbol, library } => {
-                        if library != "c" {
+                        let Some(lib) = import_library(self.g.os, library) else {
                             return err(format!("pustaka '{library}' tidak didukung; gunakan 'c'"), r.span);
+                        };
+                        let name = self.g.import(symbol, lib);
+                        if !win64 {
+                            // Variadic C functions read the vector-register count from AL.
+                            self.a.mov(W32, Rax, nf as i32);
                         }
-                        let name = self.g.import(symbol);
-                        // Variadic C functions read the vector-register count from AL.
-                        self.a.mov(W32, Rax, nf as i32);
                         self.a.call(Mem::got(name));
                     }
                     RoutineBody::Code(_) => self.a.call(r.symbol.as_str()),
@@ -1350,7 +1399,7 @@ impl<'g, 'p> Rg<'g, 'p> {
                 self.a.call(R11);
             }
         }
-        let total = n + k as i32 + pad as i32;
+        let total = n + k as i32 + pad as i32 + if win64 { SHADOW / 8 } else { 0 };
         if total > 0 {
             self.a.add(W64, Rsp, 8 * total);
         }
@@ -1512,7 +1561,8 @@ impl<'g, 'p> Rg<'g, 'p> {
         self.a.cmp(W8, Mem::base(Rax, 16 + id), 0);
         self.a.jcc(XCond::E, skip);
         self.a.bind(hook);
-        self.a.mov(W32, Rdi, id);
+        let a0 = self.arg(0);
+        self.a.mov(W32, a0, id);
         self.call_aligned(rtl::DBG_HOOK);
         self.a.bind(skip);
     }
@@ -1591,20 +1641,23 @@ impl<'g, 'p> Rg<'g, 'p> {
                 self.address(value)?;
                 self.push(Rax);
                 self.address(target)?;
-                self.a.mov(W64, Rdi, Rax);
+                let (a0, a1, a2) = (self.arg(0), self.arg(1), self.arg(2));
                 if let Type::ShortString(max) = t.get(target.ty) {
-                    self.a.mov(W32, Rsi, *max as i32);
-                    self.pop(Rdx);
+                    self.a.mov(W64, a0, Rax);
+                    self.a.mov(W32, a1, *max as i32);
+                    self.pop(a2);
                     self.call_aligned(rtl::STR_ASSIGN);
                 } else if let Type::OpenString = t.get(target.ty) {
                     // Capacity of an open string parameter: its hidden High.
-                    self.push(Rdi);
+                    self.a.mov(W64, a0, Rax);
+                    self.push(a0);
                     let m = self.open_high(target)?;
-                    self.a.mov(W64, Rsi, m);
-                    self.pop(Rdi);
-                    self.pop(Rdx);
+                    self.a.mov(W64, a1, m);
+                    self.pop(a0);
+                    self.pop(a2);
                     self.call_aligned(rtl::STR_ASSIGN);
                 } else {
+                    self.a.mov(W64, Rdi, Rax);
                     self.pop(Rsi);
                     self.memcpy(t.size(target.ty));
                 }
@@ -1664,15 +1717,28 @@ impl<'g, 'p> Rg<'g, 'p> {
     fn routine(mut self, body: &[Stmt]) -> CResult<Atom> {
         let r = self.me();
         let t = self.types();
+        let win64 = self.win64();
         self.a.push(Rbp);
         self.a.mov(W64, Rbp, Rsp);
-        self.a.sub(W64, Rsp, FRAME_PLACEHOLDER);
-        let after_frame = self.a.here();
+        let after_frame;
+        if win64 {
+            // ODIN_CHKSTK touches every page of the frame (RAX bytes) and
+            // keeps all registers but RAX and R11, arguments included.
+            self.a.mov(W32, Rax, FRAME_PLACEHOLDER);
+            after_frame = self.a.here();
+            self.a.call(CHKSTK);
+            self.a.sub(W64, Rsp, Rax);
+            self.a.mov(W64, Mem::base(Rbp, WIN_SAVE_RSI), Rsi);
+            self.a.mov(W64, Mem::base(Rbp, WIN_SAVE_RDI), Rdi);
+        } else {
+            self.a.sub(W64, Rsp, FRAME_PLACEHOLDER);
+            after_frame = self.a.here();
+        }
         if r.parent.is_some() {
             self.a.mov(W64, Mem::base(Rbp, -8), R10);
         }
         // Incoming arguments: registers first, then the caller's stack.
-        let mut inc = Incoming { ni: 0, nf: 0, stack_off: 16 };
+        let mut inc = Incoming { ni: 0, nf: 0, position: 0, win64, stack_off: if win64 { 16 + SHADOW } else { 16 } };
         let layout_slots: Vec<Slot> = self.g.layouts[self.id.0 as usize].slots.clone();
         let scratch: Vec<Option<i32>> = self.g.layouts[self.id.0 as usize].scratch.clone();
         if let Some(rt) = r.sig.result
@@ -1690,9 +1756,7 @@ impl<'g, 'p> Rg<'g, 'p> {
                 Passing::Value if matches!(t.get(p.ty), Type::Real(_)) => {
                     let Slot::Value(off) = layout_slots[i] else { unreachable!() };
                     let single = matches!(t.get(p.ty), Type::Real(RealKind::Single));
-                    if inc.nf < 8 {
-                        let x = FLOAT_ARGS[inc.nf];
-                        inc.nf += 1;
+                    if let Some(x) = inc.float() {
                         if single {
                             self.a.movss(Mem::base(Rbp, off), x);
                         } else {
@@ -1737,10 +1801,11 @@ impl<'g, 'p> Rg<'g, 'p> {
             let Slot::Value(off) = layout_slots[i] else { unreachable!() };
             let sp = scratch[i].unwrap();
             if let Type::ShortString(max) = t.get(p.ty) {
-                self.a.lea(W64, Rdi, Mem::base(Rbp, off));
-                self.a.mov(W32, Rsi, *max as i32);
-                self.a.mov(W64, Rdx, Mem::base(Rbp, sp));
-                self.a.call(rtl::STR_ASSIGN);
+                let (a0, a1, a2) = (self.arg(0), self.arg(1), self.arg(2));
+                self.a.lea(W64, a0, Mem::base(Rbp, off));
+                self.a.mov(W32, a1, *max as i32);
+                self.a.mov(W64, a2, Mem::base(Rbp, sp));
+                self.call_aligned(rtl::STR_ASSIGN);
             } else {
                 self.a.mov(W64, Rsi, Mem::base(Rbp, sp));
                 self.a.lea(W64, Rdi, Mem::base(Rbp, off));
@@ -1767,6 +1832,10 @@ impl<'g, 'p> Rg<'g, 'p> {
                 },
             }
         }
+        if win64 {
+            self.a.mov(W64, Rsi, Mem::base(Rbp, WIN_SAVE_RSI));
+            self.a.mov(W64, Rdi, Mem::base(Rbp, WIN_SAVE_RDI));
+        }
         self.a.leave();
         self.a.ret();
         if self.depth != 0 {
@@ -1790,6 +1859,9 @@ impl<'g, 'p> Rg<'g, 'p> {
 struct Incoming {
     ni: usize,
     nf: usize,
+    /// Win64: arguments take registers by position, whatever their class.
+    position: usize,
+    win64: bool,
     stack_off: i32,
 }
 
@@ -1797,13 +1869,29 @@ impl Incoming {
     /// The register holding the next integer-class argument; arguments
     /// passed on the stack are loaded into RAX first.
     fn int(&mut self, a: &mut Assembler) -> Reg {
-        if self.ni < 6 {
-            self.ni += 1;
-            INT_ARGS[self.ni - 1]
+        let reg = if self.win64 {
+            self.position += 1;
+            WIN_INT_ARGS.get(self.position - 1).copied()
         } else {
+            self.ni += 1;
+            INT_ARGS.get(self.ni - 1).copied()
+        };
+        reg.unwrap_or_else(|| {
             a.mov(W64, Rax, Mem::base(Rbp, self.stack_off));
             self.stack_off += 8;
             Rax
+        })
+    }
+
+    /// The register holding the next real argument, or `None` when it was
+    /// passed on the stack (at `stack_off`, which the caller then advances).
+    fn float(&mut self) -> Option<Xmm> {
+        if self.win64 {
+            self.position += 1;
+            (self.position <= 4).then(|| FLOAT_ARGS[self.position - 1])
+        } else {
+            self.nf += 1;
+            FLOAT_ARGS.get(self.nf - 1).copied()
         }
     }
 }

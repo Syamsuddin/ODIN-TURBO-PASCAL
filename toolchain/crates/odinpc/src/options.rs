@@ -143,8 +143,15 @@ impl Options {
         defines.insert("ODIN".into());
         defines.insert("VER70".into());
         defines.insert(if self.target.starts_with("aarch64") { "CPUAARCH64" } else { "CPUX86_64" }.into());
-        defines.insert(if self.target.ends_with("darwin") { "DARWIN" } else { "LINUX" }.into());
-        defines.insert("UNIX".into());
+        defines.insert("CPU64".into());
+        // The same OS symbols as FPC, so RTL sources read alike under both compilers.
+        if self.target.ends_with("windows") {
+            defines.insert("WINDOWS".into());
+            defines.insert("MSWINDOWS".into());
+        } else {
+            defines.insert(if self.target.ends_with("darwin") { "DARWIN" } else { "LINUX" }.into());
+            defines.insert("UNIX".into());
+        }
         let mut switches = Switches::tp_default();
         switches.set(Switches::RANGE, self.range_checks);
         switches.set(Switches::OVERFLOW, self.overflow_checks);

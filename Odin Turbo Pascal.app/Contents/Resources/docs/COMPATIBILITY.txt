@@ -1,4 +1,4 @@
-KOMPATIBILITAS DAN CAKUPAN VERSI 2.0.1
+KOMPATIBILITAS DAN CAKUPAN VERSI 2.1.0-alpha.1
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Implementasi baru dengan penampilan terinspirasi IDE Turbo Pascal era DOS.
@@ -14,7 +14,10 @@ Unit Pascal                       Diuji dengan UMATH dan UNITDEMO
 LF/CRLF, UTF-8/BOM, CP437          Diuji round-trip
 Shell injection via arguments     Tidak memakai shell untuk compile/run
 LLDB                              Integrasi tersedia, belum diuji macOS
-Mac Intel / Apple Silicon         Jalur installer tersedia, belum diuji hardware
+Mac Intel / Apple Silicon         Backend Odin diuji (Apple Silicon di runner CI),
+                                  installer belum diuji di hardware Apple Silicon
+Linux x86_64 / arm64              Backend Odin diuji (VM dan runner CI), dari source
+Windows                           Belum didukung (direncanakan untuk 2.2.0)
 Signing / notarization Apple      Belum tersedia
 BGI/Graph DOS                     Tidak diimplementasikan
 Interrupt/port/mem DOS            Tidak diemulasi
@@ -28,17 +31,27 @@ ukuran pointer, ABI, sistem berkas, dan unit tetap berlaku. Jangan menganggap
 layout record/binary file DOS atau aritmetika pointer identik pada macOS 64-bit.
 Lihat referensi resmi sebelum memindahkan program DOS dengan asumsi 16-bit.
 
-BACKEND COMPILER ODIN (BAWAAN DI MAC INTEL SEJAK 2.0.0-alpha.1)
+BACKEND COMPILER ODIN (BAWAAN DI MAC INTEL SEJAK 2.0.0-alpha.1, DI APPLE
+SILICON DAN LINUX SEJAK 2.1.0-alpha.1)
 
-Backend bawaan adalah toolchain Odin: compiler odinpc
-(Rust) dan runtime library sendiri di rtl/. Free Pascal tetap bisa dipilih
-di Options > Compiler, dan dipakai otomatis bila odinpc tidak ditemukan atau
-CPU belum didukung. Bagian unit di bawah menjelaskan backend Free Pascal.
+Backend bawaan adalah toolchain Odin: compiler odinpc (Rust) dan runtime
+library sendiri di rtl/. Target: x86_64-darwin, aarch64-darwin (Mach-O),
+x86_64-linux dan aarch64-linux (ELF dinamis, glibc 2.34 atau lebih baru).
+Free Pascal tetap bisa dipilih di Options > Compiler, dan dipakai otomatis
+bila odinpc tidak ditemukan atau sistemnya belum didukung (Windows).
+Bagian unit di bawah menjelaskan backend Free Pascal.
 
 Diuji 15 Oktober 2026 pada Mac Intel x86_64 (Darwin 24.6) dengan FPC 3.2.2
 sebagai pembanding: kesepuluh contoh, 77 program uji diferensial, dan layar
-Crt (jendela, scroll, warna) memberi hasil yang sama. Belum didukung di Apple
-Silicon; di sana Odin memakai Free Pascal.
+Crt (jendela, scroll, warna) memberi hasil yang sama. Korpus yang sama juga
+lulus di VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu-user) dan di runner
+GitHub Actions untuk macOS 15 Apple Silicon, Ubuntu 24.04 x86_64, dan Ubuntu
+24.04 arm64, bersama tes IDE, debugger, dan Odin Vision dengan backend Odin.
+Mac Apple Silicon dan PC Linux fisik belum diuji langsung.
+
+Di arm64, prosesor tidak menghentikan program saat operasi real gagal.
+Kode hasil kompilasi membaca bendera FPSR sesudah operasi real dan
+menghasilkan runtime error 207, 200, atau 205 seperti di x86-64.
 
 Unit di backend Odin: System, Crt, Dos, Strings, Printer, Objects, dan Odin
 Vision (Turbo Vision milik Odin): Drivers, Memory, HistList, Views, Menus,
@@ -76,8 +89,8 @@ itu dibagikan, ketentuan GPL berlaku untuk executable tersebut.
 UNIT STANDAR TURBO PASCAL 7
 
 Diuji 13 Oktober 2026 pada Mac Intel x86_64 (Darwin 24.6) dengan FPC 3.2.2,
-melalui jalur build dan User screen Odin. Untuk Apple Silicon, program uji
-hanya dikompilasi silang ke arm64, belum dijalankan pada hardware arm64.
+melalui jalur build dan User screen Odin. Sejak 2.1.0-alpha.1 tes
+FPC juga berjalan di runner GitHub Actions macOS 15 Apple Silicon.
 
 Unit           Status
 System         Tersedia otomatis. Rutin string, matematika, Str/Val, berkas
