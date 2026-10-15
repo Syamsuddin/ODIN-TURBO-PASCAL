@@ -13,6 +13,8 @@ use odin_base::{FileId, Span};
 pub enum Os {
     Darwin,
     Linux,
+    /// x86-64 only, with the Win64 calling convention.
+    Windows,
 }
 
 #[derive(Clone, Debug)]
@@ -68,6 +70,21 @@ pub fn c_library(os: Os) -> &'static str {
     match os {
         Os::Darwin => "/usr/lib/libSystem.B.dylib",
         Os::Linux => "libc",
+        Os::Windows => "ucrtbase.dll",
+    }
+}
+
+/// The library an `external 'name'` declaration imports from, or `None` when
+/// the OS has no such library. Unix programs reach the OS only through the C
+/// library; Windows ones also call DLLs such as kernel32 directly.
+pub fn import_library(os: Os, name: &str) -> Option<String> {
+    if name.eq_ignore_ascii_case("c") {
+        return Some(c_library(os).to_string());
+    }
+    match os {
+        Os::Windows if name.contains('.') => Some(name.to_ascii_lowercase()),
+        Os::Windows => Some(format!("{}.dll", name.to_ascii_lowercase())),
+        _ => None,
     }
 }
 
