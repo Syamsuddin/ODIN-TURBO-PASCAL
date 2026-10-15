@@ -76,6 +76,10 @@ jobs:
         run: |
           "$PYTHON" -c "import sys, tkinter; print(sys.version); print('Tk', tkinter.TkVersion)"
           fpc -iV || echo "fpc tidak ditemukan"
+          if [ "$RUNNER_OS" = Windows ]; then
+            ls C:/tools/freepascal C:/tools/freepascal/bin C:/tools/freepascal/units 2>&1 | head -40
+            for c in C:/tools/freepascal/bin/*/fpc.cfg; do echo "== $c"; head -30 "$c"; done
+          fi
 
       # On Windows odinpc does not build yet (odin-debug, Tahap 8d): the
       # Python tests still run, with the Free Pascal backend.

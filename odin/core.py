@@ -461,6 +461,12 @@ def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = 
     for key, flag in (("unit_paths", "-Fu"), ("include_paths", "-Fi")):
         command += [flag + str(Path(p).expanduser().resolve()) for p in settings[key] if p]
     cpu = ("aarch64" if platform.machine() == "arm64" else "x86_64") if sys.platform == "darwin" else None
+    # An FPC install without fpc.cfg next to the compiler (some Windows
+    # packages) knows no unit folders at all: add the RTL's, as fpc.cfg would.
+    if sys.platform == "win32" and not (Path(compiler).parent / "fpc.cfg").is_file():
+        vision_dir = free_vision_dir(compiler)
+        if vision_dir:
+            command.append("-Fu" + str(Path(vision_dir).parent / "*"))
     # FPC searches -Fu in order: the user's own units still win over Free Vision.
     vision = free_vision_dir(compiler, cpu)
     if vision:
