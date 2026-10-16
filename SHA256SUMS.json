@@ -3,7 +3,7 @@
   ".github/workflows/ci.yml": "e64f2b387d4d197d33c5ba06c9cbf555f0114bd9e79192c38aee7ada17293857",
   ".github/workflows/oracle.yml": "656884e9d1cb1d8612c0f6d0de0d59712851825401cda42c93bc39d06a13ad3f",
   ".gitignore": "f0af16c6b93f41c80c6457b6c62f716c629229977a75043882a747b682e6dc5b",
-  "CHANGELOG.md": "064525286b6c90693c55df9cdd336fffade3b3cf688df0f4e559b35235ad60a5",
+  "CHANGELOG.md": "5a70aaedab08264d2a0c147f2c7187fd3b111ea02259abcc38d014e81845c12d",
   "IMPLEMENTATION_PLAN.md": "2c67c634a945faa5a8058475f606740a23ec25ad77d84cf4f5c5d5fe61916ea5",
   "Install.cmd": "ab6c89ac0c75d8b1341acc47fc8ad942ec7f31d696981dd41045e7a3d9163a69",
   "Install.command": "9563336fb0314c872e39b7b23beec457a35ab1e983a2a1e44b6140735131d11f",
@@ -153,7 +153,7 @@
   "Odin Turbo Pascal.app/Contents/Resources/rtl/vision/views.pas": "18bc5e556d44d0ef42cf9c8ad9d0899a276ff26d512c7301ff4dac78a3947f52",
   "Odin Turbo Pascal.app/Contents/Resources/toolchain/odinpc": "580daacbbf831c89dce4cf8b4c6987d1c696cd79924fec4e6105774603586e40",
   "Odin_Turbo_Pascal.code-workspace": "69e7b37e2ebdaf8fc313bf6cb74882fed65895e5f853736e65759bafb333bc6b",
-  "README.md": "be24366a71ac332ec128a89d420f8466b91090820f885a08f0dc11e8f384da4a",
+  "README.md": "8158c7cde3c0bdcc1d790ba291ad0c9403bd5d8c7961de9907f41d800ee3369c",
   "README.txt": "e31c88d32c41266e51fc3b70e9117ad6c752167cc80b274c4034cb2bbd420300",
   "THIRD_PARTY.txt": "bfd6aaec148b50dc9de612217a170e18f7ac7b111400b5a86aa89bafc3db3ffb",
   "Uninstall.cmd": "d38c1e051924dc85b2bb4f8b4133936bbbd19f4e1bb6bf5ea254885a51aea805",
@@ -839,6 +839,6 @@
   "toolchain/crates/odinpc/src/options.rs": "8397f2643e474ac9c31d6cd0bd8ca198993714e6be64539c42459ba1d1e7f438",
   "toolchain/crates/odinpc/tests/corpus.rs": "ab76ccd86802827d7de5384e2abe4f2eaeffa7ab3d35ca070eb27d99782af35d",
   "toolchain/crates/odinpc/tests/semantic.rs": "5073dadc5338d0045d944cddafa454915decf74c418b1d3aaf9b1faf8ea65106",
-  "toolchain/odinpc.exe": "b1c45e3efcee8538f9e90a3333be7ab5861307b05eb1f8f4b6e8afa153461910",
+  "toolchain/odinpc.exe": "dee8025812ea5422ebc5591db79c86995138968e5a14e1d5bcb2cf94b260549d",
   "toolchain/rustfmt.toml": "8c8416e45116f631fc6dc17bd4d56c417bf9c637e96c2cda571cd9cf82a93e71"
 }

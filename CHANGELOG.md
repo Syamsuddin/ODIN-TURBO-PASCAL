@@ -37,6 +37,8 @@ Di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2, Rust 1.99): 97
 
 Buku dibangun dari `examples/` dengan `scripts/build_book.py`, dan setiap keluaran program di dalamnya berasal dari menjalankan program itu dengan `odinpc` 2.3.0. Halaman buku diperiksa lewat gambar hasil render, belum satu per satu di aplikasi pembaca PDF.
 
+Di GitHub Actions, kelima job CI lulus untuk rilis ini: macOS 15 Apple Silicon, macOS 15 Intel, Ubuntu 24.04 x86_64 dan arm64, dan Windows Server 2025 x86_64. `odinpc.exe` 2.3.0 berasal dari job Windows itu.
+
 Yang belum diverifikasi langsung: Apple Silicon, PC Linux dan Windows fisik, serta pembukaan buku lewat **Help › Buku** di sistem selain Mac Intel.
 
 ## [2.2.0] - 2026-10-15
