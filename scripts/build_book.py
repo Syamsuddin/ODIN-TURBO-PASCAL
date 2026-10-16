@@ -1043,6 +1043,8 @@ def assemble(front, parts, back, pages, preview=False) -> str:
     if not preview:
         body.append(back_cover())
     css = (BOOK / "buku.css").read_text(encoding="utf-8")
+    # {{TAG}} and {{VERSI}} in the sources follow odin/__init__.py, so a version bump needs no edit there.
+    body = [piece.replace("{{TAG}}", __version_tag__).replace("{{VERSI}}", __version__) for piece in body]
     return (f'<!doctype html><html lang="id"><head><meta charset="utf-8"><title>{esc(TITLE)}</title>'
             f'<style>{palette_css()}\n{css}</style></head><body>{"".join(body)}</body></html>')
 

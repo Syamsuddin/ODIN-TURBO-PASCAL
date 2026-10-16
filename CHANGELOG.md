@@ -6,6 +6,10 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-10-16
+
+Rilis 2.3.0. Odin Turbo Pascal kini menyertakan buku tutorial berwarna penuh, *Belajar Pemrograman Bahasa Pascal dengan ODIN Turbo Pascal*, yang dibuka dari menu **Help › Buku**. Rilis ini juga mengganti contoh bawaan dengan tutorial 20 bab (90 berkas) dan memberi editor warna sintaks **Turbo Biru Lembut**. Toolchain Odin tidak berubah selain nomor versinya.
+
 ### Ditambahkan
 
 - Buku tutorial **Belajar Pemrograman Bahasa Pascal dengan ODIN Turbo Pascal** (`docs/Belajar_Pemrograman_Bahasa_Pascal.pdf`), buku PDF berwarna penuh karya Syams Ideris dengan sampul, kata pengantar, daftar isi, 20 bab dalam enam bagian, penutup, dan enam lampiran. Buku memakai ke-89 program dan unit contoh tutorial, lengkap dengan infografik, gambar layar IDE, rangkuman, dan latihan. Listing dicetak dari `examples/`, dan keluaran program adalah hasil menjalankan program itu dengan `odinpc`. Sumbernya ada di `book/`, dan `scripts/build_book.py` membangunnya dengan Google Chrome dan PyMuPDF.
@@ -26,6 +30,14 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 ### Diperbaiki
 
 - Windows: program tidak lagi sesekali berhenti dengan runtime error 216 saat `Exec` menjalankan program lewat PATH. Handler pengecualian hanya menangani pelanggaran akses di kode program sendiri; pelanggaran akses di DLL sistem (yang bisa ditangani DLL itu sendiri) diteruskan, dan yang tidak tertangani tetap menjadi runtime error lewat filter terakhir.
+
+### Pengujian
+
+Di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2, Rust 1.99): 97 tes Python lulus (6 dilewati), termasuk tes GUI untuk menu **Help › Buku**, dan 177 tes Rust lulus. Universal `odinpc` 2.3.0 (x86_64 dan arm64) berhasil dibangun; hanya bagian x86_64 yang bisa dijalankan di mesin ini.
+
+Buku dibangun dari `examples/` dengan `scripts/build_book.py`, dan setiap keluaran program di dalamnya berasal dari menjalankan program itu dengan `odinpc` 2.3.0. Halaman buku diperiksa lewat gambar hasil render, belum satu per satu di aplikasi pembaca PDF.
+
+Yang belum diverifikasi langsung: Apple Silicon, PC Linux dan Windows fisik, serta pembukaan buku lewat **Help › Buku** di sistem selain Mac Intel.
 
 ## [2.2.0] - 2026-10-15
 
@@ -265,7 +277,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.1.0-alpha.1...v2.2.0
 [2.1.0-alpha.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.1...v2.1.0-alpha.1
 [2.0.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0...v2.0.1

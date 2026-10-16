@@ -1,4 +1,4 @@
-ODIN TURBO PASCAL 2.2.0
+ODIN TURBO PASCAL 2.3.0
 Paket aplikasi desktop untuk Mac Intel dan Apple Silicon; berjalan dari source di Linux
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
@@ -139,9 +139,10 @@ Lihat docs/COMPATIBILITY.txt untuk rincian.
 
 PENGUJIAN
 
-Rilis 2.2.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
-Free Pascal 3.2.2): 92 tes Python (termasuk tes GUI dengan jendela Tk
-sungguhan), 185 tes Rust, dan 77 program uji yang keluarannya sama dengan
+Rilis 2.3.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
+Free Pascal 3.2.2): 97 tes Python (termasuk tes GUI dengan jendela Tk
+sungguhan) dan 177 tes Rust. Rilis 2.2.0 diuji di Mac Intel dengan 92 tes
+Python, 185 tes Rust, dan 77 program uji yang keluarannya sama dengan
 Free Pascal. Korpus yang sama juga lulus di VM Ubuntu 24.04 (x86_64, dan
 aarch64 lewat qemu) dan, bersama tes Python dengan backend Odin, di runner
 GitHub Actions untuk macOS Apple Silicon, Linux x86_64, dan Linux arm64.
