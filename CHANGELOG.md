@@ -6,6 +6,10 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Diubah
+
+- CI: `actions/checkout` dan `actions/upload-artifact` naik dari v4 ke v7, yang berjalan di Node.js 24. GitHub Actions tidak lagi memperingatkan bahwa Node.js 20 sudah usang.
+
 ## [2.3.0] - 2026-10-16
 
 Rilis 2.3.0. Odin Turbo Pascal kini menyertakan buku tutorial berwarna penuh, *Belajar Pemrograman Bahasa Pascal dengan ODIN Turbo Pascal*, yang dibuka dari menu **Help › Buku**. Rilis ini juga mengganti contoh bawaan dengan tutorial 20 bab (90 berkas) dan memberi editor warna sintaks **Turbo Biru Lembut**. Toolchain Odin tidak berubah selain nomor versinya.

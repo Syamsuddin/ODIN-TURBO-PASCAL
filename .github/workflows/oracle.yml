@@ -27,14 +27,14 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Free Pascal
         run: |
           choco install freepascal -y --no-progress
           echo "C:/tools/freepascal/bin/i386-win32" >> "$GITHUB_PATH"
       - name: Oracle
         run: python scripts/oracle.py --fpc fpc --os windows $NAMES
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: oracle-windows
           path: |
