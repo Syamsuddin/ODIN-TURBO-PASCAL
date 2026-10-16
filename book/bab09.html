@@ -1,0 +1,554 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menjelaskan manfaat memecah program menjadi prosedur dan fungsi yang masing-masing punya satu tugas.</li>
+  <li>Menulis dan memanggil <code>procedure</code> tanpa dan dengan parameter.</li>
+  <li>Menulis <code>function</code> yang mengembalikan nilai lewat nama fungsinya, sesuai aturan Turbo Pascal 7 (tanpa <code>Result</code>).</li>
+  <li>Membedakan parameter nilai dan parameter <code>var</code>, serta memilih yang tepat.</li>
+  <li>Membedakan variabel global dan lokal, termasuk apa yang terjadi bila namanya sama.</li>
+  <li>Melacak panggilan prosedur dengan debugger memakai <kbd>F8</kbd> (Step over) dan <kbd>F7</kbd> (Trace into).</li>
+</ul>
+
+<p class="lead">Program yang Anda tulis sejauh ini mengerjakan semuanya di satu tempat: blok <code>begin..end.</code> yang
+makin lama makin panjang. Program kecil masih nyaman dibaca seperti itu, tetapi program yang sebenarnya, apalagi yang
+dikerjakan banyak orang, harus dipecah menjadi potongan-potongan kecil yang masing-masing diberi nama. Potongan itu
+disebut <b>prosedur</b> dan <b>fungsi</b>. Dengan keduanya, program Anda terbaca hampir seperti kalimat, kode yang sama
+tidak perlu ditulis berulang, dan bila ada kesalahan Anda tahu persis ke bagian mana harus melihat.</p>
+
+<h2>Memecah Program Menjadi Bagian</h2>
+
+<p>Bayangkan dapur sebuah warung. Juru masaknya tidak menghafal ulang cara menanak nasi setiap kali ada pesanan. Ada
+resep yang sudah diberi nama: "nasi goreng", "mi ayam". Pelayan cukup berkata "satu nasi goreng", dan dapur tahu apa yang
+harus dikerjakan. Di Pascal, <b>subprogram</b> adalah resep semacam itu: sekumpulan perintah yang diberi nama, ditulis
+sekali, dan dijalankan kapan pun namanya disebut. Menyebut nama itu disebut <b>memanggil</b> (<i>call</i>) subprogram.</p>
+
+<p>Pascal mengenal dua macam subprogram. <b>Prosedur</b> (<i>procedure</i>) hanya mengerjakan sesuatu, misalnya
+menampilkan garis atau menukar dua nilai. <b>Fungsi</b> (<i>function</i>) mengerjakan sesuatu lalu <b>menghasilkan
+sebuah nilai</b>, misalnya kuadrat suatu bilangan, sehingga pemanggilannya bisa dipakai di dalam ekspresi. Anda sudah
+sering memakai keduanya tanpa menyadarinya: <code>WriteLn</code> adalah prosedur bawaan, sedangkan <code>Sqr</code> dan
+<code>Length</code> adalah fungsi bawaan. Sekarang Anda akan membuatnya sendiri.</p>
+
+<div class="trio">
+  <div class="card"><h4><span class="ikon">1</span>Terbaca</h4><p>Program utama cukup berisi urutan nama langkah,
+  misalnya <code>TampilkanJudul; TampilkanMenu;</code>, tanpa rincian di dalamnya.</p></div>
+  <div class="card"><h4><span class="ikon">2</span>Tidak berulang</h4><p>Perintah yang dipakai berkali-kali ditulis sekali.
+  Mengubahnya pun cukup di satu tempat.</p></div>
+  <div class="card"><h4><span class="ikon">3</span>Mudah diuji</h4><p>Setiap bagian bisa dicoba sendiri. Bila hasilnya salah,
+  Anda tahu bagian mana yang bermasalah.</p></div>
+</div>
+
+<h2>Prosedur: Perintah yang Diberi Nama</h2>
+
+<p>Prosedur ditulis di bagian deklarasi, <b>di atas</b> blok program utama. Kata <code>procedure</code>, nama, titik
+koma, lalu badan prosedur berupa <code>begin..end</code> yang diakhiri titik koma (bukan titik: titik hanya untuk
+penutup program).</p>
+
+<div class="sintaks"><pre><b>procedure</b> <i>NamaProsedur</i>;
+<b>begin</b>
+  <i>pernyataan</i>;
+<b>end</b>;
+
+<i>NamaProsedur</i>;        { pemanggilan: cukup tulis namanya }</pre></div>
+
+<p>Program 9.1 menampilkan daftar menu kantin. Ada tiga prosedur. <code>GarisPemisah</code> menulis satu garis.
+<code>TampilkanJudul</code> memanggil <code>GarisPemisah</code> dua kali, dan <code>TampilkanMenu</code> mencetak daftar
+harga. Prosedur boleh memanggil prosedur lain, asalkan prosedur yang dipanggil sudah ditulis <b>lebih dulu</b> di atasnya.
+Buka <code>bab09_01_prosedur_dasar.pas</code> lewat <span class="menu">File ▸ Examples...</span> dan jalankan dengan
+<kbd>Ctrl</kbd>+<kbd>F9</kbd>.</p>
+
+<x-listing src="bab09_01_prosedur_dasar.pas"></x-listing>
+
+<x-run src="bab09_01_prosedur_dasar.pas" caption="Tiga prosedur bekerja sama menyusun daftar menu"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–12</td><td>Deklarasi <code>GarisPemisah</code>. Badannya hanya satu <code>WriteLn</code>. Tidak ada yang tampil saat prosedur ini dideklarasikan; isinya baru berjalan ketika dipanggil.</td></tr>
+    <tr><td>14–19</td><td><code>TampilkanJudul</code> memanggil <code>GarisPemisah</code> di baris 16 dan 18. Garis yang sama muncul di atas dan di bawah judul, padahal <code>WriteLn</code> garisnya hanya ditulis satu kali.</td></tr>
+    <tr><td>21–27</td><td><code>TampilkanMenu</code> mencetak empat baris menu.</td></tr>
+    <tr><td>29–34</td><td>Program utama. Isinya hanya nama-nama prosedur, sehingga alur program terbaca sekilas: judul, menu, garis, ucapan penutup.</td></tr>
+  </tbody>
+</table>
+
+<div class="awas"><p>Pascal membaca berkas dari atas ke bawah dan hanya mengenal nama yang <b>sudah dideklarasikan</b> di atasnya. Bila
+<code>TampilkanJudul</code> ditulis sebelum <code>GarisPemisah</code>, kompiler akan menolak panggilan di baris 16 karena
+nama itu belum dikenal. Karena itu urutan penulisan prosedur selalu dari yang paling dasar ke yang memakainya.</p></div>
+
+<p>Urutan kerjanya bisa digambarkan sebagai diagram. Setiap kali sebuah prosedur dipanggil, program "melompat" ke dalam
+prosedur itu, mengerjakan isinya dari atas ke bawah, lalu <b>kembali</b> ke baris tepat sesudah pemanggilan.
+<x-ref to="gb-panggil"></x-ref> memperlihatkan seluruh perjalanan Program 9.1: panah penuh adalah pemanggilan, panah putus-putus adalah
+kembalinya kendali.</p>
+
+<figure class="grafik" id="gb-panggil">
+<svg viewBox="0 0 680 350">
+  <rect class="term" x="20" y="6" width="120" height="30" rx="6"/>
+  <text class="mid white b" x="80" y="26">Program utama</text>
+  <rect class="box" x="185" y="6" width="130" height="30" rx="6"/>
+  <text class="mid b" x="250" y="26">TampilkanJudul</text>
+  <rect class="box" x="355" y="6" width="130" height="30" rx="6"/>
+  <text class="mid b" x="420" y="26">GarisPemisah</text>
+  <rect class="box" x="525" y="6" width="130" height="30" rx="6"/>
+  <text class="mid b" x="590" y="26">TampilkanMenu</text>
+  <path class="dash" d="M80 36 V345"/>
+  <path class="dash" d="M250 36 V345"/>
+  <path class="dash" d="M420 36 V345"/>
+  <path class="dash" d="M590 36 V345"/>
+  <path class="arrow" d="M80 66 H246"/>
+  <text class="s" x="92" y="60">1  baris 30</text>
+  <path class="arrow" d="M250 94 H416"/>
+  <text class="s" x="262" y="88">2  baris 16</text>
+  <path class="arrow" style="stroke-dasharray:4 3" d="M420 122 H254"/>
+  <text class="s muted" x="330" y="116">kembali</text>
+  <rect class="ok" x="256" y="130" width="150" height="16" rx="3"/>
+  <text class="xs" x="262" y="142">WriteLn judul (baris 17)</text>
+  <path class="arrow" d="M250 170 H416"/>
+  <text class="s" x="262" y="164">3  baris 18</text>
+  <path class="arrow" style="stroke-dasharray:4 3" d="M420 198 H254"/>
+  <text class="s muted" x="330" y="192">kembali</text>
+  <path class="arrow" style="stroke-dasharray:4 3" d="M250 226 H84"/>
+  <text class="s muted" x="130" y="220">kembali</text>
+  <path class="arrow" d="M80 254 H586"/>
+  <text class="s" x="92" y="248">4  baris 31</text>
+  <path class="arrow" style="stroke-dasharray:4 3" d="M590 282 H84"/>
+  <text class="s muted" x="480" y="276">kembali</text>
+  <path class="arrow" d="M80 310 H416"/>
+  <text class="s" x="92" y="304">5  baris 32</text>
+  <path class="arrow" style="stroke-dasharray:4 3" d="M420 336 H84"/>
+  <text class="s muted" x="330" y="330">kembali</text>
+</svg>
+<figcaption>Perjalanan kendali pada Program 9.1. Angka menunjukkan urutan pemanggilan; setiap pemanggilan diakhiri kembalinya kendali ke pemanggil.</figcaption>
+</figure>
+
+<h2>Fungsi: Subprogram yang Menghasilkan Nilai</h2>
+
+<p>Fungsi sama seperti prosedur, dengan dua perbedaan. Pertama, setelah daftar parameter ditulis titik dua dan <b>tipe
+hasil</b>. Kedua, di dalam badan fungsi Anda harus mengisi hasilnya. Cara mengisinya di Turbo Pascal 7 adalah
+menugaskan nilai ke <b>nama fungsi itu sendiri</b>.</p>
+
+<div class="sintaks"><pre><b>function</b> <i>NamaFungsi</i>(<i>parameter</i>: <i>Tipe</i>): <i>TipeHasil</i>;
+<b>begin</b>
+  <i>NamaFungsi</i> := <i>nilai</i>;       { inilah hasil yang dikembalikan }
+<b>end</b>;
+
+<i>Variabel</i> := <i>NamaFungsi</i>(<i>argumen</i>);   { dipanggil di dalam ekspresi }</pre></div>
+
+<p>Perbedaan terpenting dengan prosedur terletak pada cara memanggilnya. Prosedur dipanggil sebagai pernyataan
+tersendiri. Fungsi dipanggil sebagai <b>bagian dari ekspresi</b>: disimpan ke variabel, dijumlahkan, dibandingkan,
+dicetak, atau dijadikan argumen fungsi lain. <x-ref to="tb-beda"></x-ref> merangkum perbedaannya.</p>
+
+<table class="data" id="tb-beda">
+  <caption>Prosedur dan fungsi dibandingkan</caption>
+  <thead><tr><th></th><th>Prosedur</th><th>Fungsi</th></tr></thead>
+  <tbody>
+    <tr><td><b>Kata kunci</b></td><td><code>procedure</code></td><td><code>function</code></td></tr>
+    <tr><td><b>Tipe hasil</b></td><td>tidak ada</td><td>ditulis sesudah titik dua</td></tr>
+    <tr><td><b>Mengisi hasil</b></td><td>tidak perlu</td><td><code>NamaFungsi := nilai;</code></td></tr>
+    <tr><td><b>Cara memanggil</b></td><td>pernyataan sendiri: <code>Tukar(X, Y);</code></td><td>di dalam ekspresi: <code>Z := Kuadrat(5) + 1;</code></td></tr>
+    <tr><td><b>Cocok untuk</b></td><td>melakukan tindakan (tampil, ubah, tukar)</td><td>menghitung satu nilai (kuadrat, luas, genap atau tidak)</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p>Di Turbo Pascal 7 <b>tidak ada variabel <code>Result</code></b>. Bahasa lain, dan mode Delphi di Free Pascal,
+mengizinkan <code>Result := nilai</code>, tetapi di buku ini hasil fungsi selalu diberikan lewat nama fungsi:
+<code>Kuadrat := X * X</code>. Jangan sampai tertukar: di dalam fungsi, nama fungsi di <b>sisi kiri</b> <code>:=</code>
+berarti "tetapkan hasil", sedangkan nama fungsi yang muncul di <b>sisi kanan</b> berarti memanggil fungsi itu lagi
+(itulah rekursi, yang dibahas di bab berikutnya).</p></div>
+
+<p>Program 9.2 berisi empat fungsi dengan tipe hasil berbeda: <code>LongInt</code>, <code>Integer</code>,
+<code>Boolean</code>, dan <code>Real</code>. Perhatikan bahwa <code>Genap</code> cukup mengisi namanya dengan hasil
+sebuah perbandingan, dan <code>Terbesar</code> mengisi namanya di salah satu dari dua cabang <code>if</code>.</p>
+
+<x-listing src="bab09_02_fungsi_dasar.pas"></x-listing>
+
+<x-run src="bab09_02_fungsi_dasar.pas" caption="Hasil fungsi dipakai dalam ekspresi, penugasan, dan <code>WriteLn</code>"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–12</td><td><code>Kuadrat</code> menerima satu parameter <code>X</code> dan mengembalikan <code>LongInt</code>. Baris 11 mengisi hasilnya. Tipe <code>LongInt</code> dipilih agar bilangan besar muat.</td></tr>
+    <tr><td>14–20</td><td><code>Terbesar</code> membandingkan dua <code>Integer</code>. Tepat satu dari baris 17 dan 19 dijalankan, sehingga hasilnya selalu terisi.</td></tr>
+    <tr><td>22–25</td><td><code>Genap</code> mengembalikan <code>Boolean</code>. Ekspresi <code>N mod 2 = 0</code> sudah berupa <code>True</code> atau <code>False</code>, jadi tidak perlu <code>if</code>.</td></tr>
+    <tr><td>27–30</td><td><code>LuasLingkaran</code> memakai konstanta bawaan <code>Pi</code>.</td></tr>
+    <tr><td>36–37</td><td>Hasil <code>Kuadrat(12)</code> disimpan ke variabel <code>Hasil</code> lebih dulu, baru dicetak.</td></tr>
+    <tr><td>39</td><td>Dua pemanggilan dalam satu ekspresi: <code>Kuadrat(3) + Kuadrat(4)</code> sama dengan <code>9 + 16</code>.</td></tr>
+    <tr><td>41</td><td>Nilai <code>Boolean</code> bisa dicetak oleh <code>WriteLn</code>; Turbo Pascal menuliskannya sebagai <code>TRUE</code> atau <code>FALSE</code>.</td></tr>
+    <tr><td>42</td><td>Hasil bertipe <code>Real</code> diformat dengan <code>:0:2</code>, dua angka di belakang titik.</td></tr>
+    <tr><td>43–44</td><td>Fungsi di dalam fungsi: <code>Terbesar(10, 3)</code> dihitung dulu (hasilnya 10), baru hasilnya diberikan kepada <code>Genap</code>.</td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p>Tambahkan fungsi <code>Kubik(X: LongInt): LongInt</code> yang mengembalikan <code>X * X * X</code>, lalu cetak
+<code>Kubik(5)</code>. Setelah itu hapus baris <code>Kuadrat := X * X;</code> dan jalankan lagi: fungsi yang tidak pernah mengisi
+namanya mengembalikan nilai sembarang, dan itu salah satu sumber kesalahan paling licin.</p></div>
+
+<h2>Parameter: Mengirim Data ke Subprogram</h2>
+
+<p>Subprogram yang selalu mengerjakan hal yang persis sama kurang berguna. Agar fleksibel, kita mengirim data lewat
+<b>parameter</b>. Ada dua istilah yang sering tertukar:</p>
+
+<ul>
+  <li><b>Parameter formal</b>: nama yang ditulis pada judul subprogram, misalnya <code>X</code> pada
+  <code>procedure Gandakan(X: Integer)</code>. Ia bekerja seperti variabel lokal yang diisi saat subprogram dipanggil.</li>
+  <li><b>Argumen</b> (parameter aktual): nilai atau variabel yang Anda tulis saat memanggil, misalnya <code>Angka</code>
+  pada <code>Gandakan(Angka)</code>.</li>
+</ul>
+
+<p>Argumen dicocokkan dengan parameter berdasarkan <b>urutan</b> dan <b>tipenya</b>, bukan namanya. Beberapa parameter
+yang bertipe sama boleh digabung dengan koma, seperti <code>Terbesar(A, B: Integer)</code>. Pascal memiliki dua cara
+mengirim parameter, dan memilih yang tepat adalah inti bab ini.</p>
+
+<h3>Parameter nilai: subprogram menerima salinan</h3>
+
+<p>Parameter biasa disebut <b>parameter nilai</b> (<i>value parameter</i>). Saat subprogram dipanggil, nilai argumen
+<b>disalin</b> ke parameter. Subprogram bekerja pada salinan itu; apa pun yang dilakukannya tidak menyentuh variabel
+aslinya. Karena yang disalin hanya nilai, argumennya boleh berupa ekspresi, misalnya <code>Gandakan(10 + 3)</code>.</p>
+
+<p>Program 9.3 memperlihatkan hal ini. <code>Gandakan</code> mengalikan <code>X</code> dengan 2 dan mencetaknya, tetapi
+<code>Angka</code> di program utama tetap utuh. <code>CetakBaris</code> menunjukkan dua parameter dengan tipe berbeda dan
+sebuah variabel lokal <code>I</code>.</p>
+
+<x-listing src="bab09_03_parameter_nilai.pas"></x-listing>
+
+<x-run src="bab09_03_parameter_nilai.pas" caption="<code>Angka</code> tetap 5 walaupun <code>X</code> di dalam prosedur menjadi 10"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–13</td><td><code>X</code> adalah parameter nilai. Baris 11 mengubah <code>X</code>, dan baris 12 mencetak nilai barunya.</td></tr>
+    <tr><td>15–22</td><td><code>CetakBaris</code> mencetak <code>Karakter</code> sebanyak <code>Panjang</code> kali. <code>I</code> adalah variabel lokal (baris 16–17) untuk menghitung perulangan <code>for</code>.</td></tr>
+    <tr><td>28–31</td><td><code>Angka</code> bernilai 5 sebelum dan sesudah pemanggilan <code>Gandakan(Angka)</code>.</td></tr>
+    <tr><td>34</td><td>Argumen berupa ekspresi: <code>10 + 3</code> dihitung dulu menjadi 13, lalu disalin ke <code>X</code>.</td></tr>
+    <tr><td>37–39</td><td>Argumen untuk <code>Karakter</code> harus <code>Char</code> dan untuk <code>Panjang</code> harus bilangan bulat, dalam urutan itu. Baris 39 mengirim <code>Angka * 6</code> = 30.</td></tr>
+  </tbody>
+</table>
+
+<h3>Parameter var: subprogram memakai variabel aslinya</h3>
+
+<p>Kadang kita justru <b>ingin</b> subprogram mengubah variabel pemanggil, misalnya menukar isi dua variabel. Untuk itu
+tuliskan kata <code>var</code> di depan parameter. Pada <b>parameter var</b> (<i>variable parameter</i>, atau
+<i>pass by reference</i>) tidak ada salinan. Nama parameter hanya menjadi <b>nama lain</b> bagi variabel yang dikirim, jadi
+perubahan di dalam subprogram langsung terjadi pada variabel aslinya.</p>
+
+<div class="sintaks"><pre><b>procedure</b> <i>Nama</i>(<i>P1</i>: <i>Tipe</i>; <b>var</b> <i>P2</i>, <i>P3</i>: <i>Tipe</i>);
+                     { P1: nilai (salinan);  P2 dan P3: var (variabel asli) }</pre></div>
+
+<p>Gambar berikut membandingkan keduanya dengan kotak memori. Di kiri, <code>X</code> adalah kotak baru berisi salinan
+nilai <code>Angka</code>; di kanan, <code>A</code> dan <code>B</code> bukan kotak baru, melainkan tambahan label pada kotak
+<code>X</code> dan <code>Y</code> yang sudah ada.</p>
+
+<figure class="grafik" id="gb-nilai-var">
+<svg viewBox="0 0 680 300">
+  <text class="h" x="10" y="20">Parameter nilai: Gandakan(Angka)</text>
+  <text class="s muted" x="10" y="38">Program 9.3, baris 30</text>
+  <rect class="box-w" x="10" y="52" width="130" height="62" rx="6"/>
+  <text class="mid b" x="75" y="72">Angka</text>
+  <text class="mid mono" x="75" y="98" style="font-size:18px">5</text>
+  <text class="xs mid muted" x="75" y="126">program utama</text>
+  <path class="arrow" d="M140 83 H190"/>
+  <text class="xs mid" x="165" y="76">salin</text>
+  <rect class="box" x="195" y="52" width="130" height="62" rx="6"/>
+  <text class="mid b" x="260" y="72">X</text>
+  <text class="mid mono" x="260" y="98" style="font-size:18px">5</text>
+  <text class="xs mid muted" x="260" y="126">kotak baru di Gandakan</text>
+  <text class="s b" x="10" y="164">Sesudah X := X * 2</text>
+  <rect class="ok" x="10" y="176" width="130" height="62" rx="6"/>
+  <text class="mid b" x="75" y="196">Angka</text>
+  <text class="mid mono" x="75" y="222" style="font-size:18px">5</text>
+  <rect class="no" x="195" y="176" width="130" height="62" rx="6"/>
+  <text class="mid b" x="260" y="196">X</text>
+  <text class="mid mono" x="260" y="222" style="font-size:18px">10</text>
+  <text class="s" x="10" y="266">Yang berubah hanya salinan.</text>
+  <text class="s" x="10" y="282">Angka di luar tetap 5.</text>
+  <path class="line" d="M345 8 V292"/>
+  <text class="h" x="365" y="20">Parameter var: Tukar(X, Y)</text>
+  <text class="s muted" x="365" y="38">Program 9.4, baris 33</text>
+  <rect class="box-w" x="365" y="52" width="110" height="62" rx="6"/>
+  <text class="mid b" x="420" y="72">X</text>
+  <text class="mid mono" x="420" y="98" style="font-size:18px">3</text>
+  <rect class="box-w" x="515" y="52" width="110" height="62" rx="6"/>
+  <text class="mid b" x="570" y="72">Y</text>
+  <text class="mid mono" x="570" y="98" style="font-size:18px">8</text>
+  <rect class="box" x="365" y="148" width="110" height="34" rx="17"/>
+  <text class="mid b" x="420" y="170">A</text>
+  <rect class="box" x="515" y="148" width="110" height="34" rx="17"/>
+  <text class="mid b" x="570" y="170">B</text>
+  <path class="arrow" d="M420 148 V118"/>
+  <path class="arrow" d="M570 148 V118"/>
+  <text class="xs" x="428" y="136">nama lain X</text>
+  <text class="xs" x="578" y="136">nama lain Y</text>
+  <text class="s b" x="365" y="214">Sesudah Tukar selesai</text>
+  <rect class="ok" x="365" y="226" width="110" height="40" rx="6"/>
+  <text class="mid b" x="420" y="242">X</text>
+  <text class="mid mono" x="420" y="260">8</text>
+  <rect class="ok" x="515" y="226" width="110" height="40" rx="6"/>
+  <text class="mid b" x="570" y="242">Y</text>
+  <text class="mid mono" x="570" y="260">3</text>
+  <text class="s" x="365" y="288">Isi variabel asli yang tertukar.</text>
+</svg>
+<figcaption>Parameter nilai bekerja pada salinan di kotak baru; parameter <code>var</code> hanyalah nama lain bagi kotak yang sudah ada.</figcaption>
+</figure>
+
+<p>Program 9.4 memakai parameter <code>var</code> dalam dua cara. <code>Tukar</code> menukar dua bilangan, pekerjaan
+klasik yang membutuhkan variabel pembantu <code>Sementara</code>. <code>HitungPersegi</code> memperlihatkan manfaat kedua:
+sebuah fungsi hanya bisa mengembalikan satu nilai, sedangkan prosedur dengan parameter <code>var</code> dapat
+mengembalikan <b>beberapa hasil sekaligus</b>.</p>
+
+<x-listing src="bab09_04_parameter_var.pas"></x-listing>
+
+<x-run src="bab09_04_parameter_var.pas" caption="<code>X</code> dan <code>Y</code> bertukar isi; luas dan keliling diterima lewat parameter <code>var</code>"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9</td><td><code>var A, B: Integer</code>: kedua parameter adalah variabel asli milik pemanggil. Setiap pemanggilan boleh memakai variabel yang berbeda.</td></tr>
+    <tr><td>10–11</td><td><code>Sementara</code> adalah variabel lokal. Ia menyimpan isi <code>A</code> agar tidak hilang saat <code>A</code> ditimpa.</td></tr>
+    <tr><td>13–15</td><td>Pertukaran tiga langkah: simpan <code>A</code>, isi <code>A</code> dengan <code>B</code>, isi <code>B</code> dengan simpanan tadi. Tanpa variabel bantu, salah satu nilai akan hilang.</td></tr>
+    <tr><td>19</td><td>Dua parameter pertama adalah parameter nilai (masukan); dua terakhir parameter <code>var</code> (keluaran). Kata <code>var</code> berlaku untuk <code>Luas</code> dan <code>Keliling</code> sekaligus.</td></tr>
+    <tr><td>21–22</td><td>Hasil ditulis ke parameter <code>var</code>, yang sebenarnya adalah <code>L</code> dan <code>K</code> di program utama.</td></tr>
+    <tr><td>33</td><td><code>Tukar(X, Y)</code>: argumen harus berupa variabel.</td></tr>
+    <tr><td>36–37</td><td>Argumen <code>6</code> dan <code>4</code> boleh angka (parameter nilai), tetapi <code>L</code> dan <code>K</code> wajib variabel (parameter <code>var</code>).</td></tr>
+  </tbody>
+</table>
+
+<div class="ingat"><p>Aturan memilih: gunakan <b>parameter nilai</b> untuk data masukan yang hanya dibaca, dan <b>parameter
+<code>var</code></b> hanya bila subprogram memang harus mengubah variabel pemanggil atau mengeluarkan lebih dari satu
+hasil. Bila yang dikembalikan hanya satu nilai, fungsi biasanya lebih rapi daripada prosedur dengan <code>var</code>.</p></div>
+
+<h2>Variabel Lokal dan Global</h2>
+
+<p>Setiap nama di Pascal punya <b>cakupan</b> (<i>scope</i>): daerah program tempat nama itu dikenal.
+Variabel yang dideklarasikan di atas program utama (di luar semua subprogram) adalah variabel <b>global</b>: ia dikenal di
+seluruh program di bawahnya, dan hidup sampai program berakhir. Variabel yang dideklarasikan di dalam sebuah subprogram
+adalah variabel <b>lokal</b>: hanya subprogram itu yang mengenalnya, ia dibuat baru setiap kali subprogram dipanggil, dan
+lenyap begitu subprogram selesai. Parameter formal juga termasuk lokal.</p>
+
+<p>Bila variabel lokal memakai nama yang sama dengan variabel global, di dalam subprogram nama itu menunjuk ke yang
+<b>lokal</b>; yang global "tertutup" dan tidak tersentuh. Program 9.5 memperlihatkan ketiga kemungkinan sekaligus.</p>
+
+<figure class="grafik" id="gb-cakupan">
+<svg viewBox="0 0 680 290">
+  <rect class="box-w" x="4" y="4" width="672" height="282" rx="10"/>
+  <text class="h" x="18" y="26">Program utama</text>
+  <rect class="ok" x="440" y="12" width="224" height="30" rx="6"/>
+  <text class="b" x="450" y="31">var Hitungan: Integer   (global)</text>
+  <rect class="box" x="20" y="64" width="204" height="168" rx="8"/>
+  <text class="h c" x="32" y="86">procedure Tambah</text>
+  <text class="s" x="32" y="112">Tidak punya variabel lokal.</text>
+  <text class="mono" x="32" y="140">Hitungan := Hitungan + 1;</text>
+  <text class="s b" x="32" y="170" style="fill:#11743f">Memakai Hitungan GLOBAL</text>
+  <text class="s" x="32" y="190">Setelah dua kali Tambah,</text>
+  <text class="s" x="32" y="206">Hitungan global = 2.</text>
+  <rect class="box" x="238" y="64" width="204" height="168" rx="8"/>
+  <text class="h c" x="250" y="86">procedure Coba</text>
+  <rect class="no" x="250" y="96" width="180" height="26" rx="5"/>
+  <text class="s b" x="258" y="113">var Hitungan  (lokal)</text>
+  <text class="mono" x="250" y="146">Hitungan := 100;</text>
+  <text class="s b" x="250" y="172" style="fill:#b42318">Memakai Hitungan LOKAL</text>
+  <text class="s" x="250" y="190">Yang global tertutup dan</text>
+  <text class="s" x="250" y="206">tetap bernilai 2.</text>
+  <rect class="box" x="456" y="64" width="204" height="168" rx="8"/>
+  <text class="h c" x="468" y="86">procedure Sapa</text>
+  <rect class="io" x="468" y="96" width="180" height="26" rx="5"/>
+  <text class="s b" x="476" y="113">var Kali  (lokal)</text>
+  <text class="mono" x="468" y="146">Kali := 1;</text>
+  <text class="s b" x="468" y="172">Dibuat baru tiap dipanggil</text>
+  <text class="s" x="468" y="190">Lenyap saat Sapa selesai,</text>
+  <text class="s" x="468" y="206">tidak dikenal di luar.</text>
+  <text class="xs muted" x="20" y="262">Garis kotak = batas cakupan. Nama di dalam kotak subprogram hanya dikenal di kotak itu;</text>
+  <text class="xs muted" x="20" y="276">nama di kotak luar dikenal juga di dalam, kecuali bila tertutup oleh nama yang sama.</text>
+</svg>
+<figcaption>Cakupan pada Program 9.5: satu variabel global, satu variabel lokal yang menutupinya, dan satu variabel lokal biasa.</figcaption>
+</figure>
+
+<x-listing src="bab09_05_lokal_global.pas"></x-listing>
+
+<x-run src="bab09_05_lokal_global.pas" caption="Hitungan global hanya berubah oleh <code>Tambah</code>; <code>Coba</code> mengubah variabel lokalnya sendiri"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–10</td><td><code>Hitungan</code> global. Baris 34 mengisinya dengan 0 secara eksplisit; jangan mengandalkan nilai awal variabel.</td></tr>
+    <tr><td>12–15</td><td><code>Tambah</code> tidak mendeklarasikan <code>Hitungan</code> sendiri, sehingga baris 14 mengubah variabel global.</td></tr>
+    <tr><td>17–23</td><td><code>Coba</code> mendeklarasikan <code>Hitungan</code> lagi di baris 19. Baris 21 dan 22 hanya melihat yang lokal, dan nilai 100 hilang saat prosedur selesai.</td></tr>
+    <tr><td>25–31</td><td><code>Kali</code> selalu mulai dari 1 pada setiap panggilan, karena variabel lokal dibuat baru dan diisi di baris 29. Nilai lama dari panggilan sebelumnya tidak bisa diandalkan.</td></tr>
+    <tr><td>34–37</td><td>Dua kali <code>Tambah</code> menaikkan <code>Hitungan</code> dari 0 menjadi 2.</td></tr>
+    <tr><td>39–40</td><td>Sesudah <code>Coba</code>, <code>Hitungan</code> global masih 2.</td></tr>
+  </tbody>
+</table>
+
+<div class="awas"><p>Variabel global memang mudah dipakai, tetapi berbahaya: setiap subprogram bisa mengubahnya diam-diam, sehingga
+sulit melacak siapa yang membuat nilainya salah. Biasakan <b>mengirim data lewat parameter</b> dan menyimpan hasil
+sementara di variabel lokal. Beri nama yang berbeda bagi variabel lokal dan global, agar tidak ada yang tertutup tanpa
+disengaja.</p></div>
+
+<h2>Melacak Panggilan dengan Debugger</h2>
+
+<p>Membaca diagram panggilan itu berguna, tetapi melihatnya terjadi jauh lebih meyakinkan. Debugger Odin Turbo Pascal
+menjalankan program satu baris demi satu baris dan menunjukkan isi variabel. Baris yang <b>akan</b> dijalankan berikutnya
+ditandai hijau. Dua tombol langkahnya berbeda hanya pada baris yang berisi pemanggilan subprogram:</p>
+
+<div class="duo">
+  <div class="card"><h4><span class="ikon">F8</span>Step over</h4><p>Menjalankan satu baris. Bila baris itu memanggil
+  prosedur, seluruh prosedur dijalankan sekaligus dan Anda berhenti di baris sesudah pemanggilan. Pakai bila Anda
+  percaya isi prosedur sudah benar.</p></div>
+  <div class="card"><h4><span class="ikon">F7</span>Trace into</h4><p>Menjalankan satu baris, tetapi bila baris itu memanggil
+  prosedur, Anda <b>masuk</b> dan berhenti di baris pertama prosedur. Pakai bila Anda ingin melihat isinya.</p></div>
+</div>
+
+<p>Mari lacak Program 9.4. Pasang titik henti di baris 33 (<span class="menu">Debug ▸ Toggle breakpoint</span> atau
+<kbd>Ctrl</kbd>+<kbd>F8</kbd>), lalu mulai dengan <span class="menu">Debug ▸ Start debugging</span>. Program berhenti di
+baris 33, tepat sebelum <code>Tukar(X, Y)</code> dijalankan.</p>
+
+<x-ide file="bab09_04_parameter_var.pas" top="26" rows="13" cursor="33:3" breakpoints="33" exec="33" watches="X: 3;Y: 8" caption="Berhenti di baris 33. F8 akan menyelesaikan <code>Tukar</code> sekaligus dan berhenti di baris 34; F7 akan masuk ke dalam <code>Tukar</code>"></x-ide>
+
+<p>Tekan <kbd>F7</kbd> dan program masuk ke <code>Tukar</code>. Tekan <kbd>F7</kbd> atau <kbd>F8</kbd> beberapa kali
+sampai baris 14 ditandai hijau. Buka <span class="menu">Debug ▸ Local variables</span> dan
+<span class="menu">Debug ▸ Call stack</span> untuk melihat keadaan di dalam prosedur: variabel lokalnya, dan rantai
+subprogram yang sedang aktif.</p>
+
+<x-ide file="bab09_04_parameter_var.pas" top="7" rows="10" cursor="14:3" breakpoints="33" exec="14" watches="A: 3;B: 8" locals="Sementara: 3" stack="TUKAR  (bab09_04_parameter_var.pas:14);PASCALMAIN  (bab09_04_parameter_var.pas:33)" caption="Di dalam <code>Tukar</code>: <code>Sementara</code> sudah menyimpan 3, tetapi <code>A := B</code> (baris 14) belum dijalankan"></x-ide>
+
+<p>Perhatikan tiga jendela di bawah editor. <b>Watches</b> memperlihatkan <code>A</code> dan <code>B</code> bernilai 3 dan
+8: itulah isi <code>X</code> dan <code>Y</code>, karena <code>A</code> dan <code>B</code> hanyalah nama lain mereka. <b>Local
+variables</b> menampilkan <code>Sementara</code> yang baru berisi 3. <b>Call stack</b> menyebut <code>Tukar</code> di
+puncak dan program utama di bawahnya, beserta baris pemanggilnya (33). Tekan <kbd>F8</kbd> tiga kali lagi dan Anda akan
+melihat <code>A</code> menjadi 8 dan <code>B</code> menjadi 3 sebelum prosedur kembali ke baris 34.</p>
+
+<div class="coba"><p>Ulangi pelacakan pada Program 9.3 dengan titik henti di baris 30. Masuk ke <code>Gandakan</code> dengan
+<kbd>F7</kbd>, lalu perhatikan Watches: setelah baris 11 dijalankan, <code>X</code> berubah menjadi 10, tetapi
+<code>Angka</code> tetap 5. Itulah perbedaan parameter nilai dan <code>var</code> yang Anda lihat dengan mata sendiri.</p></div>
+
+<h2>Latihan Terpadu: Kalkulator Modular</h2>
+
+<p>Sekarang kita gabungkan semuanya dalam program yang sedikit lebih besar. Kalkulator berikut dipecah menjadi tiga
+subprogram dengan satu tugas masing-masing: <code>TampilkanMenu</code> (prosedur), <code>BacaBilangan</code> (fungsi
+yang menampilkan pesan lalu membaca satu bilangan), dan <code>Hitung</code> (fungsi yang menghitung sekaligus melaporkan
+apakah operasinya berhasil). Program utamanya tinggal berupa perulangan <code>repeat</code> yang rapi.</p>
+
+<p>Perhatikan rancangan <code>Hitung</code>. Hasil hitungannya bisa berupa bilangan <code>Real</code> apa saja, termasuk
+nol atau negatif, sehingga tidak ada nilai istimewa yang bisa menandakan "gagal". Maka fungsi mengembalikan
+<code>Boolean</code> sebagai status (berhasil atau tidak), sedangkan angka hasilnya dikeluarkan lewat parameter
+<code>var Hasil</code>. Pola "status lewat fungsi, data lewat parameter <code>var</code>" sangat lazim di Pascal.</p>
+
+<x-listing src="bab09_06_kalkulator_modular.pas"></x-listing>
+
+<x-run src="bab09_06_kalkulator_modular.pas" caption="Pembagian 12 dengan 0 ditolak, lalu 12 dibagi 4 menghasilkan 3.00"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>8–14</td><td><code>TampilkanMenu</code> hanya mencetak. Baris 13 memakai <code>Write</code>, bukan <code>WriteLn</code>, agar kursor tinggal di sebelah <code>Pilihan: </code>.</td></tr>
+    <tr><td>16–23</td><td><code>BacaBilangan</code> menerima teks pesan sebagai parameter nilai bertipe <code>string</code>, membaca ke variabel lokal <code>X</code>, dan mengembalikannya lewat nama fungsi di baris 22.</td></tr>
+    <tr><td>26</td><td>Judul <code>Hitung</code>: dua masukan <code>Real</code>, kode operasi, satu keluaran <code>var</code>, dan hasil <code>Boolean</code> sebagai status.</td></tr>
+    <tr><td>28</td><td>Hasil status diisi <code>True</code> lebih dulu (anggap berhasil). Hanya kasus yang gagal yang mengubahnya.</td></tr>
+    <tr><td>29–37</td><td><code>case</code> memilih operasi. Pada operasi 4, pembagi nol diperiksa lebih dulu di baris 33; bila nol, status menjadi <code>False</code> dan <code>Hasil</code> tidak disentuh.</td></tr>
+    <tr><td>40–42</td><td>Variabel global program utama. Semua kerja di subprogram memakai parameter, bukan variabel ini.</td></tr>
+    <tr><td>45–59</td><td>Perulangan <code>repeat</code> menampilkan menu terus sampai <code>Pilihan = 0</code>.</td></tr>
+    <tr><td>48–56</td><td>Pilihan 1 sampai 4 membaca dua bilangan (baris 50–51) lalu memanggil <code>Hitung</code> di dalam syarat <code>if</code> (baris 52): hasil <code>True</code>/<code>False</code> fungsi langsung menjadi syaratnya.</td></tr>
+    <tr><td>57–58</td><td>Pilihan lain selain 0 ditolak dengan pesan.</td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p>Tambahkan operasi 5 untuk pangkat dua: buat fungsi <code>Kuadrat(X: Real): Real</code>, perluas menu di
+<code>TampilkanMenu</code>, dan tambahkan satu cabang di <code>case</code>. Perhatikan bahwa program utama nyaris tidak
+berubah; itulah keuntungan pemecahan menjadi subprogram.</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Argumen angka untuk parameter var</h3>
+
+<p>Parameter <code>var</code> membutuhkan variabel yang bisa diubah. Angka, ekspresi, atau hasil fungsi bukan variabel,
+jadi kompiler menolaknya. Ini yang dimaksud komentar di akhir Program 9.4.</p>
+
+<x-error name="tukar.pas" caption="Angka 3 dan 8 tidak bisa menjadi argumen untuk parameter var">program Tukar;
+procedure Tukar(var A, B: Integer);
+var
+  T: Integer;
+begin
+  T := A;
+  A := B;
+  B := T;
+end;
+
+begin
+  Tukar(3, 8);
+end.</x-error>
+
+<p>Perbaikannya: simpan angka itu dulu ke variabel, lalu kirim variabelnya.</p>
+
+<h3>Memakai Result di Turbo Pascal 7</h3>
+
+<p>Pemrogram yang terbiasa dengan bahasa lain sering menulis <code>Result := ...</code>. Di Turbo Pascal 7, nama
+<code>Result</code> tidak dikenal, sehingga dianggap variabel yang belum dideklarasikan.</p>
+
+<x-error name="result.pas" caption="Nilai fungsi harus diberikan lewat nama fungsi, bukan Result">program Hasil;
+function Dua(X: Integer): Integer;
+begin
+  Result := X * 2;
+end;
+
+begin
+  WriteLn(Dua(4));
+end.</x-error>
+
+<p>Perbaikannya: ganti <code>Result</code> dengan nama fungsinya, <code>Dua := X * 2;</code>.</p>
+
+<h3>Memakai variabel lokal di luar subprogramnya</h3>
+
+<p>Variabel lokal hanya dikenal di dalam subprogram tempat ia dideklarasikan. Memakainya dari program utama, seperti
+komentar di akhir Program 9.5 mengingatkan, ditolak kompiler.</p>
+
+<x-error name="lingkup.pas" caption="Total hanya dikenal di dalam prosedur Hitung">program Lingkup;
+procedure Hitung;
+var
+  Total: Integer;
+begin
+  Total := 10;
+end;
+
+begin
+  Hitung;
+  WriteLn(Total);
+end.</x-error>
+
+<p>Perbaikannya: kirim hasilnya keluar lewat parameter <code>var</code> atau ubah <code>Hitung</code> menjadi fungsi.
+Jangan "memperbaiki" dengan menjadikan <code>Total</code> global tanpa pikir panjang.</p>
+
+<h3>Kesalahan yang tidak ditolak kompiler</h3>
+
+<ul>
+  <li><b>Fungsi yang tidak mengisi namanya</b> pada salah satu jalur. Misalnya <code>if A &gt; B then Terbesar := A;</code>
+  tanpa <code>else</code>: bila <code>A</code> tidak lebih besar, hasil fungsi tidak terdefinisi. Pastikan setiap jalur
+  mengisi hasil.</li>
+  <li><b>Lupa kata <code>var</code></b> sehingga perubahan "hilang" begitu prosedur selesai. Bila variabel pemanggil tidak
+  berubah padahal prosedur sudah dijalankan, periksa judul prosedurnya.</li>
+  <li><b>Argumen tertukar urutannya</b> walaupun tipenya cocok, misalnya dua bilangan bulat. Kompiler tidak bisa menebak
+  maksud Anda; hasil hitungannya saja yang akan aneh.</li>
+</ul>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>Subprogram memecah program menjadi bagian bernama: lebih terbaca, tidak berulang, dan mudah diuji. Subprogram harus ditulis <b>sebelum</b> dipakai.</li>
+  <li><code>procedure</code> mengerjakan tindakan dan dipanggil sebagai pernyataan; <code>function</code> menghasilkan nilai dan dipanggil di dalam ekspresi.</li>
+  <li>Di Turbo Pascal 7 hasil fungsi diberikan lewat <b>nama fungsi</b> (<code>NamaFungsi := nilai</code>). Tidak ada <code>Result</code>.</li>
+  <li><b>Parameter nilai</b> menerima salinan: perubahan di dalam tidak memengaruhi pemanggil, dan argumennya boleh ekspresi.</li>
+  <li><b>Parameter <code>var</code></b> adalah nama lain bagi variabel pemanggil: perubahan terlihat di luar, dan argumennya wajib variabel.</li>
+  <li>Variabel <b>lokal</b> hanya dikenal dan hidup di dalam subprogramnya; variabel <b>global</b> dikenal di seluruh program. Nama lokal menutupi nama global yang sama.</li>
+  <li>Utamakan parameter daripada variabel global. Bila perlu beberapa hasil, pakai prosedur dengan parameter <code>var</code> atau fungsi berstatus <code>Boolean</code> plus <code>var</code>.</li>
+  <li>Di debugger, <kbd>F8</kbd> melewati pemanggilan subprogram, <kbd>F7</kbd> masuk ke dalamnya; Watches, Local variables, dan Call stack menunjukkan keadaan di dalamnya.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Buat prosedur <code>Salam</code> tanpa parameter yang mencetak "Selamat datang di Odin Turbo Pascal!" lalu panggil tiga kali dari program utama.</li>
+  <li><span class="lv dasar">Dasar</span>Buat fungsi <code>Tengah(A, B: Integer): Integer</code> yang mengembalikan rata-rata bulat dua bilangan (<code>(A + B) div 2</code>). Tulis juga fungsi <code>Positif(N: Integer): Boolean</code>.</li>
+  <li><span class="lv menengah">Menengah</span>Tulis prosedur <code>CetakSegitiga(Tinggi: Integer)</code> yang mencetak segitiga bintang. Pakai kembali ide <code>CetakBaris</code> pada Program 9.3.</li>
+  <li><span class="lv menengah">Menengah</span>Buat prosedur <code>Urutkan2(var A, B: Integer)</code> yang memastikan <code>A &lt;= B</code>, menukar bila perlu. Panggil tiga kali berurutan untuk mengurutkan tiga bilangan.</li>
+  <li><span class="lv menengah">Menengah</span>Buat fungsi <code>NilaiHuruf(Nilai: Integer): Char</code> memakai <code>case</code> dengan rentang (ingat Bab 6). Program utama membaca nilai dan mencetak hurufnya.</li>
+  <li><span class="lv tantangan">Tantangan</span>Buat prosedur <code>PecahDetik(Total: LongInt; var Jam, Menit, Detik: Integer)</code> yang menguraikan total detik. Uji dengan 3725 detik, lalu telusuri dengan F7 untuk memastikan nilai tiap parameter <code>var</code>.</li>
+  <li><span class="lv tantangan">Tantangan</span>Ubah Program 9.5 agar <code>Tambah</code> menerima parameter <code>var Cacah: Integer</code> alih-alih memakai variabel global. Apa saja yang harus diubah pada pemanggilnya, dan apa keuntungannya?</li>
+</ol>
+</div>

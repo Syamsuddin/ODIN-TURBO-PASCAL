@@ -1,0 +1,617 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Membedakan variabel biasa dari <i>pointer</i>: yang satu menyimpan data, yang lain menyimpan alamat data.</li>
+  <li>Memakai tipe pointer <code>^T</code>, operator alamat <code>@</code>, dereferensi <code>P^</code>, dan nilai <code>nil</code>.</li>
+  <li>Memesan dan mengembalikan memori selama program berjalan dengan <code>New</code> dan <code>Dispose</code>.</li>
+  <li>Menjelaskan struktur simpul (<i>node</i>) berisi <code>Data</code> dan <code>Berikut</code>, serta rantai simpul yang disebut <i>linked list</i>.</li>
+  <li>Menambah simpul di depan dan di belakang list, serta menelusuri list dengan perulangan <code>while P &lt;&gt; nil</code>.</li>
+  <li>Menghapus simpul di awal, tengah, atau akhir list dengan menyambung simpul sebelumnya ke simpul sesudahnya.</li>
+</ul>
+
+<p class="lead">Sampai bab ini, setiap variabel sudah ditentukan jumlah dan ukurannya sejak program ditulis. Array dengan
+100 elemen akan selalu 100 elemen, walau yang terpakai hanya tiga. Bab ini memperkenalkan <b>pointer</b>, alat untuk
+meminta memori saat program berjalan dan menyambung data satu sama lain. Dengan pointer Anda dapat membangun
+<i>linked list</i>, struktur data yang tumbuh dan menyusut mengikuti kebutuhan. Konsepnya terasa abstrak pada awalnya,
+karena itu bab ini banyak memakai gambar. Pelan-pelan saja, dan gambarlah sendiri setiap langkah di kertas.</p>
+
+<h2>Variabel Menyimpan Data, Pointer Menyimpan Alamat</h2>
+
+<p>Setiap variabel menempati tempat tertentu di memori, dan setiap tempat itu punya <b>alamat</b>, yaitu nomor yang
+mengidentifikasi letaknya, seperti nomor rumah di sebuah jalan. Variabel biasa menyimpan <b>isi</b> di rumah itu.
+<b>Pointer</b> (penunjuk) menyimpan <b>alamat</b> rumah lain. Analogi yang berguna: sebuah kartu nama berisi alamat
+sebuah toko. Kartu itu bukan tokonya, tetapi dengan kartu itu Anda tahu ke mana harus pergi, dan bila alamat di
+kartu diganti, Anda diarahkan ke toko lain.</p>
+
+<figure class="grafik" id="gb-var-ptr">
+<svg viewBox="0 0 680 220">
+  <text class="h c" x="10" y="20">Memori (alamat contoh, nilai sebenarnya berbeda tiap kali program berjalan)</text>
+  <rect class="box" x="30" y="50" width="160" height="62" rx="6"/>
+  <text class="xs muted" x="36" y="64">alamat $1000</text>
+  <text class="b" x="36" y="84">X</text>
+  <text class="mono b" x="120" y="96">10</text>
+  <text class="xs" x="36" y="104">Integer</text>
+  <rect class="box" x="30" y="130" width="160" height="62" rx="6"/>
+  <text class="xs muted" x="36" y="144">alamat $1002</text>
+  <text class="b" x="36" y="164">Y</text>
+  <text class="mono b" x="120" y="176">20</text>
+  <text class="xs" x="36" y="184">Integer</text>
+  <rect class="ok" x="400" y="50" width="200" height="62" rx="6"/>
+  <text class="xs muted" x="406" y="64">alamat $2000</text>
+  <text class="b" x="406" y="84">P</text>
+  <text class="mono b" x="470" y="96">$1000</text>
+  <text class="xs" x="406" y="104">^Integer (pointer)</text>
+  <path class="arrow" d="M400 82 H196"/>
+  <text class="s b mid" x="298" y="74">P menunjuk X</text>
+  <rect class="box-w" x="400" y="130" width="260" height="70" rx="6"/>
+  <text class="s" x="410" y="150"><tspan class="mono">P</tspan> berisi alamat ($1000)</text>
+  <text class="s" x="410" y="166"><tspan class="mono">P^</tspan> adalah isi yang ditunjuk (10)</text>
+  <text class="s" x="410" y="182"><tspan class="mono">@X</tspan> adalah alamat X ($1000)</text>
+</svg>
+<figcaption>Variabel <code>X</code> menyimpan angka 10. Pointer <code>P</code> menyimpan alamat <code>X</code>, bukan angka 10.</figcaption>
+</figure>
+
+<p>Sebuah pointer selalu <b>bertipe</b>: pointer ke <code>Integer</code>, pointer ke <code>record</code>, dan
+seterusnya. Tipe ini memberi tahu kompiler bagaimana memperlakukan data di alamat itu. Pascal memakai tiga notasi
+yang harus dihafalkan.</p>
+
+<table class="data" id="tb-notasi">
+  <caption>Notasi pointer di Pascal</caption>
+  <thead><tr><th>Notasi</th><th>Dibaca</th><th>Arti</th></tr></thead>
+  <tbody>
+    <tr><td><code>^Integer</code></td><td>"pointer ke Integer"</td><td>Tipe pointer; sering diberi nama, mis. <code>PInteger = ^Integer;</code></td></tr>
+    <tr><td><code>@X</code></td><td>"alamat X"</td><td>Operator yang menghasilkan alamat variabel <code>X</code></td></tr>
+    <tr><td><code>P^</code></td><td>"isi yang ditunjuk P"</td><td>Dereferensi: mengakses data di alamat yang disimpan <code>P</code></td></tr>
+    <tr><td><code>nil</code></td><td>"nihil"</td><td>Nilai pointer yang tidak menunjuk ke mana pun</td></tr>
+  </tbody>
+</table>
+
+<div class="sintaks"><pre><b>type</b>
+  PInteger = ^<i>Integer</i>;         { tipe pointer, nama diawali P }
+<b>var</b>
+  P: PInteger;
+
+P := @<i>X</i>;                     { P berisi alamat X }
+P^ := <i>5</i>;                     { ubah data yang ditunjuk P }
+P := <b>nil</b>;                    { P tidak menunjuk apa pun }</pre></div>
+
+<div class="tp7"><p>Dalam Odin Turbo Pascal di macOS 64-bit, sebuah pointer berukuran <b>8 byte</b>, sedangkan
+<code>Integer</code> tetap 2 byte. Jangan berasumsi ukuran pointer sama dengan ukuran <code>Integer</code> seperti di
+DOS 16-bit. Nilai alamat yang tampil di debugger juga berbeda di setiap komputer dan setiap kali program dijalankan.</p></div>
+
+<h2>Pointer ke Variabel yang Ada</h2>
+
+<p>Program pertama memakai pointer dengan cara yang paling sederhana: menunjuk ke variabel biasa yang sudah ada.
+Buka <code>bab18_01_pointer_dasar.pas</code> lewat <span class="menu">File ▸ Examples...</span> dan jalankan.
+Perhatikan bagaimana nilai <code>X</code> berubah padahal tidak ada pernyataan yang menulis ke <code>X</code> secara
+langsung.</p>
+
+<x-listing src="bab18_01_pointer_dasar.pas"></x-listing>
+
+<x-run src="bab18_01_pointer_dasar.pas" caption="Mengubah <code>P^</code> sama dengan mengubah <code>X</code>; dua pointer boleh menunjuk tempat yang sama"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>11–12</td><td><code>PInteger = ^Integer</code> membuat tipe baru: pointer ke <code>Integer</code>. Memberi nama tipe pointer (diawali <code>P</code>) adalah kebiasaan umum.</td></tr>
+    <tr><td>15–16</td><td>Dua variabel <code>Integer</code> (<code>X</code>, <code>Y</code>) dan dua pointer (<code>P</code>, <code>Q</code>).</td></tr>
+    <tr><td>21–22</td><td><code>P := @X</code> mengisi <code>P</code> dengan alamat <code>X</code>. Karena itu <code>P^</code> sama dengan isi <code>X</code>, yaitu 10.</td></tr>
+    <tr><td>24–25</td><td><code>P^ := 99</code> menulis 99 ke tempat yang ditunjuk <code>P</code>, yaitu ke <code>X</code>. Nilai <code>X</code> berubah menjadi 99.</td></tr>
+    <tr><td>27–29</td><td><code>Q := P</code> menyalin <b>alamat</b> (bukan data): kini <code>P</code> dan <code>Q</code> menunjuk <code>X</code>. <code>Q^ := Q^ + 1</code> menaikkan <code>X</code> menjadi 100, dan <code>P^</code> ikut bernilai 100 karena sama-sama menunjuk <code>X</code>.</td></tr>
+    <tr><td>31–33</td><td><code>P := @Y</code> memindahkan <code>P</code> ke <code>Y</code> (<code>P^</code> kini 20). <code>Q</code> masih menunjuk <code>X</code>, jadi pembandingan <code>P = Q</code> bernilai <code>False</code>: yang dibandingkan adalah alamatnya.</td></tr>
+    <tr><td>35–37</td><td><code>P := nil</code> melepaskan <code>P</code> dari <code>Y</code>. Memeriksa <code>P = nil</code> sebelum memakai <code>P^</code> adalah pengaman penting.</td></tr>
+  </tbody>
+</table>
+
+<figure class="grafik" id="gb-ptr-langkah">
+<svg viewBox="0 0 680 270">
+  <text class="h c" x="10" y="18">Posisi pointer pada beberapa saat di Program 18.1</text>
+  <g>
+    <rect class="box-w" x="10" y="30" width="215" height="110" rx="8"/>
+    <text class="s b" x="22" y="48">Sesudah baris 21: P := @X</text>
+    <rect class="box" x="24" y="62" width="60" height="30" rx="4"/><text class="mono" x="32" y="82">X: 10</text>
+    <rect class="box" x="24" y="100" width="60" height="30" rx="4"/><text class="mono" x="32" y="120">Y: 20</text>
+    <rect class="ok" x="140" y="62" width="70" height="30" rx="4"/><text class="mono" x="148" y="82">P</text>
+    <path class="arrow" d="M140 77 H88"/>
+  </g>
+  <g>
+    <rect class="box-w" x="232" y="30" width="215" height="110" rx="8"/>
+    <text class="s b" x="244" y="48">Sesudah baris 27: Q := P</text>
+    <rect class="box" x="246" y="62" width="64" height="30" rx="4"/><text class="mono" x="254" y="82">X: 100</text>
+    <rect class="box" x="246" y="100" width="64" height="30" rx="4"/><text class="mono" x="254" y="120">Y: 20</text>
+    <rect class="ok" x="364" y="56" width="70" height="26" rx="4"/><text class="mono" x="372" y="74">P</text>
+    <rect class="io" x="364" y="90" width="70" height="26" rx="4"/><text class="mono" x="372" y="108">Q</text>
+    <path class="arrow" d="M364 69 H314"/>
+    <path class="arrow" d="M364 103 H330 V82 H314"/>
+  </g>
+  <g>
+    <rect class="box-w" x="454" y="30" width="215" height="110" rx="8"/>
+    <text class="s b" x="466" y="48">Sesudah baris 31: P := @Y</text>
+    <rect class="box" x="468" y="62" width="64" height="30" rx="4"/><text class="mono" x="476" y="82">X: 100</text>
+    <rect class="box" x="468" y="100" width="64" height="30" rx="4"/><text class="mono" x="476" y="120">Y: 20</text>
+    <rect class="ok" x="586" y="96" width="70" height="26" rx="4"/><text class="mono" x="594" y="114">P</text>
+    <rect class="io" x="586" y="58" width="70" height="26" rx="4"/><text class="mono" x="594" y="76">Q</text>
+    <path class="arrow" d="M586 109 H536"/>
+    <path class="arrow" d="M586 71 H536"/>
+  </g>
+  <rect class="dec" x="10" y="160" width="659" height="100" rx="8"/>
+  <text class="h" x="24" y="182">Dua cara membaca gambar ini</text>
+  <text class="s" x="24" y="202">1. Panah menunjukkan alamat yang tersimpan di pointer. Memindahkan pointer berarti memindahkan panah.</text>
+  <text class="s" x="24" y="220">2. Q := P menyalin panah (alamat), bukan menyalin angka. Dua panah ke satu kotak berarti satu data dengan dua "pegangan".</text>
+  <text class="s" x="24" y="238">3. P^ := 99 mengikuti panah lalu mengubah isi kotaknya; P := @Y hanya memindahkan ujung panah.</text>
+</svg>
+<figcaption>Dari kiri ke kanan: <code>P</code> menunjuk <code>X</code>; <code>Q</code> ikut menunjuk <code>X</code>; <code>P</code> berpindah ke <code>Y</code>.</figcaption>
+</figure>
+
+<h3>Melihat alamat di debugger</h3>
+
+<p>Anda dapat melihat isi pointer yang sebenarnya lewat debugger. Pasang titik henti pada baris yang diinginkan
+dengan <span class="menu">Debug ▸ Toggle breakpoint</span>, jalankan dengan <span class="menu">Debug ▸ Start debugging</span>,
+lalu tambahkan <code>X</code>, <code>P</code>, dan <code>Q</code> lewat <span class="menu">Debug ▸ Add watch...</span>.
+Nilai pointer ditampilkan sebagai alamat bentuk <code>PTR($...)</code>. Gambar berikut memperlihatkan bentuk
+tampilannya; <b>angka alamat hanyalah contoh</b>, alamat di komputer Anda akan berbeda.</p>
+
+<x-ide file="bab18_01_pointer_dasar.pas" top="18" rows="14" breakpoints="29" exec="29" watches="X: 100;P: PTR($00007FF7BFEFF6BC);Q: PTR($00007FF7BFEFF6BC)" caption="Debugger berhenti di baris 29: <code>P</code> dan <code>Q</code> berisi alamat yang sama (angka alamat hanya contoh)"></x-ide>
+
+<p>Titik merah di gutter menandai baris yang menghentikan program, dan baris hijau adalah baris yang akan
+dijalankan berikutnya. Pada jendela <b>Watches</b>, nilai <code>X</code> berupa angka biasa, sedangkan <code>P</code>
+dan <code>Q</code> berupa <code>PTR($...)</code>. Dua pointer yang menunjuk tempat yang sama menampilkan alamat yang
+sama.</p>
+
+<p>Gunakan <span class="menu">Debug ▸ Step over</span> (<kbd>F8</kbd>) untuk maju satu baris dan perhatikan
+alamat di <code>P</code> berubah ketika baris 31 selesai, sementara alamat di <code>Q</code> tetap. Ini cara
+terbaik "melihat" panah pointer yang tadi digambar.</p>
+
+<div class="awas"><p>Jangan pernah mengakses <code>P^</code> saat <code>P</code> bernilai <code>nil</code> atau berisi alamat
+sembarang. Program akan berhenti dengan galat (di Turbo Pascal: <i>runtime error</i> 216, <i>general protection
+fault</i>) atau, lebih buruk, merusak data lain tanpa pesan. Selalu pastikan pointer menunjuk ke tempat yang sah
+sebelum diikuti.</p></div>
+
+<h2>Memori Dinamis: New dan Dispose</h2>
+
+<p>Pointer baru benar-benar berguna bila ia menunjuk ke memori yang <b>dipesan sendiri saat program berjalan</b>.
+Memori program terbagi menjadi dua wilayah. Variabel yang Anda umumkan di bagian <code>var</code> berada di wilayah
+yang diatur otomatis. Wilayah lain disebut <b><i>heap</i></b> (tumpukan bebas): tempat memori bisa dipesan kapan
+saja dengan <code>New</code> dan dikembalikan kapan saja dengan <code>Dispose</code>. Analoginya penyewaan: <code>New</code>
+menyewa kamar dan memberi Anda kuncinya (pointer); <code>Dispose</code> mengembalikan kamar itu ke pengelola.</p>
+
+<div class="sintaks"><pre><b>New</b>(<i>P</i>);        { pesan memori seukuran tipe yang ditunjuk P; P menunjuk ke sana }
+<i>P</i>^ := <i>nilai</i>;    { isi memori itu }
+<b>Dispose</b>(<i>P</i>);    { kembalikan memori ke heap }</pre></div>
+
+<figure class="grafik" id="gb-heap">
+<svg viewBox="0 0 680 270">
+  <rect class="box-w" x="10" y="10" width="250" height="250" rx="8"/>
+  <text class="h c" x="24" y="32">Variabel biasa</text>
+  <text class="xs muted" x="24" y="46">ditentukan saat program ditulis</text>
+  <rect class="ok" x="24" y="62" width="222" height="34" rx="5"/>
+  <text class="mono" x="34" y="84">PAngka</text>
+  <text class="mono b" x="170" y="84">$5A10</text>
+  <rect class="ok" x="24" y="104" width="222" height="34" rx="5"/>
+  <text class="mono" x="34" y="126">A</text>
+  <text class="mono b" x="170" y="126">$5B30</text>
+  <rect class="ok" x="24" y="146" width="222" height="34" rx="5"/>
+  <text class="mono" x="34" y="168">B</text>
+  <text class="mono b" x="170" y="168">$5C50</text>
+  <text class="s muted" x="24" y="210">Pointer: hanya menyimpan alamat</text>
+  <text class="s muted" x="24" y="226">(masing-masing 8 byte)</text>
+  <rect class="box-w" x="420" y="10" width="250" height="250" rx="8"/>
+  <text class="h c" x="434" y="32">Heap</text>
+  <text class="xs muted" x="434" y="46">dipesan saat program berjalan</text>
+  <rect class="box" x="434" y="62" width="222" height="34" rx="5"/>
+  <text class="xs muted" x="440" y="74">$5A10</text>
+  <text class="mono b" x="440" y="90">2026</text>
+  <rect class="box" x="434" y="104" width="222" height="52" rx="5"/>
+  <text class="xs muted" x="440" y="116">$5B30</text>
+  <text class="mono b" x="440" y="134">Nama: 'Rudi'</text>
+  <text class="mono b" x="440" y="150">Nilai: 81</text>
+  <rect class="box" x="434" y="164" width="222" height="52" rx="5"/>
+  <text class="xs muted" x="440" y="176">$5C50</text>
+  <text class="mono b" x="440" y="194">Nama: 'Sari'</text>
+  <text class="mono b" x="440" y="210">Nilai: 81</text>
+  <path class="arrow" d="M246 79 H428"/>
+  <path class="arrow" d="M246 121 H428"/>
+  <path class="arrow" d="M246 163 H300 V190 H428"/>
+  <text class="s b mid" x="340" y="72">New(PAngka)</text>
+  <text class="s b mid" x="340" y="114">New(A)</text>
+  <text class="s b mid" x="340" y="182">New(B)</text>
+</svg>
+<figcaption>Setiap <code>New</code> membuat kotak baru di heap dan mengisi pointernya dengan alamat kotak itu (alamat hanya contoh).</figcaption>
+</figure>
+
+<p>Program kedua memakai <code>New</code> untuk satu <code>Integer</code> dan untuk dua <code>record</code>. Untuk
+pointer ke <code>record</code>, field diakses dengan <code>P^.Field</code>: ikuti panah dahulu (<code>P^</code>), lalu
+ambil field-nya. Buka <code>bab18_02_new_dispose.pas</code> dan jalankan.</p>
+
+<x-listing src="bab18_02_new_dispose.pas"></x-listing>
+
+<x-run src="bab18_02_new_dispose.pas" caption="Dua record di heap: salinan <code>B</code> diubah tanpa memengaruhi <code>A</code>"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–14</td><td><code>PSiswa = ^TSiswa</code> ditulis <b>sebelum</b> <code>TSiswa</code> dideklarasikan. Pascal membolehkan ini khusus untuk tipe pointer; cara ini kelak dipakai untuk simpul yang menunjuk ke tipenya sendiri.</td></tr>
+    <tr><td>17</td><td><code>PAngka: ^Integer</code> mengumumkan pointer tanpa nama tipe terpisah, bentuk lain yang setara.</td></tr>
+    <tr><td>21–23</td><td><code>New(PAngka)</code> memesan tempat satu <code>Integer</code> di heap dan mengisi <code>PAngka</code> dengan alamatnya. Isi memori itu masih sembarang sampai baris 22 menaruh 2026.</td></tr>
+    <tr><td>24–25</td><td><code>Dispose</code> mengembalikan memori ke heap. <code>PAngka := nil</code> menandai bahwa pointer ini tidak lagi menunjuk apa pun; tanpa baris ini, <code>PAngka</code> masih berisi alamat lama yang sudah tidak sah.</td></tr>
+    <tr><td>28–30</td><td><code>New(A)</code> memesan satu <code>TSiswa</code>. Field diisi lewat <code>A^.Nama</code> dan <code>A^.Nilai</code>.</td></tr>
+    <tr><td>31–33</td><td><code>New(B)</code> memesan record kedua. <code>B^ := A^</code> menyalin <b>isi</b> record (berbeda dengan <code>B := A</code> yang hanya menyalin alamat). Lalu nama di <code>B</code> diganti menjadi <code>'Sari'</code>.</td></tr>
+    <tr><td>34–35</td><td>Keluaran membuktikan dua record itu terpisah: <code>A</code> tetap Rudi, <code>B</code> menjadi Sari, nilai keduanya 81 hasil salinan.</td></tr>
+    <tr><td>37–38</td><td>Setiap <code>New</code> punya pasangan <code>Dispose</code>: dua <code>New</code> untuk record, dua <code>Dispose</code>.</td></tr>
+  </tbody>
+</table>
+
+<div class="awas"><p><b>Aturan emas heap:</b> setiap <code>New</code> harus punya pasangan <code>Dispose</code>. Memori yang
+dipesan tetapi tidak pernah dikembalikan disebut <i>memory leak</i> (kebocoran memori): program makin besar dan
+akhirnya kehabisan tempat. Sebaliknya, memakai pointer sesudah <code>Dispose</code> disebut <i>dangling pointer</i>:
+isinya tidak lagi milik Anda. Setelah <code>Dispose(P)</code>, biasakan menulis <code>P := nil</code>.</p></div>
+
+<div class="coba"><p><b>Coba sendiri.</b> Ganti baris 32 menjadi <code>B := A;</code> (tanpa <code>^</code>), lalu
+jalankan. Kini <code>A</code> dan <code>B</code> menunjuk record yang sama, sehingga mengubah nama lewat <code>B</code>
+juga mengubah <code>A^.Nama</code>. Catatan: record kedua yang dipesan di baris 31 menjadi tidak terjangkau
+(bocor), dan <code>Dispose(B)</code> di baris 38 membebaskan record yang sama dua kali. Ini contoh mengapa
+<code>B := A</code> dan <code>B^ := A^</code> jangan dicampuradukkan.</p></div>
+
+<h2>Simpul dan Linked List</h2>
+
+<p>Bagaimana bila Anda perlu menyimpan daftar bilangan tetapi tidak tahu berapa banyaknya? Array mengharuskan
+Anda menetapkan ukuran lebih dulu; terlalu kecil gagal, terlalu besar boros. <b><i>Linked list</i></b> (senarai
+berantai) menyelesaikannya dengan merangkai <b>simpul</b> (<i>node</i>) satu per satu. Setiap simpul berisi dua
+bagian: <b>data</b>, dan <b>pointer ke simpul berikutnya</b>. Simpul terakhir menunjuk <code>nil</code> sebagai
+tanda ujung rantai. Satu pointer tambahan, <code>Awal</code>, menunjuk simpul pertama; hilangkan pointer ini dan
+seluruh rantai tidak dapat dicapai lagi.</p>
+
+<div class="sintaks"><pre><b>type</b>
+  PSimpul = ^TSimpul;          { boleh ditulis sebelum TSimpul }
+  TSimpul = <b>record</b>
+    Data: <i>Integer</i>;
+    Berikut: PSimpul;          { pointer ke simpul selanjutnya }
+  <b>end</b>;</pre></div>
+
+<p><code>TSimpul</code> berisi pointer ke <code>TSimpul</code> lain. Definisi yang menunjuk dirinya sendiri ini
+tidak bermasalah, karena yang disimpan hanya alamat (8 byte), bukan seluruh simpul berikutnya.</p>
+
+<figure class="grafik" id="gb-list">
+<svg viewBox="0 0 680 190">
+  <text class="s b" x="14" y="38">Awal</text>
+  <rect class="ok" x="10" y="46" width="64" height="34" rx="5"/>
+  <text class="mono s" x="20" y="67">$5A10</text>
+  <path class="arrow" d="M74 63 H122"/>
+  <g>
+    <rect class="box" x="124" y="40" width="150" height="46" rx="6"/>
+    <line class="line" x1="199" y1="40" x2="199" y2="86"/>
+    <text class="xs muted" x="130" y="36">simpul 1, alamat $5A10</text>
+    <text class="mono b mid" x="161" y="68">5</text>
+    <text class="mono s mid" x="236" y="68">$5B30</text>
+    <text class="xs mid" x="161" y="100">Data</text>
+    <text class="xs mid" x="236" y="100">Berikut</text>
+  </g>
+  <path class="arrow" d="M262 86 V120 H318 V63 H330"/>
+  <g>
+    <rect class="box" x="332" y="40" width="150" height="46" rx="6"/>
+    <line class="line" x1="407" y1="40" x2="407" y2="86"/>
+    <text class="xs muted" x="338" y="36">simpul 2, alamat $5B30</text>
+    <text class="mono b mid" x="369" y="68">12</text>
+    <text class="mono s mid" x="444" y="68">$5C50</text>
+  </g>
+  <path class="arrow" d="M470 86 V120 H526 V63 H538"/>
+  <g>
+    <rect class="box" x="540" y="40" width="130" height="46" rx="6"/>
+    <line class="line" x1="605" y1="40" x2="605" y2="86"/>
+    <text class="xs muted" x="546" y="36">simpul 3, alamat $5C50</text>
+    <text class="mono b mid" x="572" y="68">8</text>
+    <text class="mono s mid" x="637" y="68">nil</text>
+  </g>
+  <rect class="dec" x="10" y="136" width="660" height="44" rx="8"/>
+  <text class="s" x="24" y="154">Tiap simpul menyimpan alamat simpul berikutnya. Ujung rantai ditandai <tspan class="b">nil</tspan>.</text>
+  <text class="s" x="24" y="170">Simpul tidak harus berdekatan di memori; hubungannya hanya lewat pointer <tspan class="mono">Berikut</tspan>.</text>
+</svg>
+<figcaption>Linked list <code>5 → 12 → 8</code>: <code>Awal</code> menunjuk simpul pertama dan simpul terakhir menunjuk <code>nil</code>.</figcaption>
+</figure>
+
+<table class="data" id="tb-array-list">
+  <caption>Array dan linked list</caption>
+  <thead><tr><th></th><th>Array</th><th>Linked list</th></tr></thead>
+  <tbody>
+    <tr><td>Ukuran</td><td>Tetap sejak program ditulis</td><td>Tumbuh dan menyusut saat berjalan</td></tr>
+    <tr><td>Akses elemen ke-<i>n</i></td><td>Langsung: <code>A[n]</code></td><td>Harus menelusuri dari awal</td></tr>
+    <tr><td>Menyisip atau menghapus di tengah</td><td>Menggeser banyak elemen</td><td>Cukup mengubah pointer</td></tr>
+    <tr><td>Memori</td><td>Hanya data</td><td>Data ditambah satu pointer per simpul</td></tr>
+  </tbody>
+</table>
+
+<h2>Menambah Simpul</h2>
+
+<p>Ada dua tempat lazim untuk menambah simpul: di <b>depan</b> dan di <b>belakang</b> list. Menambah di depan
+sangat cepat, hanya tiga langkah tanpa menelusuri apa pun. Menambah di belakang harus berjalan dulu sampai simpul
+terakhir.</p>
+
+<p>Perhatikan prosedur <code>TambahDepan</code> dari Program 18.3. Setiap baris di dalamnya adalah satu langkah pada
+gambar berikut, dan urutannya tidak boleh ditukar.</p>
+
+<x-code>procedure TambahDepan(var Awal: PSimpul; Nilai: Integer);
+var
+  Baru: PSimpul;
+begin
+  New(Baru);                    { langkah 1: simpul baru di heap }
+  Baru^.Data := Nilai;
+  Baru^.Berikut := Awal;        { langkah 2: tunjuk awal lama }
+  Awal := Baru;                 { langkah 3: jadi awal baru }
+end;</x-code>
+
+<figure class="grafik" id="gb-depan">
+<svg viewBox="0 0 680 300">
+  <text class="h c" x="10" y="18">TambahDepan(Awal, 5) pada list 12 → 8</text>
+  <text class="s b" x="10" y="48">Sebelum</text>
+  <rect class="ok" x="90" y="34" width="56" height="26" rx="4"/><text class="mono s" x="98" y="52">Awal</text>
+  <path class="arrow" d="M146 47 H178"/>
+  <rect class="box" x="180" y="30" width="86" height="34" rx="5"/><line class="line" x1="215" y1="30" x2="215" y2="64"/>
+  <text class="mono b mid" x="197" y="52">12</text><text class="mono s mid" x="241" y="52">&#9679;</text>
+  <path class="arrow" d="M241 52 H290"/>
+  <rect class="box" x="292" y="30" width="86" height="34" rx="5"/><line class="line" x1="327" y1="30" x2="327" y2="64"/>
+  <text class="mono b mid" x="309" y="52">8</text><text class="mono s mid" x="353" y="52">nil</text>
+
+  <text class="s b" x="10" y="108">Langkah 1</text>
+  <text class="xs muted" x="10" y="122">New(Baru); Data := 5</text>
+  <rect class="ok" x="90" y="84" width="56" height="26" rx="4"/><text class="mono s" x="98" y="102">Awal</text>
+  <path class="arrow" d="M146 97 H178"/>
+  <rect class="box" x="180" y="80" width="86" height="34" rx="5"/><line class="line" x1="215" y1="80" x2="215" y2="114"/>
+  <text class="mono b mid" x="197" y="102">12</text><text class="mono s mid" x="241" y="102">&#9679;</text>
+  <path class="arrow" d="M241 102 H290"/>
+  <rect class="box" x="292" y="80" width="86" height="34" rx="5"/><line class="line" x1="327" y1="80" x2="327" y2="114"/>
+  <text class="mono b mid" x="309" y="102">8</text><text class="mono s mid" x="353" y="102">nil</text>
+  <rect class="io" x="440" y="80" width="86" height="34" rx="5"/><line class="line" x1="475" y1="80" x2="475" y2="114"/>
+  <text class="mono b mid" x="457" y="102">5</text><text class="mono s mid" x="501" y="102">?</text>
+  <rect class="io" x="540" y="84" width="56" height="26" rx="4"/><text class="mono s" x="548" y="102">Baru</text>
+  <path class="arrow" d="M540 97 H530"/>
+
+  <text class="s b" x="10" y="178">Langkah 2</text>
+  <text class="xs muted" x="10" y="192">Baru^.Berikut := Awal</text>
+  <rect class="ok" x="90" y="154" width="56" height="26" rx="4"/><text class="mono s" x="98" y="172">Awal</text>
+  <path class="arrow" d="M146 167 H178"/>
+  <rect class="box" x="180" y="150" width="86" height="34" rx="5"/><line class="line" x1="215" y1="150" x2="215" y2="184"/>
+  <text class="mono b mid" x="197" y="172">12</text><text class="mono s mid" x="241" y="172">&#9679;</text>
+  <path class="arrow" d="M241 172 H290"/>
+  <rect class="box" x="292" y="150" width="86" height="34" rx="5"/><line class="line" x1="327" y1="150" x2="327" y2="184"/>
+  <text class="mono b mid" x="309" y="172">8</text><text class="mono s mid" x="353" y="172">nil</text>
+  <rect class="io" x="440" y="150" width="86" height="34" rx="5"/><line class="line" x1="475" y1="150" x2="475" y2="184"/>
+  <text class="mono b mid" x="457" y="172">5</text><text class="mono s mid" x="501" y="172">&#9679;</text>
+  <path class="arrow" d="M501 172 H520 V132 H223 V150"/>
+  <rect class="io" x="540" y="154" width="56" height="26" rx="4"/><text class="mono s" x="548" y="172">Baru</text>
+  <path class="arrow" d="M540 167 H530"/>
+
+  <text class="s b" x="10" y="248">Langkah 3</text>
+  <text class="xs muted" x="10" y="262">Awal := Baru</text>
+  <rect class="ok" x="90" y="224" width="56" height="26" rx="4"/><text class="mono s" x="98" y="242">Awal</text>
+  <path class="arrow" d="M118 250 V276 H400 H457 V258"/>
+  <rect class="box" x="180" y="220" width="86" height="34" rx="5"/><line class="line" x1="215" y1="220" x2="215" y2="254"/>
+  <text class="mono b mid" x="197" y="242">12</text><text class="mono s mid" x="241" y="242">&#9679;</text>
+  <path class="arrow" d="M241 242 H290"/>
+  <rect class="box" x="292" y="220" width="86" height="34" rx="5"/><line class="line" x1="327" y1="220" x2="327" y2="254"/>
+  <text class="mono b mid" x="309" y="242">8</text><text class="mono s mid" x="353" y="242">nil</text>
+  <rect class="ok" x="440" y="220" width="86" height="34" rx="5"/><line class="line" x1="475" y1="220" x2="475" y2="254"/>
+  <text class="mono b mid" x="457" y="242">5</text><text class="mono s mid" x="501" y="242">&#9679;</text>
+  <path class="arrow" d="M501 242 H530 V210 H223 V220"/>
+  <text class="xs muted" x="10" y="296">Hasil: Awal → 5 → 12 → 8 → nil. Urutan dua langkah terakhir penting: bila Awal diubah lebih dulu, alamat 12 hilang.</text>
+</svg>
+<figcaption>Tiga langkah menambah simpul di depan; lingkaran kecil melambangkan pointer <code>Berikut</code>.</figcaption>
+</figure>
+
+<p>Prosedur <code>TambahBelakang</code> berbeda dari <code>TambahDepan</code>: simpul baru harus dipasang ke simpul <i>terakhir</i>, yang hanya bisa ditemukan
+dengan menelusuri rantai sampai <code>Berikut = nil</code>. Program ini juga memiliki prosedur <code>Tampilkan</code>
+untuk menelusuri list dan <code>HapusSemua</code> untuk mengembalikan seluruh memori. Buka
+<code>bab18_03_linked_list_tambah.pas</code> dan jalankan.</p>
+
+<x-listing src="bab18_03_linked_list_tambah.pas"></x-listing>
+
+<x-run src="bab18_03_linked_list_tambah.pas" caption="List tumbuh satu simpul tiap kali; pada akhirnya <code>HapusSemua</code> mengosongkannya"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10–15</td><td>Tipe simpul seperti pada bentuk umum: <code>Data</code> dan pointer <code>Berikut</code>.</td></tr>
+    <tr><td>17</td><td><code>Awal</code> adalah parameter <code>var</code> karena prosedur akan <b>mengubah</b> pointer awal milik pemanggil.</td></tr>
+    <tr><td>21–24</td><td>Tiga langkah dari Gambar di atas: pesan simpul (21), isi data (22), sambungkan ke awal lama (23), jadikan awal baru (24). Berlaku juga untuk list kosong, karena <code>Awal</code> yang <code>nil</code> menjadi <code>Berikut</code> simpul pertama.</td></tr>
+    <tr><td>31–33</td><td>Simpul baru dibuat dan <code>Berikut</code>-nya <code>nil</code>, karena ia akan menjadi simpul terakhir.</td></tr>
+    <tr><td>34–35</td><td>Kasus khusus: bila list kosong, simpul baru langsung menjadi <code>Awal</code>.</td></tr>
+    <tr><td>37–41</td><td>Selain itu, pointer bantu <code>P</code> berjalan dari awal selama <code>P^.Berikut &lt;&gt; nil</code> sampai berhenti di simpul terakhir, lalu simpul baru dikaitkan di sana.</td></tr>
+    <tr><td>45–57</td><td><code>Tampilkan</code> menelusuri list. Awal <code>P := Awal</code>, lalu selama <code>P &lt;&gt; nil</code> data dicetak dan <code>P := P^.Berikut</code> memindahkannya ke simpul berikutnya. Karena <code>Awal</code> di sini parameter nilai, pointer aslinya tidak terganggu.</td></tr>
+    <tr><td>59–69</td><td><code>HapusSemua</code> membuang simpul satu per satu. Urutan di baris 65–67 penting: simpan simpul di <code>P</code>, geser <code>Awal</code> ke simpul berikutnya, <i>baru</i> <code>Dispose(P)</code>. Bila <code>Dispose</code> lebih dulu, sambungan ke simpul berikutnya ikut hilang.</td></tr>
+    <tr><td>75–86</td><td>Program utama membuat list kosong, lalu bergantian menambah dan menampilkan. <code>TambahBelakang</code> 12 dan 8, kemudian <code>TambahDepan</code> 5 dan 1 membuat urutan akhir 1, 5, 12, 8. Pemanggilan terakhir <code>HapusSemua</code> mengembalikan list ke <code>nil</code>.</td></tr>
+  </tbody>
+</table>
+
+<div class="ingat"><p>Tiga pola penelusuran yang akan sering Anda tulis: (1) <code>P := Awal;</code> (2) ulangi
+<code>while P &lt;&gt; nil do</code> (3) di akhir putaran <code>P := P^.Berikut</code>. Bila
+Anda lupa baris (3), perulangan tidak pernah berhenti.</p></div>
+
+<h2>Menghapus Simpul</h2>
+
+<p>Menghapus simpul dari tengah list tidak boleh sembarangan: simpul sebelum dan sesudahnya harus tetap tersambung.
+Triknya adalah mengingat <b>simpul sebelumnya</b> selagi menelusuri, lalu menyambungkannya langsung ke simpul
+<b>sesudahnya</b> sehingga simpul yang dihapus "dilompati". Setelah itu barulah simpul itu dikembalikan dengan
+<code>Dispose</code>. Simpul pertama adalah kasus khusus, karena tidak ada simpul sebelumnya; yang diubah adalah
+<code>Awal</code> itu sendiri.</p>
+
+<figure class="grafik" id="gb-hapus">
+<svg viewBox="0 0 680 290">
+  <text class="h c" x="10" y="18">Hapus(Awal, 30) pada list 10 → 20 → 30 → 40</text>
+  <text class="s b" x="10" y="52">Sebelum</text>
+  <rect class="ok" x="90" y="36" width="56" height="26" rx="4"/><text class="mono s" x="98" y="54">Awal</text>
+  <path class="arrow" d="M146 49 H168"/>
+  <rect class="box" x="170" y="32" width="76" height="34" rx="5"/><line class="line" x1="204" y1="32" x2="204" y2="66"/>
+  <text class="mono b mid" x="187" y="54">10</text><text class="mono s mid" x="225" y="54">&#9679;</text>
+  <path class="arrow" d="M225 54 H262"/>
+  <rect class="box" x="264" y="32" width="76" height="34" rx="5"/><line class="line" x1="298" y1="32" x2="298" y2="66"/>
+  <text class="mono b mid" x="281" y="54">20</text><text class="mono s mid" x="319" y="54">&#9679;</text>
+  <path class="arrow" d="M319 54 H356"/>
+  <rect class="no" x="358" y="32" width="76" height="34" rx="5"/><line class="line" x1="392" y1="32" x2="392" y2="66"/>
+  <text class="mono b mid" x="375" y="54">30</text><text class="mono s mid" x="413" y="54">&#9679;</text>
+  <path class="arrow" d="M413 54 H450"/>
+  <rect class="box" x="452" y="32" width="76" height="34" rx="5"/><line class="line" x1="486" y1="32" x2="486" y2="66"/>
+  <text class="mono b mid" x="469" y="54">40</text><text class="mono s mid" x="507" y="54">nil</text>
+
+  <text class="s b" x="10" y="130">Cari</text>
+  <text class="xs muted" x="10" y="144">Sebelum, P maju</text>
+  <rect class="box" x="170" y="106" width="76" height="34" rx="5"/><line class="line" x1="204" y1="106" x2="204" y2="140"/>
+  <text class="mono b mid" x="187" y="128">10</text><text class="mono s mid" x="225" y="128">&#9679;</text>
+  <path class="arrow" d="M225 128 H262"/>
+  <rect class="ok" x="264" y="106" width="76" height="34" rx="5"/><line class="line" x1="298" y1="106" x2="298" y2="140"/>
+  <text class="mono b mid" x="281" y="128">20</text><text class="mono s mid" x="319" y="128">&#9679;</text>
+  <path class="arrow" d="M319 128 H356"/>
+  <rect class="no" x="358" y="106" width="76" height="34" rx="5"/><line class="line" x1="392" y1="106" x2="392" y2="140"/>
+  <text class="mono b mid" x="375" y="128">30</text><text class="mono s mid" x="413" y="128">&#9679;</text>
+  <path class="arrow" d="M413 128 H450"/>
+  <rect class="box" x="452" y="106" width="76" height="34" rx="5"/><line class="line" x1="486" y1="106" x2="486" y2="140"/>
+  <text class="mono b mid" x="469" y="128">40</text><text class="mono s mid" x="507" y="128">nil</text>
+  <text class="s b mid" x="302" y="162">Sebelum</text>
+  <text class="s b mid" x="396" y="162">P</text>
+
+  <text class="s b" x="10" y="214">Sambung</text>
+  <text class="xs muted" x="10" y="228">Sebelum^.Berikut :=</text>
+  <text class="xs muted" x="10" y="240">P^.Berikut</text>
+  <rect class="box" x="170" y="190" width="76" height="34" rx="5"/><line class="line" x1="204" y1="190" x2="204" y2="224"/>
+  <text class="mono b mid" x="187" y="212">10</text><text class="mono s mid" x="225" y="212">&#9679;</text>
+  <path class="arrow" d="M225 212 H262"/>
+  <rect class="ok" x="264" y="190" width="76" height="34" rx="5"/><line class="line" x1="298" y1="190" x2="298" y2="224"/>
+  <text class="mono b mid" x="281" y="212">20</text><text class="mono s mid" x="319" y="212">&#9679;</text>
+  <path class="arrow dash" d="M319 212 H356"/>
+  <rect class="no" x="358" y="190" width="76" height="34" rx="5"/><line class="line" x1="392" y1="190" x2="392" y2="224"/>
+  <text class="mono b mid" x="375" y="212">30</text><text class="mono s mid" x="413" y="212">&#9679;</text>
+  <rect class="box" x="452" y="190" width="76" height="34" rx="5"/><line class="line" x1="486" y1="190" x2="486" y2="224"/>
+  <text class="mono b mid" x="469" y="212">40</text><text class="mono s mid" x="507" y="212">nil</text>
+  <path class="arrow" d="M319 212 V250 H486 V228"/>
+  <text class="s b" x="548" y="196">Simpul 30</text>
+  <text class="s" x="548" y="212">dilompati, lalu</text>
+  <text class="s" x="548" y="228">Dispose(P).</text>
+  <text class="xs muted" x="10" y="278">Hasil: Awal → 10 → 20 → 40 → nil. Bila yang dihapus simpul pertama, ubah Awal := P^.Berikut (tidak ada Sebelum).</text>
+</svg>
+<figcaption>Menghapus simpul 30: simpul sebelumnya (20) disambung langsung ke simpul sesudahnya (40), baru simpul 30 dikembalikan.</figcaption>
+</figure>
+
+<p>Fungsi <code>Hapus</code> pada program berikut menerapkannya dan mengembalikan <code>True</code> bila nilai
+ditemukan. Program utama membuat list 10, 20, 30, 40, 50, lalu menghapus nilai di tengah, di awal, di akhir, nilai
+yang tidak ada, dan akhirnya mengosongkan list. Buka <code>bab18_04_linked_list_hapus.pas</code> dan jalankan.</p>
+
+<x-listing src="bab18_04_linked_list_hapus.pas"></x-listing>
+
+<x-run src="bab18_04_linked_list_hapus.pas" caption="Enam kali penghapusan: tengah, awal, akhir, nilai yang tidak ada, lalu sampai list kosong"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>34–43</td><td><code>Tampilkan</code> kali ini memakai parameternya sendiri (<code>Awal</code>) sebagai penelusur. Aman karena parameter nilai hanyalah salinan pointer; pointer asli milik pemanggil tidak ikut bergeser.</td></tr>
+    <tr><td>46–48</td><td><code>Hapus</code> menerima <code>var Awal</code> karena penghapusan simpul pertama mengubah <code>Awal</code>. Ada dua pointer bantu: <code>Sebelum</code> dan <code>P</code>.</td></tr>
+    <tr><td>50–56</td><td>Penelusuran: <code>Sebelum</code> dimulai <code>nil</code>, <code>P</code> dari awal. Selama belum ketemu, <code>Sebelum</code> mengikuti <code>P</code> satu langkah di belakangnya. Syarat <code>(P &lt;&gt; nil) and (...)</code> mengamankan akses <code>P^.Data</code>.</td></tr>
+    <tr><td>58–59</td><td>Bila <code>P</code> sampai <code>nil</code>, nilai tidak ditemukan dan fungsi mengembalikan <code>False</code>.</td></tr>
+    <tr><td>62–65</td><td>Kasus pertama: <code>Sebelum = nil</code> berarti yang dihapus simpul awal, jadi <code>Awal := P^.Berikut</code>. Kasus kedua: simpul <code>Sebelum</code> disambung ke <code>P^.Berikut</code>, melompati <code>P</code>.</td></tr>
+    <tr><td>66–67</td><td>Barulah <code>Dispose(P)</code> dan hasil <code>True</code> diberikan.</td></tr>
+    <tr><td>71–78</td><td><code>Coba</code> membungkus pemanggilan <code>Hapus</code> dengan pesan hasilnya dan menampilkan list sesudahnya.</td></tr>
+    <tr><td>84–96</td><td>Program utama mengisi list 10..50 dengan perulangan, lalu menjalankan enam skenario berurutan. Perhatikan hasil <code>Hapus 99</code> yang tidak ditemukan dan hasil terakhir saat list menjadi <code>nil</code>.</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p>Fungsi <code>Hapus</code> mengembalikan nilai dengan memberi nilai ke <b>nama fungsinya</b>
+(<code>Hapus := True</code>), bukan ke <code>Result</code>, karena <code>Result</code> tidak ada di Turbo Pascal 7.</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Mengisi pointer dengan nilai, bukan alamat</h3>
+
+<x-error name="ptrangka.pas" caption="Pointer tidak boleh diisi bilangan; isilah dengan alamat atau New">program PtrAngka;
+var
+  P: ^Integer;
+begin
+  P := 5;
+  WriteLn(P^);
+end.</x-error>
+
+<p>Kompiler menolak karena <code>5</code> adalah bilangan bulat biasa, sedangkan <code>P</code> adalah pointer. Bila maksud
+Anda mengisi data yang ditunjuk, tulis <code>P^ := 5</code> setelah <code>P</code> menunjuk tempat yang sah
+(<code>New(P)</code> atau <code>P := @Sesuatu</code>).</p>
+
+<h3>Mengikuti pointer nil</h3>
+
+<p>Ini kesalahan paling sering saat bekerja dengan list: menelusuri sampai melewati ujung, atau memakai pointer
+yang belum diisi. Program berikut memakai pointer yang bernilai <code>nil</code>.</p>
+
+<x-error name="nilptr.pas" run caption="Mengikuti pointer nil menghentikan program (<i>runtime error</i> 216)">program NilPtr;
+var
+  P: ^Integer;
+begin
+  P := nil;
+  WriteLn('Sebelum mengikuti pointer');
+  WriteLn(P^);
+  WriteLn('Tidak akan sampai sini');
+end.</x-error>
+
+<p>Kompilasinya lancar, tetapi program berhenti pada baris 7 dengan galat <i>runtime</i> 216. Kode galat ini
+berarti program mengakses alamat yang tidak sah. Pada list, sumber galat yang sama adalah <code>P^.Berikut</code>
+ketika <code>P</code> sudah <code>nil</code>. Pengamannya: periksa <code>P &lt;&gt; nil</code> sebelum mengikuti panah,
+seperti pada perulangan <code>while P &lt;&gt; nil</code> di Program 18.3 dan <code>(P &lt;&gt; nil) and (P^.Data
+&lt;&gt; Nilai)</code> di Program 18.4.</p>
+
+<h3>Kesalahan yang diam: bocor dan menggantung</h3>
+
+<p>Dua kesalahan berikut tidak menghasilkan pesan galat sehingga sulit ditemukan.</p>
+
+<div class="duo">
+  <div class="card bad"><h4><span class="ikon">!</span>Memori bocor</h4><p>Mengubah <code>Awal := nil</code> atau
+  <code>P := Baru</code> tanpa <code>Dispose</code> membuat simpul lama tak terjangkau. Memorinya tidak bisa
+  dikembalikan lagi. Hapus list dengan <code>HapusSemua</code> sebelum program selesai.</p></div>
+  <div class="card bad"><h4><span class="ikon">!</span>Pointer menggantung</h4><p>Memakai <code>P^</code> setelah
+  <code>Dispose(P)</code> membaca memori yang bukan milik Anda. Hasilnya tidak terduga. Tulis <code>P := nil</code>
+  sesudah <code>Dispose</code>, dan jangan menyimpan salinan pointer yang sudah dibuang.</p></div>
+</div>
+
+<h3>Urutan langkah yang terbalik</h3>
+
+<p>Pada <code>TambahDepan</code>, bila <code>Awal := Baru</code> ditulis <i>sebelum</i>
+<code>Baru^.Berikut := Awal</code>, simpul baru menunjuk dirinya sendiri dan seluruh list lama terputus. Pada
+<code>HapusSemua</code>, <code>Dispose(P)</code> sebelum <code>Awal := Awal^.Berikut</code> membuat Anda mengikuti
+pointer ke memori yang sudah dibuang. Gambarlah panah di kertas sebelum menulis kodenya; urutan yang benar biasanya
+tampak jelas dari gambar.</p>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>Variabel biasa menyimpan <b>data</b>; <b>pointer</b> menyimpan <b>alamat</b> data. Tipe pointer ditulis
+  <code>^Tipe</code> dan ukurannya 8 byte di macOS 64-bit.</li>
+  <li><code>@X</code> menghasilkan alamat <code>X</code>; <code>P^</code> mengakses data yang ditunjuk <code>P</code>;
+  <code>nil</code> berarti tidak menunjuk apa pun.</li>
+  <li><code>Q := P</code> menyalin alamat (dua penunjuk, satu data); <code>Q^ := P^</code> menyalin isi.</li>
+  <li><code>New(P)</code> memesan memori di <i>heap</i> dan <code>Dispose(P)</code> mengembalikannya. Setiap
+  <code>New</code> harus punya <code>Dispose</code>; sesudahnya isi <code>P := nil</code>.</li>
+  <li>Simpul linked list adalah <code>record</code> berisi data dan pointer <code>Berikut</code>. Pointer
+  <code>Awal</code> menunjuk simpul pertama; simpul terakhir menunjuk <code>nil</code>.</li>
+  <li>Menambah di depan: simpul baru menunjuk <code>Awal</code> lama, lalu menjadi <code>Awal</code>. Menambah di
+  belakang: telusuri sampai simpul terakhir dan kaitkan di sana.</li>
+  <li>Menghapus: ingat simpul <code>Sebelum</code>, sambungkan ke <code>P^.Berikut</code>, baru
+  <code>Dispose(P)</code>. Simpul pertama dihapus dengan mengubah <code>Awal</code>.</li>
+  <li>Parameter yang akan mengubah pointer awal list harus <code>var</code>. Debugger menampilkan pointer sebagai
+  <code>PTR($...)</code>.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Deklarasikan <code>X: Integer</code> dan pointer <code>P</code> ke
+  <code>Integer</code>. Buat <code>P</code> menunjuk <code>X</code>, ubah <code>X</code> lewat <code>P^</code>, lalu
+  tampilkan keduanya. Gambar kotak dan panah untuk setiap langkah.</li>
+  <li><span class="lv dasar">Dasar</span>Pesan satu <code>Real</code> dengan <code>New</code>, isi dengan hasil
+  perhitungan (mis. luas lingkaran), tampilkan dengan format <code>:0:2</code>, lalu <code>Dispose</code>.</li>
+  <li><span class="lv menengah">Menengah</span>Tambahkan fungsi <code>Hitung(Awal): Integer</code> pada Program 18.3
+  yang mengembalikan banyak simpul, dan fungsi <code>Jumlah(Awal): Integer</code> untuk menjumlahkan data.</li>
+  <li><span class="lv menengah">Menengah</span>Buat fungsi <code>Cari(Awal, Nilai): Boolean</code> yang menelusuri list
+  dan mengembalikan <code>True</code> bila nilai ada. Pastikan aman untuk list kosong.</li>
+  <li><span class="lv menengah">Menengah</span>Tulis prosedur <code>SisipUrut(var Awal; Nilai)</code> yang menyisipkan
+  simpul pada tempat yang benar agar list selalu terurut naik. Pertimbangkan tiga kasus: list kosong, nilai
+  paling kecil (disisip di depan), dan nilai di tengah atau akhir.</li>
+  <li><span class="lv tantangan">Tantangan</span>Tulis prosedur <code>Balik(var Awal)</code> yang membalik urutan
+  list tanpa membuat simpul baru, hanya mengubah pointer <code>Berikut</code>. Gunakan tiga pointer bantu.</li>
+  <li><span class="lv tantangan">Tantangan</span>Gabungkan Bab 17 dan 18: simpan isi list ke file bertipe
+  <code>file of Integer</code>, lalu bacalah kembali ke list baru. Mengapa pointer <code>Berikut</code> tidak
+  boleh ikut disimpan ke file?</li>
+</ol>
+</div>

@@ -1,0 +1,541 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Memahami string sebagai deretan karakter berindeks yang dimulai dari 1, dan membaca atau mengubah satu karakternya lewat <code>S[I]</code>.</li>
+  <li>Memakai <code>Length</code>, <code>Copy</code>, <code>Pos</code>, <code>Insert</code>, <code>Delete</code>, <code>UpCase</code>, dan penyambungan string.</li>
+  <li>Menulis fungsi yang mengembalikan string, misalnya untuk membalik huruf dan membalik urutan kata.</li>
+  <li>Memeriksa palindrom dengan membandingkan karakter dari kedua ujung string.</li>
+  <li>Menghitung vokal, konsonan, angka, dan spasi dengan <code>case</code> pada karakter.</li>
+  <li>Mengubah bilangan menjadi string dengan <code>Str</code> dan sebaliknya dengan <code>Val</code>, serta memeriksa masukan yang salah lewat kode galat.</li>
+</ul>
+
+<p class="lead">Hampir setiap program yang berguna berurusan dengan teks: nama, alamat, kalimat, kode pos, nomor telepon.
+Anda sudah memakai string sejak Bab 3 untuk menyimpan dan menampilkan teks. Sekarang saatnya membuka isinya. Di Pascal,
+string tidak lain adalah deretan karakter yang masing-masing punya nomor urut, sama seperti elemen array pada Bab 11.
+Dengan perulangan dan beberapa fungsi bawaan, Anda dapat memotong, mencari, menyisipkan, membalik, dan memeriksa teks.</p>
+
+<h2>String sebagai Deretan Karakter</h2>
+
+<p>Sebuah nilai bertipe <code>string</code> terdiri dari nol atau lebih karakter. Karakter pertama bernomor <b>1</b>,
+karakter kedua bernomor 2, dan seterusnya. Untuk mengambil satu karakter, tulis nama string diikuti nomornya di dalam
+kurung siku, persis seperti elemen array: <code>S[3]</code> adalah karakter ketiga dari <code>S</code>, bertipe
+<code>Char</code>. Banyaknya karakter disebut <b>panjang</b> string, dan diperoleh dari fungsi <code>Length(S)</code>.
+String yang panjangnya nol, ditulis <code>''</code>, disebut <b>string kosong</b>.</p>
+
+<figure class="grafik" id="gb-string-indeks">
+<svg viewBox="0 0 680 200">
+  <text class="h c" x="10" y="20">var S: string;   S := 'PASCAL';</text>
+  <text class="s muted" x="10" y="38">Setiap karakter menempati satu kotak. Nomor di atas kotak adalah indeks, dimulai dari 1.</text>
+  <text class="mono mid c" x="130" y="68">[1]</text>
+  <text class="mono mid c" x="200" y="68">[2]</text>
+  <text class="mono mid c" x="270" y="68">[3]</text>
+  <text class="mono mid c" x="340" y="68">[4]</text>
+  <text class="mono mid c" x="410" y="68">[5]</text>
+  <text class="mono mid c" x="480" y="68">[6]</text>
+  <rect class="box-w" x="100" y="76" width="60" height="46" rx="4"/>
+  <rect class="box-w" x="170" y="76" width="60" height="46" rx="4"/>
+  <rect class="ok" x="240" y="76" width="60" height="46" rx="4"/>
+  <rect class="box-w" x="310" y="76" width="60" height="46" rx="4"/>
+  <rect class="box-w" x="380" y="76" width="60" height="46" rx="4"/>
+  <rect class="box-w" x="450" y="76" width="60" height="46" rx="4"/>
+  <text class="h mid" x="130" y="106">'P'</text>
+  <text class="h mid" x="200" y="106">'A'</text>
+  <text class="h mid" x="270" y="106">'S'</text>
+  <text class="h mid" x="340" y="106">'C'</text>
+  <text class="h mid" x="410" y="106">'A'</text>
+  <text class="h mid" x="480" y="106">'L'</text>
+  <path class="line" d="M100 134 H510"/>
+  <text class="s mid" x="305" y="150">Length(S) = 6</text>
+  <path class="arrow" d="M270 184 V128"/>
+  <text class="mono" x="285" y="176">S[3] adalah 'S' (bertipe Char)</text>
+  <text class="s muted" x="540" y="92">'P' ditulis dengan petik</text>
+  <text class="s muted" x="540" y="106">tunggal: satu Char.</text>
+</svg>
+<figcaption>String <code>'PASCAL'</code>: enam karakter dengan indeks 1 sampai 6. <code>Length</code> memberi tahu jumlahnya.</figcaption>
+</figure>
+
+<p>Karena karakter-karakternya berindeks, hampir semua pola yang Anda pelajari pada array berlaku juga untuk string:
+perulangan <code>for I := 1 to Length(S)</code> menelusuri teks dari awal sampai akhir, dan <code>for I := Length(S)
+downto 1</code> menelusurinya dari belakang. Bedanya, string memiliki satu set fungsi bawaan khusus untuk pekerjaan
+yang sering dilakukan pada teks.</p>
+
+<div class="trio">
+  <div class="card"><h4><span class="ikon">1</span>Membaca</h4><p><code>S[I]</code> mengambil satu karakter.
+  <code>Length(S)</code> memberi panjangnya.</p></div>
+  <div class="card"><h4><span class="ikon">2</span>Memotong dan mencari</h4><p><code>Copy</code> mengambil
+  potongan, <code>Pos</code> mencari letak sebuah teks dalam string.</p></div>
+  <div class="card"><h4><span class="ikon">3</span>Mengubah</h4><p><code>Insert</code> menyisipkan, <code>Delete</code>
+  menghapus, <code>UpCase</code> membesarkan huruf, dan <code>+</code> menyambung.</p></div>
+</div>
+
+<div class="tp7"><p>Di Turbo Pascal 7, <code>string</code> panjangnya paling banyak <b>255 karakter</b>. Anda juga dapat
+membatasi panjang maksimum dengan <code>string[20]</code>. Nilai yang lebih panjang dari batasnya dipotong diam-diam.
+Karakter dalam string bertipe <code>Char</code>, dan untuk <code>Char</code> yang dipakai adalah petik tunggal:
+<code>'A'</code>.</p></div>
+
+<h2>Fungsi dan Prosedur String</h2>
+
+<p>Tabel berikut merangkum enam alat yang dipakai Program 12.1, dengan hasilnya untuk string
+<code>'Belajar Pascal itu menyenangkan'</code>.</p>
+
+<table class="data" id="tb-fungsi-string">
+  <caption>Fungsi dan prosedur string bawaan</caption>
+  <thead><tr><th>Bentuk</th><th>Jenis</th><th>Fungsinya</th><th>Contoh hasil</th></tr></thead>
+  <tbody>
+    <tr><td><code>Length(S)</code></td><td>fungsi</td><td>banyak karakter</td><td>31</td></tr>
+    <tr><td><code>Copy(S, Awal, N)</code></td><td>fungsi</td><td>mengambil N karakter mulai posisi Awal</td><td><code>Copy(S, 9, 6)</code> = <code>'Pascal'</code></td></tr>
+    <tr><td><code>Pos(Cari, S)</code></td><td>fungsi</td><td>posisi pertama Cari di S; 0 bila tidak ada</td><td><code>Pos('itu', S)</code> = 16</td></tr>
+    <tr><td><code>Insert(T, S, P)</code></td><td>prosedur</td><td>menyisipkan T ke dalam S mulai posisi P</td><td>mengubah S</td></tr>
+    <tr><td><code>Delete(S, P, N)</code></td><td>prosedur</td><td>menghapus N karakter mulai posisi P</td><td>mengubah S</td></tr>
+    <tr><td><code>UpCase(C)</code></td><td>fungsi</td><td>mengubah satu <code>Char</code> huruf kecil menjadi kapital</td><td><code>UpCase('a')</code> = <code>'A'</code></td></tr>
+  </tbody>
+</table>
+
+<div class="sintaks"><pre><i>Hasil</i> := <b>Length</b>(<i>S</i>);
+<i>Potongan</i> := <b>Copy</b>(<i>S</i>, <i>posisiAwal</i>, <i>banyak</i>);
+<i>Letak</i> := <b>Pos</b>(<i>yangDicari</i>, <i>S</i>);        <i>{ 0 bila tidak ditemukan }</i>
+
+<b>Insert</b>(<i>teksSisipan</i>, <i>S</i>, <i>posisi</i>);       <i>{ mengubah S }</i>
+<b>Delete</b>(<i>S</i>, <i>posisi</i>, <i>banyak</i>);          <i>{ mengubah S }</i>
+<i>Besar</i> := <b>UpCase</b>(<i>karakter</i>);</pre></div>
+
+<p>Perhatikan perbedaan <b>fungsi</b> dan <b>prosedur</b>. Fungsi (<code>Length</code>, <code>Copy</code>,
+<code>Pos</code>, <code>UpCase</code>) menghasilkan nilai dan <b>tidak mengubah</b> string asalnya, sehingga dipakai di
+dalam ekspresi. Prosedur (<code>Insert</code>, <code>Delete</code>) <b>mengubah</b> variabel string yang diberikan,
+sehingga ditulis sebagai perintah tersendiri. Gambar berikut memperlihatkan keempat operasi itu pada string contoh.</p>
+
+<figure class="grafik" id="gb-copy-pos">
+<svg viewBox="0 0 680 262">
+  <text class="h c" x="10" y="20">Kalimat := 'Belajar Pascal itu menyenangkan';   (31 karakter)</text>
+  <g class="mono">
+  <rect class="box-w" x="15" y="50" width="21" height="28"/><rect class="box-w" x="36" y="50" width="21" height="28"/><rect class="box-w" x="57" y="50" width="21" height="28"/><rect class="box-w" x="78" y="50" width="21" height="28"/><rect class="box-w" x="99" y="50" width="21" height="28"/><rect class="box-w" x="120" y="50" width="21" height="28"/><rect class="box-w" x="141" y="50" width="21" height="28"/><rect class="box" x="162" y="50" width="21" height="28"/>
+  <rect class="ok" x="183" y="50" width="21" height="28"/><rect class="ok" x="204" y="50" width="21" height="28"/><rect class="ok" x="225" y="50" width="21" height="28"/><rect class="ok" x="246" y="50" width="21" height="28"/><rect class="ok" x="267" y="50" width="21" height="28"/><rect class="ok" x="288" y="50" width="21" height="28"/><rect class="box" x="309" y="50" width="21" height="28"/>
+  <rect class="dec" x="330" y="50" width="21" height="28"/><rect class="dec" x="351" y="50" width="21" height="28"/><rect class="dec" x="372" y="50" width="21" height="28"/><rect class="box" x="393" y="50" width="21" height="28"/>
+  <rect class="box-w" x="414" y="50" width="21" height="28"/><rect class="box-w" x="435" y="50" width="21" height="28"/><rect class="box-w" x="456" y="50" width="21" height="28"/><rect class="box-w" x="477" y="50" width="21" height="28"/><rect class="box-w" x="498" y="50" width="21" height="28"/><rect class="box-w" x="519" y="50" width="21" height="28"/><rect class="box-w" x="540" y="50" width="21" height="28"/><rect class="box-w" x="561" y="50" width="21" height="28"/><rect class="box-w" x="582" y="50" width="21" height="28"/><rect class="box-w" x="603" y="50" width="21" height="28"/><rect class="box-w" x="624" y="50" width="21" height="28"/><rect class="box-w" x="645" y="50" width="21" height="28"/>
+  <text class="mid" x="25.5" y="69">B</text><text class="mid" x="46.5" y="69">e</text><text class="mid" x="67.5" y="69">l</text><text class="mid" x="88.5" y="69">a</text><text class="mid" x="109.5" y="69">j</text><text class="mid" x="130.5" y="69">a</text><text class="mid" x="151.5" y="69">r</text><text class="mid" x="172.5" y="69">_</text>
+  <text class="mid" x="193.5" y="69">P</text><text class="mid" x="214.5" y="69">a</text><text class="mid" x="235.5" y="69">s</text><text class="mid" x="256.5" y="69">c</text><text class="mid" x="277.5" y="69">a</text><text class="mid" x="298.5" y="69">l</text><text class="mid" x="319.5" y="69">_</text>
+  <text class="mid" x="340.5" y="69">i</text><text class="mid" x="361.5" y="69">t</text><text class="mid" x="382.5" y="69">u</text><text class="mid" x="403.5" y="69">_</text>
+  <text class="mid" x="424.5" y="69">m</text><text class="mid" x="445.5" y="69">e</text><text class="mid" x="466.5" y="69">n</text><text class="mid" x="487.5" y="69">y</text><text class="mid" x="508.5" y="69">e</text><text class="mid" x="529.5" y="69">n</text><text class="mid" x="550.5" y="69">a</text><text class="mid" x="571.5" y="69">n</text><text class="mid" x="592.5" y="69">g</text><text class="mid" x="613.5" y="69">k</text><text class="mid" x="634.5" y="69">a</text><text class="mid" x="655.5" y="69">n</text>
+  </g>
+  <text class="xs mid c" x="25.5" y="44">1</text>
+  <text class="xs mid c" x="193.5" y="44">9</text>
+  <text class="xs mid c" x="298.5" y="44">14</text>
+  <text class="xs mid c" x="340.5" y="44">16</text>
+  <text class="xs mid c" x="382.5" y="44">18</text>
+  <text class="xs mid c" x="424.5" y="44">20</text>
+  <text class="xs mid c" x="655.5" y="44">31</text>
+  <text class="xs muted" x="430" y="94">( _ = spasi )</text>
+  <path class="line" d="M183 90 V104 H309 V90"/>
+  <text class="s b" x="30" y="124">Copy(Kalimat, 9, 6) = 'Pascal'</text>
+  <text class="s" x="30" y="140">mulai posisi 9, ambil 6 karakter (posisi 9 sampai 14)</text>
+  <path class="line" d="M330 90 V112 H393 V90"/>
+  <text class="s b" x="410" y="124">Pos('itu', Kalimat) = 16</text>
+  <text class="s" x="410" y="140">huruf pertama 'itu' ada di posisi 16</text>
+  <rect class="box-w" x="10" y="172" width="660" height="80" rx="6"/>
+  <text class="s b c" x="22" y="190">Insert('sangat ', Kalimat, 20)</text>
+  <text class="s" x="22" y="206">Posisi 20 adalah awal kata 'menyenangkan'. Teks sisipan masuk di posisi itu, dan sisa kalimat bergeser ke kanan.</text>
+  <text class="s b c" x="22" y="226">Delete(Kalimat, 1, 8)</text>
+  <text class="s" x="22" y="242">Menghapus 8 karakter mulai posisi 1: 'Belajar' dan spasinya. Sisa karakter bergeser ke kiri.</text>
+</svg>
+<figcaption>Posisi karakter pada <code>Kalimat</code>. <code>Copy</code> dan <code>Pos</code> bekerja dengan nomor posisi yang sama seperti indeks <code>Kalimat[I]</code>.</figcaption>
+</figure>
+
+<p>Program 12.1 mencoba semuanya berurutan. Buka <code>bab12_01_fungsi_string.pas</code> lewat
+<span class="menu">File ▸ Examples...</span> dan jalankan. Program ini tidak meminta masukan.</p>
+
+<x-listing src="bab12_01_fungsi_string.pas"></x-listing>
+
+<x-run src="bab12_01_fungsi_string.pas" caption="Keluaran Program 12.1"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>12–14</td><td>Dua variabel string, <code>Kalimat</code> dan <code>Kata</code>, serta dua <code>Integer</code> untuk indeks dan posisi.</td></tr>
+    <tr><td>17–19</td><td>Mengisi <code>Kalimat</code> dengan literal string, lalu mencetaknya beserta panjangnya, yaitu 31 karakter.</td></tr>
+    <tr><td>20</td><td><code>Copy(Kalimat, 9, 6)</code> mengambil enam karakter mulai dari posisi 9: <code>Pascal</code>. Perhatikan bahwa argumen ketiga adalah <i>banyak karakter</i>, bukan posisi akhir.</td></tr>
+    <tr><td>22–24</td><td><code>Pos('itu', Kalimat)</code> memberi posisi 16. <code>Pos('Java', Kalimat)</code> memberi 0 karena kata itu tidak ada. Nilai 0 adalah cara <code>Pos</code> mengatakan "tidak ditemukan", karena posisi karakter selalu dimulai dari 1.</td></tr>
+    <tr><td>27–28</td><td><code>Insert</code> menyisipkan <code>'sangat '</code> (dengan spasi di akhir) sebelum kata <code>menyenangkan</code>. Posisi sisipan didapat dari <code>Pos</code> agar tidak perlu menghitung manual. <code>Kalimat</code> sendiri berubah.</td></tr>
+    <tr><td>29–30</td><td><code>Delete(Kalimat, 1, 8)</code> membuang delapan karakter pertama, yaitu <code>Belajar</code> dan satu spasi. Keluaran mulai dari <code>Pascal</code>.</td></tr>
+    <tr><td>33–36</td><td>Salinan kalimat dibesarkan satu karakter demi satu: <code>UpCase</code> menerima satu <code>Char</code>, jadi harus dipanggil di dalam perulangan. Hasilnya disimpan kembali ke <code>Kata[I]</code>. Mengubah satu karakter lewat indeks diperbolehkan.</td></tr>
+    <tr><td>39</td><td>Dua cara menyambung string: fungsi <code>Concat</code> dan operator <code>+</code>. Keduanya menghasilkan string baru.</td></tr>
+  </tbody>
+</table>
+
+<div class="awas"><p><code>Insert</code> dan <code>Delete</code> mengubah variabelnya, jadi nilai lama hilang. Bila Anda masih
+membutuhkan string aslinya, salin dahulu ke variabel lain, seperti baris 33 menyalin <code>Kalimat</code> ke
+<code>Kata</code> sebelum diubah. Perhatikan pula urutan argumen <code>Pos</code>: yang dicari lebih dulu, baru string
+tempat mencarinya.</p></div>
+
+<div class="coba"><p>Tambahkan baris yang memakai <code>Pos(' ', Kalimat)</code> untuk menemukan spasi pertama, lalu
+<code>Copy</code> untuk mencetak kata pertama saja. Petunjuk: kata pertama adalah <code>Copy(Kalimat, 1, Posisi - 1)</code>.</p></div>
+
+<h2>Membalik Huruf dan Membalik Kata</h2>
+
+<p>Membalik string adalah latihan klasik yang melatih Anda menelusuri string dan membangun string baru. Ada dua versi
+yang berbeda sifatnya. <b>Membalik huruf</b> menjadikan <code>pascal</code> menjadi <code>lacsap</code>.
+<b>Membalik urutan kata</b> menjadikan <code>saya suka pascal</code> menjadi <code>pascal suka saya</code>, dengan huruf
+di dalam kata tetap utuh.</p>
+
+<p>Cara membalik huruf: mulai dari string hasil yang kosong, baca string asal dari karakter terakhir ke pertama, dan
+tempelkan tiap karakter ke belakang hasil. Karena yang dibaca paling akhir menjadi yang tertempel paling awal, hasilnya
+terbalik. Membalik urutan kata lebih rumit: program memotong satu kata dari depan string, lalu menaruhnya di <b>depan</b>
+hasil, dan mengulanginya sampai string asal habis.</p>
+
+<p>Kedua pekerjaan ini ditulis sebagai <b>fungsi yang mengembalikan string</b>. Di Turbo Pascal, hasil fungsi diberikan
+dengan menugaskan nilai ke nama fungsinya sendiri (<code>BalikHuruf := Hasil;</code>), bukan dengan <code>Result</code>.</p>
+
+<x-listing src="bab12_02_balik_kata.pas"></x-listing>
+
+<x-run src="bab12_02_balik_kata.pas" caption="Kalimat dengan dua spasi di tengah: huruf dibalik, lalu kata dibalik"></x-run>
+
+<p>Pada keluaran, <code>Huruf dibalik</code> menampilkan <code>lacsap akus  ayas</code>: dua spasi tetap ada, karena
+membalik huruf memperlakukan spasi seperti karakter lain. Pada <code>Kata dibalik</code>, spasi ganda dirapikan menjadi
+satu spasi. Gambar berikut menelusuri <code>BalikUrutanKata</code> untuk masukan yang sama, <code>saya  suka pascal</code>
+(dengan dua spasi setelah <code>saya</code>).</p>
+
+<figure class="grafik" id="gb-balik-kata">
+<svg viewBox="0 0 680 252">
+  <text class="h c" x="10" y="20">Jejak BalikUrutanKata('saya  suka pascal')   ( _ = spasi )</text>
+  <rect class="box" x="10" y="32" width="50" height="26"/><rect class="box" x="60" y="32" width="200" height="26"/><rect class="box" x="260" y="32" width="130" height="26"/><rect class="box" x="390" y="32" width="280" height="26"/>
+  <text class="b" x="18" y="49">Putaran</text><text class="b" x="68" y="49">S sebelum</text><text class="b" x="268" y="49">Kata yang dipotong</text><text class="b" x="398" y="49">Hasil sesudah</text>
+  <rect class="box-w" x="10" y="58" width="50" height="38"/><rect class="box-w" x="60" y="58" width="200" height="38"/><rect class="ok" x="260" y="58" width="130" height="38"/><rect class="box-w" x="390" y="58" width="280" height="38"/>
+  <text class="mono mid" x="35" y="82">1</text><text class="mono" x="68" y="82">saya__suka_pascal</text><text class="mono" x="268" y="82">saya</text><text class="mono" x="398" y="82">saya</text>
+  <rect class="box-w" x="10" y="96" width="50" height="38"/><rect class="box-w" x="60" y="96" width="200" height="38"/><rect class="no" x="260" y="96" width="130" height="38"/><rect class="box-w" x="390" y="96" width="280" height="38"/>
+  <text class="mono mid" x="35" y="120">2</text><text class="mono" x="68" y="120">_suka_pascal</text><text class="mono" x="268" y="120">'' (kosong)</text><text class="mono" x="398" y="120">saya  (tidak berubah)</text>
+  <rect class="box-w" x="10" y="134" width="50" height="38"/><rect class="box-w" x="60" y="134" width="200" height="38"/><rect class="ok" x="260" y="134" width="130" height="38"/><rect class="box-w" x="390" y="134" width="280" height="38"/>
+  <text class="mono mid" x="35" y="158">3</text><text class="mono" x="68" y="158">suka_pascal</text><text class="mono" x="268" y="158">suka</text><text class="mono" x="398" y="158">suka_saya</text>
+  <rect class="box-w" x="10" y="172" width="50" height="38"/><rect class="box-w" x="60" y="172" width="200" height="38"/><rect class="ok" x="260" y="172" width="130" height="38"/><rect class="box-w" x="390" y="172" width="280" height="38"/>
+  <text class="mono mid" x="35" y="196">4</text><text class="mono" x="68" y="196">pascal</text><text class="mono" x="268" y="196">pascal</text><text class="mono" x="398" y="196">pascal_suka_saya</text>
+  <text class="s" x="10" y="230">Putaran 2 memotong kata kosong (spasi ganda), sehingga dilewati. Putaran 4: tidak ada spasi lagi, S habis.</text>
+  <text class="s muted" x="10" y="246">Kata baru selalu ditaruh di depan Hasil, sehingga kata yang dipotong paling awal berakhir paling belakang.</text>
+</svg>
+<figcaption>Empat putaran <code>while S &lt;&gt; ''</code>. Spasi ganda menghasilkan kata kosong yang dilewati.</figcaption>
+</figure>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–18</td><td>Fungsi <code>BalikHuruf</code>. Baris 14 mulai dari string kosong. Perulangan <code>downto</code> pada baris 15–16 menempelkan <code>S[I]</code> dari karakter terakhir ke karakter pertama. Baris 17 mengembalikan hasilnya lewat nama fungsi.</td></tr>
+    <tr><td>21–24</td><td>Fungsi <code>BalikUrutanKata</code>. <code>S</code> adalah salinan parameter, sehingga boleh dirusak (dipotong sampai habis) tanpa mengubah variabel milik pemanggil.</td></tr>
+    <tr><td>27</td><td>Perulangan berjalan selama <code>S</code> belum kosong.</td></tr>
+    <tr><td>29–34</td><td><code>Pos(' ', S)</code> mencari spasi pertama. Bila 0, sisa string adalah kata terakhir: ambil semuanya dan kosongkan <code>S</code>.</td></tr>
+    <tr><td>35–39</td><td>Bila ada spasi, <code>Copy(S, 1, Spasi - 1)</code> mengambil kata di depannya, dan <code>Delete(S, 1, Spasi)</code> membuang kata beserta spasinya.</td></tr>
+    <tr><td>40–44</td><td>Kata yang kosong (akibat spasi ganda) dilewati. Kata pertama langsung menjadi hasil, kata berikutnya ditaruh <i>di depan</i> hasil dengan satu spasi pemisah.</td></tr>
+    <tr><td>46</td><td>Hasil diberikan ke nama fungsi.</td></tr>
+    <tr><td>53–56</td><td>Program utama membaca satu kalimat dan memanggil kedua fungsi di dalam <code>WriteLn</code>.</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p>Fungsi di Turbo Pascal 7 tidak memiliki variabel <code>Result</code>. Hasil fungsi diberikan dengan
+menulis <code>NamaFungsi := nilai</code>. Fungsi boleh mengembalikan <code>string</code>, tetapi tidak boleh mengembalikan
+array atau record.</p></div>
+
+<div class="coba"><p>Jalankan Program 12.2 dengan kalimat <code>a b c</code>. Lalu coba kalimat yang diawali dan
+diakhiri spasi. Apakah hasil <code>Kata dibalik</code> memiliki spasi di tepinya? Telusuri bagian mana dari baris 40–44
+yang mencegahnya.</p></div>
+
+<h2>Palindrom</h2>
+
+<p><b>Palindrom</b> adalah kata atau kalimat yang terbaca sama dari depan maupun dari belakang, seperti
+<code>kakak</code>, <code>katak</code>, atau <code>Kasur ini rusak</code>. Untuk kalimat, spasi dan perbedaan huruf besar
+dan kecil diabaikan. Program harus mengerjakan dua hal: membersihkan teks (membuang selain huruf dan angka, lalu menjadikan
+semuanya kapital) dan memeriksa apakah teks bersih itu palindrom.</p>
+
+<p>Memeriksa palindrom tidak perlu membuat string terbalik. Cukup dua penunjuk: <code>Kiri</code> mulai dari karakter
+pertama dan <code>Kanan</code> mulai dari karakter terakhir. Keduanya dibandingkan, lalu bergerak ke tengah satu langkah
+demi satu langkah. Begitu ada pasangan yang berbeda, teks bukan palindrom. Bila kedua penunjuk bertemu tanpa menemukan
+perbedaan, teks adalah palindrom.</p>
+
+<figure class="grafik" id="gb-palindrom">
+<svg viewBox="0 0 680 232">
+  <text class="h c" x="10" y="20">Bersihkan('Kasur ini rusak') = 'KASURINIRUSAK' (13 karakter)</text>
+  <text class="xs mid c" x="75" y="62">1</text><text class="xs mid c" x="115" y="62">2</text><text class="xs mid c" x="155" y="62">3</text><text class="xs mid c" x="195" y="62">4</text><text class="xs mid c" x="235" y="62">5</text><text class="xs mid c" x="275" y="62">6</text><text class="xs mid c" x="315" y="62">7</text><text class="xs mid c" x="355" y="62">8</text><text class="xs mid c" x="395" y="62">9</text><text class="xs mid c" x="435" y="62">10</text><text class="xs mid c" x="475" y="62">11</text><text class="xs mid c" x="515" y="62">12</text><text class="xs mid c" x="555" y="62">13</text>
+  <rect class="ok" x="55" y="68" width="40" height="34"/><rect class="ok" x="95" y="68" width="40" height="34"/><rect class="ok" x="135" y="68" width="40" height="34"/><rect class="ok" x="175" y="68" width="40" height="34"/><rect class="ok" x="215" y="68" width="40" height="34"/><rect class="ok" x="255" y="68" width="40" height="34"/>
+  <rect class="dec" x="295" y="68" width="40" height="34"/>
+  <rect class="ok" x="335" y="68" width="40" height="34"/><rect class="ok" x="375" y="68" width="40" height="34"/><rect class="ok" x="415" y="68" width="40" height="34"/><rect class="ok" x="455" y="68" width="40" height="34"/><rect class="ok" x="495" y="68" width="40" height="34"/><rect class="ok" x="535" y="68" width="40" height="34"/>
+  <text class="mono mid" x="75" y="90">K</text><text class="mono mid" x="115" y="90">A</text><text class="mono mid" x="155" y="90">S</text><text class="mono mid" x="195" y="90">U</text><text class="mono mid" x="235" y="90">R</text><text class="mono mid" x="275" y="90">I</text><text class="mono mid" x="315" y="90">N</text><text class="mono mid" x="355" y="90">I</text><text class="mono mid" x="395" y="90">R</text><text class="mono mid" x="435" y="90">U</text><text class="mono mid" x="475" y="90">S</text><text class="mono mid" x="515" y="90">A</text><text class="mono mid" x="555" y="90">K</text>
+  <path class="line" d="M75 106 V122 H555 V106"/>
+  <path class="line" d="M115 106 V132 H515 V106"/>
+  <path class="line" d="M155 106 V142 H475 V106"/>
+  <path class="line" d="M195 106 V152 H435 V106"/>
+  <path class="line" d="M235 106 V162 H395 V106"/>
+  <path class="line" d="M275 106 V172 H355 V106"/>
+  <text class="s" x="580" y="126">pasangan 1: K = K</text>
+  <text class="s" x="580" y="146">pasangan 3: S = S</text>
+  <text class="s" x="580" y="176">pasangan 6: I = I</text>
+  <text class="s b c" x="315" y="190" style="text-anchor:middle">N di tengah tidak punya pasangan</text>
+  <text class="s" x="10" y="214">Putaran ke-k membandingkan karakter ke-k dari kiri dengan karakter ke-k dari kanan. Kiri dan Kanan bertemu di karakter 7, perulangan berhenti.</text>
+</svg>
+<figcaption>Pasangan karakter yang dibandingkan pada teks bersih. Semua pasangan sama, jadi teks ini palindrom.</figcaption>
+</figure>
+
+<x-listing src="bab12_03_palindrom.pas"></x-listing>
+
+<x-run src="bab12_03_palindrom.pas" caption="Dua kalimat, lalu <kbd>Enter</kbd> pada baris kosong untuk mengakhiri"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10–24</td><td>Fungsi <code>Bersihkan</code>. Setiap karakter dikapitalkan dengan <code>UpCase</code> (baris 19) lalu diuji: hanya huruf <code>'A'..'Z'</code> atau angka <code>'0'..'9'</code> yang ditempelkan ke <code>Hasil</code> (baris 20–21). Spasi dan tanda baca terbuang.</td></tr>
+    <tr><td>27–33</td><td>Fungsi <code>Palindrom</code> bertipe <code>Boolean</code>. Ia memulai dengan anggapan <code>True</code>, <code>Kiri</code> di awal, dan <code>Kanan</code> di akhir (<code>Length(S)</code>).</td></tr>
+    <tr><td>34</td><td>Perulangan hanya berjalan selama <code>Kiri &lt; Kanan</code>: pemeriksaan berhenti di tengah, karena membandingkan separuh pertama dengan separuh kedua sudah cukup.</td></tr>
+    <tr><td>36–40</td><td>Bila sepasang karakter berbeda, hasil menjadi <code>False</code> dan <code>Exit</code> langsung keluar dari fungsi. Di Turbo Pascal, <code>Exit</code> tidak membawa nilai; nilai yang sudah ditugaskan ke nama fungsi (baris 38) yang dipakai.</td></tr>
+    <tr><td>41–42</td><td>Kedua penunjuk bergerak satu langkah ke tengah.</td></tr>
+    <tr><td>50–61</td><td>Perulangan <code>repeat</code> membaca teks terus-menerus. Baris kosong (<code>Teks = ''</code>) mengakhirinya. Teks dibersihkan dulu pada baris 55, lalu <code>Bersih</code> diperiksa, tetapi yang ditulis ke layar tetap <code>Teks</code> asli.</td></tr>
+  </tbody>
+</table>
+
+<p>Untuk melihat penunjuk bergerak, jalankan program di bawah debugger. Pasang <i>breakpoint</i> di baris 36 dan
+tambahkan <i>watch</i> untuk <code>Kiri</code> dan <code>Kanan</code>. Setiap putaran, <code>Kiri</code> naik dan
+<code>Kanan</code> turun.</p>
+
+<x-ide file="bab12_03_palindrom.pas" top="26" rows="14" breakpoints="36" exec="36" watches="Kiri: 2;Kanan: 12;S: 'KASURINIRUSAK'" marks="gutter,watches" caption="Berhenti di baris 36 pada pasangan kedua: <code>Kiri</code> bernilai 2 dan <code>Kanan</code> bernilai 12"></x-ide>
+
+<table class="baris">
+  <thead><tr><th>Nomor</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td><span class="marknum">1</span></td><td><b>Gutter.</b> Titik merah dan sorotan hijau pada baris 36, yaitu pembandingan pasangan karakter.</td></tr>
+    <tr><td><span class="marknum">2</span></td><td><b>Watches.</b> <code>Kiri</code> dan <code>Kanan</code> bergerak ke tengah; <code>S</code> adalah teks yang sudah dibersihkan.</td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p>Coba masukan <code>Ibu Ratna antar ubi</code>, lalu <code>Kasur Rusak</code>, <code>12321</code>, dan
+satu huruf saja. Satu karakter dan string kosong dianggap palindrom oleh fungsi ini. Mengapa? Perhatikan kapan perulangan
+baris 34 berhenti.</p></div>
+
+<h2>Menghitung Vokal dan Jenis Karakter Lain</h2>
+
+<p>Karena string adalah deretan <code>Char</code>, Anda dapat menyortir tiap karakter ke dalam kelompok. Program 12.4
+menghitung lima kelompok: vokal, konsonan, angka, spasi, dan lainnya (tanda baca dan simbol). Pekerjaan memilih kelompok
+ini cocok dengan <code>case</code> dari Bab 6, karena label <code>case</code> boleh berupa nilai tunggal
+(<code>'A'</code>), daftar (<code>'A', 'I'</code>), maupun rentang (<code>'0'..'9'</code>).</p>
+
+<div class="alur">
+  <div><span class="ikon">1</span><b>Ambil</b><code>Kalimat[I]</code> untuk I dari 1 sampai Length.</div>
+  <div><span class="ikon">2</span><b>Kapitalkan</b><code>UpCase</code> agar cukup memeriksa huruf besar.</div>
+  <div><span class="ikon">3</span><b>Pilah</b><code>case</code> memilih satu kelompok untuk karakter itu.</div>
+  <div><span class="ikon">4</span><b>Hitung</b>Penghitung kelompok terpilih bertambah satu.</div>
+</div>
+
+<x-listing src="bab12_04_hitung_vokal.pas"></x-listing>
+
+<x-run src="bab12_04_hitung_vokal.pas" caption="Kalimat <code>Odin Turbo Pascal 2026!</code>"></x-run>
+
+<p>Mari periksa hasilnya dengan tangan. Kalimat <code>Odin Turbo Pascal 2026!</code> terdiri atas 23 karakter. Vokalnya
+<code>O</code>, <code>i</code>, <code>u</code>, <code>o</code>, <code>a</code>, <code>a</code> (enam); konsonannya
+<code>d</code>, <code>n</code>, <code>T</code>, <code>r</code>, <code>b</code>, <code>P</code>, <code>s</code>,
+<code>c</code>, <code>l</code> (sembilan); angkanya 2, 0, 2, 6 (empat); spasinya tiga; dan tanda seru satu. Jumlahnya
+6 + 9 + 4 + 3 + 1 = 23, sama dengan panjang kalimat. Penjumlahan semacam ini adalah cara cepat untuk menguji bahwa tidak
+ada karakter yang terlewat atau terhitung dua kali.</p>
+
+<figure class="grafik" id="gb-pilah-karakter">
+<svg viewBox="0 0 680 200">
+  <text class="h c" x="10" y="20">Ke kelompok mana setiap karakter masuk (setelah UpCase)</text>
+  <rect class="ok" x="10" y="34" width="150" height="84" rx="6"/>
+  <text class="b" x="20" y="54">Vokal</text>
+  <text class="mono" x="20" y="74">'A' 'I' 'U' 'E' 'O'</text>
+  <text class="s" x="20" y="96">label daftar nilai</text>
+  <rect class="io" x="170" y="34" width="190" height="84" rx="6"/>
+  <text class="b" x="180" y="54">Konsonan</text>
+  <text class="mono" x="180" y="74">'B'..'D'  'F'..'H'</text>
+  <text class="mono" x="180" y="90">'J'..'N'  'P'..'T'</text>
+  <text class="mono" x="180" y="106">'V'..'Z'</text>
+  <rect class="dec" x="370" y="34" width="100" height="84" rx="6"/>
+  <text class="b" x="380" y="54">Angka</text>
+  <text class="mono" x="380" y="74">'0'..'9'</text>
+  <rect class="box" x="480" y="34" width="80" height="84" rx="6"/>
+  <text class="b" x="490" y="54">Spasi</text>
+  <text class="mono" x="490" y="74">' '</text>
+  <rect class="no" x="570" y="34" width="100" height="84" rx="6"/>
+  <text class="b" x="580" y="54">Lainnya</text>
+  <text class="mono" x="580" y="74">else</text>
+  <text class="s" x="580" y="96">'!' ',' '-' ...</text>
+  <text class="s" x="10" y="144">Rentang konsonan melompati huruf vokal: B..D melewati A, F..H melewati E, J..N melewati I, P..T melewati O, V..Z melewati U.</text>
+  <text class="s" x="10" y="162">Setiap karakter cocok dengan tepat satu label. Karakter yang tidak cocok dengan label mana pun jatuh ke cabang else.</text>
+  <text class="s muted" x="10" y="184">Karena UpCase hanya mengubah huruf kecil a..z, huruf besar dan kecil masuk ke kelompok yang sama.</text>
+</svg>
+<figcaption>Pembagian kelompok pada <code>case</code> baris 22–33. Label tidak boleh bertumpuk.</figcaption>
+</figure>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>8–12</td><td>Satu <code>string</code>, satu <code>Char</code> penampung, dan lima penghitung.</td></tr>
+    <tr><td>15–16</td><td>Membaca seluruh kalimat dengan <code>ReadLn</code> ke dalam variabel string. Spasi di dalam kalimat ikut terbaca.</td></tr>
+    <tr><td>18</td><td>Lima penghitung diberi nilai awal 0 sekaligus pada satu baris, dipisah titik koma.</td></tr>
+    <tr><td>19–21</td><td>Perulangan menelusuri semua karakter. <code>UpCase</code> menjadikannya huruf besar sehingga label <code>case</code> cukup ditulis untuk <code>'A'..'Z'</code>.</td></tr>
+    <tr><td>22–24</td><td>Label daftar: karakter vokal menaikkan <code>Vokal</code>.</td></tr>
+    <tr><td>25–26</td><td>Label rentang: lima rentang yang menutupi semua huruf konsonan.</td></tr>
+    <tr><td>27–30</td><td>Rentang angka dan label spasi.</td></tr>
+    <tr><td>31–32</td><td><code>else</code> menampung semuanya: tanda baca dan simbol. Di sini tanda seru dihitung sebagai "lainnya".</td></tr>
+    <tr><td>36–41</td><td>Mencetak panjang dan kelima hitungan dengan perataan yang rapi.</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p><code>UpCase</code> di Turbo Pascal hanya mengenal huruf Latin a sampai z. Huruf bersimbol (misalnya
+huruf beraksen) tidak diubah, sehingga jatuh ke cabang <code>else</code>. Karena <code>UpCase</code> menerima satu
+<code>Char</code> bukan seluruh string, mengapitalkan string utuh selalu memerlukan perulangan seperti pada Program 12.1.</p></div>
+
+<div class="coba"><p>Ubah program agar menghitung huruf besar dan huruf kecil secara terpisah. Petunjuk: periksa
+<code>Kalimat[I]</code> langsung (<code>('A' &lt;= C) and (C &lt;= 'Z')</code>) sebelum <code>UpCase</code> dipakai.</p></div>
+
+<h2>Mengubah Angka dan String</h2>
+
+<p>Angka <code>1250</code> dan string <code>'1250'</code> terlihat sama di layar, tetapi bagi komputer keduanya berbeda
+jenis: yang satu bilangan yang bisa dijumlahkan, yang lain deretan empat karakter. Untuk berpindah dari satu bentuk ke
+bentuk lain, Pascal menyediakan dua prosedur:</p>
+
+<div class="sintaks"><pre><b>Str</b>(<i>bilangan</i>, <i>S</i>);                  <i>{ bilangan menjadi string }</i>
+<b>Str</b>(<i>bilangan</i>:<i>lebar</i>:<i>desimal</i>, <i>S</i>);    <i>{ dengan format, untuk Real }</i>
+<b>Val</b>(<i>S</i>, <i>bilangan</i>, <i>Kode</i>);             <i>{ string menjadi bilangan }</i></pre></div>
+
+<p><code>Str</code> bekerja seperti <code>WriteLn</code> yang hasilnya disimpan ke variabel string, bukan ditampilkan.
+<code>Val</code> memiliki parameter ketiga yang unik, yaitu <b>kode galat</b>. Bila seluruh string berhasil dibaca sebagai
+bilangan, <code>Kode</code> bernilai <b>0</b>. Bila tidak, <code>Kode</code> berisi <b>nomor posisi karakter pertama yang
+salah</b>, dan bilangannya tidak boleh dipercaya.</p>
+
+<div class="duo">
+  <div class="card good"><h4><span class="ikon">V</span>Val: kode 0</h4><p><code>Val('1250', Harga, Kode)</code> menghasilkan
+  <code>Harga = 1250</code> dan <code>Kode = 0</code>. Aman dipakai.</p></div>
+  <div class="card bad"><h4><span class="ikon">X</span>Val: kode bukan 0</h4><p><code>Val('12a50', Harga, Kode)</code> menghasilkan
+  <code>Kode = 3</code>, karena <code>a</code> adalah karakter ke-3. <code>Harga</code> tidak boleh dipakai.</p></div>
+</div>
+
+<p>Mengapa tidak langsung memakai <code>ReadLn(Harga)</code>? Karena bila pengguna mengetik huruf, program akan
+berhenti dengan runtime error. Dengan membaca masukan sebagai <b>string</b> lalu memeriksanya dengan <code>Val</code>,
+program Anda dapat memberi pesan yang ramah dan meminta pengguna mengulang. Pola ini, <i>baca sebagai teks, validasi,
+baru pakai</i>, dipakai di hampir semua program yang menerima ketikan pengguna.</p>
+
+<p>Program 12.5 menerapkannya pada harga barang. Fungsi <code>FormatRibuan</code> memakai <code>Str</code> dan
+<code>Insert</code> untuk menyisipkan titik pemisah ribuan, misalnya mengubah <code>1250000</code> menjadi
+<code>1.250.000</code>. Program juga menghitung PPN 11% dan menampilkannya dengan <code>Str</code> berformat.</p>
+
+<figure class="grafik" id="gb-ribuan">
+<svg viewBox="0 0 680 190">
+  <text class="h c" x="10" y="20">FormatRibuan(1250000): titik disisipkan dari belakang, setiap tiga digit</text>
+  <rect class="box" x="10" y="34" width="120" height="26"/><rect class="box" x="130" y="34" width="70" height="26"/><rect class="box" x="200" y="34" width="190" height="26"/><rect class="box" x="390" y="34" width="280" height="26"/>
+  <text class="b" x="18" y="51">Langkah</text><text class="b" x="138" y="51">P</text><text class="b" x="208" y="51">Perintah</text><text class="b" x="398" y="51">S sesudahnya</text>
+  <rect class="box-w" x="10" y="60" width="120" height="30"/><rect class="box-w" x="130" y="60" width="70" height="30"/><rect class="box-w" x="200" y="60" width="190" height="30"/><rect class="box-w" x="390" y="60" width="280" height="30"/>
+  <text class="s" x="18" y="79">Str(N, S); P := 5</text><text class="mono" x="138" y="79">5</text><text class="mono" x="208" y="79">Length(S) - 2</text><text class="mono" x="398" y="79">1250000</text>
+  <rect class="box-w" x="10" y="90" width="120" height="30"/><rect class="box-w" x="130" y="90" width="70" height="30"/><rect class="box-w" x="200" y="90" width="190" height="30"/><rect class="ok" x="390" y="90" width="280" height="30"/>
+  <text class="s" x="18" y="109">putaran 1</text><text class="mono" x="138" y="109">5</text><text class="mono" x="208" y="109">Insert('.', S, 5)</text><text class="mono" x="398" y="109">1250.000</text>
+  <rect class="box-w" x="10" y="120" width="120" height="30"/><rect class="box-w" x="130" y="120" width="70" height="30"/><rect class="box-w" x="200" y="120" width="190" height="30"/><rect class="ok" x="390" y="120" width="280" height="30"/>
+  <text class="s" x="18" y="139">putaran 2</text><text class="mono" x="138" y="139">2</text><text class="mono" x="208" y="139">Insert('.', S, 2)</text><text class="mono" x="398" y="139">1.250.000</text>
+  <text class="s" x="10" y="168">Sesudah putaran 2, P menjadi -1 sehingga perulangan while P &gt; 1 berhenti. Hasilnya 1.250.000.</text>
+  <text class="s muted" x="10" y="184">Menyisipkan dari belakang menjaga posisi digit di sebelah kiri tetap sama, jadi P tidak perlu dihitung ulang.</text>
+</svg>
+<figcaption>Dua penyisipan titik oleh <code>FormatRibuan</code>. Langkah dimulai dari kelompok tiga digit paling kanan.</figcaption>
+</figure>
+
+<x-listing src="bab12_05_konversi_angka_string.pas"></x-listing>
+
+<x-run src="bab12_05_konversi_angka_string.pas" caption="Masukan <code>12a50</code> (huruf), <code>-5</code> (negatif), lalu <code>1250000</code> (sah)"></x-run>
+
+<p>Perhatikan bagaimana program menolak dua masukan pertama dengan pesan yang berbeda dan baru menerima yang ketiga.
+Kode galat 3 berarti karakter ketiga, yaitu <code>a</code>, tidak dapat dibaca sebagai angka.</p>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>12–25</td><td>Fungsi <code>FormatRibuan</code> menerima <code>LongInt</code> dan mengembalikan string. Baris 17 mengubah angka menjadi string dengan <code>Str</code>.</td></tr>
+    <tr><td>18–23</td><td>Titik pertama disisipkan tiga karakter dari kanan (<code>Length(S) - 2</code>). Selama posisinya masih lebih dari 1, titik disisipkan dan posisi mundur tiga langkah. Syarat <code>P &gt; 1</code> mencegah titik di awal angka seperti <code>.250</code>.</td></tr>
+    <tr><td>28–31</td><td><code>Teks</code> menampung ketikan mentah, <code>Harga</code> bilangannya, <code>Kode</code> kode galat <code>Val</code>, dan <code>Pajak</code> bertipe <code>Real</code>.</td></tr>
+    <tr><td>35–38</td><td>Masukan dibaca sebagai string, lalu <code>Val</code> mencoba mengubahnya menjadi <code>Harga</code>.</td></tr>
+    <tr><td>39–41</td><td>Bila <code>Kode</code> tidak nol, tampilkan pesan lengkap dengan posisi karakter yang salah.</td></tr>
+    <tr><td>42–43</td><td>Bila bilangan terbaca tetapi negatif, tampilkan pesan lain. Perhatikan <code>else if</code> yang memeriksa syarat kedua hanya bila syarat pertama <code>False</code>.</td></tr>
+    <tr><td>44</td><td>Perulangan diulang sampai <code>Kode = 0</code> <i>dan</i> <code>Harga &gt;= 0</code>.</td></tr>
+    <tr><td>46</td><td>Harga dicetak lewat <code>FormatRibuan</code>.</td></tr>
+    <tr><td>48–50</td><td><code>Harga * 0.11</code> adalah <code>Real</code>. <code>Str(Pajak:0:2, Hasil)</code> menyimpannya sebagai teks dengan dua desimal, lalu <code>Length(Hasil)</code> menghitung panjang teks itu, termasuk titik desimal.</td></tr>
+    <tr><td>52–53</td><td>Memakai <code>Str</code> lagi untuk menghitung jumlah digit harga.</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p>Pada Turbo Pascal 7, <code>Val</code> menerima bilangan bulat maupun real sebagai tujuan, dan jenis
+tujuan menentukan format string yang dianggap sah. Untuk <code>Real</code> yang dicetak ke string, selalu beri format
+<code>:lebar:desimal</code> seperti pada baris 49.</p></div>
+
+<div class="coba"><p>Jalankan Program 12.5 dengan masukan <code>abc</code>, lalu <code>12 34</code> (ada spasi), lalu string kosong
+(langsung <kbd>Enter</kbd>). Di karakter keberapa <code>Val</code> menunjuk kesalahan pada tiap kasus?</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Menugaskan string ke Char</h3>
+
+<p>Variabel <code>Char</code> hanya menampung <b>satu</b> karakter. Memberinya teks dua huruf atau lebih ditolak oleh
+kompiler.</p>
+
+<x-error name="chardua.pas" caption="Char tidak bisa menampung dua karakter">program CharDua;
+var
+  C: Char;
+begin
+  C := 'AB';
+  WriteLn(C);
+end.</x-error>
+
+<p>Bila yang Anda inginkan adalah teks, deklarasikan variabelnya sebagai <code>string</code>. Bila yang Anda inginkan
+adalah karakter pertama, tulis <code>C := S[1];</code>.</p>
+
+<h3>Menyimpan angka bukan di tempat yang tepat</h3>
+
+<p>Keliru memakai variabel string untuk menerima hasil <code>Length</code>, atau sebaliknya, adalah kesalahan tipe
+yang umum. <code>Length</code> selalu menghasilkan bilangan.</p>
+
+<x-error name="panjang.pas" caption="Hasil Length adalah bilangan, bukan string">program Panjang;
+var
+  Teks, Banyak: string;
+begin
+  Teks := 'Pascal';
+  Banyak := Length(Teks);
+  WriteLn('Panjang: ', Banyak);
+end.</x-error>
+
+<p>Perbaikannya: deklarasikan <code>Banyak</code> sebagai <code>Integer</code>. Bila Anda memang membutuhkan
+bilangan itu sebagai teks, gunakan <code>Str(Length(Teks), Banyak)</code>.</p>
+
+<h3>Val dengan kode galat yang salah tipe</h3>
+
+<p>Parameter ketiga <code>Val</code> harus bertipe bilangan bulat. Memberinya variabel bertipe lain ditolak.</p>
+
+<x-error name="valsalah.pas" caption="Kode galat Val harus Integer, bukan Real">program ValSalah;
+var
+  Angka: Integer;
+  Kode: Real;
+begin
+  Val('123', Angka, Kode);
+  WriteLn(Angka);
+end.</x-error>
+
+<h3>Indeks di luar panjang string</h3>
+
+<p>Seperti array, string yang diakses di luar rentangnya bermasalah. Akses karakter nomor 0 atau nomor yang lebih besar
+dari <code>Length</code> mengambil data yang bukan bagian dari teks. Pada perulangan selalu batasi indeks dengan
+<code>Length(S)</code>, dan pada <code>Copy</code>, <code>Insert</code>, <code>Delete</code> pastikan posisi awal berada
+di dalam string. Ingat pula bahwa <code>Pos</code> bernilai 0 bila teks tidak ditemukan, sehingga hasilnya harus diperiksa
+sebelum dipakai sebagai posisi.</p>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>String adalah deretan karakter yang berindeks mulai dari 1. <code>S[I]</code> adalah karakter ke-<code>I</code> bertipe <code>Char</code>, dan <code>Length(S)</code> adalah banyaknya karakter.</li>
+  <li><code>Copy(S, Awal, N)</code> mengambil potongan, <code>Pos(Cari, S)</code> mencari posisi (0 bila tidak ada), <code>Insert</code> menyisipkan, dan <code>Delete</code> menghapus. <code>Insert</code> dan <code>Delete</code> mengubah variabelnya.</li>
+  <li><code>UpCase</code> bekerja pada satu <code>Char</code>; untuk string utuh dibutuhkan perulangan. String disambung dengan <code>+</code> atau <code>Concat</code>.</li>
+  <li>Fungsi boleh mengembalikan string. Di Turbo Pascal hasilnya ditugaskan ke nama fungsi, bukan ke <code>Result</code>.</li>
+  <li>Membalik huruf: baca dari belakang ke depan dan tempelkan ke hasil. Membalik kata: potong kata di depan, taruh di depan hasil.</li>
+  <li>Palindrom diperiksa dengan membandingkan karakter dari kedua ujung bergerak ke tengah, setelah teks dibersihkan dari spasi dan dikapitalkan.</li>
+  <li>Menghitung jenis karakter memakai <code>case</code> dengan label daftar dan rentang; <code>else</code> menampung sisanya.</li>
+  <li><code>Str</code> mengubah bilangan menjadi string (boleh berformat), <code>Val</code> mengubah string menjadi bilangan dengan kode galat 0 bila sukses atau posisi karakter yang salah. Baca masukan sebagai string, validasi dengan <code>Val</code>, baru pakai.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Baca sebuah kata, lalu tampilkan karakter pertama, karakter terakhir, dan panjangnya.</li>
+  <li><span class="lv dasar">Dasar</span>Baca sebuah kalimat dan tampilkan kata pertamanya saja (petunjuk: <code>Pos</code> dan <code>Copy</code>).</li>
+  <li><span class="lv menengah">Menengah</span>Ubah Program 12.4 agar juga menampilkan persentase vokal terhadap seluruh huruf, dengan dua desimal. Hati-hati dengan pembagian oleh nol bila kalimat tidak mengandung huruf.</li>
+  <li><span class="lv menengah">Menengah</span>Buat program yang membaca satu kalimat dan mengubah huruf pertama setiap kata menjadi kapital, sedangkan huruf lainnya tetap.</li>
+  <li><span class="lv menengah">Menengah</span>Buat program yang menghitung banyaknya kata dalam kalimat, dengan memperhitungkan spasi ganda dan spasi di awal atau akhir.</li>
+  <li><span class="lv tantangan">Tantangan</span>Tulis fungsi <code>Anagram(A, B: string): Boolean</code> yang memeriksa apakah dua kata memiliki huruf yang sama persis dengan urutan berbeda (misalnya <code>kasur</code> dan <code>rusak</code>), mengabaikan huruf besar dan kecil.</li>
+  <li><span class="lv tantangan">Tantangan</span>Tulis program kalkulator sederhana: baca ekspresi seperti <code>12+30</code> sebagai string, cari tanda <code>+</code> dengan <code>Pos</code>, pecah menjadi dua bagian dengan <code>Copy</code>, ubah keduanya dengan <code>Val</code>, dan tampilkan jumlahnya. Tolak masukan yang salah.</li>
+</ol>
+</div>

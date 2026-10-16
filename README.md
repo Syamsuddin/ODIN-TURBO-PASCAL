@@ -89,7 +89,7 @@ Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS, Linux and Wi
 - Layar biru klasik dengan menu **File · Edit · Search · Run · Compile · Debug · Options · Window · Help**, status bar, dan baris tombol fungsi.
 - Beberapa jendela sekaligus: tile, cascade, zoom, dan daftar jendela.
 - Undo/redo, clipboard, find/replace, go to line, hapus baris, indentasi otomatis, serta mode insert/overwrite.
-- Warna sintaks **Odin Gelap** (palet VS Code Dark+) aktif secara bawaan dan membedakan kata tercadang, variabel, prosedur/fungsi, tipe bawaan, konstanta, angka, string, operator, komentar, dan direktif kompiler. Teks kuning klasik di latar biru tetap tersedia lewat **Options › Editor**.
+- Warna sintaks **Turbo Biru Lembut** (latar biru tua dengan warna pastel) aktif secara bawaan dan membedakan kata tercadang, variabel, prosedur/fungsi, tipe bawaan, konstanta, angka, string, operator, komentar, dan direktif kompiler. Teks kuning klasik di latar biru tetap tersedia lewat **Options › Editor**.
 - Desktop menampilkan logo Odin dengan plakat bergaya dialog Turbo Vision di bawahnya: tag versi (misalnya `v2.2.0`), kredit penulis, hak cipta, dan lisensi. Tag yang sama tampil di baris status, About, dan halaman bawaan `bab01_01_halo_dunia.pas`.
 - Encoding CP437 dan UTF-8 (termasuk BOM), serta akhir baris LF dan CRLF, dipertahankan apa adanya saat menyimpan.
 
@@ -349,10 +349,17 @@ Odin tidak memakai akun, server, API key, maupun telemetri. Internet hanya diper
 
 Program dijalankan dengan working directory di folder source program utama. `Uninstall.command` dan `Uninstall.cmd` tidak menghapus program pribadi maupun folder pengaturan.
 
+## Buku
+
+**Help › Buku** membuka buku tutorial *Belajar Pemrograman Bahasa Pascal dengan ODIN Turbo Pascal* ([`docs/Belajar_Pemrograman_Bahasa_Pascal.pdf`](docs/Belajar_Pemrograman_Bahasa_Pascal.pdf)) di aplikasi PDF bawaan sistem. Buku berwarna penuh ini ditulis oleh Syams Ideris dan mengikuti tutorial di **File › Examples**: kata pengantar, daftar isi, 20 bab dalam enam bagian, penutup, dan enam lampiran (pemasangan, pintasan keyboard, kata tercadang, arti pesan kesalahan, daftar program, glosarium). Setiap bab dilengkapi infografik, gambar layar IDE, rangkuman, dan latihan bertingkat.
+
+Semua listing di buku dicetak langsung dari `examples/`, dan semua keluaran program adalah hasil mengompilasi lalu menjalankan program itu dengan `odinpc`. Gambar layar IDE digambar dari menu, warna editor, dan kode aslinya. PDF dibangun ulang dengan `python3 scripts/build_book.py` (perlu Google Chrome dan PyMuPDF; sumbernya di `book/`).
+
 ## Dokumentasi
 
 | Dokumen | Isi |
 |---|---|
+| [`docs/Belajar_Pemrograman_Bahasa_Pascal.pdf`](docs/Belajar_Pemrograman_Bahasa_Pascal.pdf) | Buku tutorial Pascal berwarna penuh (menu **Help › Buku**) |
 | [`docs/HELP.txt`](docs/HELP.txt) | Panduan penggunaan IDE (juga di menu **Help**) |
 | [`docs/PASCAL.txt`](docs/PASCAL.txt) | Referensi Pascal ringkas |
 | [`docs/SHORTCUTS.txt`](docs/SHORTCUTS.txt) | Daftar lengkap pintasan keyboard |
@@ -383,6 +390,7 @@ ODIN_FPC=/path/ke/fpc python3 -m unittest discover -s tests -v   # pakai compile
 ODIN_CORPUS_TARGET=aarch64-linux ODIN_CORPUS_RUNNER="qemu-aarch64-static -L /usr/aarch64-linux-gnu" \
   cargo test -p odinpc --test corpus                # korpus untuk target lain (lihat tests/corpus.rs)
 python3 scripts/oracle.py                           # tulis ulang ekspektasi korpus dengan FPC
+python3 scripts/build_book.py                       # bangun ulang buku PDF (Chrome + PyMuPDF; di luar sandbox, perlu PTY)
 ```
 
 Catatan tes:
@@ -424,7 +432,8 @@ ODIN-TURBO-PASCAL/
 ├── docs/                    Panduan, referensi Pascal, pintasan, kompatibilitas
 ├── tests/                   Tes Python (fungsional, compiler, debugger, GUI, Odin Vision) dan
 │   └── pascal/              korpus Pascal (keluaran FPC sebagai pembanding) serta snapshot Odin Vision
-├── scripts/                 Launcher, pemeriksaan pemasang, oracle FPC, bundel .app, versi, logo
+├── book/                    Sumber buku tutorial (HTML per bab dan buku.css); dibangun scripts/build_book.py
+├── scripts/                 Launcher, pemeriksaan pemasang, oracle FPC, bundel .app, versi, logo, buku
 ├── assets/                  Logo, ikon, dan banner (master PNG serta PNG/ICNS hasil render)
 ├── .github/workflows/       CI lima platform dan oracle FPC Windows
 ├── Odin Turbo Pascal.app    Bundel macOS (dibentuk dari source)

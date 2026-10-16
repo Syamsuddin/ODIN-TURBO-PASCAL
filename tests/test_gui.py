@@ -97,6 +97,23 @@ class GuiTests(unittest.TestCase):
         self.assertTrue(self.widgets(dialog,tk.Scrollbar))
         dialog.destroy()
 
+    def test_help_menu_opens_the_book(self):
+        # Help > Buku sits above About and opens docs/Belajar_Pemrograman_Bahasa_Pascal.pdf in the system viewer.
+        menu=self.app.menus["Help"][1]
+        labels=[menu.entrycget(i,"label") for i in range(menu.index("end")+1) if menu.type(i)=="command"]
+        self.assertEqual(labels,["Contents","Pascal reference","Keyboard shortcuts","Buku","About Odin"])
+        book=Path(__file__).resolve().parent.parent/"docs"/"Belajar_Pemrograman_Bahasa_Pascal.pdf"
+        self.assertTrue(book.is_file(),"jalankan python3 scripts/build_book.py")
+        self.assertEqual(book.read_bytes()[:5],b"%PDF-")
+        with patch("odin.app.subprocess.Popen") as popen,patch("odin.app.os.startfile",create=True) as startfile:
+            self.app.book()
+        if sys.platform=="win32":startfile.assert_called_once_with(book)
+        else:self.assertEqual(popen.call_args.args[0][1],str(book))
+        # Without the PDF the user gets a message, not a traceback.
+        with patch("odin.app.ASSETS",Path(tempfile.gettempdir())/"tanpa-buku"),patch("odin.app.messagebox.showerror") as error:
+            self.app.book()
+        error.assert_called_once()
+
     def test_menus_dialogs_and_terminal(self):
         self.assertEqual(set(self.app.menus),set("File Edit Search Run Compile Debug Options Window Help".split()))
         for action in (self.app.compiler_options,self.app.directory_options,self.app.editor_options,

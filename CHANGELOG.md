@@ -8,7 +8,9 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ### Ditambahkan
 
-- Warna sintaks **Odin Gelap** di editor, dengan palet VS Code Dark+ di atas latar `#1E1E1E`. Warnanya: kata tercadang dan konstanta bawaan (`True`, `False`, `nil`) biru; variabel dan nama buatan sendiri lainnya biru muda; prosedur dan fungsi kuning pucat, baik buatan sendiri maupun bawaan seperti `WriteLn`; tipe bawaan hijau toska; angka, termasuk heksadesimal (`$0E`), hijau muda; string dan konstanta karakter (`#13`) jingga; operator abu terang; komentar hijau; direktif kompiler (`{$R+}`) ungu. Sebelumnya hanya empat jenis token yang diwarnai.
+- Buku tutorial **Belajar Pemrograman Bahasa Pascal dengan ODIN Turbo Pascal** (`docs/Belajar_Pemrograman_Bahasa_Pascal.pdf`), buku PDF berwarna penuh karya Syams Ideris dengan sampul, kata pengantar, daftar isi, 20 bab dalam enam bagian, penutup, dan enam lampiran. Buku memakai ke-89 program dan unit contoh tutorial, lengkap dengan infografik, gambar layar IDE, rangkuman, dan latihan. Listing dicetak dari `examples/`, dan keluaran program adalah hasil menjalankan program itu dengan `odinpc`. Sumbernya ada di `book/`, dan `scripts/build_book.py` membangunnya dengan Google Chrome dan PyMuPDF.
+- Menu **Help › Buku**, di atas **About Odin**, membuka buku itu di aplikasi PDF bawaan sistem.
+- Warna sintaks **Turbo Biru Lembut** di editor: latar biru tua `#000080` (seperti skema "Pascal Classic" Lazarus) dengan warna pastel yang lebih tenang untuk sesi panjang. Warnanya: kata tercadang putih tebal; variabel dan nama buatan sendiri lainnya kuning lembut; prosedur dan fungsi buatan sendiri jingga muda; rutin bawaan seperti `WriteLn` biru langit; tipe bawaan hijau muda; angka, termasuk heksadesimal (`$0E`), dan konstanta bawaan (`True`, `False`, `nil`) merah muda; string dan konstanta karakter (`#13`) hijau toska; operator lavender; komentar biru keabuan dan miring; direktif kompiler (`{$R+}`) merah salem. Sebelumnya hanya empat jenis token yang diwarnai.
 
 ### Diubah
 

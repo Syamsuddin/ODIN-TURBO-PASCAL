@@ -1,0 +1,711 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menjelaskan apa itu rekursi dan mengapa setiap fungsi rekursif membutuhkan kasus dasar dan kasus rekursif.</li>
+  <li>Menelusuri tumpukan pemanggilan (<i>call stack</i>) saat fungsi rekursif memanggil dirinya sendiri dan saat hasilnya kembali.</li>
+  <li>Menulis fungsi rekursif untuk faktorial, deret Fibonacci, dan pangkat.</li>
+  <li>Membandingkan banyaknya pemanggilan antara dua rancangan rekursif, dan mengenali mengapa Fibonacci rekursif lambat.</li>
+  <li>Memecahkan teka-teki Menara Hanoi dengan satu prosedur rekursif yang pendek.</li>
+  <li>Mengamati Call stack di debugger dan mengenali kesalahan khas rekursi: kasus dasar hilang dan tumpukan penuh.</li>
+</ul>
+
+<p class="lead">Di Bab 9 Anda belajar bahwa sebuah subprogram boleh memanggil subprogram lain. Bab ini mengajukan
+pertanyaan yang tampak aneh: bolehkah sebuah subprogram memanggil <b>dirinya sendiri</b>? Boleh, dan teknik itu disebut
+<b>rekursi</b>. Rekursi bukan sekadar trik. Banyak masalah, mulai dari menghitung faktorial sampai menjelajahi
+folder di komputer, berbentuk "masalah besar yang tersusun dari masalah yang sama tetapi lebih kecil", dan rekursi
+adalah cara paling alami untuk menuliskannya. Anda akan mempelajarinya lewat empat program, dari yang paling sederhana
+sampai teka-teki Menara Hanoi.</p>
+
+<h2>Berpikir Secara Rekursif</h2>
+
+<p>Bayangkan Anda berdiri di antrean panjang dan ingin tahu Anda urutan ke berapa. Anda bertanya kepada orang di depan,
+"Kamu urutan berapa?", lalu ia bertanya kepada orang di depannya dengan pertanyaan yang persis sama, dan seterusnya sampai
+pertanyaan itu tiba di orang pertama. Orang pertama tidak perlu bertanya: ia langsung menjawab "satu". Jawaban itu lalu
+merambat ke belakang, ditambah satu oleh setiap orang, sampai tiba di Anda. Itulah rekursi: masalah yang sama
+diteruskan ke versi yang <b>lebih kecil</b>, sampai tiba pada kasus yang begitu kecil sehingga jawabannya langsung diketahui.</p>
+
+<p>Setiap pemecahan rekursif memiliki dua bagian yang tidak boleh hilang:</p>
+
+<div class="duo">
+  <div class="card good"><h4><span class="ikon">1</span>Kasus dasar (<i>base case</i>)</h4><p>Kasus paling kecil yang
+  jawabannya diberikan langsung, tanpa memanggil diri sendiri. Inilah rem yang menghentikan rekursi. Pada antrean tadi:
+  orang pertama menjawab "satu".</p></div>
+  <div class="card"><h4><span class="ikon">2</span>Kasus rekursif</h4><p>Memecah masalah menjadi masalah yang <b>lebih
+  kecil</b> dan memanggil diri sendiri untuknya, lalu menggabungkan hasilnya. Pada antrean tadi: "posisiku = posisi orang
+  di depanku + 1".</p></div>
+</div>
+
+<div class="alur">
+  <div><span class="ikon">1</span><b>Periksa kasus dasar</b>Sudah cukup kecil? Bila ya, kembalikan jawabannya.</div>
+  <div><span class="ikon">2</span><b>Kecilkan masalah</b>Ubah parameter agar mendekati kasus dasar.</div>
+  <div><span class="ikon">3</span><b>Panggil diri sendiri</b>Selesaikan masalah yang lebih kecil itu.</div>
+  <div><span class="ikon">4</span><b>Gabungkan</b>Pakai hasilnya untuk menjawab masalah semula.</div>
+</div>
+
+<div class="awas"><p>Bila kasus dasar tidak ada, atau masalahnya tidak pernah mengecil menuju kasus dasar, fungsi akan memanggil dirinya
+tanpa henti sampai memori tumpukan habis dan program dihentikan. Setiap kali Anda menulis fungsi rekursif, tanyakan dua
+hal: "Di mana kasus dasarnya?" dan "Apakah parameter pada pemanggilan berikutnya lebih dekat ke kasus dasar?"</p></div>
+
+<h2>Faktorial: Rekursi yang Paling Klasik</h2>
+
+<p><b>Faktorial</b> sebuah bilangan bulat tak negatif <i>N</i>, ditulis <i>N</i>!, adalah hasil kali semua bilangan bulat dari 1
+sampai <i>N</i>. Jadi 4! = 4 × 3 × 2 × 1 = 24. Perhatikan bahwa 4! sama dengan 4 × 3!, dan 3! sama dengan 3 × 2!. Setiap
+faktorial tersusun dari faktorial yang lebih kecil, dan itu persis bentuk rekursif:</p>
+
+<div class="sintaks"><pre><i>N</i>! = <i>N</i> × (<i>N</i> - 1)!      untuk <i>N</i> &gt; 1      { kasus rekursif }
+0! = 1! = 1                      { kasus dasar }</pre></div>
+
+<p>Penerjemahannya ke Pascal hampir kata per kata. Ingat aturan Turbo Pascal 7 dari Bab 9: hasil fungsi diberikan lewat
+nama fungsi. Namun nama fungsi punya dua peran yang harus dibedakan. Di <b>sisi kiri</b> <code>:=</code>,
+<code>Faktorial := ...</code> menetapkan hasil. Di <b>sisi kanan</b>, <code>Faktorial(N - 1)</code> <b>memanggil</b>
+fungsi itu lagi.</p>
+
+<div class="tp7"><p>Tidak ada <code>Result</code> di Turbo Pascal 7, jadi tidak ada cara lain untuk menetapkan hasil selain lewat nama
+fungsi. Di dalam fungsi rekursif kedua peran nama itu bertemu dalam satu baris:
+<code>Faktorial := N * Faktorial(N - 1)</code>. Baca dari kanan ke kiri: panggil dulu <code>Faktorial(N - 1)</code>,
+kalikan dengan <code>N</code>, baru hasilnya ditetapkan.</p></div>
+
+<p>Program 10.1 berisi dua versi. <code>Faktorial</code> adalah versi ringkas. <code>FaktorialJejak</code> adalah versi yang
+sama, tetapi mencetak pesan setiap kali masuk dan keluar, dengan jorokan sesuai kedalaman pemanggilan, sehingga Anda dapat
+<b>melihat</b> rekursi berlangsung. Program ini memanggil versi jejak untuk 4, lalu mencetak 0! sampai 12!. Buka
+<code>bab10_01_faktorial_rekursif.pas</code> lewat <span class="menu">File ▸ Examples...</span> dan jalankan.</p>
+
+<x-listing src="bab10_01_faktorial_rekursif.pas"></x-listing>
+
+<x-run src="bab10_01_faktorial_rekursif.pas" caption="Jejak <code>FaktorialJejak(4, 0)</code> disusul tabel 0! sampai 12!"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9</td><td>Parameter <code>N</code> bertipe <code>Integer</code>, tetapi hasilnya <code>LongInt</code>, karena faktorial cepat membesar.</td></tr>
+    <tr><td>11–12</td><td>Kasus dasar: untuk <code>N</code> sama dengan 0 atau 1 hasilnya 1 dan fungsi <b>tidak</b> memanggil dirinya lagi. Memakai <code>N &lt;= 1</code> (bukan <code>N = 1</code>) juga menangani 0! dan melindungi dari masukan negatif.</td></tr>
+    <tr><td>14</td><td>Kasus rekursif. <code>N - 1</code> lebih kecil dari <code>N</code>, jadi setiap pemanggilan selangkah lebih dekat ke kasus dasar.</td></tr>
+    <tr><td>19–21</td><td><code>FaktorialJejak</code> punya parameter kedua <code>Tingkat</code> (kedalaman) dan variabel lokal <code>Hasil</code>. Karena <code>Hasil</code> lokal, setiap pemanggilan memiliki <code>Hasil</code> miliknya sendiri.</td></tr>
+    <tr><td>23</td><td><code>WriteLn('':Tingkat * 2, ...)</code> mencetak teks kosong dengan lebar <code>Tingkat * 2</code>, yaitu cara membuat jorokan. Pesan "masuk" dicetak <b>sebelum</b> memanggil diri sendiri.</td></tr>
+    <tr><td>24–27</td><td>Kasus dasar dan kasus rekursif, kali ini hasilnya disimpan ke <code>Hasil</code>. Pada baris 27 pemanggilan berikutnya memakai <code>Tingkat + 1</code> agar jorokannya bertambah.</td></tr>
+    <tr><td>28</td><td>Pesan "keluar" dicetak <b>sesudah</b> pemanggilan rekursif kembali. Itu sebabnya pesan ini muncul dalam urutan terbalik.</td></tr>
+    <tr><td>29</td><td>Hasil dikembalikan lewat nama fungsi.</td></tr>
+    <tr><td>37</td><td>Memanggil versi jejak dengan <code>N = 4</code> pada tingkat 0.</td></tr>
+    <tr><td>39–40</td><td>Perulangan mencetak <code>I</code>! untuk 0 sampai 12 dengan lebar kolom 10 agar angkanya rata kanan.</td></tr>
+  </tbody>
+</table>
+
+<h3>Apa yang terjadi di balik layar: tumpukan pemanggilan</h3>
+
+<p>Mengapa pesan "masuk" tertulis dari 4 turun ke 1, sedangkan pesan "keluar" dari 1 naik ke 4? Jawabannya adalah
+<b>tumpukan pemanggilan</b> (<i>call stack</i>). Setiap kali sebuah fungsi dipanggil, komputer menyiapkan satu <b>bingkai</b>
+(<i>frame</i>) di tumpukan memori untuk menyimpan parameter, variabel lokal, dan tempat untuk kembali. Bingkai baru
+diletakkan di atas bingkai pemanggilnya, seperti piring yang ditumpuk. Fungsi yang sedang bekerja selalu yang paling atas.
+Saat sebuah fungsi selesai, bingkainya dibuang dan pekerjaan dilanjutkan oleh bingkai di bawahnya.</p>
+
+<p>Karena setiap pemanggilan punya bingkainya sendiri, <code>Faktorial(4)</code> dan <code>Faktorial(3)</code> memiliki
+<code>N</code> yang berbeda walaupun namanya sama dan keduanya aktif bersamaan. Tidak ada yang saling menimpa. Di kiri
+<x-ref to="gb-tumpukan"></x-ref> memperlihatkan tumpukan pada saat paling dalam, ketika <code>Faktorial(1)</code> dipanggil;
+di kanan terlihat bagaimana hasil kembali satu per satu, dari bingkai teratas ke bawah.</p>
+
+<figure class="grafik" id="gb-tumpukan">
+<svg viewBox="0 0 680 318">
+  <text class="h" x="10" y="16">Tumpukan pemanggilan Faktorial(4)</text>
+  <text class="s muted" x="10" y="32">saat bingkai paling dalam aktif</text>
+  <rect class="ok" x="10" y="46" width="320" height="46" rx="6"/>
+  <text class="b" x="22" y="66">Faktorial(1)    N = 1</text>
+  <text class="s" x="22" y="83">kasus dasar: hasil := 1, berhenti memanggil</text>
+  <rect class="box" x="10" y="100" width="320" height="46" rx="6"/>
+  <text class="b" x="22" y="120">Faktorial(2)    N = 2</text>
+  <text class="s" x="22" y="137">menunggu hasil Faktorial(1) untuk 2 * ...</text>
+  <rect class="box" x="10" y="154" width="320" height="46" rx="6"/>
+  <text class="b" x="22" y="174">Faktorial(3)    N = 3</text>
+  <text class="s" x="22" y="191">menunggu hasil Faktorial(2) untuk 3 * ...</text>
+  <rect class="box" x="10" y="208" width="320" height="46" rx="6"/>
+  <text class="b" x="22" y="228">Faktorial(4)    N = 4</text>
+  <text class="s" x="22" y="245">menunggu hasil Faktorial(3) untuk 4 * ...</text>
+  <rect class="term" x="10" y="262" width="320" height="40" rx="6"/>
+  <text class="white b" x="22" y="286">Program utama (FaktorialJejak / baris 40)</text>
+  <path class="arrow" d="M344 280 V60"/>
+  <text class="xs muted" x="350" y="150">makin</text>
+  <text class="xs muted" x="350" y="162">dalam</text>
+  <text class="h" x="400" y="16">Hasil kembali satu per satu</text>
+  <text class="s muted" x="400" y="32">dari bingkai teratas ke bawah</text>
+  <rect class="ok" x="400" y="46" width="270" height="34" rx="6"/>
+  <text class="b" x="410" y="67">Faktorial(1) mengembalikan 1</text>
+  <path class="arrow" d="M535 80 V96"/>
+  <rect class="box" x="400" y="98" width="270" height="34" rx="6"/>
+  <text class="b" x="410" y="119">Faktorial(2) = 2 x 1 = 2</text>
+  <path class="arrow" d="M535 132 V150"/>
+  <rect class="box" x="400" y="152" width="270" height="34" rx="6"/>
+  <text class="b" x="410" y="173">Faktorial(3) = 3 x 2 = 6</text>
+  <path class="arrow" d="M535 186 V204"/>
+  <rect class="box" x="400" y="206" width="270" height="34" rx="6"/>
+  <text class="b" x="410" y="227">Faktorial(4) = 4 x 6 = 24</text>
+  <path class="arrow" d="M535 240 V258"/>
+  <rect class="term" x="400" y="260" width="270" height="34" rx="6"/>
+  <text class="white b" x="410" y="281">Program utama menerima 24</text>
+</svg>
+<figcaption>Kiri: bingkai-bingkai menumpuk saat <code>Faktorial</code> memanggil dirinya. Kanan: setiap bingkai menyelesaikan perkaliannya begitu hasil dari atasnya tiba, lalu dibuang.</figcaption>
+</figure>
+
+<p>Anda bisa melihat tumpukan itu langsung di debugger. Pasang titik henti di baris 12 (kasus dasar), pilih
+<span class="menu">Debug ▸ Start debugging</span>, lalu tekan <span class="menu">Debug ▸ Continue</span> (atau
+<kbd>Ctrl</kbd>+<kbd>F9</kbd>) sampai <code>I</code> di jendela Watches bernilai 4. Program berhenti di dalam pemanggilan
+yang paling dalam. Buka <span class="menu">Debug ▸ Call stack</span>.</p>
+
+<x-ide file="bab10_01_faktorial_rekursif.pas" top="9" rows="9" cursor="12:5" breakpoints="12" exec="12" watches="N: 1;I: 4" locals="N: 1" stack="FAKTORIAL  (bab10_01_faktorial_rekursif.pas:12);FAKTORIAL  (bab10_01_faktorial_rekursif.pas:14);FAKTORIAL  (bab10_01_faktorial_rekursif.pas:14);FAKTORIAL  (bab10_01_faktorial_rekursif.pas:14);PASCALMAIN  (bab10_01_faktorial_rekursif.pas:40)" caption="Berhenti di kasus dasar saat menghitung 4!: Call stack memuat empat bingkai <code>Faktorial</code> dan satu program utama"></x-ide>
+
+<p>Empat baris <code>FAKTORIAL</code> di Call stack adalah <code>Faktorial(1)</code> di puncak, lalu
+<code>Faktorial(2)</code>, <code>(3)</code>, dan <code>(4)</code>. Tiga yang bawah berhenti di baris 14, karena sedang menunggu
+pemanggilan di dalam ekspresi perkaliannya selesai. Yang paling bawah adalah program utama, yang memanggil dari baris 40.
+Local variables hanya menampilkan milik bingkai teratas (<code>N = 1</code>). Klik dua kali sebuah bingkai di Call stack
+untuk memilihnya; Watches dan Local variables lalu menampilkan <code>N</code> milik bingkai itu.</p>
+
+<h3>Batas LongInt</h3>
+
+<p>Perhatikan komentar di baris 39: "13! sudah melebihi <code>LongInt</code>". Faktorial membesar sangat cepat, dan 12! =
+479001600 adalah faktorial terbesar yang masih muat di <code>LongInt</code> (maksimum 2147483647). 13! kira-kira 6,2 miliar,
+sehingga tidak muat. Anda akan melihat akibatnya di bagian kesalahan umum di akhir bab.</p>
+
+<div class="fakta">
+  <div><b>24</b>4! = 4 x 3 x 2 x 1</div>
+  <div><b>479001600</b>12!, faktorial terbesar yang muat di LongInt</div>
+  <div><b>4</b>kedalaman tumpukan untuk menghitung 4!</div>
+</div>
+
+<div class="coba"><p>Ubah <code>FaktorialJejak(4, 0)</code> di baris 37 menjadi <code>FaktorialJejak(6, 0)</code>. Berapa baris "masuk" yang
+tampil, dan berapa kedalaman jorokan terbesar? Lalu tebak lebih dulu: bila baris 28 dipindah ke atas baris 24, bagaimana
+urutan pesannya? Cobalah.</p></div>
+
+<h2>Fibonacci: Rumus Indah yang Lambat</h2>
+
+<p>Deret Fibonacci dimulai dari 1, 1, lalu setiap suku berikutnya adalah jumlah dua suku sebelumnya: 1, 1, 2, 3, 5, 8, 13, 21,
+... Rumusnya langsung berbentuk rekursif, dengan <b>dua</b> kasus dasar dan <b>dua</b> pemanggilan rekursif:</p>
+
+<div class="sintaks"><pre>Fib(1) = Fib(2) = 1                      { dua kasus dasar }
+Fib(<i>N</i>)  = Fib(<i>N</i> - 1) + Fib(<i>N</i> - 2)       untuk <i>N</i> &gt; 2</pre></div>
+
+<p>Program 10.2 menulis deret itu dan sekaligus mengukur biayanya. Variabel global <code>Panggilan</code> bertambah satu
+setiap kali <code>Fib</code> dipanggil, sehingga kita bisa menghitung berapa banyak pemanggilan yang dibutuhkan untuk
+setiap <i>N</i>. (Variabel global dipakai di sini karena <code>Fib</code> perlu "melapor" tanpa mengubah parameternya; di
+Bab 9 sudah dibahas bahwa ini pengecualian, bukan kebiasaan.)</p>
+
+<x-listing src="bab10_02_fibonacci_rekursif.pas"></x-listing>
+
+<x-run src="bab10_02_fibonacci_rekursif.pas" caption="Deret Fibonacci, lalu jumlah pemanggilan untuk <i>N</i> = 5, 10, 15, 20, dan 25"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10</td><td><code>Panggilan</code> adalah variabel global bertipe <code>LongInt</code> yang menghitung pemanggilan.</td></tr>
+    <tr><td>14</td><td>Baris pertama <code>Fib</code>: menambah penghitung pada <b>setiap</b> pemanggilan, termasuk yang berakhir di kasus dasar.</td></tr>
+    <tr><td>15–16</td><td>Dua kasus dasar sekaligus: untuk <code>N</code> sama dengan 1 atau 2, hasilnya 1.</td></tr>
+    <tr><td>18</td><td>Dua pemanggilan rekursif dalam satu ekspresi, <code>Fib(N - 1)</code> dan <code>Fib(N - 2)</code>, lalu dijumlahkan.</td></tr>
+    <tr><td>26–29</td><td>Mencetak 15 suku pertama pada satu baris. Pemanggilan <code>Fib(N)</code> dilakukan di dalam <code>Write</code>.</td></tr>
+    <tr><td>33–40</td><td>Untuk <code>N</code> = 5, 10, ..., 25: penghitung dikosongkan (baris 36), <code>Fib(N)</code> dihitung, lalu <code>N</code>, hasil, dan jumlah pemanggilan dicetak. Lebar kolom <code>:2</code>, <code>:14</code>, <code>:19</code> membuat angkanya rata kanan.</td></tr>
+  </tbody>
+</table>
+
+<p>Lihat kolom terakhir pada keluaran. Menghitung <code>Fib(25)</code> yang bernilai 75025 ternyata membutuhkan 150049
+pemanggilan, dua kali lipat dari nilainya. Mengapa sebanyak itu? Karena <code>Fib(N - 1)</code> dan
+<code>Fib(N - 2)</code> bekerja sendiri-sendiri tanpa saling tahu, sehingga suku yang sama dihitung berulang-ulang.
+<x-ref to="gb-pohon-fib"></x-ref> menggambar pohon pemanggilan untuk <code>Fib(5)</code>, yang hanya butuh sembilan pemanggilan.</p>
+
+<figure class="grafik" id="gb-pohon-fib">
+<svg viewBox="0 0 680 330">
+  <path class="line" d="M337 54 L195 96 M337 54 L480 96"/>
+  <path class="line" d="M195 124 L120 166 M195 124 L270 166"/>
+  <path class="line" d="M480 124 L430 166 M480 124 L530 166"/>
+  <path class="line" d="M120 194 L70 236 M120 194 L170 236"/>
+  <rect class="box" x="309" y="26" width="56" height="28" rx="6"/>
+  <text class="mid b" x="337" y="45">Fib(5)</text>
+  <rect class="box" x="167" y="96" width="56" height="28" rx="6"/>
+  <text class="mid b" x="195" y="115">Fib(4)</text>
+  <rect class="no" x="452" y="96" width="56" height="28" rx="6"/>
+  <text class="mid b" x="480" y="115">Fib(3)</text>
+  <rect class="no" x="92" y="166" width="56" height="28" rx="6"/>
+  <text class="mid b" x="120" y="185">Fib(3)</text>
+  <rect class="ok" x="242" y="166" width="56" height="28" rx="6"/>
+  <text class="mid b" x="270" y="185">Fib(2)</text>
+  <rect class="ok" x="402" y="166" width="56" height="28" rx="6"/>
+  <text class="mid b" x="430" y="185">Fib(2)</text>
+  <rect class="ok" x="502" y="166" width="56" height="28" rx="6"/>
+  <text class="mid b" x="530" y="185">Fib(1)</text>
+  <rect class="ok" x="42" y="236" width="56" height="28" rx="6"/>
+  <text class="mid b" x="70" y="255">Fib(2)</text>
+  <rect class="ok" x="142" y="236" width="56" height="28" rx="6"/>
+  <text class="mid b" x="170" y="255">Fib(1)</text>
+  <rect class="no" x="590" y="30" width="16" height="14" rx="3"/>
+  <text class="s" x="612" y="41">Fib(3): 2 kali</text>
+  <rect class="ok" x="590" y="56" width="16" height="14" rx="3"/>
+  <text class="s" x="612" y="67">kasus dasar</text>
+  <text class="s b" x="42" y="292">Fib(2) dihitung 3 kali, Fib(3) 2 kali, Fib(1) 2 kali.</text>
+  <text class="s" x="42" y="310">Total 9 pemanggilan untuk menghasilkan nilai 5.</text>
+</svg>
+<figcaption>Pohon pemanggilan <code>Fib(5)</code>: sembilan simpul. Suku yang sama (merah dan hijau) dihitung berulang kali.</figcaption>
+</figure>
+
+<p>Karena setiap pemanggilan di atas kasus dasar melahirkan dua pemanggilan baru, jumlah pemanggilan hampir <b>berlipat
+ganda</b> setiap kali <i>N</i> naik satu. Untuk <code>Fib(N)</code> jumlahnya persis 2 × <code>Fib(N)</code> - 1, dan
+karena <code>Fib(N)</code> sendiri tumbuh secara eksponensial, waktu hitungnya meledak. Pada <i>N</i> = 25 masih tidak
+terasa, tetapi untuk <i>N</i> = 45 komputer harus melakukan miliaran pemanggilan. Bandingkan dengan perulangan di
+Bab 8.3, yang cukup mengulang <i>N</i> kali. Diagram batang berikut memakai skala logaritma, artinya setiap garis
+vertikal putus-putus mewakili jumlah yang <b>sepuluh kali lebih besar</b> dari garis sebelumnya.</p>
+
+<figure class="grafik" id="gb-banding-fib">
+<svg viewBox="0 0 680 262">
+  <path class="dash" d="M110 24 V232"/>
+  <path class="dash" d="M183 24 V232"/>
+  <path class="dash" d="M257 24 V232"/>
+  <path class="dash" d="M330 24 V232"/>
+  <path class="dash" d="M403 24 V232"/>
+  <path class="dash" d="M477 24 V232"/>
+  <text class="xs mid muted" x="110" y="246">1</text>
+  <text class="xs mid muted" x="183" y="246">10</text>
+  <text class="xs mid muted" x="257" y="246">100</text>
+  <text class="xs mid muted" x="330" y="246">1.000</text>
+  <text class="xs mid muted" x="403" y="246">10.000</text>
+  <text class="xs mid muted" x="477" y="246">100.000</text>
+  <text class="s b" x="10" y="14">Jumlah pemanggilan atau langkah (skala logaritma)</text>
+  <text class="b" x="10" y="48">N = 5</text>
+  <rect class="no" x="110" y="32" width="70" height="12" rx="2"/>
+  <text class="xs" x="186" y="42">9 (rekursi)</text>
+  <rect class="ok" x="110" y="46" width="51" height="10" rx="2"/>
+  <text class="xs" x="167" y="55">5 (perulangan)</text>
+  <text class="b" x="10" y="88">N = 10</text>
+  <rect class="no" x="110" y="72" width="150" height="12" rx="2"/>
+  <text class="xs" x="266" y="82">109 (rekursi)</text>
+  <rect class="ok" x="110" y="86" width="73" height="10" rx="2"/>
+  <text class="xs" x="189" y="95">10 (perulangan)</text>
+  <text class="b" x="10" y="128">N = 15</text>
+  <rect class="no" x="110" y="112" width="227" height="12" rx="2"/>
+  <text class="xs" x="343" y="122">1219 (rekursi)</text>
+  <rect class="ok" x="110" y="126" width="86" height="10" rx="2"/>
+  <text class="xs" x="202" y="135">15 (perulangan)</text>
+  <text class="b" x="10" y="168">N = 20</text>
+  <rect class="no" x="110" y="152" width="303" height="12" rx="2"/>
+  <text class="xs" x="419" y="162">13529 (rekursi)</text>
+  <rect class="ok" x="110" y="166" width="95" height="10" rx="2"/>
+  <text class="xs" x="211" y="175">20 (perulangan)</text>
+  <text class="b" x="10" y="208">N = 25</text>
+  <rect class="no" x="110" y="192" width="380" height="12" rx="2"/>
+  <text class="xs" x="496" y="202">150049 (rekursi)</text>
+  <rect class="ok" x="110" y="206" width="103" height="10" rx="2"/>
+  <text class="xs" x="219" y="215">25 (perulangan)</text>
+</svg>
+<figcaption>Pemanggilan <code>Fib(N)</code> secara rekursif (merah) dibandingkan dengan langkah perulangan (hijau). Selisihnya melebar cepat.</figcaption>
+</figure>
+
+<div class="coba"><p>Ubah batas perulangan <code>while</code> pada baris 34 menjadi <code>N &lt;= 35</code>, tambahkan tampilan untuk
+<i>N</i> = 30 dan 35, lalu jalankan. Ukur dengan jam tangan berapa lama program berpikir. Ini contoh nyata bahwa program
+yang <b>benar</b> belum tentu program yang <b>baik</b>.</p></div>
+
+<h2>Pangkat: Memecah Separuh demi Separuh</h2>
+
+<p>Rekursi tidak selalu mengurangi masalah satu demi satu. Kadang masalah bisa <b>dibelah dua</b>, dan itu jauh lebih
+hemat. Menghitung <i>A<sup>N</sup></i> ada dua cara. Cara biasa mengalikan <i>A</i> sebanyak <i>N</i> kali, jadi
+<i>A<sup>N</sup></i> = <i>A</i> × <i>A<sup>N-1</sup></i>, dengan kasus dasar <i>A<sup>0</sup></i> = 1. Cara cepat memakai
+fakta bahwa <i>A<sup>N</sup></i> = (<i>A<sup>N div 2</sup></i>)<sup>2</sup>, dikali <i>A</i> sekali lagi bila <i>N</i> ganjil.
+Karena pangkatnya dibagi dua setiap langkah, banyaknya pemanggilan hanya sekitar 2 log <i>N</i>.</p>
+
+<p>Program 10.3 mengimplementasikan keduanya dan menghitung berapa kali masing-masing dipanggil, memakai variabel global
+<code>Langkah</code>. Satu hal penting di <code>PangkatCepat</code>: hasil separuhnya dihitung <b>sekali</b> dan disimpan di
+variabel lokal <code>Separuh</code>, lalu dikalikan dengan dirinya. Bila ditulis
+<code>PangkatCepat(A, N div 2) * PangkatCepat(A, N div 2)</code>, kita kembali ke dua pemanggilan dan seluruh penghematannya
+hilang.</p>
+
+<x-listing src="bab10_03_pangkat_rekursif.pas"></x-listing>
+
+<x-run src="bab10_03_pangkat_rekursif.pas" caption="2 pangkat 10: cara biasa 11 pemanggilan, cara cepat hanya 5"></x-run>
+
+<p>Coba pangkat yang lebih besar untuk melihat jurang antara keduanya.</p>
+
+<x-run src="bab10_03_pangkat_rekursif.pas" input="2\n30\n" caption="2 pangkat 30: cara biasa 31 pemanggilan, cara cepat 6"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>11</td><td><code>Langkah</code> menghitung jumlah pemanggilan, dikosongkan sebelum setiap cara dijalankan (baris 49 dan 53).</td></tr>
+    <tr><td>13–20</td><td><code>Pangkat</code>: cara biasa. Kasus dasar <code>N = 0</code> memberi 1. Kasus rekursif memanggil dengan <code>N - 1</code>: pangkat turun satu demi satu, sehingga untuk <i>N</i> ada <i>N</i> + 1 pemanggilan.</td></tr>
+    <tr><td>22–37</td><td><code>PangkatCepat</code>: cara cepat. Kasus dasar yang sama di baris 27–28.</td></tr>
+    <tr><td>31</td><td>Memanggil dengan <code>N div 2</code> dan menyimpan hasilnya di <code>Separuh</code>. <code>div</code> adalah pembagian bulat, jadi 5 div 2 = 2.</td></tr>
+    <tr><td>32–35</td><td>Bila <code>N</code> genap, hasilnya <code>Separuh * Separuh</code>. Bila ganjil, ada satu faktor <code>A</code> tersisa yang harus dikalikan lagi.</td></tr>
+    <tr><td>44–47</td><td>Membaca bilangan pokok, lalu pangkat 0 sampai 100 dengan <code>repeat..until</code> yang mengulang pertanyaan bila masukan di luar rentang.</td></tr>
+    <tr><td>49–55</td><td>Kedua cara dijalankan, dan hasil serta jumlah pemanggilan dicetak berdampingan. Hasil <code>Real</code> diformat <code>:0:2</code>.</td></tr>
+  </tbody>
+</table>
+
+<p><x-ref to="gb-pangkat"></x-ref> menelusuri <code>PangkatCepat(2, 10)</code>. Rantai pemanggilan menjalar ke kanan:
+10, 5, 2, 1, lalu 0 (kasus dasar). Hanya lima pemanggilan, dibanding sebelas pada cara biasa. Hasilnya lalu
+kembali ke kiri sambil dikuadratkan, dan dikalikan 2 pada pangkat ganjil.</p>
+
+<figure class="grafik" id="gb-pangkat">
+<svg viewBox="0 0 680 220">
+  <text class="s b" x="5" y="14">Memanggil (N dibagi dua)</text>
+  <rect class="box" x="5" y="24" width="120" height="44" rx="6"/>
+  <text class="mid b" x="65" y="43">PangkatCepat</text>
+  <text class="mid mono s" x="65" y="59">(2, 10)</text>
+  <rect class="box" x="140" y="24" width="120" height="44" rx="6"/>
+  <text class="mid b" x="200" y="43">PangkatCepat</text>
+  <text class="mid mono s" x="200" y="59">(2, 5)</text>
+  <rect class="box" x="275" y="24" width="120" height="44" rx="6"/>
+  <text class="mid b" x="335" y="43">PangkatCepat</text>
+  <text class="mid mono s" x="335" y="59">(2, 2)</text>
+  <rect class="box" x="410" y="24" width="120" height="44" rx="6"/>
+  <text class="mid b" x="470" y="43">PangkatCepat</text>
+  <text class="mid mono s" x="470" y="59">(2, 1)</text>
+  <rect class="ok" x="545" y="24" width="120" height="44" rx="6"/>
+  <text class="mid b" x="605" y="43">PangkatCepat</text>
+  <text class="mid mono s" x="605" y="59">(2, 0)</text>
+  <path class="arrow" d="M125 46 H138"/>
+  <path class="arrow" d="M260 46 H273"/>
+  <path class="arrow" d="M395 46 H408"/>
+  <path class="arrow" d="M530 46 H543"/>
+  <text class="s b" x="5" y="108">Hasil kembali (ke kiri)</text>
+  <rect class="box-w" x="5" y="118" width="120" height="50" rx="6"/>
+  <text class="mid mono b" x="65" y="138">1024</text>
+  <text class="mid xs" x="65" y="156">32 x 32</text>
+  <rect class="box-w" x="140" y="118" width="120" height="50" rx="6"/>
+  <text class="mid mono b" x="200" y="138">32</text>
+  <text class="mid xs" x="200" y="156">4 x 4 x 2 (N ganjil)</text>
+  <rect class="box-w" x="275" y="118" width="120" height="50" rx="6"/>
+  <text class="mid mono b" x="335" y="138">4</text>
+  <text class="mid xs" x="335" y="156">2 x 2</text>
+  <rect class="box-w" x="410" y="118" width="120" height="50" rx="6"/>
+  <text class="mid mono b" x="470" y="138">2</text>
+  <text class="mid xs" x="470" y="156">1 x 1 x 2 (N ganjil)</text>
+  <rect class="ok" x="545" y="118" width="120" height="50" rx="6"/>
+  <text class="mid mono b" x="605" y="138">1</text>
+  <text class="mid xs" x="605" y="156">kasus dasar</text>
+  <path class="arrow" style="stroke-dasharray:4 3" d="M543 143 H532"/>
+  <path class="arrow" style="stroke-dasharray:4 3" d="M408 143 H397"/>
+  <path class="arrow" style="stroke-dasharray:4 3" d="M273 143 H262"/>
+  <path class="arrow" style="stroke-dasharray:4 3" d="M138 143 H127"/>
+  <text class="s" x="5" y="196">Lima pemanggilan menghasilkan 2^10 = 1024; cara biasa membutuhkan sebelas.</text>
+</svg>
+<figcaption>Penelusuran <code>PangkatCepat(2, 10)</code>: pangkat terus dibelah dua sampai 0, lalu hasil dikuadratkan kembali.</figcaption>
+</figure>
+
+<table class="data compact">
+  <caption>Banyaknya pemanggilan untuk menghitung 2<sup>N</sup> (dari keluaran Program 10.3)</caption>
+  <thead><tr><th>Pangkat <i>N</i></th><th>Cara biasa (<code>Pangkat</code>)</th><th>Cara cepat (<code>PangkatCepat</code>)</th></tr></thead>
+  <tbody>
+    <tr><td>10</td><td>11 pemanggilan</td><td>5 pemanggilan</td></tr>
+    <tr><td>30</td><td>31 pemanggilan</td><td>6 pemanggilan</td></tr>
+    <tr><td>100</td><td>101 pemanggilan</td><td>8 pemanggilan</td></tr>
+  </tbody>
+</table>
+
+<div class="ingat"><p>Dua program, dua pelajaran. Pada <b>Fibonacci</b> rekursi membuat pekerjaan berlipat ganda karena
+masalah yang sama dihitung berulang. Pada <b>pangkat</b> rekursi justru menghemat pekerjaan karena masalah dibelah dua dan
+hasil separuhnya dipakai ulang. Rekursi bukan otomatis lambat atau cepat; yang menentukan adalah bagaimana masalah dipecah.</p></div>
+
+<h2>Menara Hanoi: Teka-teki yang Dipecahkan Rekursi</h2>
+
+<p>Menara Hanoi adalah teka-teki dengan tiga tiang dan sejumlah cakram berukuran berbeda yang bertumpuk di tiang pertama,
+yang terbesar di dasar. Tujuannya memindahkan seluruh tumpukan ke tiang lain dengan dua aturan: <b>satu cakram</b> per
+langkah, dan cakram besar <b>tidak boleh</b> diletakkan di atas cakram yang lebih kecil. Tanpa rekursi, teka-teki ini
+membuat pemula kebingungan. Dengan rekursi, pemecahannya hanya tiga langkah. Untuk memindahkan <i>N</i> cakram dari tiang
+<b>Asal</b> ke tiang <b>Tujuan</b> dengan bantuan tiang <b>Bantu</b>:</p>
+
+<ol class="langkah">
+  <li><b>Pindahkan <i>N</i> - 1 cakram atas</b> dari Asal ke Bantu (masalah yang lebih kecil, diserahkan ke rekursi).</li>
+  <li><b>Pindahkan cakram terbesar</b> dari Asal ke Tujuan (satu langkah nyata).</li>
+  <li><b>Pindahkan <i>N</i> - 1 cakram</b> dari Bantu ke Tujuan (sekali lagi masalah yang lebih kecil).</li>
+</ol>
+
+<p>Kasus dasarnya adalah nol cakram: tidak ada yang perlu dipindahkan. Kuncinya adalah <b>percaya</b> bahwa pemanggilan
+rekursif akan memindahkan <i>N</i> - 1 cakram dengan benar, tanpa Anda perlu membayangkan bagaimana. Program 10.4
+menuliskan ketiga langkah itu dan mencetak setiap pemindahan.</p>
+
+<div class="tp7"><p>Prosedur <code>Hanoi</code> memakai <code>Exit</code> sebagai kasus dasar (baris 17–18). Di Turbo Pascal 7
+<code>Exit</code> tidak membawa nilai: ia hanya mengakhiri prosedur atau fungsi yang sedang berjalan dan kembali ke
+pemanggilnya. Pada fungsi, nilai hasilnya tetap harus diberikan lewat nama fungsi sebelum <code>Exit</code>.</p></div>
+
+<x-listing src="bab10_04_menara_hanoi.pas"></x-listing>
+
+<x-run src="bab10_04_menara_hanoi.pas" input="3\n" caption="Tiga cakram dipindahkan dari A ke C dalam tujuh langkah"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>13</td><td><code>JumlahLangkah</code> adalah penghitung global pemindahan cakram.</td></tr>
+    <tr><td>15</td><td>Parameter <code>N</code> adalah banyak cakram, dan tiga <code>Char</code> adalah nama tiang. Perhatikan urutan <b>Asal, Tujuan, Bantu</b>.</td></tr>
+    <tr><td>17–18</td><td>Kasus dasar: bila tidak ada cakram, <code>Exit</code> segera mengakhiri prosedur.</td></tr>
+    <tr><td>19</td><td>Langkah 1: pindahkan <code>N - 1</code> cakram dari <code>Asal</code> ke <code>Bantu</code>. Di sini peran tiang <b>bertukar</b>: yang tadinya Tujuan kini menjadi Bantu.</td></tr>
+    <tr><td>20–21</td><td>Langkah 2, satu-satunya pemindahan nyata: penghitung bertambah dan baris pemindahan dicetak.</td></tr>
+    <tr><td>22</td><td>Langkah 3: pindahkan <code>N - 1</code> cakram dari <code>Bantu</code> ke <code>Tujuan</code>. Perannya bertukar lagi.</td></tr>
+    <tr><td>29–32</td><td>Meminta jumlah cakram 1 sampai 8 dan mengulang pertanyaan selama masukan di luar rentang. Batas 8 menjaga keluaran tetap pendek (255 langkah).</td></tr>
+    <tr><td>34–36</td><td>Penghitung dikosongkan, <code>Hanoi</code> dipanggil dengan A sebagai asal, C tujuan, B bantu, lalu total langkah dicetak.</td></tr>
+  </tbody>
+</table>
+
+<p><x-ref to="gb-hanoi"></x-ref> menggambar keadaan tiang setelah setiap langkah pada keluaran di atas. Perhatikan panel 4:
+cakram terbesar baru berpindah setelah dua cakram di atasnya menyingkir ke tiang B. Perhatikan juga panel 7: dua cakram
+yang tadi disingkirkan dipindahkan lagi ke atas cakram terbesar.</p>
+
+<figure class="grafik" id="gb-hanoi">
+<svg viewBox="0 0 680 322">
+  <rect class="box-w" x="4" y="0" width="164" height="150" rx="6"/>
+  <text class="s b" x="12" y="16">0. Awal</text>
+  <path class="line" d="M12 118 H160"/>
+  <path class="line" style="stroke-width:3" d="M36 118 V48"/>
+  <text class="xs mid muted" x="36" y="132">A</text>
+  <rect class="no" x="9" y="104" width="54" height="12" rx="3"/>
+  <text class="xs mid b" x="36" y="113.5">3</text>
+  <rect class="io" x="16" y="90" width="40" height="12" rx="3"/>
+  <text class="xs mid b" x="36" y="99.5">2</text>
+  <rect class="ok" x="23" y="76" width="26" height="12" rx="3"/>
+  <text class="xs mid b" x="36" y="85.5">1</text>
+  <path class="line" style="stroke-width:3" d="M86 118 V48"/>
+  <text class="xs mid muted" x="86" y="132">B</text>
+  <path class="line" style="stroke-width:3" d="M136 118 V48"/>
+  <text class="xs mid muted" x="136" y="132">C</text>
+  <rect class="box-w" x="174" y="0" width="164" height="150" rx="6"/>
+  <text class="s b" x="182" y="16">1. Cakram 1: A -> C</text>
+  <path class="line" d="M182 118 H330"/>
+  <path class="line" style="stroke-width:3" d="M206 118 V48"/>
+  <text class="xs mid muted" x="206" y="132">A</text>
+  <rect class="no" x="179" y="104" width="54" height="12" rx="3"/>
+  <text class="xs mid b" x="206" y="113.5">3</text>
+  <rect class="io" x="186" y="90" width="40" height="12" rx="3"/>
+  <text class="xs mid b" x="206" y="99.5">2</text>
+  <path class="line" style="stroke-width:3" d="M256 118 V48"/>
+  <text class="xs mid muted" x="256" y="132">B</text>
+  <path class="line" style="stroke-width:3" d="M306 118 V48"/>
+  <text class="xs mid muted" x="306" y="132">C</text>
+  <rect class="ok" x="293" y="104" width="26" height="12" rx="3"/>
+  <text class="xs mid b" x="306" y="113.5">1</text>
+  <rect class="box-w" x="344" y="0" width="164" height="150" rx="6"/>
+  <text class="s b" x="352" y="16">2. Cakram 2: A -> B</text>
+  <path class="line" d="M352 118 H500"/>
+  <path class="line" style="stroke-width:3" d="M376 118 V48"/>
+  <text class="xs mid muted" x="376" y="132">A</text>
+  <rect class="no" x="349" y="104" width="54" height="12" rx="3"/>
+  <text class="xs mid b" x="376" y="113.5">3</text>
+  <path class="line" style="stroke-width:3" d="M426 118 V48"/>
+  <text class="xs mid muted" x="426" y="132">B</text>
+  <rect class="io" x="406" y="104" width="40" height="12" rx="3"/>
+  <text class="xs mid b" x="426" y="113.5">2</text>
+  <path class="line" style="stroke-width:3" d="M476 118 V48"/>
+  <text class="xs mid muted" x="476" y="132">C</text>
+  <rect class="ok" x="463" y="104" width="26" height="12" rx="3"/>
+  <text class="xs mid b" x="476" y="113.5">1</text>
+  <rect class="box-w" x="514" y="0" width="164" height="150" rx="6"/>
+  <text class="s b" x="522" y="16">3. Cakram 1: C -> B</text>
+  <path class="line" d="M522 118 H670"/>
+  <path class="line" style="stroke-width:3" d="M546 118 V48"/>
+  <text class="xs mid muted" x="546" y="132">A</text>
+  <rect class="no" x="519" y="104" width="54" height="12" rx="3"/>
+  <text class="xs mid b" x="546" y="113.5">3</text>
+  <path class="line" style="stroke-width:3" d="M596 118 V48"/>
+  <text class="xs mid muted" x="596" y="132">B</text>
+  <rect class="io" x="576" y="104" width="40" height="12" rx="3"/>
+  <text class="xs mid b" x="596" y="113.5">2</text>
+  <rect class="ok" x="583" y="90" width="26" height="12" rx="3"/>
+  <text class="xs mid b" x="596" y="99.5">1</text>
+  <path class="line" style="stroke-width:3" d="M646 118 V48"/>
+  <text class="xs mid muted" x="646" y="132">C</text>
+  <rect class="box-w" x="4" y="160" width="164" height="150" rx="6"/>
+  <text class="s b" x="12" y="176">4. Cakram 3: A -> C</text>
+  <path class="line" d="M12 278 H160"/>
+  <path class="line" style="stroke-width:3" d="M36 278 V208"/>
+  <text class="xs mid muted" x="36" y="292">A</text>
+  <path class="line" style="stroke-width:3" d="M86 278 V208"/>
+  <text class="xs mid muted" x="86" y="292">B</text>
+  <rect class="io" x="66" y="264" width="40" height="12" rx="3"/>
+  <text class="xs mid b" x="86" y="273.5">2</text>
+  <rect class="ok" x="73" y="250" width="26" height="12" rx="3"/>
+  <text class="xs mid b" x="86" y="259.5">1</text>
+  <path class="line" style="stroke-width:3" d="M136 278 V208"/>
+  <text class="xs mid muted" x="136" y="292">C</text>
+  <rect class="no" x="109" y="264" width="54" height="12" rx="3"/>
+  <text class="xs mid b" x="136" y="273.5">3</text>
+  <rect class="box-w" x="174" y="160" width="164" height="150" rx="6"/>
+  <text class="s b" x="182" y="176">5. Cakram 1: B -> A</text>
+  <path class="line" d="M182 278 H330"/>
+  <path class="line" style="stroke-width:3" d="M206 278 V208"/>
+  <text class="xs mid muted" x="206" y="292">A</text>
+  <rect class="ok" x="193" y="264" width="26" height="12" rx="3"/>
+  <text class="xs mid b" x="206" y="273.5">1</text>
+  <path class="line" style="stroke-width:3" d="M256 278 V208"/>
+  <text class="xs mid muted" x="256" y="292">B</text>
+  <rect class="io" x="236" y="264" width="40" height="12" rx="3"/>
+  <text class="xs mid b" x="256" y="273.5">2</text>
+  <path class="line" style="stroke-width:3" d="M306 278 V208"/>
+  <text class="xs mid muted" x="306" y="292">C</text>
+  <rect class="no" x="279" y="264" width="54" height="12" rx="3"/>
+  <text class="xs mid b" x="306" y="273.5">3</text>
+  <rect class="box-w" x="344" y="160" width="164" height="150" rx="6"/>
+  <text class="s b" x="352" y="176">6. Cakram 2: B -> C</text>
+  <path class="line" d="M352 278 H500"/>
+  <path class="line" style="stroke-width:3" d="M376 278 V208"/>
+  <text class="xs mid muted" x="376" y="292">A</text>
+  <rect class="ok" x="363" y="264" width="26" height="12" rx="3"/>
+  <text class="xs mid b" x="376" y="273.5">1</text>
+  <path class="line" style="stroke-width:3" d="M426 278 V208"/>
+  <text class="xs mid muted" x="426" y="292">B</text>
+  <path class="line" style="stroke-width:3" d="M476 278 V208"/>
+  <text class="xs mid muted" x="476" y="292">C</text>
+  <rect class="no" x="449" y="264" width="54" height="12" rx="3"/>
+  <text class="xs mid b" x="476" y="273.5">3</text>
+  <rect class="io" x="456" y="250" width="40" height="12" rx="3"/>
+  <text class="xs mid b" x="476" y="259.5">2</text>
+  <rect class="box-w" x="514" y="160" width="164" height="150" rx="6"/>
+  <text class="s b" x="522" y="176">7. Cakram 1: A -> C</text>
+  <path class="line" d="M522 278 H670"/>
+  <path class="line" style="stroke-width:3" d="M546 278 V208"/>
+  <text class="xs mid muted" x="546" y="292">A</text>
+  <path class="line" style="stroke-width:3" d="M596 278 V208"/>
+  <text class="xs mid muted" x="596" y="292">B</text>
+  <path class="line" style="stroke-width:3" d="M646 278 V208"/>
+  <text class="xs mid muted" x="646" y="292">C</text>
+  <rect class="no" x="619" y="264" width="54" height="12" rx="3"/>
+  <text class="xs mid b" x="646" y="273.5">3</text>
+  <rect class="io" x="626" y="250" width="40" height="12" rx="3"/>
+  <text class="xs mid b" x="646" y="259.5">2</text>
+  <rect class="ok" x="633" y="236" width="26" height="12" rx="3"/>
+  <text class="xs mid b" x="646" y="245.5">1</text>
+</svg>
+<figcaption>Menara Hanoi dengan tiga cakram: keadaan awal dan tujuh langkah. Angka pada cakram adalah ukurannya (3 terbesar).</figcaption>
+</figure>
+
+<p>Karena setiap cakram ekstra menggandakan pekerjaan lalu menambah satu, jumlah langkah minimum untuk <i>N</i> cakram adalah
+2<sup><i>N</i></sup> - 1 (itulah komentar di baris 36).</p>
+
+<table class="data compact">
+  <caption>Jumlah langkah Menara Hanoi menurut banyak cakram</caption>
+  <thead><tr><th>Cakram <i>N</i></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th></tr></thead>
+  <tbody><tr><td>Langkah 2<sup>N</sup> - 1</td><td>1</td><td>3</td><td>7</td><td>15</td><td>31</td><td>63</td><td>127</td><td>255</td></tr></tbody>
+</table>
+
+<p>Selain itu, tumpukan pemanggilan Hanoi cukup menarik untuk dilihat. Pasang titik henti di baris 20, mulai debugging dengan
+masukan 3, dan lanjutkan sampai <code>JumlahLangkah</code> bernilai 2. Di sini program berhenti tepat sebelum mencetak
+langkah ketiga.</p>
+
+<x-ide file="bab10_04_menara_hanoi.pas" top="14" rows="10" cursor="20:5" breakpoints="20" exec="20" watches="N: 1;Asal: 'C';JumlahLangkah: 2" locals="N: 1;Asal: 'C';Tujuan: 'B';Bantu: 'A'" stack="HANOI  (bab10_04_menara_hanoi.pas:20);HANOI  (bab10_04_menara_hanoi.pas:22);HANOI  (bab10_04_menara_hanoi.pas:19);PASCALMAIN  (bab10_04_menara_hanoi.pas:35)" caption="Berhenti di dalam <code>Hanoi(1, 'C', 'B', 'A')</code>: tiga bingkai <code>Hanoi</code> aktif, dan baris pemanggil di setiap bingkai memberi tahu langkah mana yang sedang berjalan"></x-ide>
+
+<p>Cara membaca Call stack ini: bingkai teratas adalah <code>Hanoi(1, 'C', 'B', 'A')</code> yang akan memindahkan cakram 1
+dari C ke B. Di bawahnya, <code>Hanoi(2, 'A', 'B', 'C')</code> sedang berada di baris 22, yaitu langkah 3 miliknya (memindahkan
+cakram kecil dari Bantu ke Tujuan). Di bawahnya lagi, <code>Hanoi(3, 'A', 'C', 'B')</code> berada di baris 19, yaitu langkah 1
+miliknya (menyingkirkan dua cakram atas). Tidak ada tumpukan kertas catatan: tumpukan pemanggilan itulah "ingatan"
+program tentang bagian pekerjaan yang masih tertunda.</p>
+
+<div class="coba"><p>Jalankan Program 10.4 dengan 4 cakram dan hitung baris keluarannya. Cocokkah dengan 2<sup>4</sup> - 1 = 15? Lalu
+ubah urutan pemanggilan di baris 35 menjadi <code>Hanoi(N, 'A', 'B', 'C')</code> dan lihat ke tiang mana tumpukan akhirnya
+berpindah.</p></div>
+
+<h2 style="break-before:page">Rekursi atau Perulangan?</h2>
+
+<p>Semua yang dikerjakan rekursi bisa juga dikerjakan perulangan, dan sebaliknya. Pilih berdasarkan bentuk masalahnya,
+bukan selera. <x-ref to="tb-banding"></x-ref> merangkum pertimbangan yang praktis.</p>
+
+<table class="data" id="tb-banding">
+  <caption>Rekursi dibandingkan dengan perulangan</caption>
+  <thead><tr><th></th><th>Rekursi</th><th>Perulangan</th></tr></thead>
+  <tbody>
+    <tr><td><b>Cocok untuk</b></td><td>masalah yang tersusun dari masalah sejenis yang lebih kecil: Hanoi, pohon, folder, pencarian bercabang</td><td>mengulang pekerjaan yang sama dalam jumlah yang diketahui: menjumlah, mencacah, membaca data</td></tr>
+    <tr><td><b>Kejelasan</b></td><td>sangat ringkas bila rumusnya sendiri rekursif</td><td>sangat jelas untuk pekerjaan berurutan sederhana</td></tr>
+    <tr><td><b>Memori</b></td><td>setiap pemanggilan memakai satu bingkai tumpukan; kedalaman besar bisa menghabiskan tumpukan</td><td>memori tetap, berapa pun jumlah pengulangan</td></tr>
+    <tr><td><b>Risiko khas</b></td><td>kasus dasar hilang; pekerjaan berulang (Fibonacci)</td><td>kondisi berhenti salah sehingga perulangan tak berujung</td></tr>
+  </tbody>
+</table>
+
+<p>Faktorial dan Fibonacci di bab ini sebenarnya lebih cocok ditulis dengan perulangan di program sungguhan. Keduanya
+dipakai sebagai contoh karena rumusnya mudah dipahami, bukan karena rekursi pilihan terbaik. Hanoi lain cerita: tanpa
+rekursi, program pemecahnya jauh lebih rumit.</p>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Lupa argumen pada pemanggilan rekursif</h3>
+
+<p>Pada pemanggilan rekursif, nama fungsi di sisi kanan tetap harus diberi argumen. Menulisnya tanpa argumen membuat
+kompiler menganggapnya pemanggilan dengan parameter yang kurang.</p>
+
+<x-error name="tanpaarg.pas" caption="Pemanggilan rekursif tanpa argumen ditolak kompiler">program TanpaArg;
+function Faktorial(N: Integer): LongInt;
+begin
+  if N <= 1 then
+    Faktorial := 1
+  else
+    Faktorial := N * Faktorial;
+end;
+
+begin
+  WriteLn(Faktorial(5));
+end.</x-error>
+
+<p>Perbaikannya: tulis <code>Faktorial(N - 1)</code>.</p>
+
+<h3>Kasus dasar hilang: tumpukan penuh</h3>
+
+<p>Program berikut lolos kompilasi, tetapi memanggil dirinya tanpa pernah berhenti. Setiap pemanggilan menambah satu bingkai
+sampai ruang tumpukan habis. Pada keluaran di bawah, program dihentikan dengan <i>runtime error</i> 202, kode untuk tumpukan penuh (<i>stack overflow</i>).</p>
+
+<x-error name="tanpadasar.pas" run caption="Tanpa kasus dasar, bingkai terus menumpuk sampai tumpukan habis">program TanpaDasar;
+function Hitung(N: LongInt): LongInt;
+begin
+  Hitung := N + Hitung(N - 1);
+end;
+
+begin
+  WriteLn(Hitung(5));
+end.</x-error>
+
+<p>Perbaikannya: tambahkan kasus dasar, misalnya <code>if N &lt;= 0 then Hitung := 0 else ...</code>. Pastikan juga
+parameter pada pemanggilan berikutnya benar-benar bergerak menuju kasus dasar itu.</p>
+
+<h3>Hasil melebihi tipe data</h3>
+
+<p>Faktorial 13 tidak muat di <code>LongInt</code>. Perhatikan apa yang terjadi saat program mencoba menghitungnya: pemeriksaan jangkauan menghentikan program dengan <i>runtime error</i> 201, bukan menghasilkan angka yang salah diam-diam.</p>
+
+<x-error name="lebihbesar.pas" run caption="13! lebih besar dari batas LongInt sehingga program dihentikan">program LebihBesar;
+function Faktorial(N: Integer): LongInt;
+begin
+  if N <= 1 then
+    Faktorial := 1
+  else
+    Faktorial := N * Faktorial(N - 1);
+end;
+
+begin
+  WriteLn(Faktorial(13));
+end.</x-error>
+
+<p>Perbaikannya: pakai tipe yang lebih besar (misalnya <code>Real</code> dengan format <code>:0:0</code>, yang menampung
+bilangan jauh lebih besar tetapi tidak persis untuk digit yang sangat banyak), atau batasi masukan seperti yang dilakukan
+Program 10.1 dan Program 10.4.</p>
+
+<h3>Kesalahan yang tidak ditolak kompiler</h3>
+
+<ul>
+  <li><b>Masalah tidak mengecil</b>: memanggil <code>Faktorial(N)</code> alih-alih <code>Faktorial(N - 1)</code> di
+  kasus rekursif. Kompilasi lolos, tetapi hasilnya sama seperti tumpukan penuh di atas.</li>
+  <li><b>Kasus dasar terlewat</b>: untuk <code>N = 0</code> pada <code>if N = 1 then</code> yang tidak ada cabang
+  untuk nol, rekursi menembus ke bilangan negatif. Pakai <code>N &lt;= 1</code> bila memang bisa terjadi.</li>
+  <li><b>Pemanggilan ganda yang tidak perlu</b>, seperti menulis <code>PangkatCepat</code> dua kali dalam satu ekspresi.
+  Simpan hasilnya di variabel lokal.</li>
+</ul>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li><b>Rekursi</b> adalah fungsi atau prosedur yang memanggil dirinya sendiri untuk versi masalah yang lebih kecil.</li>
+  <li>Setiap rekursi wajib punya <b>kasus dasar</b> yang berhenti tanpa memanggil diri, dan <b>kasus rekursif</b> yang membuat parameter bergerak menuju kasus dasar.</li>
+  <li>Setiap pemanggilan mendapat <b>bingkai</b> sendiri di tumpukan pemanggilan (parameter dan variabel lokal sendiri). Bingkai menumpuk saat masuk dan dibuang satu per satu saat kembali; Call stack di debugger memperlihatkannya.</li>
+  <li>Di Turbo Pascal 7, hasil fungsi rekursif ditetapkan lewat nama fungsi di sisi kiri <code>:=</code>; nama yang sama di sisi kanan adalah pemanggilan rekursif. <code>Exit</code> tanpa nilai mengakhiri subprogram.</li>
+  <li><b>Fibonacci</b> rekursif menghitung suku yang sama berulang kali, sehingga pemanggilannya berlipat ganda (2 x <code>Fib(N)</code> - 1). Rekursi tidak otomatis efisien.</li>
+  <li><b>Pangkat cepat</b> membelah pangkat setiap langkah sehingga pemanggilannya sekitar 2 log <i>N</i>, jauh lebih sedikit daripada <i>N</i> + 1; hasil separuh harus dihitung sekali.</li>
+  <li><b>Menara Hanoi</b> memecahkan <i>N</i> cakram dalam 2<sup><i>N</i></sup> - 1 langkah lewat tiga langkah rekursif yang bertukar peran tiang.</li>
+  <li>Kesalahan khas: kasus dasar hilang atau tidak dicapai (tumpukan penuh), argumen lupa ditulis, dan hasil melampaui batas tipe seperti <code>LongInt</code>.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Tulis fungsi rekursif <code>JumlahSampai(N: Integer): LongInt</code> yang menghitung 1 + 2 + ... + <i>N</i>. Tentukan kasus dasarnya, lalu telusuri <code>JumlahSampai(4)</code> di kertas seperti <x-ref to="gb-tumpukan"></x-ref>.</li>
+  <li><span class="lv dasar">Dasar</span>Ubah Program 10.1 agar mencetak jejak untuk 6 dan hitung banyak pesan "masuk" yang muncul. Berapa banyak bingkai yang aktif bersamaan pada saat terdalam?</li>
+  <li><span class="lv menengah">Menengah</span>Tulis prosedur rekursif <code>HitungMundur(N: Integer)</code> yang mencetak <i>N</i>, <i>N</i> - 1, ..., 1, lalu "Selesai!". Kemudian ubah agar mencetak 1 sampai <i>N</i> (hanya memindahkan satu baris). Jelaskan mengapa urutannya berubah.</li>
+  <li><span class="lv menengah">Menengah</span>Tulis fungsi rekursif <code>JumlahDigit(N: LongInt): Integer</code> yang menjumlahkan angka-angka penyusun bilangan (misalnya 4527 menjadi 18) dengan <code>mod 10</code> dan <code>div 10</code>.</li>
+  <li><span class="lv menengah">Menengah</span>Tulis fungsi rekursif <code>FPB(A, B: Integer): Integer</code> berdasarkan algoritma Euclid: FPB(<i>A</i>, 0) = <i>A</i>, dan FPB(<i>A</i>, <i>B</i>) = FPB(<i>B</i>, <i>A</i> mod <i>B</i>). Uji dengan 48 dan 36.</li>
+  <li><span class="lv tantangan">Tantangan</span>Tulis <code>Fib</code> yang efisien tanpa pemanggilan berulang, misalnya dengan fungsi bantu rekursif <code>FibBantu(N, A, B)</code> yang membawa dua suku terakhir sebagai parameter. Bandingkan jumlah pemanggilannya dengan Program 10.2 untuk <i>N</i> = 25.</li>
+  <li><span class="lv tantangan">Tantangan</span>Ubah Program 10.4 agar hanya mencetak total langkah (tanpa daftar), lalu ukur kapan komputer mulai terasa lambat bila batas cakram dinaikkan. Berapa langkah yang dibutuhkan 20 cakram menurut rumusnya?</li>
+</ol>
+</div>

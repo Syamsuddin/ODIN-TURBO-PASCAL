@@ -1,0 +1,524 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menjelaskan perbedaan <i>array</i> (banyak data sejenis) dan <i>record</i> (beberapa data berbeda jenis yang satu kesatuan).</li>
+  <li>Mendeklarasikan tipe <code>record</code>, mengisi dan membaca <i>field</i> dengan notasi titik.</li>
+  <li>Memakai pernyataan <code>with</code> agar penulisan field lebih ringkas, dan menyalin record utuh dengan satu penugasan.</li>
+  <li>Membuat tabel data dengan <i>array of record</i> dan mengolahnya dengan perulangan.</li>
+  <li>Menyusun record bersarang (record di dalam record) dan mengaksesnya dengan titik berantai.</li>
+  <li>Memantau isi record dengan jendela <i>Watches</i> pada debugger.</li>
+</ul>
+
+<p class="lead">Data di dunia nyata jarang berdiri sendiri. Sebuah buku punya judul, penulis, tahun terbit, dan harga;
+seorang siswa punya nama, kelas, dan nilai. Bab-bab sebelumnya hanya memberi Anda variabel tunggal dan <i>array</i> yang
+isinya seragam. Bab ini memperkenalkan <b>record</b>, wadah yang menyatukan beberapa data berbeda jenis menjadi satu
+kesatuan yang bisa diberi nama, disalin, dan disusun menjadi tabel.</p>
+
+<h2>Mengapa Perlu Record?</h2>
+
+<p>Bayangkan Anda mencatat tiga buku. Tanpa record, Anda harus membuat variabel terpisah untuk setiap bagian data:
+<code>JudulBuku1</code>, <code>PenulisBuku1</code>, <code>TahunBuku1</code>, <code>HargaBuku1</code>, lalu hal yang sama untuk
+buku kedua dan ketiga. Dua belas variabel berserakan, dan tak ada yang menjamin keempat bagian milik buku yang sama
+tetap berpasangan. <i>Array</i> tidak membantu, karena semua elemen array harus bertipe sama, sedangkan judul adalah
+teks dan tahun adalah bilangan.</p>
+
+<p>Record memecahkan masalah ini. Anggap record sebagai <b>formulir</b>: selembar kertas dengan kolom-kolom berlabel.
+Setiap kolom punya nama dan jenis isian sendiri, tetapi seluruh kolom itu tetap satu lembar. Pada Pascal, kolom itu
+disebut <b>field</b> (medan), dan lembar kosongnya disebut <b>tipe record</b>. Satu lembar yang sudah terisi adalah satu
+<b>variabel record</b>.</p>
+
+<figure class="grafik" id="gb-formulir">
+<svg viewBox="0 0 680 262">
+  <rect class="box-w" x="20" y="10" width="270" height="240" rx="8"/>
+  <rect class="term" x="20" y="10" width="270" height="30" rx="8"/>
+  <text class="h white" x="36" y="30">Buku1  (TBuku)</text>
+  <text class="s muted" x="36" y="64">Judul</text>
+  <rect class="box" x="100" y="50" width="178" height="22" rx="3"/>
+  <text class="mono" x="108" y="65">Belajar Pemrograman Pascal</text>
+  <text class="s muted" x="36" y="102">Penulis</text>
+  <rect class="box" x="100" y="88" width="178" height="22" rx="3"/>
+  <text class="mono" x="108" y="103">Siti Aminah</text>
+  <text class="s muted" x="36" y="140">Tahun</text>
+  <rect class="box" x="100" y="126" width="178" height="22" rx="3"/>
+  <text class="mono" x="108" y="141">2024</text>
+  <text class="s muted" x="36" y="178">Harga</text>
+  <rect class="box" x="100" y="164" width="178" height="22" rx="3"/>
+  <text class="mono" x="108" y="179">85000</text>
+  <text class="xs muted" x="36" y="216">Satu formulir = satu variabel record.</text>
+  <text class="xs muted" x="36" y="232">Tiap kolom = satu field dengan tipe sendiri.</text>
+  <path class="arrow" d="M278 61 H340"/>
+  <path class="arrow" d="M278 99 H340"/>
+  <path class="arrow" d="M278 137 H340"/>
+  <path class="arrow" d="M278 175 H340"/>
+  <rect class="navy" x="345" y="10" width="320" height="240" rx="8"/>
+  <text class="mono code-fg" x="360" y="36">type</text>
+  <text class="mono code-fg" x="360" y="56">&#160;&#160;TBuku = record</text>
+  <text class="mono code-fg" x="360" y="76">&#160;&#160;&#160;&#160;Judul: string[40];</text>
+  <text class="mono code-fg" x="360" y="96">&#160;&#160;&#160;&#160;Penulis: string[30];</text>
+  <text class="mono code-fg" x="360" y="116">&#160;&#160;&#160;&#160;Tahun: Integer;</text>
+  <text class="mono code-fg" x="360" y="136">&#160;&#160;&#160;&#160;Harga: LongInt;</text>
+  <text class="mono code-fg" x="360" y="156">&#160;&#160;end;</text>
+  <text class="mono code-fg" x="360" y="186">var</text>
+  <text class="mono code-fg" x="360" y="206">&#160;&#160;Buku1, Buku2: TBuku;</text>
+  <text class="xs" x="360" y="236" style="fill:#aab4c8">Kolom formulir tampil sebagai field di tipe record.</text>
+</svg>
+<figcaption>Record sebagai formulir: tiap kolom berlabel adalah satu field, dan kode di kanan mendeklarasikan formulir yang sama.</figcaption>
+</figure>
+
+<h2>Mendeklarasikan Record dan Memakai Field</h2>
+
+<p>Tipe record ditulis di bagian <code>type</code>, dengan kata tercadang <code>record</code> dan diakhiri
+<code>end</code> (tanpa <code>begin</code>). Di dalamnya, daftar field ditulis seperti deklarasi variabel: nama, titik dua,
+tipe.</p>
+
+<div class="sintaks"><pre><b>type</b>
+  <i>NamaTipe</i> = <b>record</b>
+    <i>Field1</i>: <i>Tipe1</i>;
+    <i>Field2, Field3</i>: <i>Tipe2</i>;
+  <b>end</b>;
+
+<b>var</b>
+  <i>Variabel</i>: <i>NamaTipe</i>;
+
+<i>Variabel</i>.<i>Field1</i> := <i>nilai</i>;      { notasi titik }</pre></div>
+
+<p>Untuk mengakses satu field, tulis nama variabel, sebuah <b>titik</b>, lalu nama field:
+<code>Buku1.Judul</code>. Field diperlakukan persis seperti variabel biasa bertipe field itu. Anda dapat
+menugaskan, membandingkan, mencetak, atau memakainya dalam ekspresi. Nama field hanya perlu unik <i>di dalam</i>
+recordnya, jadi dua record berbeda boleh sama-sama punya field bernama <code>Nama</code>.</p>
+
+<h3>Program pertama: data buku</h3>
+
+<p>Buka <code>bab13_01_record_dasar.pas</code> lewat <span class="menu">File ▸ Examples...</span>. Program ini
+mendeklarasikan <code>TBuku</code>, mengisi dua buku dengan dua cara, mencetaknya, lalu menyalin sebuah record.</p>
+
+<x-listing src="bab13_01_record_dasar.pas"></x-listing>
+
+<x-run src="bab13_01_record_dasar.pas"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–15</td><td>Deklarasi tipe <code>TBuku</code> dengan empat field. <code>Judul</code> dan <code>Penulis</code> bertipe <code>string</code> berbatas panjang (maksimal 40 dan 30 karakter), <code>Tahun</code> bertipe <code>Integer</code>, <code>Harga</code> bertipe <code>LongInt</code> agar muat harga di atas 32767. Tidak ada memori yang dipesan di sini; ini baru cetakan formulir.</td></tr>
+    <tr><td>17–18</td><td>Dua variabel <code>Buku1</code> dan <code>Buku2</code> bertipe <code>TBuku</code>. Sekarang ada dua formulir kosong di memori.</td></tr>
+    <tr><td>22–25</td><td>Mengisi <code>Buku1</code> field demi field dengan notasi titik. Urutan pengisian bebas.</td></tr>
+    <tr><td>28–34</td><td>Pernyataan <code>with Buku2 do</code>. Di dalam <code>begin..end</code>, nama <code>Judul</code>, <code>Penulis</code>, <code>Tahun</code>, dan <code>Harga</code> otomatis berarti field milik <code>Buku2</code>.</td></tr>
+    <tr><td>36–37</td><td>Mencetak <code>Buku1</code> dengan notasi titik lengkap.</td></tr>
+    <tr><td>38–42</td><td>Mencetak <code>Buku2</code> di dalam <code>with</code>, sehingga awalan <code>Buku2.</code> tidak perlu ditulis.</td></tr>
+    <tr><td>45</td><td><code>Buku2 := Buku1</code> menyalin <b>seluruh</b> isi formulir dalam satu penugasan. Semua field <code>Buku2</code> kini sama dengan <code>Buku1</code>.</td></tr>
+    <tr><td>46</td><td>Hanya salinan yang diubah: harga <code>Buku2</code> dikurangi 10000, yaitu 85000 menjadi 75000.</td></tr>
+    <tr><td>47–48</td><td>Hasilnya terlihat pada keluaran: baris <code>Salinan</code> menampilkan 75000, sedangkan baris <code>Asli</code> tetap 85000. Setelah disalin, kedua record berdiri sendiri dan saling tidak memengaruhi.</td></tr>
+  </tbody>
+</table>
+
+<h3>Pernyataan with</h3>
+
+<p>Menulis <code>Buku2.</code> berulang-ulang melelahkan. Pernyataan <code>with</code> memberi tahu kompiler:
+&ldquo;di dalam blok ini, nama field yang tidak dikenali berarti field milik record ini.&rdquo;</p>
+
+<div class="sintaks"><pre><b>with</b> <i>Variabel</i> <b>do</b>
+<b>begin</b>
+  <i>Field1</i> := <i>nilai</i>;      { sama dengan Variabel.Field1 := nilai }
+  <i>Field2</i> := <i>nilai</i>;
+<b>end</b>;</pre></div>
+
+<div class="awas">
+<p><b>Hati-hati dengan nama yang bentrok.</b> Bila di luar <code>with</code> ada variabel bernama sama dengan sebuah field,
+nama itu di dalam <code>with</code> diartikan sebagai <b>field</b>, bukan variabel luar. Bila Anda perlu variabel luar itu,
+beri tahu dengan menulis nama lengkap record yang lain, atau jangan pakai <code>with</code>. Untuk blok yang panjang,
+notasi titik lengkap sering lebih jelas dibaca.</p>
+</div>
+
+<h3>Isi memori dan penyalinan</h3>
+
+<p>Sebuah variabel record menempati satu blok memori yang berurutan; field-fieldnya tersusun di dalam blok itu
+sesuai urutan deklarasi. Itu sebabnya satu penugasan <code>Buku2 := Buku1</code> cukup untuk menyalin semuanya: kompiler
+menyalin satu blok utuh, bukan field satu per satu.</p>
+
+<figure class="grafik" id="gb-salin">
+<svg viewBox="0 0 680 252">
+  <text class="h" x="20" y="22">Sebelum  Buku2 := Buku1</text>
+  <rect class="box" x="20" y="34" width="200" height="22" rx="3"/>
+  <text class="b" x="28" y="49">Buku1</text>
+  <rect class="box-w" x="20" y="60" width="200" height="22" rx="0"/>
+  <text class="s" x="28" y="75">Judul    Belajar Pemrograman Pascal</text>
+  <rect class="box-w" x="20" y="82" width="200" height="22"/>
+  <text class="s" x="28" y="97">Penulis  Siti Aminah</text>
+  <rect class="box-w" x="20" y="104" width="200" height="22"/>
+  <text class="s" x="28" y="119">Tahun    2024</text>
+  <rect class="box-w" x="20" y="126" width="200" height="22"/>
+  <text class="s" x="28" y="141">Harga    85000</text>
+
+  <rect class="box" x="260" y="34" width="200" height="22" rx="3"/>
+  <text class="b" x="268" y="49">Buku2</text>
+  <rect class="box-w" x="260" y="60" width="200" height="22"/>
+  <text class="s" x="268" y="75">Judul    Algoritma untuk Pemula</text>
+  <rect class="box-w" x="260" y="82" width="200" height="22"/>
+  <text class="s" x="268" y="97">Penulis  Ahmad Fauzi</text>
+  <rect class="box-w" x="260" y="104" width="200" height="22"/>
+  <text class="s" x="268" y="119">Tahun    2022</text>
+  <rect class="box-w" x="260" y="126" width="200" height="22"/>
+  <text class="s" x="268" y="141">Harga    67500</text>
+  <path class="arrow" d="M222 90 H258"/>
+  <text class="xs muted" x="470" y="80">Panah: seluruh blok</text>
+  <text class="xs muted" x="470" y="94">disalin sekaligus.</text>
+
+  <text class="h" x="20" y="180">Sesudah  Buku2.Harga := Buku1.Harga - 10000</text>
+  <rect class="box-w" x="20" y="192" width="200" height="22"/>
+  <text class="s" x="28" y="207">Buku1.Harga    85000</text>
+  <rect class="ok" x="260" y="192" width="200" height="22"/>
+  <text class="s b" x="268" y="207">Buku2.Harga    75000</text>
+  <text class="xs muted" x="20" y="240">Judul, Penulis, dan Tahun Buku2 sudah sama dengan Buku1; hanya Harga yang kemudian dibedakan.</text>
+</svg>
+<figcaption>Penyalinan record: satu penugasan menyalin semua field, lalu kedua record berdiri sendiri.</figcaption>
+</figure>
+
+<p>Dua variabel record bisa saling ditugaskan hanya bila <b>tipenya sama persis</b> (sama-sama <code>TBuku</code>).
+Record dengan isi serupa tetapi dideklarasikan dengan tipe berbeda tidak dapat disalin langsung.</p>
+
+<div class="tp7">
+<p><b>Aturan Turbo Pascal 7.</b> Record tidak dapat dibandingkan dengan <code>=</code>, dan tidak dapat dicetak utuh
+dengan <code>Write</code>. Keduanya harus dikerjakan <b>per field</b>. Satu-satunya operasi yang berlaku untuk seluruh
+record adalah penugasan (<code>:=</code>) antara dua record bertipe sama.</p>
+</div>
+
+<h3>Memantau record dengan debugger</h3>
+
+<p>Jendela <i>Watches</i> sangat berguna untuk record. Anda dapat menambahkan watch untuk tiap field
+(<code>Buku1.Harga</code>) lewat <span class="menu">Debug ▸ Add watch...</span>. Taruh titik henti pada baris 45, mulai
+debugging dengan <span class="menu">Debug ▸ Start debugging</span>, lalu perhatikan nilai watch ketika Anda melangkah dengan
+<span class="menu">Debug ▸ Step over</span>.</p>
+
+<x-ide file="bab13_01_record_dasar.pas" top="36" rows="14" cursor="45:3" breakpoints="45" exec="45" watches="Buku1.Harga: 85000;Buku2.Harga: 67500;Buku2.Tahun: 2022" marks="gutter,editor,watches" caption="Berhenti di baris 45: <code>Buku2</code> masih berisi data lama, belum ditimpa salinan <code>Buku1</code>"></x-ide>
+
+<ol class="langkah">
+  <li><b>Pasang titik henti.</b> Pindahkan kursor ke baris 45, lalu pilih <span class="menu">Debug ▸ Toggle breakpoint</span>. Titik merah <span class="marknum">1</span> muncul di gutter, baris yang akan dijalankan disorot hijau <span class="marknum">2</span>.</li>
+  <li><b>Tambah watch.</b> Pilih <span class="menu">Debug ▸ Add watch...</span> untuk <code>Buku1.Harga</code>, <code>Buku2.Harga</code>, dan <code>Buku2.Tahun</code>. Jendela Watches <span class="marknum">3</span> menampilkan nilainya.</li>
+  <li><b>Langkahi satu baris.</b> Pilih <span class="menu">Debug ▸ Step over</span> sekali. Nilai <code>Buku2.Harga</code> dan <code>Buku2.Tahun</code> berubah mengikuti <code>Buku1</code>, bukti bahwa semua field ikut tersalin.</li>
+</ol>
+
+<h2>Array of Record: Record sebagai Tabel</h2>
+
+<p>Satu record cocok untuk satu buku, satu siswa, satu pegawai. Namun daftar nilai kelas berisi banyak siswa.
+Gabungkan dua gagasan yang sudah Anda kenal: buat <b>array yang setiap elemennya berupa record</b>. Hasilnya adalah tabel
+seperti lembar kerja: <b>satu elemen array = satu baris</b>, <b>satu field = satu kolom</b>.</p>
+
+<div class="sintaks"><pre><b>var</b>
+  <i>Tabel</i>: <b>array</b>[<i>1..Maks</i>] <b>of</b> <i>TRecord</i>;
+
+<i>Tabel</i>[<i>I</i>].<i>Field</i> := <i>nilai</i>;      { field milik elemen ke-I }</pre></div>
+
+<figure class="grafik" id="gb-tabel">
+<svg viewBox="0 0 680 228">
+  <text class="h" x="20" y="22">Siswa: array[1..30] of TSiswa</text>
+  <rect class="term" x="20" y="34" width="60" height="26"/>
+  <text class="b white mid" x="50" y="51">Indeks</text>
+  <rect class="term" x="80" y="34" width="180" height="26"/>
+  <text class="b white mid" x="170" y="51">Nama</text>
+  <rect class="term" x="260" y="34" width="110" height="26"/>
+  <text class="b white mid" x="315" y="51">Kelas</text>
+  <rect class="term" x="370" y="34" width="110" height="26"/>
+  <text class="b white mid" x="425" y="51">Nilai</text>
+  <rect class="box-w" x="20" y="60" width="60" height="30"/>
+  <text class="mono mid" x="50" y="80">[1]</text>
+  <rect class="box-w" x="80" y="60" width="180" height="30"/>
+  <text class="mono" x="90" y="80">Ani</text>
+  <rect class="box-w" x="260" y="60" width="110" height="30"/>
+  <text class="mono" x="270" y="80">X-A</text>
+  <rect class="box-w" x="370" y="60" width="110" height="30"/>
+  <text class="mono" x="380" y="80">88</text>
+  <rect class="ok" x="20" y="90" width="60" height="30"/>
+  <text class="mono mid" x="50" y="110">[2]</text>
+  <rect class="ok" x="80" y="90" width="180" height="30"/>
+  <text class="mono" x="90" y="110">Budi</text>
+  <rect class="ok" x="260" y="90" width="110" height="30"/>
+  <text class="mono" x="270" y="110">X-B</text>
+  <rect class="ok" x="370" y="90" width="110" height="30"/>
+  <text class="mono" x="380" y="110">92</text>
+  <rect class="box-w" x="20" y="120" width="60" height="30"/>
+  <text class="mono mid" x="50" y="140">[3]</text>
+  <rect class="box-w" x="80" y="120" width="180" height="30"/>
+  <text class="muted" x="90" y="140">...</text>
+  <rect class="box-w" x="260" y="120" width="110" height="30"/>
+  <rect class="box-w" x="370" y="120" width="110" height="30"/>
+  <text class="s muted" x="20" y="172">Satu baris = satu elemen = satu record TSiswa.</text>
+  <text class="s muted" x="20" y="188">Satu kolom = satu field (Nama, Kelas, atau Nilai).</text>
+  <path class="arrow" d="M500 105 H530"/>
+  <text class="mono b c" x="536" y="100">Siswa[2].Nama</text>
+  <text class="s muted" x="536" y="116">berisi 'Budi'</text>
+  <text class="mono b c" x="536" y="146">Siswa[2].Nilai</text>
+  <text class="s muted" x="536" y="162">berisi 92</text>
+  <path class="arrow" d="M500 150 L530 143"/>
+</svg>
+<figcaption>Array of record sebagai tabel: baris dipilih dengan indeks, kolom dipilih dengan nama field. Baris yang disorot hijau adalah <code>Siswa[2]</code>.</figcaption>
+</figure>
+
+<h3>Program kedua: daftar nilai siswa</h3>
+
+<p>Program <code>bab13_02_array_of_record.pas</code> membaca sejumlah siswa dari papan ketik, menyimpannya di tabel,
+mencetak tabel berkolom rapi, dan mencari nilai tertinggi. Contoh di bawah mengetikkan dua siswa.</p>
+
+<x-listing src="bab13_02_array_of_record.pas"></x-listing>
+
+<x-run src="bab13_02_array_of_record.pas" caption="Dua siswa dimasukkan: Ani (X-A, 88) dan Budi (X-B, 92)"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–10</td><td>Konstanta <code>MaksSiswa</code> menetapkan kapasitas tabel, 30 baris. Mengubah angka ini cukup di satu tempat.</td></tr>
+    <tr><td>12–17</td><td>Tipe <code>TSiswa</code> dengan tiga field: <code>Nama</code>, <code>Kelas</code>, <code>Nilai</code>.</td></tr>
+    <tr><td>20</td><td><code>Siswa</code> adalah array dengan 30 elemen, masing-masing satu <code>TSiswa</code>. Itulah tabelnya.</td></tr>
+    <tr><td>24–27</td><td>Perulangan <code>repeat..until</code> meminta jumlah siswa sampai nilainya antara 1 dan 30, agar indeks tidak melewati batas array.</td></tr>
+    <tr><td>29–35</td><td>Untuk tiap baris <code>I</code> dari 1 sampai <code>N</code>, tiga <code>ReadLn</code> mengisi tiga field: <code>Siswa[I].Nama</code>, <code>Siswa[I].Kelas</code>, <code>Siswa[I].Nilai</code>.</td></tr>
+    <tr><td>37–39</td><td>Mencetak baris kosong, judul kolom, dan garis pemisah.</td></tr>
+    <tr><td>40</td><td>Menganggap siswa nomor 1 sebagai yang terbaik sementara.</td></tr>
+    <tr><td>43–46</td><td>Bentuk <code>'':N</code> menulis tepat <i>N</i> spasi. Dengan <code>'':22 - Length(Nama)</code>, kolom nama selalu lebar 22 karakter berapa pun panjang namanya, sehingga kolom <code>Kelas</code> sejajar. Pernyataan <code>with Siswa[I] do</code> memperpendek penulisan field elemen ke-<code>I</code>.</td></tr>
+    <tr><td>47–48</td><td>Bila nilai baris ini melebihi nilai calon terbaik, catat <code>I</code> sebagai yang terbaik. Ini pola &ldquo;cari maksimum&rdquo; yang sama dengan pencarian pada array biasa, tetapi membandingkan <i>field</i> <code>Nilai</code>.</td></tr>
+    <tr><td>51–52</td><td>Mencetak nama dan nilai milik baris terbaik. Pada contoh ini Budi (92) mengalahkan Ani (88).</td></tr>
+  </tbody>
+</table>
+
+<div class="coba">
+<p>Jalankan program dengan 3 siswa dan beri dua siswa nilai yang sama tertinggi. Siapa yang dipilih
+sebagai nilai tertinggi, siswa pertama atau yang kedua? Jelaskan dengan melihat operator pada baris 47.</p>
+</div>
+
+<h2>Record Bersarang</h2>
+
+<p>Field sebuah record boleh bertipe record lain. Seorang pegawai punya tanggal lahir yang terdiri atas hari, bulan,
+tahun, dan alamat yang terdiri atas jalan, kota, kode pos. Daripada memipihkan semuanya menjadi satu daftar panjang, kita
+kelompokkan: <code>Lahir</code> adalah record <code>TTanggal</code>, <code>Alamat</code> adalah record <code>TAlamat</code>.
+Susunannya mirip formulir yang memuat lampiran berupa formulir lain.</p>
+
+<figure class="grafik" id="gb-bersarang">
+<svg viewBox="0 0 680 262">
+  <rect class="term" x="20" y="10" width="170" height="36" rx="6"/>
+  <text class="h white" x="105" y="33" style="text-anchor:middle">Pegawai</text>
+  <text class="s muted" x="200" y="32">TPegawai</text>
+
+  <path class="line" d="M105 46 V76"/>
+  <path class="line" d="M105 76 H60 V100"/>
+  <path class="line" d="M105 76 H195 V100"/>
+  <path class="line" d="M105 76 H330 V100"/>
+  <path class="line" d="M105 76 H560 V100"/>
+
+  <rect class="box-w" x="20" y="100" width="80" height="34" rx="5"/>
+  <text class="mono mid" x="60" y="115">Nama</text>
+  <text class="xs muted mid" x="60" y="128">string[30]</text>
+
+  <rect class="box" x="140" y="100" width="110" height="34" rx="5"/>
+  <text class="mono b mid" x="195" y="115">Lahir</text>
+  <text class="xs muted mid" x="195" y="128">TTanggal</text>
+
+  <rect class="box" x="280" y="100" width="100" height="34" rx="5"/>
+  <text class="mono b mid" x="330" y="115">Alamat</text>
+  <text class="xs muted mid" x="330" y="128">TAlamat</text>
+
+  <rect class="box-w" x="510" y="100" width="100" height="34" rx="5"/>
+  <text class="mono mid" x="560" y="115">Gaji</text>
+  <text class="xs muted mid" x="560" y="128">LongInt</text>
+
+  <path class="line" d="M195 134 V158"/>
+  <path class="line" d="M195 158 H110 V180"/>
+  <path class="line" d="M195 158 H195 V180"/>
+  <path class="line" d="M195 158 H280 V180"/>
+  <rect class="ok" x="60" y="180" width="100" height="34" rx="5"/>
+  <text class="mono mid" x="110" y="195">Hari</text>
+  <text class="xs muted mid" x="110" y="208">Integer</text>
+  <rect class="ok" x="165" y="180" width="60" height="34" rx="5"/>
+  <text class="mono mid" x="195" y="195">Bulan</text>
+  <text class="xs muted mid" x="195" y="208">Integer</text>
+  <rect class="ok" x="230" y="180" width="100" height="34" rx="5"/>
+  <text class="mono mid" x="280" y="195">Tahun</text>
+  <text class="xs muted mid" x="280" y="208">Integer</text>
+
+  <path class="line" d="M330 134 V158"/>
+  <path class="line" d="M330 158 H410 V180"/>
+  <path class="line" d="M330 158 H500 V180"/>
+  <path class="line" d="M330 158 H590 V180"/>
+  <rect class="ok" x="365" y="180" width="90" height="34" rx="5"/>
+  <text class="mono mid" x="410" y="195">Jalan</text>
+  <text class="xs muted mid" x="410" y="208">string[40]</text>
+  <rect class="ok" x="460" y="180" width="80" height="34" rx="5"/>
+  <text class="mono mid" x="500" y="195">Kota</text>
+  <text class="xs muted mid" x="500" y="208">string[20]</text>
+  <rect class="ok" x="545" y="180" width="90" height="34" rx="5"/>
+  <text class="mono mid" x="590" y="195">KodePos</text>
+  <text class="xs muted mid" x="590" y="208">string[5]</text>
+
+  <text class="xs muted" x="20" y="242">Pegawai.Lahir.Tahun  berarti: dari Pegawai ambil Lahir, dari Lahir ambil Tahun.</text>
+  <text class="xs muted" x="20" y="256">Pegawai.Alamat.Kota  berarti: dari Pegawai ambil Alamat, dari Alamat ambil Kota.</text>
+</svg>
+<figcaption>Pohon <code>TPegawai</code>: dua field (<code>Lahir</code>, <code>Alamat</code>) adalah record lagi. Daun hijau adalah data tunggal.</figcaption>
+</figure>
+
+<p>Untuk mencapai daun, ikuti pohon dari akar dengan <b>titik berantai</b>: <code>Pegawai.Lahir.Tahun</code>. Setiap
+titik berarti &ldquo;masuk satu tingkat&rdquo;. Tipe yang dipakai sebagai field harus dideklarasikan <b>lebih dulu</b>,
+sebab Pascal membaca dari atas ke bawah.</p>
+
+<h3>Program ketiga: data pegawai</h3>
+
+<p>Program <code>bab13_03_record_bersarang.pas</code> mengisi sebuah <code>TPegawai</code> dan mencetak hasilnya,
+termasuk umur yang dihitung dari tahun lahir.</p>
+
+<x-listing src="bab13_03_record_bersarang.pas"></x-listing>
+
+<x-run src="bab13_03_record_bersarang.pas"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–12</td><td><code>TTanggal</code> berisi tiga <code>Integer</code> sekaligus: <code>Hari, Bulan, Tahun</code>. Beberapa field bertipe sama boleh dideklarasikan dalam satu baris, dipisah koma.</td></tr>
+    <tr><td>14–18</td><td><code>TAlamat</code> dengan tiga field string. <code>KodePos</code> bertipe string karena kode pos bukan bilangan yang dihitung.</td></tr>
+    <tr><td>20–25</td><td><code>TPegawai</code> memakai kedua tipe di atas sebagai tipe field <code>Lahir</code> dan <code>Alamat</code>. Itulah sarangnya.</td></tr>
+    <tr><td>27–28</td><td>Konstanta <code>TahunIni = 2026</code> dipakai untuk menghitung umur.</td></tr>
+    <tr><td>34–37</td><td>Mengisi nama, lalu tiga field <code>Lahir</code> dengan titik berantai.</td></tr>
+    <tr><td>39–44</td><td><code>with Pegawai.Alamat do</code> membuka record bagian dalam saja. Di dalamnya cukup menulis <code>Jalan</code>, <code>Kota</code>, <code>KodePos</code>.</td></tr>
+    <tr><td>45</td><td>Mengisi <code>Gaji</code>, field paling luar.</td></tr>
+    <tr><td>47–55</td><td><code>with Pegawai do</code> membuka record luar. Karena itu <code>Lahir.Hari</code> dan <code>Alamat.Kota</code> cukup ditulis dari tingkat kedua. Baris 51 menghitung <code>TahunIni - Lahir.Tahun</code>, yaitu 2026 dikurangi 1995, sekitar 31 tahun.</td></tr>
+  </tbody>
+</table>
+
+<p>Debugger juga dapat menampilkan field bersarang. Tambahkan watch <code>Pegawai.Lahir.Tahun</code> dan
+<code>Pegawai.Gaji</code> lalu langkahi program.</p>
+
+<x-ide file="bab13_03_record_bersarang.pas" top="33" rows="14" cursor="47:3" breakpoints="47" exec="47" watches="Pegawai.Lahir.Tahun: 1995;Pegawai.Gaji: 4750000;Pegawai.Alamat.Kota: 'Kandangan'" marks="watches" caption="Watches untuk field bersarang: titik berantai dipakai juga pada <code>Debug ▸ Add watch...</code>"></x-ide>
+
+<h2>Menyatukan Semuanya: Data Mahasiswa</h2>
+
+<p>Program terakhir bab ini memakai array of record sebagai &ldquo;basis data mini&rdquo; dengan menu. Setiap
+tugas dipisah menjadi prosedur atau fungsi, sehingga program mudah dibaca. Susunan programnya demikian.</p>
+
+<div class="alur">
+  <div><span class="ikon">1</span><b>Tambah</b>menambah satu record di akhir tabel</div>
+  <div><span class="ikon">2</span><b>Tampilkan</b>mencetak semua baris tabel</div>
+  <div><span class="ikon">3</span><b>Cari NIM</b>mencari nomor elemen menurut NIM</div>
+  <div><span class="ikon">4</span><b>Statistik</b>rata-rata dan IPK tertinggi</div>
+</div>
+
+<p>Variabel <code>Jumlah</code> mencatat berapa baris yang sudah terisi, sehingga perulangan cukup berjalan dari 1 sampai
+<code>Jumlah</code>, bukan sampai <code>MaksData</code>. Buka <code>bab13_04_data_mahasiswa.pas</code>. Program ini
+panjang, jadi penjelasannya dibagi per bagian.</p>
+
+<x-listing src="bab13_04_data_mahasiswa.pas"></x-listing>
+
+<p>Masukan bawaan menambah mahasiswa baru bernama Dewi (IPK 3.91), mencari NIM 2601002, menampilkan statistik, lalu
+keluar. Menu tampil ulang setelah setiap perintah sampai Anda memilih 0.</p>
+
+<x-run src="bab13_04_data_mahasiswa.pas" caption="Menambah Dewi, mencari NIM 2601002, lalu statistik"></x-run>
+
+<p>Satu jalannya lagi memperlihatkan pemeriksaan NIM ganda dan tampilan seluruh tabel:</p>
+
+<x-run src="bab13_04_data_mahasiswa.pas" input="1\n2601001\n2\n3\n2601009\n0\n" caption="NIM ganda ditolak, lalu seluruh tabel ditampilkan, dan pencarian NIM yang tidak ada"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–17</td><td>Kapasitas 50 baris dan tipe <code>TMahasiswa</code> dengan <code>NIM</code>, <code>Nama</code>, dan <code>IPK</code> bertipe <code>Real</code>.</td></tr>
+    <tr><td>20–21</td><td>Tabel <code>Data</code> sebagai variabel global, dan <code>Jumlah</code> sebagai penunjuk baris terakhir yang terisi.</td></tr>
+    <tr><td>23–34</td><td><code>Tambah</code> menolak penambahan bila tabel penuh (baris 25). Bila tidak, <code>Jumlah</code> dinaikkan lebih dulu, lalu tiga field baris baru diisi dari parameter.</td></tr>
+    <tr><td>36–40</td><td><code>TampilkanSatu</code> mencetak satu baris. Dengan <code>with Data[I] do</code> nama field langsung dipakai, dan <code>IPK:4:2</code> memformat <code>Real</code> dengan dua desimal sesuai aturan TP7.</td></tr>
+    <tr><td>42–50</td><td><code>TampilkanSemua</code> mencetak judul kolom, memanggil <code>TampilkanSatu</code> untuk tiap baris, lalu menuliskan banyak mahasiswa.</td></tr>
+    <tr><td>52–61</td><td><code>CariNIM</code> adalah fungsi pencari. Nilai awal 0 berarti &ldquo;tidak ketemu&rdquo; (baris 57). Bila <code>Data[I].NIM</code> sama dengan NIM yang dicari, hasil diganti <code>I</code>. Karena NIM unik, hanya satu baris yang cocok.</td></tr>
+    <tr><td>63–84</td><td><code>Statistik</code> menjumlahkan IPK dan mencari IPK tertinggi sekaligus dalam satu perulangan. Bagian awal (68–72) keluar lebih cepat dengan <code>Exit</code> bila tabel kosong, supaya tidak membagi dengan nol.</td></tr>
+    <tr><td>81–83</td><td>Rata-rata dicetak dengan <code>Total / Jumlah:0:2</code>; nama dan IPK tertinggi dengan <code>:0:2</code>.</td></tr>
+    <tr><td>92–95</td><td>Program mulai dengan <code>Jumlah := 0</code> lalu menambah tiga data contoh lewat <code>Tambah</code>.</td></tr>
+    <tr><td>97–126</td><td>Menu berulang sampai pilihan 0. Pilihan 1 (baris 104–114) memeriksa dulu dengan <code>CariNIM</code> bahwa NIM belum ada. Pilihan 3 (116–123) memanggil <code>CariNIM</code> lalu <code>TampilkanSatu</code> bila hasilnya bukan 0.</td></tr>
+  </tbody>
+</table>
+
+<div class="info">
+<p><b>Mengapa dipisah menjadi subprogram?</b> Karena <code>Data</code> dan <code>Jumlah</code> adalah variabel global, setiap
+prosedur langsung dapat memakainya. Untuk program kecil seperti ini cara itu sederhana. Pada program besar, lebih baik data
+dilewatkan lewat parameter agar tiap prosedur jelas apa yang ia ubah.</p>
+</div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Menulis field yang tidak ada</h3>
+
+<p>Salah ketik nama field adalah kekeliruan paling umum. Kompiler langsung menolaknya.</p>
+
+<x-error name="salah1.pas" caption="Field bernama <code>Pengarang</code> tidak ada pada <code>TBuku</code>">program Salah1;
+type
+  TBuku = record
+    Judul: string[40];
+    Penulis: string[30];
+  end;
+var
+  B: TBuku;
+begin
+  B.Judul := 'Pascal';
+  B.Pengarang := 'Budi';
+end.</x-error>
+
+<p>Perbaikannya: gunakan nama field yang dideklarasikan, di sini <code>Penulis</code>. Bila ragu, lihat kembali
+deklarasi tipe record.</p>
+
+<h3>Mencetak record utuh</h3>
+
+<x-error name="salah2.pas" caption="<code>WriteLn</code> tidak bisa mencetak record">program Salah2;
+type
+  TTitik = record
+    X, Y: Integer;
+  end;
+var
+  P: TTitik;
+begin
+  P.X := 3;
+  P.Y := 4;
+  WriteLn(P);
+end.</x-error>
+
+<p>Cetak field satu per satu: <code>WriteLn(P.X, ', ', P.Y)</code>.</p>
+
+<h3>Membandingkan dua record dengan =</h3>
+
+<x-error name="salah3.pas" caption="Operator <code>=</code> tidak berlaku untuk record">program Salah3;
+type
+  TTitik = record
+    X, Y: Integer;
+  end;
+var
+  A, B: TTitik;
+begin
+  A.X := 1; A.Y := 2;
+  B := A;
+  if A = B then
+    WriteLn('sama');
+end.</x-error>
+
+<p>Bandingkan per field: <code>(A.X = B.X) and (A.Y = B.Y)</code>.</p>
+
+<h3>Lupa indeks pada array of record</h3>
+
+<p>Pada tabel, menulis <code>Siswa.Nama</code> tanpa indeks tidak bermakna, karena <code>Siswa</code> adalah array, bukan
+satu record. Tulis <code>Siswa[I].Nama</code>. Dan jangan memakai indeks di luar <code>1..MaksSiswa</code>; indeks di luar
+batas merusak data lain atau menghentikan program saat pemeriksaan batas aktif.</p>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>Record mengelompokkan beberapa data <b>berbeda tipe</b> dalam satu kesatuan; array mengelompokkan banyak data <b>sama tipe</b>.</li>
+  <li>Tipe record dideklarasikan dengan <code>record ... end</code> di bagian <code>type</code>; variabelnya dideklarasikan di <code>var</code>.</li>
+  <li>Field diakses dengan notasi titik: <code>Variabel.Field</code>; bentuk <code>with Variabel do</code> menghemat penulisan.</li>
+  <li>Dua record bertipe sama dapat disalin dengan satu penugasan; perbandingan dan pencetakan harus per field.</li>
+  <li>Array of record membentuk tabel: indeks memilih baris, nama field memilih kolom (<code>Tabel[I].Field</code>).</li>
+  <li>Record dapat bersarang; akses memakai titik berantai (<code>Pegawai.Lahir.Tahun</code>), dan tipe bagian dalam dideklarasikan lebih dulu.</li>
+  <li>Variabel penghitung seperti <code>Jumlah</code> memisahkan kapasitas tabel dari banyak data yang benar-benar terisi.</li>
+  <li>Jendela Watches memantau field record, termasuk field bersarang, selama debugging.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span> Buat record <code>TSiswa</code> dengan field <code>Nama</code>, <code>Umur</code>, dan <code>Kelas</code>. Isi satu variabel lalu cetak isinya dalam satu kalimat.</li>
+  <li><span class="lv dasar">Dasar</span> Ubah Program 13.1 agar menyimpan satu buku lagi (<code>Buku3</code>) dan mencetaknya dengan <code>with</code>.</li>
+  <li><span class="lv menengah">Menengah</span> Tambahkan field <code>Kelas</code> bertipe <code>string[5]</code> ke Program 13.2. Setelah tabel dicetak, hitung dan cetak rata-rata nilai seluruh siswa.</li>
+  <li><span class="lv menengah">Menengah</span> Buat record <code>TTitik</code> (X, Y bertipe <code>Real</code>) dan record <code>TGaris</code> yang berisi dua titik, <code>Awal</code> dan <code>Akhir</code>. Hitung panjang garis dengan rumus jarak.</li>
+  <li><span class="lv menengah">Menengah</span> Pada Program 13.4, tambahkan pilihan 5 untuk menghapus mahasiswa menurut NIM. Petunjuk: geser semua baris sesudahnya satu tempat ke depan, lalu kurangi <code>Jumlah</code>.</li>
+  <li><span class="lv tantangan">Tantangan</span> Urutkan tabel mahasiswa Program 13.4 menurut IPK dari tertinggi ke terendah dengan metode gelembung. Petunjuk: Anda dapat menukar <b>seluruh record</b> dengan variabel bantu bertipe <code>TMahasiswa</code>.</li>
+  <li><span class="lv tantangan">Tantangan</span> Buat buku harian: record <code>TCatatan</code> berisi <code>Tanggal</code> (<code>TTanggal</code> bersarang) dan <code>Isi</code>. Simpan sampai 20 catatan, lalu cetak catatan yang tanggalnya sama dengan tanggal yang diketik pengguna.</li>
+</ol>
+</div>

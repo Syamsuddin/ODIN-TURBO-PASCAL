@@ -1,0 +1,793 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Memahami syarat (kondisi) sebagai ekspresi Boolean yang bernilai <code>True</code> atau <code>False</code>.</li>
+  <li>Memakai <code>if..then</code> untuk menjalankan perintah hanya bila syaratnya terpenuhi.</li>
+  <li>Memakai <code>if..then..else</code> untuk memilih satu dari dua jalan, dan memahami mengapa tidak boleh ada titik koma sebelum <code>else</code>.</li>
+  <li>Menyusun <code>if</code> bersarang dan rantai <code>else if</code>, serta mengenali jebakan <i>dangling else</i>.</li>
+  <li>Memakai <code>case..of</code> dengan daftar nilai, rentang, dan cabang <code>else</code>.</li>
+  <li>Menerapkan percabangan pada masalah nyata: nilai huruf dan tahun kabisat.</li>
+</ul>
+
+<p class="lead">Semua program di bab-bab sebelumnya berjalan lurus: perintah pertama, kedua, ketiga, sampai <code>end.</code>,
+tanpa pernah melompati satu baris pun. Program seperti itu tidak bisa bereaksi terhadap keadaan. Di bab ini Anda akan
+mengajari program mengambil keputusan: menjalankan sebagian perintah hanya bila suatu syarat terpenuhi, memilih satu dari
+dua jalan, atau memilih satu dari banyak kemungkinan. Kemampuan inilah yang membuat program terasa "pintar".</p>
+
+<h2>Program yang Bisa Memilih</h2>
+
+<p>Setiap hari Anda mengambil keputusan dengan pola yang sama: <i>kalau</i> hujan, <i>maka</i> bawa payung. <i>Kalau</i>
+nilai ujian 75 atau lebih, <i>maka</i> lulus, <i>kalau tidak</i> ikut remedial. Pola "kalau ... maka ... kalau tidak ..."
+ini disebut <b>percabangan</b> (<i>branching</i> atau <i>selection</i>), karena jalannya program bercabang seperti jalan
+di persimpangan. Program memeriksa sebuah <b>syarat</b>, lalu memilih cabang mana yang ditempuh.</p>
+
+<p>Di Pascal, syarat adalah <b>ekspresi Boolean</b>: ekspresi yang hasilnya hanya salah satu dari dua nilai,
+<code>True</code> (benar) atau <code>False</code> (salah). Anda sudah mengenalnya di Bab 5. Syarat biasanya dibentuk dari
+operator pembanding (<code>=</code>, <code>&lt;&gt;</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>,
+<code>&gt;=</code>) dan digabung dengan operator logika <code>and</code>, <code>or</code>, serta <code>not</code>. Tabel
+berikut memberi beberapa contoh syarat yang akan Anda temui di bab ini.</p>
+
+<table class="data" id="tb-syarat">
+  <caption>Contoh syarat dan nilainya untuk data tertentu</caption>
+  <thead><tr><th>Syarat</th><th>Artinya</th><th>Data</th><th>Hasil</th></tr></thead>
+  <tbody>
+    <tr><td><code>Suhu &gt;= 38</code></td><td>suhu 38 atau lebih</td><td><code>Suhu</code> = 37</td><td><code>False</code></td></tr>
+    <tr><td><code>Bilangan mod 2 = 0</code></td><td>sisa bagi 2 adalah nol (genap)</td><td><code>Bilangan</code> = 14</td><td><code>True</code></td></tr>
+    <tr><td><code>(Umur &gt;= 13) and (Umur &lt;= 22)</code></td><td>umur di antara 13 dan 22</td><td><code>Umur</code> = 25</td><td><code>False</code></td></tr>
+    <tr><td><code>(Huruf = 'Y') or (Huruf = 'y')</code></td><td>huruf Y besar atau kecil</td><td><code>Huruf</code> = <code>'y'</code></td><td><code>True</code></td></tr>
+    <tr><td><code>not Kabisat</code></td><td>kebalikan nilai <code>Kabisat</code></td><td><code>Kabisat</code> = <code>True</code></td><td><code>False</code></td></tr>
+  </tbody>
+</table>
+
+<p>Pascal menyediakan dua perintah percabangan. Perintah <b><code>if</code></b> memeriksa sebuah syarat Boolean dan cocok
+untuk keputusan "ya atau tidak". Perintah <b><code>case</code></b> memeriksa nilai sebuah variabel dan cocok untuk memilih
+satu dari banyak kemungkinan, misalnya nomor menu atau nama hari. Keduanya akan dibahas satu per satu.</p>
+
+<div class="trio">
+  <div class="card"><h4><span class="ikon">1</span>if..then</h4><p>Satu cabang. Perintah dijalankan bila syarat
+  <code>True</code>, dilewati bila <code>False</code>.</p></div>
+  <div class="card"><h4><span class="ikon">2</span>if..then..else</h4><p>Dua cabang. Tepat satu dari keduanya dijalankan,
+  tergantung hasil syarat.</p></div>
+  <div class="card"><h4><span class="ikon">n</span>case..of</h4><p>Banyak cabang. Nilai sebuah variabel ordinal dicocokkan
+  dengan label setiap cabang.</p></div>
+</div>
+
+<h2>Percabangan Satu Arah: if..then</h2>
+
+<p>Bentuk paling sederhana adalah <code>if..then</code>. Bila syarat bernilai <code>True</code>, pernyataan sesudah
+<code>then</code> dijalankan. Bila <code>False</code>, pernyataan itu dilewati begitu saja, dan program langsung
+melanjutkan ke pernyataan berikutnya. Tidak ada yang dikerjakan sebagai gantinya.</p>
+
+<div class="sintaks"><pre><b>if</b> <i>syarat</i> <b>then</b>
+  <i>pernyataan</i>;
+
+<b>if</b> <i>syarat</i> <b>then</b>
+<b>begin</b>
+  <i>pernyataan1</i>;
+  <i>pernyataan2</i>;
+<b>end</b>;</pre></div>
+
+<p>Sesudah <code>then</code> hanya boleh ada <b>satu</b> pernyataan. Bila Anda ingin menjalankan beberapa perintah
+sekaligus, bungkus semuanya dengan <code>begin</code> dan <code>end</code>. Gabungan ini disebut <b>pernyataan
+majemuk</b> (<i>compound statement</i>): bagi kompiler, seluruh isi <code>begin..end</code> dihitung sebagai satu
+pernyataan. Perhatikan cara kerja <code>if..then</code> pada diagram alir berikut. Belah ketupat kuning adalah titik
+keputusan; dari sana ada dua jalan keluar, <code>True</code> dan <code>False</code>.</p>
+
+<figure class="grafik" id="gb-flow-if">
+<svg viewBox="0 0 680 290">
+  <rect class="io" x="70" y="10" width="160" height="34" rx="6"/>
+  <text class="mid" x="150" y="31">Baca Suhu</text>
+  <path class="arrow" d="M150 44 V68"/>
+  <polygon class="dec" points="150,70 240,105 150,140 60,105"/>
+  <text class="mono mid" x="150" y="109">Suhu &gt;= 38 ?</text>
+  <path class="arrow" d="M150 140 V168"/>
+  <text class="s b" x="158" y="159" style="fill:#11743f">True</text>
+  <rect class="ok" x="60" y="170" width="180" height="36" rx="6"/>
+  <text class="mid" x="150" y="192">Tulis: Anda demam.</text>
+  <path class="arrow" d="M150 206 V238"/>
+  <path class="arrow" d="M240 105 H285 V257 H244"/>
+  <text class="s b" x="248" y="97" style="fill:#b42318">False</text>
+  <rect class="box" x="60" y="240" width="180" height="34" rx="6"/>
+  <text class="mid" x="150" y="261">Pemeriksaan selesai.</text>
+  <rect class="navy" x="330" y="10" width="340" height="138" rx="8"/>
+  <rect x="336" y="24" width="5" height="16" style="fill:#3b7be0"/>
+  <rect x="336" y="52" width="5" height="16" style="fill:#d99a00"/>
+  <rect x="336" y="80" width="5" height="16" style="fill:#1a9e58"/>
+  <rect x="336" y="108" width="5" height="16" style="fill:var(--c)"/>
+  <text class="mono code-fg" x="350" y="36">ReadLn(Suhu);</text>
+  <text class="mono code-fg" x="350" y="64">if Suhu &gt;= 38 then</text>
+  <text class="mono code-fg" x="350" y="92">  WriteLn('Anda demam. Istirahatlah.');</text>
+  <text class="mono code-fg" x="350" y="120">WriteLn('Pemeriksaan selesai.');</text>
+  <polygon class="dec" points="344,176 352,184 344,192 336,184"/>
+  <text class="s" x="362" y="188">Syarat: ekspresi Boolean, hasilnya True atau False</text>
+  <rect class="ok" x="336" y="206" width="16" height="16" rx="3"/>
+  <text class="s" x="362" y="218">Dijalankan hanya bila syarat bernilai True</text>
+  <rect class="box" x="336" y="236" width="16" height="16" rx="3"/>
+  <text class="s" x="362" y="248">Selalu dijalankan, apa pun hasil syaratnya</text>
+  <text class="xs muted" x="336" y="276">Garis warna di kiri kode menunjukkan kotak diagram yang sesuai.</text>
+</svg>
+<figcaption>Diagram alir <code>if..then</code>: bila syarat <code>False</code>, perintah di cabang <code>True</code> dilewati.</figcaption>
+</figure>
+
+<p>Program contoh pertama memeriksa suhu badan. Buka <code>bab06_01_if_then.pas</code> lewat
+<span class="menu">File ▸ Examples...</span>, lalu jalankan dengan <kbd>Ctrl</kbd>+<kbd>F9</kbd>. Program ini memiliki dua
+<code>if</code>: yang pertama dengan satu pernyataan, yang kedua dengan pernyataan majemuk.</p>
+
+<x-listing src="bab06_01_if_then.pas"></x-listing>
+
+<p>Bila Anda mengetik <code>38</code>, syarat pada baris 15 bernilai <code>True</code> sehingga pesan demam tampil. Syarat
+pada baris 19 bernilai <code>False</code>, jadi blok baris 20–23 dilewati. Baris 25 selalu dijalankan.</p>
+
+<x-run src="bab06_01_if_then.pas" caption="Suhu 38: cabang <code>if</code> pertama dijalankan"></x-run>
+
+<p>Jalankan sekali lagi dan ketik <code>34</code>. Sekarang keadaannya terbalik: syarat pertama <code>False</code>, syarat
+kedua <code>True</code>, sehingga kedua <code>WriteLn</code> di dalam <code>begin..end</code> dijalankan.</p>
+
+<x-run src="bab06_01_if_then.pas" input="34\n" caption="Suhu 34: blok <code>begin..end</code> pada baris 20–23 dijalankan"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9</td><td>Variabel <code>Suhu</code> bertipe <code>Integer</code>, jadi suhu diketik sebagai bilangan bulat.</td></tr>
+    <tr><td>12–13</td><td>Program meminta masukan dan menyimpannya di <code>Suhu</code>. Kursor menunggu di User screen sampai Anda menekan <kbd>Enter</kbd>.</td></tr>
+    <tr><td>15–16</td><td>Satu pernyataan <code>if</code> utuh. Syarat <code>Suhu &gt;= 38</code> diperiksa; bila <code>True</code>, <code>WriteLn</code> pada baris 16 dijalankan. Titik koma di akhir baris 16 mengakhiri seluruh pernyataan <code>if</code>, bukan hanya <code>WriteLn</code>.</td></tr>
+    <tr><td>19–23</td><td><code>if</code> kedua dengan pernyataan majemuk. Kedua <code>WriteLn</code> di dalam <code>begin..end</code> dijalankan bersama-sama, atau dilewati bersama-sama.</td></tr>
+    <tr><td>25</td><td>Pernyataan di luar kedua <code>if</code>. Baris ini selalu dijalankan, berapa pun suhunya.</td></tr>
+  </tbody>
+</table>
+
+<p>Bagaimana bila suhunya 36? Kedua syarat bernilai <code>False</code>, sehingga hanya baris 25 yang dijalankan. Tabel
+berikut merangkum baris mana yang bekerja untuk setiap kemungkinan masukan. Membuat tabel seperti ini adalah cara yang
+baik untuk menguji program percabangan: pilih satu masukan untuk <b>setiap</b> cabang, lalu periksa hasilnya satu per
+satu.</p>
+
+<table class="data compact">
+  <caption>Baris yang dijalankan Program 6.1 untuk tiga kelompok masukan</caption>
+  <thead><tr><th>Masukan</th><th>Suhu &gt;= 38</th><th>Suhu &lt; 35</th><th>Baris yang dijalankan</th></tr></thead>
+  <tbody>
+    <tr><td>38 atau lebih</td><td><code>True</code></td><td><code>False</code></td><td>16, 25</td></tr>
+    <tr><td>35 sampai 37</td><td><code>False</code></td><td><code>False</code></td><td>25 saja</td></tr>
+    <tr><td>kurang dari 35</td><td><code>False</code></td><td><code>True</code></td><td>21, 22, 25</td></tr>
+  </tbody>
+</table>
+
+<div class="tip"><p>Biasakan menulis isi cabang menjorok dua spasi ke kanan, seperti di semua contoh buku ini. Kompiler
+tidak peduli dengan spasi, tetapi mata Anda akan langsung melihat perintah mana yang berada di dalam <code>if</code> dan mana
+yang tidak.</p></div>
+
+<h2>Dua Pilihan: if..then..else</h2>
+
+<p>Sering kali kita tidak hanya ingin melewati perintah, tetapi melakukan hal lain sebagai gantinya: bila genap tulis
+"genap", bila tidak tulis "ganjil". Untuk itu <code>if</code> dilengkapi bagian <b><code>else</code></b> (artinya "kalau
+tidak"). Dengan <code>if..then..else</code>, <b>tepat satu</b> dari dua cabang selalu dijalankan: cabang
+<code>then</code> bila syarat <code>True</code>, cabang <code>else</code> bila <code>False</code>. Tidak mungkin keduanya
+dijalankan, dan tidak mungkin keduanya dilewati.</p>
+
+<div class="sintaks"><pre><b>if</b> <i>syarat</i> <b>then</b>
+  <i>pernyataan_bila_True</i>
+<b>else</b>
+  <i>pernyataan_bila_False</i>;</pre></div>
+
+<p>Perhatikan baik-baik: <b>tidak ada titik koma sebelum <code>else</code></b>. Titik koma di Pascal adalah pemisah antar
+pernyataan. Seluruh <code>if..then..else</code> adalah <b>satu</b> pernyataan, jadi titik koma baru boleh ditulis setelah
+cabang <code>else</code> selesai. Bila Anda menulis titik koma sebelum <code>else</code>, kompiler mengira pernyataan
+<code>if</code> sudah berakhir, lalu bingung menemukan <code>else</code> yang tidak punya pasangan.</p>
+
+<figure class="grafik" id="gb-flow-ifelse">
+<svg viewBox="0 0 680 272">
+  <rect class="io" x="110" y="8" width="160" height="32" rx="6"/>
+  <text class="mid" x="190" y="28">Baca Bilangan</text>
+  <path class="arrow" d="M190 40 V62"/>
+  <polygon class="dec" points="190,64 300,95 190,126 80,95"/>
+  <text class="mono mid" x="190" y="99">Bilangan mod 2 = 0 ?</text>
+  <path class="arrow" d="M80 95 H55 V150"/>
+  <text class="s b mid" x="62" y="88" style="fill:#11743f">True</text>
+  <path class="arrow" d="M300 95 H325 V150"/>
+  <text class="s b mid" x="322" y="88" style="fill:#b42318">False</text>
+  <rect class="ok" x="5" y="152" width="140" height="36" rx="6"/>
+  <text class="mid" x="75" y="174">Tulis: genap</text>
+  <rect class="no" x="255" y="152" width="140" height="36" rx="6"/>
+  <text class="mid" x="325" y="174">Tulis: ganjil</text>
+  <path class="line" d="M75 188 V212 H325 V188"/>
+  <path class="arrow" d="M190 212 V232"/>
+  <rect class="box" x="110" y="234" width="160" height="32" rx="6"/>
+  <text class="mid" x="190" y="254">Pernyataan berikutnya</text>
+  <rect class="navy" x="420" y="8" width="250" height="150" rx="8"/>
+  <rect x="426" y="22" width="5" height="16" style="fill:#d99a00"/>
+  <rect x="426" y="50" width="5" height="16" style="fill:#1a9e58"/>
+  <rect x="426" y="78" width="5" height="16" style="fill:#d99a00"/>
+  <rect x="426" y="106" width="5" height="16" style="fill:#d64545"/>
+  <rect x="426" y="134" width="5" height="16" style="fill:var(--c)"/>
+  <text class="mono code-fg" x="438" y="34">if Bilangan mod 2 = 0 then</text>
+  <text class="mono code-fg" x="438" y="62">  WriteLn(.., ' genap')</text>
+  <text class="mono code-fg" x="438" y="90">else</text>
+  <text class="mono code-fg" x="438" y="118">  WriteLn(.., ' ganjil');</text>
+  <text class="mono code-fg" x="438" y="146">...</text>
+  <text class="s b" x="420" y="186" style="fill:#b42318">Tidak ada ; sesudah baris WriteLn genap</text>
+  <text class="s" x="420" y="204">Titik koma pertama baru muncul sesudah</text>
+  <text class="s" x="420" y="220">cabang else, karena if..then..else adalah</text>
+  <text class="s" x="420" y="236">satu pernyataan utuh.</text>
+</svg>
+<figcaption>Diagram alir <code>if..then..else</code>: dua cabang yang bertemu kembali. Tepat satu cabang dijalankan.</figcaption>
+</figure>
+
+<p>Program 6.2 memakai <code>if..then..else</code> dua kali. Yang pertama menentukan genap atau ganjil dengan operator
+<code>mod</code> (sisa bagi). Yang kedua memutuskan kelulusan, dan setiap cabangnya berisi pernyataan majemuk.</p>
+
+<x-listing src="bab06_02_if_else.pas"></x-listing>
+
+<x-run src="bab06_02_if_else.pas" caption="Masukan 7 dan 60: kedua <code>if</code> menempuh cabang <code>else</code>"></x-run>
+
+<p>Bilangan 7 dibagi 2 bersisa 1, jadi syarat baris 15 <code>False</code> dan cabang <code>else</code> pada baris 18 yang
+dijalankan. Nilai 60 kurang dari 75, jadi blok <code>else</code> pada baris 28–31 dijalankan dan baris 30 menghitung
+kekurangannya, <code>75 - 60</code>. Sekarang coba masukan yang menempuh cabang lainnya: bilangan genap dan nilai tepat
+75.</p>
+
+<x-run src="bab06_02_if_else.pas" input="8\n75\n" caption="Masukan 8 dan 75: kedua <code>if</code> menempuh cabang <code>then</code>"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>15</td><td><code>Bilangan mod 2</code> menghasilkan sisa pembagian dengan 2. Sisa 0 berarti genap.</td></tr>
+    <tr><td>16</td><td>Cabang <code>then</code>. Baris ini <b>tidak</b> diakhiri titik koma karena pernyataan <code>if</code> belum selesai; masih ada <code>else</code> di baris berikutnya.</td></tr>
+    <tr><td>17–18</td><td>Cabang <code>else</code>. Titik koma di akhir baris 18 menutup seluruh <code>if..then..else</code>.</td></tr>
+    <tr><td>22</td><td>Syarat <code>Nilai &gt;= 75</code>. Nilai tepat 75 ikut lulus karena operatornya <code>&gt;=</code>, bukan <code>&gt;</code>.</td></tr>
+    <tr><td>23–26</td><td>Cabang <code>then</code> berupa pernyataan majemuk. Kata <code>end</code> pada baris 26 juga tanpa titik koma, karena masih diikuti <code>else</code>.</td></tr>
+    <tr><td>27–31</td><td>Cabang <code>else</code> berupa pernyataan majemuk. Baris 30 menulis teks dan hasil hitungan <code>75 - Nilai</code> dalam satu <code>WriteLn</code>.</td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p>Jalankan Program 6.2 dan ketik bilangan negatif, misalnya <code>-7</code> dan <code>-8</code>. Apakah
+genap dan ganjilnya tetap benar? Lalu ubah <code>&gt;=</code> pada baris 22 menjadi <code>&gt;</code> dan ketik nilai 75.
+Apa yang berubah, dan mengapa?</p></div>
+
+<h2>if Bersarang dan Rantai else if</h2>
+
+<p>Cabang sebuah <code>if</code> boleh berisi pernyataan apa saja, termasuk <code>if</code> lain. <code>if</code> di dalam
+<code>if</code> ini disebut <b>if bersarang</b> (<i>nested if</i>). Ada dua pola yang sangat sering dipakai:</p>
+
+<ul>
+  <li><b>Rantai <code>else if</code></b>: <code>if</code> baru ditaruh di cabang <code>else</code>. Hasilnya adalah deretan
+  syarat yang diperiksa dari atas ke bawah, dan berhenti di syarat pertama yang <code>True</code>. Pola ini dipakai untuk
+  memilih satu dari beberapa kelompok, misalnya kelompok umur.</li>
+  <li><b><code>if</code> di dalam <code>then</code></b>: pertanyaan kedua hanya diajukan bila jawaban pertama
+  <code>True</code>, misalnya "apakah pelajar?" hanya ditanyakan kepada pengunjung berumur 13 sampai 22 tahun.</li>
+</ul>
+
+<div class="sintaks"><pre><b>if</b> <i>syarat1</i> <b>then</b>
+  <i>pernyataan1</i>
+<b>else if</b> <i>syarat2</i> <b>then</b>
+  <i>pernyataan2</i>
+<b>else if</b> <i>syarat3</i> <b>then</b>
+  <i>pernyataan3</i>
+<b>else</b>
+  <i>pernyataan_bila_semua_False</i>;</pre></div>
+
+<p>Sebenarnya Pascal tidak punya kata <code>else if</code>. Yang terjadi adalah cabang <code>else</code> berisi sebuah
+pernyataan <code>if</code> baru, yang cabang <code>else</code>-nya berisi <code>if</code> baru lagi, dan seterusnya. Karena
+penulisannya menjadi rapi seperti daftar, programmer menyebutnya rantai <code>else if</code>. Diagram berikut memperlihatkan
+rantai dari Program 6.3, yang menentukan harga tiket berdasarkan umur.</p>
+
+<figure class="grafik" id="gb-flow-elseif">
+<svg viewBox="0 0 680 362">
+  <rect class="io" x="90" y="6" width="120" height="30" rx="6"/>
+  <text class="mid" x="150" y="25">Baca Umur</text>
+  <path class="arrow" d="M150 36 V55"/>
+  <polygon class="dec" points="150,57 230,85 150,113 70,85"/>
+  <text class="mono mid" x="150" y="89">Umur &lt; 5 ?</text>
+  <polygon class="dec" points="150,147 230,175 150,203 70,175"/>
+  <text class="mono mid" x="150" y="179">Umur &lt; 13 ?</text>
+  <polygon class="dec" points="150,237 230,265 150,293 70,265"/>
+  <text class="mono mid" x="150" y="269">Umur &lt; 60 ?</text>
+  <path class="arrow" d="M150 113 V145"/>
+  <path class="arrow" d="M150 203 V235"/>
+  <path class="arrow" d="M150 293 V318"/>
+  <text class="s b" x="157" y="133" style="fill:#b42318">False</text>
+  <text class="s b" x="157" y="223" style="fill:#b42318">False</text>
+  <text class="s b" x="157" y="310" style="fill:#b42318">False</text>
+  <path class="arrow" d="M230 85 H286"/>
+  <path class="arrow" d="M230 175 H286"/>
+  <path class="arrow" d="M230 265 H286"/>
+  <text class="s b mid" x="258" y="78" style="fill:#11743f">True</text>
+  <text class="s b mid" x="258" y="168" style="fill:#11743f">True</text>
+  <text class="s b mid" x="258" y="258" style="fill:#11743f">True</text>
+  <rect class="ok" x="288" y="68" width="140" height="34" rx="6"/>
+  <text class="mono mid" x="358" y="89">Harga := 0</text>
+  <rect class="ok" x="288" y="158" width="140" height="34" rx="6"/>
+  <text class="mono mid" x="358" y="179">Harga := 15000</text>
+  <rect class="ok" x="288" y="248" width="140" height="34" rx="6"/>
+  <text class="mono mid" x="358" y="269">Harga := 30000</text>
+  <rect class="box" x="80" y="320" width="140" height="34" rx="6"/>
+  <text class="mono mid" x="150" y="341">Harga := 20000</text>
+  <path class="line" d="M428 85 H470 M428 175 H470 M428 265 H470 M220 337 H470 M470 85 V337"/>
+  <path class="arrow" d="M470 337 H508"/>
+  <rect class="box-w" x="510" y="318" width="164" height="38" rx="6"/>
+  <text class="s mid" x="592" y="334">lanjut ke baris 28:</text>
+  <text class="s mid" x="592" y="348">pertanyaan pelajar</text>
+  <text class="h c" x="500" y="80">Cara membaca</text>
+  <text class="s" x="500" y="102">Syarat diperiksa dari atas ke</text>
+  <text class="s" x="500" y="118">bawah. Syarat pertama yang</text>
+  <text class="s" x="500" y="134">True menentukan harga, dan</text>
+  <text class="s" x="500" y="150">syarat di bawahnya tidak</text>
+  <text class="s" x="500" y="166">diperiksa lagi.</text>
+  <text class="s" x="500" y="196">Karena itu "Umur &lt; 13" sudah</text>
+  <text class="s" x="500" y="212">pasti berarti umur 5 sampai 12:</text>
+  <text class="s" x="500" y="228">umur di bawah 5 sudah tertangkap</text>
+  <text class="s" x="500" y="244">oleh syarat pertama.</text>
+</svg>
+<figcaption>Rantai <code>else if</code> pada Program 6.3, baris 19–26. Hanya satu dari empat penugasan <code>Harga</code> yang dijalankan.</figcaption>
+</figure>
+
+<x-listing src="bab06_03_if_bersarang.pas"></x-listing>
+
+<x-run src="bab06_03_if_bersarang.pas" caption="Umur 17 dan pelajar: harga dewasa dikurangi potongan pelajar"></x-run>
+
+<p>Umur 17 tidak memenuhi <code>Umur &lt; 5</code> maupun <code>Umur &lt; 13</code>, tetapi memenuhi <code>Umur &lt; 60</code>,
+sehingga <code>Harga</code> menjadi 30000. Karena 17 berada di antara 13 dan 22, program bertanya apakah pengunjung
+pelajar. Jawaban <code>y</code> memenuhi syarat baris 33, sehingga harga dipotong 10000. Sekarang coba pengunjung balita:</p>
+
+<x-run src="bab06_03_if_bersarang.pas" input="3\n" caption="Umur 3: syarat pertama langsung <code>True</code>, dan pertanyaan pelajar tidak diajukan"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>11</td><td><code>Harga</code> bertipe <code>LongInt</code>, cukup untuk angka rupiah yang besar (batas <code>Integer</code> hanya 32767).</td></tr>
+    <tr><td>19–26</td><td>Rantai <code>else if</code> dengan empat kemungkinan. Hanya baris 26 yang diakhiri titik koma, karena seluruh rantai adalah satu pernyataan <code>if</code>.</td></tr>
+    <tr><td>29</td><td>Syarat gabungan: kedua pembanding wajib diberi tanda kurung, lalu digabung dengan <code>and</code>.</td></tr>
+    <tr><td>30–35</td><td>Cabang <code>then</code> berisi pernyataan majemuk, termasuk <code>if</code> lain pada baris 33. Inilah <code>if</code> di dalam <code>if</code>: pertanyaan pelajar hanya muncul untuk umur 13–22.</td></tr>
+    <tr><td>33</td><td>Jawaban <code>Y</code> atau <code>y</code> sama-sama diterima berkat operator <code>or</code>.</td></tr>
+    <tr><td>34</td><td>Penugasan <code>Harga := Harga - 10000</code> memakai nilai lama <code>Harga</code> untuk menghitung nilai barunya.</td></tr>
+    <tr><td>37–40</td><td><code>if..else</code> terakhir memilih cara menampilkan hasil: kalimat khusus untuk harga nol, atau angka harganya.</td></tr>
+  </tbody>
+</table>
+
+<div class="awas"><p>Urutan syarat dalam rantai <code>else if</code> sangat menentukan. Bila baris 19 dan 23 ditukar, sehingga
+<code>Umur &lt; 60</code> diperiksa lebih dulu, balita berumur 3 tahun ikut membayar 30000, karena 3 juga kurang dari 60
+dan syarat itu yang pertama bernilai <code>True</code>. Susunlah syarat dari kelompok yang paling sempit, atau dari batas
+terkecil ke terbesar.</p></div>
+
+<h3>Jebakan else yang Menggantung</h3>
+
+<p>Ketika <code>if</code> bersarang tanpa <code>begin..end</code>, muncul pertanyaan: sebuah <code>else</code> milik
+<code>if</code> yang mana? Aturan Pascal tegas: <b><code>else</code> selalu menjadi pasangan <code>if</code> terdekat di
+atasnya yang belum punya <code>else</code></b>. Indentasi tidak berpengaruh sama sekali. Masalah ini terkenal dengan nama
+<i>dangling else</i> (else yang menggantung). Program berikut ditulis dengan indentasi yang menipu: penulisnya ingin
+<code>else</code> menjadi milik <code>if Umur &gt;= 13</code>.</p>
+
+<x-error name="gantung.pas" run caption="Umur 17, tetapi yang tampil adalah pesan untuk anak-anak: <code>else</code> menjadi milik <code>if</code> kedua">program Gantung;
+var
+  Umur: Integer;
+  Pelajar: Char;
+begin
+  Umur := 17;
+  Pelajar := 'T';
+  if Umur >= 13 then
+    if Pelajar = 'Y' then
+      WriteLn('Dapat potongan pelajar')
+  else
+    WriteLn('Anak-anak tidak perlu kartu pelajar');
+  WriteLn('Selesai.');
+end.</x-error>
+
+<p>Program ini lolos kompilasi, tetapi hasilnya salah. Kompiler membaca baris 11 sebagai <code>else</code> milik
+<code>if Pelajar = 'Y'</code> (baris 9), karena itulah <code>if</code> terdekat yang belum punya <code>else</code>.
+Akibatnya, remaja yang bukan pelajar disebut anak-anak. Cara memperbaikinya adalah membungkus <code>if</code> bagian dalam
+dengan <code>begin..end</code>, sehingga <code>if</code> itu tertutup sebelum <code>else</code> dibaca.</p>
+
+<div class="duo">
+  <div class="card bad"><h4><span class="ikon">✗</span>Indentasi menipu</h4>
+<x-code>if Umur >= 13 then
+  if Pelajar = 'Y' then
+    WriteLn('Potongan pelajar')
+else
+  WriteLn('Anak-anak');</x-code>
+  <p><code>else</code> menempel pada <code>if Pelajar = 'Y'</code>.</p></div>
+  <div class="card good"><h4><span class="ikon">✓</span>Batas yang jelas</h4>
+<x-code>if Umur >= 13 then
+begin
+  if Pelajar = 'Y' then
+    WriteLn('Potongan pelajar');
+end
+else
+  WriteLn('Anak-anak');</x-code>
+  <p><code>end</code> menutup <code>if</code> dalam; <code>else</code> milik <code>if Umur &gt;= 13</code>.</p></div>
+</div>
+
+<h2>Banyak Pilihan: case..of</h2>
+
+<p>Bayangkan program yang mengubah nomor hari 1 sampai 7 menjadi nama hari. Dengan <code>if</code>, Anda butuh rantai tujuh
+syarat <code>NomorHari = 1</code>, <code>NomorHari = 2</code>, dan seterusnya. Pascal menyediakan cara yang lebih ringkas:
+<b><code>case..of</code></b>. Nilai sebuah ekspresi, yang disebut <b>selektor</b>, dicocokkan dengan <b>label</b> setiap
+cabang. Cabang yang labelnya cocok dijalankan, sisanya dilewati. Cara kerjanya seperti lift: Anda menekan tombol lantai,
+dan lift langsung berhenti di lantai itu tanpa perlu bertanya "lantai 1? lantai 2?" satu per satu.</p>
+
+<div class="sintaks"><pre><b>case</b> <i>selektor</i> <b>of</b>
+  <i>label1</i>: <i>pernyataan1</i>;
+  <i>label2</i>, <i>label3</i>: <i>pernyataan2</i>;        { daftar nilai }
+  <i>awal</i>..<i>akhir</i>: <i>pernyataan3</i>;             { rentang nilai }
+<b>else</b>
+  <i>pernyataan_bila_tidak_ada_yang_cocok</i>;
+<b>end</b>;</pre></div>
+
+<figure class="grafik" id="gb-flow-case">
+<svg viewBox="0 0 680 236">
+  <rect class="dec" x="240" y="8" width="200" height="36" rx="8"/>
+  <text class="mono mid b" x="340" y="30">case NomorHari of</text>
+  <text class="s" x="460" y="22">nilai NomorHari dicocokkan</text>
+  <text class="s" x="460" y="37">dengan label setiap cabang</text>
+  <path class="line" d="M340 44 V64 M45 64 H635"/>
+  <path class="arrow" d="M45 64 V88"/>
+  <path class="arrow" d="M129 64 V88"/>
+  <path class="arrow" d="M213 64 V88"/>
+  <path class="arrow" d="M298 64 V88"/>
+  <path class="arrow" d="M382 64 V88"/>
+  <path class="arrow" d="M466 64 V88"/>
+  <path class="arrow" d="M550 64 V88"/>
+  <path class="arrow" d="M635 64 V88"/>
+  <rect class="ok" x="8" y="90" width="74" height="48" rx="6"/>
+  <text class="mono mid b" x="45" y="108">1</text><text class="s mid" x="45" y="127">Minggu</text>
+  <rect class="ok" x="92" y="90" width="74" height="48" rx="6"/>
+  <text class="mono mid b" x="129" y="108">2</text><text class="s mid" x="129" y="127">Senin</text>
+  <rect class="ok" x="176" y="90" width="74" height="48" rx="6"/>
+  <text class="mono mid b" x="213" y="108">3</text><text class="s mid" x="213" y="127">Selasa</text>
+  <rect class="ok" x="261" y="90" width="74" height="48" rx="6"/>
+  <text class="mono mid b" x="298" y="108">4</text><text class="s mid" x="298" y="127">Rabu</text>
+  <rect class="ok" x="345" y="90" width="74" height="48" rx="6"/>
+  <text class="mono mid b" x="382" y="108">5</text><text class="s mid" x="382" y="127">Kamis</text>
+  <rect class="ok" x="429" y="90" width="74" height="48" rx="6"/>
+  <text class="mono mid b" x="466" y="108">6</text><text class="s mid" x="466" y="127">Jumat</text>
+  <rect class="ok" x="513" y="90" width="74" height="48" rx="6"/>
+  <text class="mono mid b" x="550" y="108">7</text><text class="s mid" x="550" y="127">Sabtu</text>
+  <rect class="no" x="598" y="90" width="74" height="48" rx="6"/>
+  <text class="mono mid b" x="635" y="108">else</text><text class="s mid" x="635" y="127">pesan salah</text>
+  <path class="line" d="M45 138 V162 M129 138 V162 M213 138 V162 M298 138 V162 M382 138 V162 M466 138 V162 M550 138 V162 M635 138 V162 M45 162 H635"/>
+  <path class="arrow" d="M340 162 V186"/>
+  <rect class="box" x="240" y="188" width="200" height="34" rx="6"/>
+  <text class="mono mid" x="340" y="209">end;  { lanjut }</text>
+</svg>
+<figcaption>Cara kerja <code>case</code> pertama pada Program 6.4: hanya satu cabang yang dijalankan, lalu program melompat ke sesudah <code>end</code>.</figcaption>
+</figure>
+
+<p>Satu cabang boleh berlaku untuk beberapa nilai. Tulis nilai-nilai itu dipisah koma (<code>1, 7</code>) atau sebagai
+rentang dengan dua titik (<code>2..6</code>, artinya 2 sampai 6). Contoh pengelompokan pada <code>case</code> kedua
+Program 6.4 tampak seperti ini: nilai 1 dan 7 masuk cabang libur, nilai 2 sampai 6 masuk cabang sekolah.</p>
+
+<div class="arr"><em>NomorHari</em><span class="hi"><b>1</b><i>libur</i></span><span class="lo"><b>2</b><i>sekolah</i></span><span class="lo"><b>3</b><i>sekolah</i></span><span class="lo"><b>4</b><i>sekolah</i></span><span class="lo"><b>5</b><i>sekolah</i></span><span class="lo"><b>6</b><i>sekolah</i></span><span class="hi"><b>7</b><i>libur</i></span></div>
+
+<p>Program 6.4 memakai tiga <code>case</code>: yang pertama dengan satu label per cabang dan cabang <code>else</code>, yang
+kedua dengan daftar dan rentang tanpa <code>else</code>, dan yang ketiga dengan selektor bertipe <code>Char</code>.</p>
+
+<x-listing src="bab06_04_case_of.pas"></x-listing>
+
+<x-run src="bab06_04_case_of.pas" caption="Hari ke-7 dan huruf <code>k</code>"></x-run>
+
+<p>Bagaimana bila nomor harinya di luar 1 sampai 7? Masukan berikut sengaja memakai nomor 9 dan karakter angka
+<code>5</code>. Perhatikan bahwa <code>case</code> kedua tidak menulis apa-apa: tidak ada label yang cocok dan tidak ada
+cabang <code>else</code>, jadi seluruh <code>case</code> dilewati.</p>
+
+<x-run src="bab06_04_case_of.pas" input="9\n5\n" caption="Nomor hari 9 dan karakter <code>5</code>: cabang <code>else</code> pertama dan cabang angka"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>16</td><td><code>case NomorHari of</code>: nilai <code>NomorHari</code> menjadi selektor.</td></tr>
+    <tr><td>17–23</td><td>Tujuh cabang, masing-masing dengan satu label konstanta, titik dua, lalu satu pernyataan.</td></tr>
+    <tr><td>24–25</td><td>Cabang <code>else</code> dijalankan bila tidak ada label yang cocok. Berbeda dengan <code>if</code>, sebelum <code>else</code> pada <code>case</code> <b>boleh</b> ada titik koma.</td></tr>
+    <tr><td>26</td><td><code>end;</code> menutup <code>case</code>. Setiap <code>case</code> wajib ditutup <code>end</code>, walaupun tidak ada <code>begin</code> pasangannya.</td></tr>
+    <tr><td>29–30</td><td>Label berupa daftar (<code>1, 7</code>) dan rentang (<code>2..6</code>). <code>case</code> ini tidak punya <code>else</code>.</td></tr>
+    <tr><td>35</td><td>Fungsi <code>UpCase</code> mengubah huruf kecil menjadi huruf besar, sehingga <code>k</code> dan <code>K</code> diperlakukan sama. Karakter selain huruf kecil tidak diubah.</td></tr>
+    <tr><td>38–47</td><td><code>case</code> dengan selektor <code>Char</code>. Label karakter ditulis di antara tanda petik. Konsonan ditulis per potongan rentang agar tidak bertumpuk dengan vokal.</td></tr>
+  </tbody>
+</table>
+
+<p>Mengapa konsonan tidak cukup ditulis <code>'B'..'Z'</code>? Karena rentang itu juga memuat <code>'E'</code>,
+<code>'I'</code>, <code>'O'</code>, dan <code>'U'</code> yang sudah dipakai cabang vokal. Dalam satu <code>case</code>,
+setiap nilai hanya boleh muncul di <b>satu</b> cabang. Kompiler menolak label yang bertumpuk:</p>
+
+<x-error name="vokal.pas" caption="Label <code>'B'..'Z'</code> bertumpuk dengan label vokal">program Vokal;
+var
+  Huruf: Char;
+begin
+  Huruf := 'K';
+  case Huruf of
+    'A', 'I', 'U', 'E', 'O': WriteLn('Huruf vokal');
+    'B'..'Z': WriteLn('Huruf konsonan');
+  end;
+end.</x-error>
+
+<div class="tp7"><p>Selektor <code>case</code> harus bertipe <b>ordinal</b>, yaitu tipe yang nilainya bisa diurutkan dan
+dihitung satu per satu: <code>Integer</code>, <code>LongInt</code>, <code>Char</code>, <code>Boolean</code>, enumerasi, dan
+subrange. Tipe <code>Real</code> dan <code>String</code> tidak boleh menjadi selektor. Label harus berupa konstanta yang
+sudah diketahui saat kompilasi, bukan variabel. Untuk memilih berdasarkan teks atau bilangan pecahan, pakailah rantai
+<code>else if</code>.</p></div>
+
+<div class="duo">
+  <div class="card"><h4><span class="ikon">if</span>Pakai if bila...</h4><p>syaratnya berupa perbandingan atau gabungan
+  logika (<code>Suhu &gt;= 38</code>, <code>(A &gt; 0) and (B &gt; 0)</code>), melibatkan <code>Real</code> atau
+  <code>String</code>, atau keputusannya hanya ya/tidak.</p></div>
+  <div class="card"><h4><span class="ikon">cs</span>Pakai case bila...</h4><p>pilihan bergantung pada nilai satu variabel
+  ordinal yang bisa didaftar: nomor menu, nomor bulan, huruf jawaban, atau kelompok rentang angka bulat.</p></div>
+</div>
+
+<h2>Latihan Terpadu: Nilai Angka Menjadi Nilai Huruf</h2>
+
+<p>Banyak sekolah mengubah nilai angka 0 sampai 100 menjadi nilai huruf. Program 6.5 memakai aturan berikut. Sebelum
+memilih huruf, program menolak nilai di luar 0 sampai 100 dengan <code>if</code>, karena nilai seperti 105 atau −3 tidak
+masuk akal. Pola "saring dulu masukan yang tidak sah, baru proses" ini akan sering Anda pakai.</p>
+
+<figure class="grafik" id="gb-skala-nilai">
+<svg viewBox="0 0 680 150">
+  <rect class="no" x="0" y="50" width="58" height="36" rx="5"/>
+  <text class="s mid b" x="29" y="66" style="fill:#b42318">&lt; 0</text>
+  <text class="xs mid" x="29" y="79" style="fill:#b42318">ditolak</text>
+  <rect class="no" x="622" y="50" width="58" height="36" rx="5"/>
+  <text class="s mid b" x="651" y="66" style="fill:#b42318">&gt; 100</text>
+  <text class="xs mid" x="651" y="79" style="fill:#b42318">ditolak</text>
+  <rect x="70" y="50" width="216" height="36" style="fill:#fde8e8;stroke:#9aa3b5"/>
+  <rect x="286" y="50" width="81" height="36" style="fill:#ffe9cc;stroke:#9aa3b5"/>
+  <rect x="367" y="50" width="81" height="36" style="fill:#fff6d6;stroke:#9aa3b5"/>
+  <rect x="448" y="50" width="81" height="36" style="fill:#e3f6ea;stroke:#9aa3b5"/>
+  <rect x="529" y="50" width="81" height="36" style="fill:#c8ecd6;stroke:#9aa3b5"/>
+  <text class="h mid" x="178" y="73">E</text>
+  <text class="h mid" x="326" y="73">D</text>
+  <text class="h mid" x="407" y="73">C</text>
+  <text class="h mid" x="488" y="73">B</text>
+  <text class="h mid" x="569" y="73">A</text>
+  <text class="xs mid muted" x="70" y="44">0</text>
+  <text class="xs mid muted" x="286" y="44">40</text>
+  <text class="xs mid muted" x="367" y="44">55</text>
+  <text class="xs mid muted" x="448" y="44">70</text>
+  <text class="xs mid muted" x="529" y="44">85</text>
+  <text class="xs mid muted" x="610" y="44">100</text>
+  <text class="s mid" x="178" y="102">0..39  Gagal</text>
+  <text class="s mid" x="326" y="102">40..54</text>
+  <text class="s mid" x="326" y="115">Kurang</text>
+  <text class="s mid" x="407" y="102">55..69</text>
+  <text class="s mid" x="407" y="115">Cukup</text>
+  <text class="s mid" x="488" y="102">70..84</text>
+  <text class="s mid" x="488" y="115">Baik</text>
+  <text class="s mid" x="569" y="102">85..100</text>
+  <text class="s mid" x="569" y="115">Sangat baik</text>
+  <path class="arrow" d="M459 16 V46"/>
+  <text class="s b" x="466" y="22">nilai 72 jatuh di rentang 70..84</text>
+  <text class="xs muted" x="70" y="140">Setiap rentang menjadi satu label case pada baris 21–24; nilai 0..39 ditangkap cabang else (baris 25–26).</text>
+</svg>
+<figcaption>Skala nilai Program 6.5. Rentang tidak bertumpuk dan tidak berlubang: setiap nilai 0..100 masuk tepat satu kelompok.</figcaption>
+</figure>
+
+<x-listing src="bab06_05_nilai_huruf.pas"></x-listing>
+
+<x-run src="bab06_05_nilai_huruf.pas" caption="Nilai 72 menjadi B"></x-run>
+
+<x-run src="bab06_05_nilai_huruf.pas" input="105\n" caption="Nilai 105 ditolak oleh <code>if</code> pada baris 16, sebelum <code>case</code> sempat bekerja"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>16–17</td><td>Penyaring masukan. Syarat <code>(Nilai &lt; 0) or (Nilai &gt; 100)</code> bernilai <code>True</code> untuk nilai yang tidak sah.</td></tr>
+    <tr><td>18–37</td><td>Cabang <code>else</code> berupa pernyataan majemuk berisi dua <code>case</code> dan satu <code>WriteLn</code>. Bagian ini hanya dijalankan untuk nilai yang sah.</td></tr>
+    <tr><td>20–27</td><td><code>case</code> dengan label rentang. Hasilnya disimpan di variabel <code>Huruf</code>, belum ditulis ke layar.</td></tr>
+    <tr><td>29</td><td>Huruf ditulis.</td></tr>
+    <tr><td>30–36</td><td><code>case</code> kedua memilih keterangan berdasarkan <code>Huruf</code>. Memisahkan "menghitung huruf" dari "menulis keterangan" membuat setiap bagian pendek dan mudah diperiksa.</td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p>Uji Program 6.5 dengan nilai-nilai <b>batas</b>: 0, 39, 40, 54, 55, 84, 85, dan 100. Kesalahan
+program percabangan paling sering bersembunyi tepat di angka batas, misalnya ketika <code>&lt;</code> tertukar dengan
+<code>&lt;=</code>.</p></div>
+
+<h2>Latihan Terpadu: Tahun Kabisat</h2>
+
+<p>Bumi mengelilingi matahari dalam kira-kira 365,2425 hari. Agar kalender tidak bergeser, kalender Masehi menambahkan
+tanggal 29 Februari pada <b>tahun kabisat</b>. Aturannya ada tiga lapis:</p>
+
+<ol>
+  <li>Tahun yang habis dibagi 4 adalah tahun kabisat,</li>
+  <li>kecuali tahun yang habis dibagi 100, yang bukan tahun kabisat,</li>
+  <li>kecuali lagi tahun yang habis dibagi 400, yang tetap tahun kabisat.</li>
+</ol>
+
+<p>Aturan berlapis seperti ini paling mudah diterjemahkan ke rantai <code>else if</code> bila diperiksa dari pengecualian
+yang paling khusus, yaitu habis dibagi 400. Diagram berikut memperlihatkan urutan pemeriksaan pada Program 6.6.</p>
+
+<figure class="grafik" id="gb-kabisat">
+<svg viewBox="0 0 680 196">
+  <rect class="io" x="0" y="58" width="78" height="34" rx="6"/>
+  <text class="mid" x="39" y="79">Baca Tahun</text>
+  <path class="arrow" d="M78 75 H88"/>
+  <polygon class="dec" points="165,45 240,75 165,105 90,75"/>
+  <text class="mono mid" x="165" y="79">mod 400 = 0</text>
+  <path class="arrow" d="M240 75 H253"/>
+  <polygon class="dec" points="330,45 405,75 330,105 255,75"/>
+  <text class="mono mid" x="330" y="79">mod 100 = 0</text>
+  <path class="arrow" d="M405 75 H418"/>
+  <polygon class="dec" points="495,45 570,75 495,105 420,75"/>
+  <text class="mono mid" x="495" y="79">mod 4 = 0</text>
+  <text class="s b mid" x="247" y="64" style="fill:#b42318">F</text>
+  <text class="s b mid" x="412" y="64" style="fill:#b42318">F</text>
+  <path class="arrow" d="M570 75 H615 V140"/>
+  <text class="s b" x="578" y="68" style="fill:#b42318">False</text>
+  <path class="arrow" d="M165 105 V140"/>
+  <path class="arrow" d="M330 105 V140"/>
+  <path class="arrow" d="M495 105 V140"/>
+  <text class="s b" x="171" y="126" style="fill:#11743f">True</text>
+  <text class="s b" x="336" y="126" style="fill:#11743f">True</text>
+  <text class="s b" x="501" y="126" style="fill:#11743f">True</text>
+  <rect class="ok" x="110" y="142" width="110" height="34" rx="6"/>
+  <text class="mid b" x="165" y="163">Kabisat</text>
+  <rect class="no" x="275" y="142" width="110" height="34" rx="6"/>
+  <text class="mid b" x="330" y="163">Bukan kabisat</text>
+  <rect class="ok" x="440" y="142" width="110" height="34" rx="6"/>
+  <text class="mid b" x="495" y="163">Kabisat</text>
+  <rect class="no" x="562" y="142" width="110" height="34" rx="6"/>
+  <text class="mid b" x="617" y="163">Bukan kabisat</text>
+  <text class="xs muted" x="90" y="24">Pemeriksaan berjalan dari kiri ke kanan; F = False. Contoh: 1900 berhenti di kotak kedua.</text>
+</svg>
+<figcaption>Urutan pemeriksaan tahun kabisat pada Program 6.6, baris 18–25. Pengecualian yang paling khusus diperiksa paling dulu.</figcaption>
+</figure>
+
+<p>Sebelum menulis program, uji aturan itu dengan tangan menggunakan <b>tabel keputusan</b>: setiap baris adalah satu
+contoh tahun, setiap kolom adalah satu pertanyaan. Tabel ini sekaligus menjadi daftar uji yang lengkap, karena setiap
+cabang pada diagram di atas diwakili minimal satu tahun.</p>
+
+<table class="data" id="tb-kabisat">
+  <caption>Tabel keputusan tahun kabisat</caption>
+  <thead><tr><th>Tahun</th><th>Habis dibagi 400?</th><th>Habis dibagi 100?</th><th>Habis dibagi 4?</th><th>Hasil</th></tr></thead>
+  <tbody>
+    <tr><td><b>2023</b></td><td>tidak</td><td>tidak</td><td>tidak</td><td>bukan kabisat (Februari 28 hari)</td></tr>
+    <tr><td><b>2024</b></td><td>tidak</td><td>tidak</td><td>ya</td><td>kabisat (Februari 29 hari)</td></tr>
+    <tr><td><b>1900</b></td><td>tidak</td><td>ya</td><td>ya</td><td>bukan kabisat: kena pengecualian 100</td></tr>
+    <tr><td><b>2100</b></td><td>tidak</td><td>ya</td><td>ya</td><td>bukan kabisat: kena pengecualian 100</td></tr>
+    <tr><td><b>2000</b></td><td>ya</td><td>ya</td><td>ya</td><td>kabisat: pengecualian 400 mengalahkan aturan 100</td></tr>
+  </tbody>
+</table>
+
+<x-listing src="bab06_06_tahun_kabisat.pas"></x-listing>
+
+<x-run src="bab06_06_tahun_kabisat.pas" caption="Tahun 1900 habis dibagi 100 tetapi tidak habis dibagi 400"></x-run>
+
+<x-run src="bab06_06_tahun_kabisat.pas" input="2000\n" caption="Tahun 2000 habis dibagi 400, jadi tetap kabisat"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>11</td><td>Variabel <code>Kabisat</code> bertipe <code>Boolean</code>: tempat menyimpan hasil keputusan untuk dipakai belakangan.</td></tr>
+    <tr><td>18–25</td><td>Cara 1, rantai <code>else if</code> sesuai <x-ref to="gb-kabisat"></x-ref>. Setiap cabang mengisi <code>Kabisat</code> dengan <code>True</code> atau <code>False</code>.</td></tr>
+    <tr><td>28–30</td><td>Cara 2, aturan yang sama dalam satu ekspresi logika. Bila hasilnya berbeda dari cara 1, program mengeluh. Dengan aturan yang benar, pesan pada baris 30 tidak pernah muncul.</td></tr>
+    <tr><td>32–35</td><td><code>if Kabisat then</code> sudah cukup; tidak perlu menulis <code>if Kabisat = True then</code>, karena <code>Kabisat</code> sendiri sudah bernilai Boolean.</td></tr>
+  </tbody>
+</table>
+
+<p>Ekspresi pada baris 28–29 layak diperhatikan. Di Pascal, <code>and</code> dikerjakan lebih dulu daripada
+<code>or</code>, seperti perkalian dikerjakan lebih dulu daripada penjumlahan. Jadi ekspresinya dibaca sebagai
+"(habis dibagi 4 <b>dan</b> tidak habis dibagi 100) <b>atau</b> habis dibagi 400". Setiap perbandingan wajib diberi tanda
+kurung sendiri, karena operator pembanding seperti <code>=</code> dan <code>&lt;&gt;</code> justru dikerjakan paling akhir.
+Tanpa kurung, kompiler akan mencoba menghitung <code>100 and Tahun</code> lebih dulu, dan hasilnya kacau (lihat subbab
+berikutnya).</p>
+
+<div class="ingat"><p>Variabel <code>Boolean</code> bisa langsung diisi hasil perbandingan, tanpa <code>if</code>:
+<code>Kabisat := (Tahun mod 4 = 0) and (Tahun mod 100 &lt;&gt; 0) or (Tahun mod 400 = 0);</code>. Penugasan seperti ini sama
+artinya dengan rantai <code>if</code> pada baris 18–25.</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Titik koma sebelum else</h3>
+
+<p>Ini kesalahan percabangan nomor satu bagi pemula. Program berikut menulis titik koma di akhir baris 7, tepat sebelum
+<code>else</code>. Di Odin Turbo Pascal, kompilasi yang gagal membuka jendela <b>Compile failed</b>, dan baris tempat
+kompiler tersandung ditandai merah.</p>
+
+<x-ide name="GENAP.PAS" rows="10" error="8" cursor="8:3" dialog="messages" caption="Titik koma di akhir baris 7 membuat <code>else</code> pada baris 8 tidak punya pasangan">program Genap;
+var
+  N: Integer;
+begin
+  N := 7;
+  if N mod 2 = 0 then
+    WriteLn('Genap');
+  else
+    WriteLn('Ganjil');
+end.</x-ide>
+
+<p>Kompiler menunjuk baris 8, tempat <code>else</code> berada, padahal penyebabnya ada di akhir baris 7. Titik koma itu
+menutup pernyataan <code>if</code>, sehingga kata <code>else</code> sesudahnya menjadi awal pernyataan baru, dan tidak ada
+pernyataan Pascal yang diawali <code>else</code>. Perbaikannya: hapus titik koma di akhir baris 7.</p>
+
+<h3>Titik koma sesudah then</h3>
+
+<p>Kebalikan dari kesalahan di atas jauh lebih berbahaya, karena kompiler tidak menolaknya. Titik koma tepat sesudah
+<code>then</code> membuat cabang <code>if</code> berisi <b>pernyataan kosong</b>. Perintah pada baris berikutnya tidak lagi
+menjadi bagian dari <code>if</code>, sehingga selalu dijalankan.</p>
+
+<x-error name="demam.pas" run caption="Suhu 36, tetapi program tetap menyuruh istirahat">program Demam;
+var
+  Suhu: Integer;
+begin
+  Suhu := 36;
+  if Suhu >= 38 then;
+    WriteLn('Anda demam. Istirahatlah.');
+  WriteLn('Pemeriksaan selesai.');
+end.</x-error>
+
+<p>Indentasi baris 7 membuatnya tampak berada di dalam <code>if</code>, tetapi titik koma di akhir baris 6 sudah menutup
+<code>if</code> itu. Kesalahan logika seperti ini hanya bisa ditemukan dengan menguji program memakai data yang hasilnya
+sudah Anda ketahui. Hal yang sama berlaku untuk <code>else;</code>.</p>
+
+<h3>case tanpa end</h3>
+
+<p>Setiap <code>case</code> harus ditutup <code>end</code>. Karena <code>case</code> tidak diawali <code>begin</code>,
+<code>end</code> ini mudah terlupa, terutama bila <code>case</code> berada di akhir program.</p>
+
+<x-error name="hari.pas" caption="Kompiler memakai end. terakhir untuk menutup case, sehingga program utama tidak punya penutup">program Hari;
+var
+  N: Integer;
+begin
+  N := 3;
+  case N of
+    1: WriteLn('Minggu');
+    2: WriteLn('Senin');
+    3: WriteLn('Selasa');
+end.</x-error>
+
+<p>Kata <code>end</code> pada baris 10 dipakai kompiler untuk menutup <code>case</code>. Akibatnya <code>begin</code> pada
+baris 4 tidak punya pasangan, dan titik sesudahnya muncul di tempat yang tidak terduga. Pesan kesalahan seperti ini
+sering membingungkan karena menunjuk baris terakhir. Bila kompiler mengeluh tentang akhir program, periksa apakah setiap
+<code>case</code> dan setiap <code>begin</code> sudah punya <code>end</code>.</p>
+
+<h3>Lupa tanda kurung pada syarat gabungan</h3>
+
+<x-error name="rentang.pas" caption="Tanpa kurung, <code>0 or Nilai</code> dihitung lebih dulu">program Rentang;
+var
+  Nilai: Integer;
+begin
+  Nilai := 105;
+  if Nilai < 0 or Nilai > 100 then
+    WriteLn('Nilai tidak sah');
+end.</x-error>
+
+<p>Karena <code>or</code> dikerjakan lebih dulu daripada <code>&lt;</code> dan <code>&gt;</code>, kompiler membaca baris 6
+sebagai <code>Nilai &lt; (0 or Nilai) &gt; 100</code>, sesuatu yang tidak masuk akal. Tulislah setiap perbandingan di dalam
+kurung: <code>(Nilai &lt; 0) or (Nilai &gt; 100)</code>.</p>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>Percabangan membuat program memilih jalan berdasarkan <b>syarat</b>, yaitu ekspresi Boolean yang bernilai
+  <code>True</code> atau <code>False</code>.</li>
+  <li><code>if..then</code> menjalankan satu pernyataan bila syarat <code>True</code>. Untuk beberapa perintah, bungkus
+  dengan <code>begin..end</code> (pernyataan majemuk).</li>
+  <li><code>if..then..else</code> selalu menjalankan tepat satu dari dua cabang. <b>Tidak ada titik koma sebelum
+  <code>else</code></b>; titik koma sesudah <code>then</code> membuat cabang kosong.</li>
+  <li>Rantai <code>else if</code> memeriksa syarat dari atas ke bawah dan berhenti di syarat pertama yang <code>True</code>,
+  jadi urutan syarat penting.</li>
+  <li><code>else</code> selalu milik <code>if</code> terdekat yang belum punya <code>else</code> (<i>dangling else</i>);
+  gunakan <code>begin..end</code> untuk memperjelas.</li>
+  <li><code>case..of</code> memilih cabang berdasarkan nilai selektor ordinal. Label boleh berupa daftar (<code>1, 7</code>)
+  atau rentang (<code>2..6</code>), tidak boleh bertumpuk, dan <code>case</code> selalu ditutup <code>end</code>.</li>
+  <li>Dalam syarat gabungan, beri kurung pada setiap perbandingan; <code>and</code> dikerjakan sebelum <code>or</code>.</li>
+  <li>Uji program percabangan dengan satu masukan untuk setiap cabang, termasuk nilai-nilai batas.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Buat program yang membaca sebuah bilangan bulat, lalu menulis
+  <code>positif</code>, <code>negatif</code>, atau <code>nol</code>.</li>
+  <li><span class="lv dasar">Dasar</span>Ubah Program 6.1 agar suhu 35 sampai 37 menampilkan <code>Suhu normal.</code>
+  Gunakan rantai <code>else if</code> sehingga hanya satu pesan suhu yang mungkin muncul.</li>
+  <li><span class="lv menengah">Menengah</span>Baca tiga bilangan bulat, lalu tampilkan yang terbesar. Uji dengan masukan
+  yang terbesarnya di posisi pertama, kedua, dan ketiga, serta dengan tiga bilangan yang sama.</li>
+  <li><span class="lv menengah">Menengah</span>Buat program nomor bulan 1–12 yang menampilkan nama bulan dan jumlah
+  harinya. Gunakan <code>case</code> dengan daftar nilai untuk bulan 30 dan 31 hari. Untuk Februari, tanyakan tahunnya
+  dan pakai aturan kabisat dari Program 6.6.</li>
+  <li><span class="lv menengah">Menengah</span>Buat kalkulator sederhana: baca dua bilangan dan sebuah operator
+  <code>Char</code> (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>), lalu hitung dengan <code>case</code>.
+  Tolak pembagian dengan nol dengan pesan yang jelas.</li>
+  <li><span class="lv tantangan">Tantangan</span>Baca panjang tiga sisi, lalu tentukan apakah ketiganya membentuk
+  segitiga (setiap dua sisi harus lebih panjang dari sisi ketiga). Bila ya, sebutkan jenisnya: sama sisi, sama kaki,
+  atau sembarang.</li>
+  <li><span class="lv tantangan">Tantangan</span>Tulis ulang <code>case</code> pertama Program 6.5 sebagai rantai
+  <code>else if</code>. Uji kedua versi dengan nilai-nilai batas yang sama, lalu jelaskan mana yang menurut Anda lebih
+  mudah dibaca dan mengapa.</li>
+</ol>
+</div>

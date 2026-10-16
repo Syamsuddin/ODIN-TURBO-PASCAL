@@ -26,6 +26,8 @@ from .terminal import Process, Screen, TerminalView
 from .windows import BLACK, BLUE, CYAN, GRAY, WHITE, Editor, LocalsWindow, StackWindow, WatchWindow
 
 ASSETS = Path(__file__).resolve().parent.parent
+# Help > Buku opens this PDF in docs/.
+BOOK = "Belajar_Pemrograman_Bahasa_Pascal.pdf"
 TEMPLATE = "program Untitled;\n\nbegin\n  WriteLn('Hello, Pascal!');\nend.\n"
 # Compile actions that need a debug build and run under the debugger.
 DEBUG_ACTIONS = ("debug", "step", "cursor")
@@ -218,7 +220,8 @@ class App:
         self.menu("Window", [("Tile",self.tile,""),("Cascade",self.cascade,""),("Zoom",self.zoom,"F5"),
                             ("Next",self.next_editor,"F6"),("Close",self.close_window,"Alt+F3"),("List...",self.window_list,"")])
         self.menu("Help", [("Contents",self.help,"F1"),("Pascal reference",self.reference,""),
-                          ("Keyboard shortcuts",lambda:self.help("SHORTCUTS.txt"),""),("About Odin",self.about,"")])
+                          ("Keyboard shortcuts",lambda:self.help("SHORTCUTS.txt"),""),("Buku",self.book,""),
+                          ("About Odin",self.about,"")])
         tk.Label(self.menubar,text="◉",bg=GRAY,fg=BLUE,font=self.font).pack(side="right",padx=10)
 
     def bind_keys(self):
@@ -1120,7 +1123,7 @@ class App:
         size,_=self.field(body,"Font size (10..30)",str(self.settings["font_size"]))
         tab,_=self.field(body,"Tab width (1..8)",str(self.settings["tab_width"]))
         syntax=tk.BooleanVar(value=self.settings["syntax_colors"])
-        tk.Checkbutton(body,text="Syntax colors: Odin Gelap (off = classic yellow on blue)",variable=syntax,bg=GRAY,selectcolor=GRAY).pack(pady=12)
+        tk.Checkbutton(body,text="Syntax colors: Turbo Biru Lembut (off = classic yellow on blue)",variable=syntax,bg=GRAY,selectcolor=GRAY).pack(pady=12)
         def save():
             try:
                 font_size,tab_width=int(size.get()),int(tab.get())
@@ -1161,6 +1164,20 @@ class App:
         self.show_text("Odin Help",content)
 
     def reference(self):self.help("PASCAL.txt")
+    def book(self):
+        """Help > Buku: the tutorial book, opened in the system's PDF viewer (scripts/build_book.py makes it)."""
+        path=ASSETS/"docs"/BOOK
+        if not path.is_file():
+            messagebox.showerror("Buku",f"Buku tidak ditemukan:\n{path}",parent=self.root)
+            return
+        try:
+            if sys.platform=="win32":os.startfile(path)
+            else:subprocess.Popen(["/usr/bin/open" if sys.platform=="darwin" else "xdg-open",str(path)],stdin=subprocess.DEVNULL,
+                                  stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
+        except OSError as error:
+            messagebox.showerror("Buku",f"Buku tidak bisa dibuka: {error}\n{path}",parent=self.root)
+            return
+        self.update_status(f"Opening {BOOK}")
     def about(self):
         self.show_text("About Odin Turbo Pascal",f"ODIN TURBO PASCAL\nVersion {__version_tag__}\nCreated by {__author__}\n\nIndependent classic Pascal IDE.\nPython / Tk + Odin native toolchain; Free Pascal as alternative backend.\n\nInterface inspired by the DOS-era Turbo Pascal IDE.\nThis software is not Borland Turbo Pascal and is not affiliated with Borland.\nNo Borland binaries, logos, fonts, or help files are included.\n\nNative Pascal compilation for the host CPU.\nIntel x86_64 and Apple Silicon arm64 use the same application sources.\n\n{__copyright__}.\nThis program is free software: you can redistribute it and/or modify it\nunder the terms of the GNU General Public License, version 3 or later.\nIt comes with ABSOLUTELY NO WARRANTY. See LICENSE and THIRD_PARTY.txt.\n",self.logo_small)
 

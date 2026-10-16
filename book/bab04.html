@@ -1,0 +1,166 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menampilkan teks dan nilai dengan <code>Write</code> dan <code>WriteLn</code>.</li>
+  <li>Membaca masukan dari keyboard dengan <code>Read</code> dan <code>ReadLn</code>.</li>
+  <li>Merapikan keluaran dengan format <code>:lebar</code> dan <code>:lebar:desimal</code>.</li>
+  <li>Menggabungkan masukan dan keluaran dalam program interaktif.</li>
+  <li>Memahami apa yang terjadi bila masukan tidak sesuai tipe yang diminta.</li>
+</ul>
+
+<p class="lead">Program yang berguna hampir selalu berkomunikasi: menampilkan hasil ke layar dan menerima data dari
+pengguna. Di Bab 1 Anda sudah memakai <code>WriteLn</code>. Bab ini melengkapinya dengan membaca masukan dan merapikan
+tampilan, sehingga program Anda bisa berdialog dengan penggunanya.</p>
+
+<h2>Menampilkan: Write dan WriteLn</h2>
+
+<p>Ada dua perintah untuk menulis ke layar. <code>WriteLn</code> menulis lalu <b>pindah ke baris baru</b>.
+<code>Write</code> menulis <b>tanpa pindah baris</b>, sehingga kursor tetap di tempat dan tulisan berikutnya menyambung.
+Keduanya bisa menerima beberapa nilai sekaligus, dipisah koma.</p>
+
+<figure class="grafik" id="gb-write">
+<svg viewBox="0 0 680 120">
+  <rect class="box" x="20" y="20" width="300" height="80" rx="10"/>
+  <text class="b c mid" x="170" y="42">Write('Satu ')</text>
+  <text class="xs muted mid" x="170" y="60">kursor tetap di baris yang sama</text>
+  <rect class="navy" x="40" y="68" width="260" height="22" rx="4"/>
+  <text class="code-fg mono" x="52" y="84">Satu baris yang sama_</text>
+  <rect class="box" x="360" y="20" width="300" height="80" rx="10"/>
+  <text class="b c mid" x="510" y="42">WriteLn('...')</text>
+  <text class="xs muted mid" x="510" y="60">menulis lalu pindah baris</text>
+  <rect class="navy" x="380" y="68" width="260" height="22" rx="4"/>
+  <text class="code-fg mono" x="392" y="84">Baris ini</text>
+  <text class="code-fg mono" x="392" y="84" style="opacity:0">_</text>
+</svg>
+<figcaption><code>Write</code> menyambung di baris yang sama; <code>WriteLn</code> mengakhiri baris.</figcaption>
+</figure>
+
+<x-listing src="bab04_01_write_writeln.pas"></x-listing>
+
+<x-run src="bab04_01_write_writeln.pas"></x-run>
+
+<p>Tiga <code>Write</code> pertama menghasilkan satu baris <code>Satu baris yang sama.</code> karena tidak ada perpindahan
+baris sampai <code>WriteLn</code> di akhir. <code>WriteLn;</code> tanpa isi mencetak baris kosong. Yang paling berguna:
+dalam satu perintah, <b>teks, variabel, dan ekspresi boleh dicampur</b>. <code>WriteLn('Umur saya ', Umur, ' tahun.')</code>
+menulis teks apa adanya, tetapi <code>Umur + 5</code> dan <code>7 * 6</code> dihitung dulu, lalu hasilnya yang ditulis.
+Ingat, teks dalam petik ditulis apa adanya; di luar petik dihitung sebagai ekspresi.</p>
+
+<h2>Membaca: Read dan ReadLn</h2>
+
+<p>Untuk menerima masukan dari keyboard, Pascal memakai <code>ReadLn</code>. Perintah ini menunggu pengguna mengetik lalu
+menekan <kbd>Enter</kbd>, kemudian menyimpan yang diketik ke variabel. Polanya hampir selalu sama: <code>Write</code>
+sebuah pertanyaan dulu (tanpa pindah baris, agar jawaban diketik di sampingnya), lalu <code>ReadLn</code> menangkap
+jawabannya.</p>
+
+<div class="sintaks"><pre>Write('Pertanyaan: ');
+ReadLn(<i>variabel</i>);</pre></div>
+
+<x-listing src="bab04_02_read_readln.pas"></x-listing>
+
+<p>Jalankan dengan <kbd>Ctrl</kbd>+<kbd>F9</kbd>, lalu ketik jawaban di User screen. Pada rekaman di bawah, teks berwarna
+kuning adalah yang <b>diketik pengguna</b>, sisanya ditulis program.</p>
+
+<x-run src="bab04_02_read_readln.pas"></x-run>
+
+<p><code>ReadLn</code> bisa membaca teks (<code>Nama</code>), bilangan bulat (<code>Umur</code>), maupun pecahan
+(<code>Tinggi</code>). Ia bahkan bisa membaca <b>beberapa nilai sekaligus</b> bila pengguna memisahkannya dengan spasi:
+<code>ReadLn(A, B)</code> menangkap dua bilangan dari satu baris. Alur masukan dan keluaran digambarkan berikut.</p>
+
+<figure class="grafik" id="gb-io">
+<svg viewBox="0 0 680 150">
+  <rect class="term" x="20" y="50" width="150" height="50" rx="10"/>
+  <text class="white b mid" x="95" y="72">Write</text>
+  <text class="white xs mid" x="95" y="88">tampilkan tanya</text>
+  <rect class="io" x="220" y="50" width="150" height="50" rx="10"/>
+  <text class="c b mid" x="295" y="72">Pengguna ketik</text>
+  <text class="xs mid" x="295" y="88">+ tekan Enter</text>
+  <rect class="box" x="420" y="50" width="150" height="50" rx="10"/>
+  <text class="c b mid" x="495" y="72">ReadLn</text>
+  <text class="xs mid" x="495" y="88">simpan ke variabel</text>
+  <rect class="ok" x="420" y="110" width="240" height="30" rx="8" style="opacity:0"/>
+  <path class="arrow" d="M170 75 H216"/>
+  <path class="arrow" d="M370 75 H416"/>
+  <path class="arrow" d="M570 75 H610 V120 H95 V105"/>
+  <text class="xs muted mid" x="350" y="135">ulangi untuk tiap masukan</text>
+</svg>
+<figcaption>Pola masukan: tampilkan pertanyaan, pengguna mengetik, program menyimpan ke variabel.</figcaption>
+</figure>
+
+<div class="awas"><p>Bila variabel bertipe bilangan tetapi pengguna mengetik huruf, program berhenti dengan runtime
+error 106 (masukan tidak sah). Untuk sekarang, ketiklah masukan sesuai yang diminta. Cara memeriksa masukan dibahas di
+Bab 12.</p></div>
+
+<h2>Merapikan Keluaran dengan Format</h2>
+
+<p>Keluaran yang rapi membuat program terasa profesional, terutama untuk tabel. Pascal menyediakan format lebar kolom:</p>
+
+<table class="data compact">
+  <caption>Penentu lebar dan desimal pada Write/WriteLn</caption>
+  <thead><tr><th>Format</th><th>Arti</th><th>Contoh</th><th>Hasil</th></tr></thead>
+  <tbody>
+    <tr><td><code>nilai:N</code></td><td>Tulis dalam N kolom, rata kanan</td><td><code>42:6</code></td><td><code>[&nbsp;&nbsp;&nbsp;&nbsp;42]</code></td></tr>
+    <tr><td><code>teks:N</code></td><td>Teks juga rata kanan dalam N kolom</td><td><code>'Ani':6</code></td><td><code>[&nbsp;&nbsp;&nbsp;Ani]</code></td></tr>
+    <tr><td><code>real:N:D</code></td><td>N kolom, D angka desimal</td><td><code>3.14159:10:4</code></td><td><code>[&nbsp;&nbsp;&nbsp;&nbsp;3.1416]</code></td></tr>
+    <tr><td><code>real:0:D</code></td><td>Lebar secukupnya, D desimal</td><td><code>3.14159:0:2</code></td><td><code>3.14</code></td></tr>
+  </tbody>
+</table>
+
+<x-listing src="bab04_03_format_keluaran.pas"></x-listing>
+
+<x-run src="bab04_03_format_keluaran.pas"></x-run>
+
+<p>Perhatikan baris <code>WriteLn(X)</code> tanpa format: bilangan <code>Real</code> tampil dalam notasi ilmiah yang
+sulit dibaca. Karena itu, <b>selalu beri format pada <code>Real</code></b>. Dengan memberi lebar kolom yang sama di
+setiap baris, kolom tabel menjadi lurus rapi, seperti pada daftar barang di bagian akhir program.</p>
+
+<div class="tip"><p>Bila lebar yang diminta lebih kecil dari panjang nilai, Pascal tidak memotongnya, melainkan memakai
+lebar secukupnya. Jadi <code>N</code> adalah lebar <i>minimum</i>, bukan maksimum.</p></div>
+
+<h2>Menggabungkan: Kartu Biodata</h2>
+
+<p>Mari satukan semua: membaca beberapa masukan, menghitung sesuatu, lalu menampilkan hasil yang rapi. Program berikut
+membuat kartu biodata. Umur tidak ditanyakan, melainkan dihitung dari tahun lahir.</p>
+
+<x-listing src="bab04_04_biodata_sederhana.pas"></x-listing>
+
+<x-run src="bab04_04_biodata_sederhana.pas"></x-run>
+
+<p>Program ini memakai konstanta <code>TahunIni</code> agar perhitungan umur mudah diperbarui, dan menggambar bingkai
+kartu dengan karakter <code>+</code>, <code>-</code>, dan <code>|</code>. Perhatikan bagaimana beberapa <code>Write</code>
+dan <code>ReadLn</code> ditulis di satu baris dengan dipisah titik koma, agar pertanyaan dan jawaban tampak berpasangan.</p>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<p><b>Lupa tanda petik penutup.</b> String harus diapit dua petik tunggal.</p>
+
+<x-error name="petik.pas" caption="Tanda petik penutup string terlupa">program P;
+begin
+  WriteLn('Halo, Dunia);
+end.</x-error>
+
+<p><b>Menampilkan Real tanpa format.</b> Ini bukan kesalahan kompilasi, tetapi hasilnya sulit dibaca. Bandingkan
+<code>WriteLn(3.14159)</code> yang memberi notasi ilmiah dengan <code>WriteLn(3.14159:0:2)</code> yang memberi
+<code>3.14</code>. Biasakan selalu memformat <code>Real</code>.</p>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li><code>WriteLn</code> menulis lalu pindah baris; <code>Write</code> tidak pindah baris. Keduanya menerima banyak nilai dipisah koma.</li>
+  <li>Teks dalam petik ditulis apa adanya; ekspresi di luar petik dihitung dulu. <code>WriteLn;</code> mencetak baris kosong.</li>
+  <li><code>ReadLn(variabel)</code> membaca masukan sampai Enter. Beberapa nilai bisa dibaca sekaligus bila dipisah spasi.</li>
+  <li>Pola interaktif: <code>Write</code> pertanyaan, lalu <code>ReadLn</code> jawaban.</li>
+  <li>Format <code>:N</code> memberi lebar kolom, <code>:N:D</code> memberi lebar dan jumlah desimal. Selalu format setiap <code>Real</code>.</li>
+  <li>Masukan yang tidak sesuai tipe bilangan memicu runtime error 106.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Buat program yang menanyakan nama dan kota lahir, lalu menyapa: <code>Halo [nama] dari [kota]!</code></li>
+  <li><span class="lv dasar">Dasar</span>Baca dua bilangan bulat dalam satu baris (dipisah spasi), lalu tampilkan jumlah dan selisihnya.</li>
+  <li><span class="lv menengah">Menengah</span>Buat tabel tiga barang dengan kolom Nama, Jumlah, dan Harga yang lurus rapi memakai format lebar kolom.</li>
+  <li><span class="lv menengah">Menengah</span>Minta jari-jari lingkaran, lalu tampilkan luasnya (<code>Pi * r * r</code>) dengan dua angka desimal.</li>
+  <li><span class="lv tantangan">Tantangan</span>Buat kartu nilai berbingkai yang membaca tiga nilai ujian, lalu menampilkan ketiganya beserta rata-ratanya (dua desimal) dalam bingkai yang rapi.</li>
+</ol>
+</div>

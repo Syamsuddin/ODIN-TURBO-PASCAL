@@ -109,7 +109,7 @@ Antarmuka biru, teks kuning, menu abu-abu, jendela editor, status bar, dan
 pintasan fungsi klasik. File/Edit/Search/Run/Compile/Debug/Options/Window/Help.
 Editor beberapa berkas dengan tile, cascade, zoom, undo/redo, clipboard,
 find/replace, go-to-line, indentasi, mode insert/overwrite, dan warna sintaks
-Odin Gelap yang bisa dimatikan.
+Turbo Biru Lembut yang bisa dimatikan.
 Toolchain Odin (macOS, Linux, Windows): compiler TP7 dengan tipe object, runtime library
 dengan Crt, Dos, Strings, Printer, Objects, dan Odin Vision (Turbo Vision).
 Free Pascal asli sebagai backend alternatif, mode TP/ObjFPC/Delphi, primary

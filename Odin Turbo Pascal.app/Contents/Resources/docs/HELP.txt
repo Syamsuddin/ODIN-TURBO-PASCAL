@@ -21,6 +21,13 @@ Jendela terminal yang ditutup hanya disembunyikan. Program yang sedang berjalan
 tetap aktif sampai selesai atau dihentikan dengan tombol Stop / Ctrl+F2.
 Ctrl+C pada terminal mengirim interupsi ke grup proses.
 
+BUKU
+
+Help > Buku membuka buku tutorial "Belajar Pemrograman Bahasa Pascal dengan
+ODIN Turbo Pascal" (docs/Belajar_Pemrograman_Bahasa_Pascal.pdf) di aplikasi
+PDF bawaan sistem. Buku berwarna penuh ini membahas semua program contoh,
+bab demi bab, dengan infografik, gambar layar, rangkuman, dan latihan.
+
 TUTORIAL PASCAL
 
 File > Examples berisi tutorial Pascal untuk pemula: 20 bab, dari
@@ -55,16 +62,17 @@ Enter melanjutkan indentasi baris sebelumnya. Tab memasukkan spasi sesuai
 pengaturan. Shift+Tab mengurangi indentasi baris aktif. Insert mengganti mode
 insert/overwrite. Options > Editor mengatur font, tab, dan warna sintaks.
 
-Warna sintaks Odin Gelap aktif secara bawaan, dengan latar gelap:
-  biru         kata tercadang (begin, if, var) dan True, False, nil
-  biru muda    variabel dan nama buatan sendiri lainnya
-  kuning pucat prosedur dan fungsi, buatan sendiri maupun bawaan (WriteLn)
-  hijau toska  tipe bawaan (Integer, Real, Boolean)
-  hijau muda   angka, termasuk heksadesimal ($0E)
-  jingga       string dan konstanta karakter (#13)
-  abu terang   operator dan simbol (:= + ; .)
-  hijau        komentar
-  ungu         direktif kompiler ({$R+})
+Warna sintaks Turbo Biru Lembut aktif secara bawaan, di latar biru tua:
+  putih tebal    kata tercadang (begin, if, var)
+  kuning lembut  variabel dan nama buatan sendiri lainnya
+  jingga muda    prosedur dan fungsi buatan sendiri
+  biru langit    rutin bawaan (WriteLn, ClrScr)
+  hijau muda     tipe bawaan (Integer, Real, Boolean)
+  merah muda     angka, termasuk heksadesimal ($0E), serta True, False, nil
+  hijau toska    string dan konstanta karakter (#13)
+  lavender       operator dan simbol (:= + ; .)
+  biru keabuan   komentar, dicetak miring
+  merah salem    direktif kompiler ({$R+})
 Matikan Syntax colors untuk kembali ke teks kuning klasik di latar biru.
 
 Window > List menampilkan editor yang terbuka. F6 mengganti jendela aktif.
