@@ -1,0 +1,36 @@
+(program bab06_05_nilai_huruf
+  (var (Nilai) Integer)
+  (var (Huruf) Char)
+  (begin
+    (do (call Write 'Masukkan nilai (0-100): '))
+    (do (call ReadLn Nilai))
+    (if (or (< Nilai 0) (> Nilai 100))
+      (do (call WriteLn 'Nilai tidak sah. Harus antara 0 dan 100.'))
+      (else
+        (begin
+          (case Nilai
+            (arm 85..100
+              (:= Huruf 'A'))
+            (arm 70..84
+              (:= Huruf 'B'))
+            (arm 55..69
+              (:= Huruf 'C'))
+            (arm 40..54
+              (:= Huruf 'D'))
+            (else
+              (:= Huruf 'E')
+              (empty)))
+          (do (call WriteLn 'Nilai huruf: ' Huruf))
+          (case Huruf
+            (arm 'A'
+              (do (call WriteLn 'Keterangan: Sangat baik')))
+            (arm 'B'
+              (do (call WriteLn 'Keterangan: Baik')))
+            (arm 'C'
+              (do (call WriteLn 'Keterangan: Cukup')))
+            (arm 'D'
+              (do (call WriteLn 'Keterangan: Kurang')))
+            (arm 'E'
+              (do (call WriteLn 'Keterangan: Gagal'))))
+          (empty))))
+    (empty)))

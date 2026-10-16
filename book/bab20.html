@@ -1,0 +1,640 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menjalani siklus kecil pengembangan program: analisis kebutuhan, rancangan, penulisan kode, dan pengujian dengan skenario.</li>
+  <li>Membaca dan menjelaskan program 100 sampai 200 baris dengan memecahnya menjadi blok: konstanta dan tipe, fungsi bantu, prosedur, dan program utama.</li>
+  <li>Menggabungkan <i>record</i>, <i>array</i>, string, fungsi, validasi masukan dengan <code>Val</code>, serta file teks dan file bertipe dalam satu aplikasi.</li>
+  <li>Memakai satu prosedur untuk mencetak ke layar sekaligus ke file dengan parameter <code>var F: Text</code>.</li>
+  <li>Menyimpan data agar bertahan antar-sesi dan memuatnya kembali saat program mulai.</li>
+  <li>Meninjau kembali seluruh materi buku lewat peta konsep, lalu merancang pengembangan Anda sendiri.</li>
+</ul>
+
+<p class="lead">Sembilan belas bab telah membekali Anda dengan semua bahan: tipe data, percabangan, perulangan, prosedur dan
+fungsi, array, string, record, pengurutan, pencarian, file, dan unit. Bab terakhir ini merangkai semuanya menjadi tiga
+program yang berguna: kasir toko, pengolah nilai siswa, dan buku telepon. Ketiganya bukan lagi contoh yang menjelaskan
+satu fitur, tetapi aplikasi kecil yang punya masukan, pengolahan, keluaran, dan penyimpanan. Bacalah dengan tujuan
+mengenali kembali potongan-potongan yang sudah Anda pelajari, lalu kembangkan menjadi milik Anda sendiri.</p>
+
+<h2>Dari Masalah ke Program</h2>
+
+<p>Program yang baik jarang bermula dari mengetik kode. Seorang tukang yang membangun rumah memulai dari kebutuhan
+pemilik, menggambar rancangan, baru memotong kayu, dan memeriksa hasilnya setiap tahap. Pengembangan perangkat lunak
+memiliki empat langkah yang sama, dan ketiga proyek di bab ini disusun dengan urutan tersebut.</p>
+
+<div class="alur">
+  <div><span class="ikon">1</span><b>Analisis</b>Apa yang dibutuhkan pemakai? Apa masukan dan keluarannya?</div>
+  <div><span class="ikon">2</span><b>Rancangan</b>Data apa yang disimpan? Prosedur dan fungsi apa saja? Bagaimana alur menunya?</div>
+  <div><span class="ikon">3</span><b>Kode</b>Menulis blok demi blok, dari yang paling mendasar ke program utama.</div>
+  <div><span class="ikon">4</span><b>Uji</b>Menjalankan skenario normal dan skenario salah, lalu memperbaiki.</div>
+</div>
+
+<p>Setiap proyek di bab ini dibahas dengan bagian yang sama: <b>analisis kebutuhan</b> (apa yang harus bisa dilakukan
+program), <b>rancangan</b> (diagram struktur dan alur), <b>listing lengkap</b>, <b>penjelasan per blok</b>, <b>skenario
+pengujian</b> yang dijalankan sungguhan, dan <b>ide pengembangan</b>. Tabel berikut menunjukkan materi buku yang
+dipakai masing-masing proyek.</p>
+
+<table class="data">
+  <caption>Materi buku yang digabungkan dalam tiga proyek</caption>
+  <thead><tr><th>Materi</th><th>20.1 Kasir</th><th>20.2 Nilai siswa</th><th>20.3 Buku telepon</th></tr></thead>
+  <tbody>
+    <tr><td>Record (Bab 13)</td><td>barang dan belanja</td><td>data siswa</td><td>kontak</td></tr>
+    <tr><td>Array (Bab 11)</td><td>daftar barang, keranjang</td><td>daftar siswa</td><td>daftar kontak</td></tr>
+    <tr><td>String (Bab 12)</td><td>format Rupiah, kode barang</td><td>nama siswa</td><td>pencarian, huruf kapital</td></tr>
+    <tr><td>Prosedur dan fungsi (Bab 9)</td><td>6 rutin</td><td>5 rutin</td><td>10 rutin</td></tr>
+    <tr><td>Pengurutan (Bab 16)</td><td>-</td><td>insertion sort peringkat</td><td>penyisipan urut nama</td></tr>
+    <tr><td>Pencarian (Bab 15)</td><td>kode barang</td><td>-</td><td>pencarian sebagian nama</td></tr>
+    <tr><td>File teks (Bab 17)</td><td>struk.txt</td><td>rekap_nilai.txt</td><td>-</td></tr>
+    <tr><td>File bertipe (Bab 17)</td><td>-</td><td>-</td><td>kontak.dat</td></tr>
+    <tr><td>Percabangan dan perulangan (Bab 6-8)</td><td>semua</td><td>semua</td><td>semua</td></tr>
+  </tbody>
+</table>
+
+<h2>Proyek 1: Kasir Sederhana</h2>
+
+<h3>Analisis kebutuhan</h3>
+
+<p>Sebuah toko kelontong ingin program kasir sederhana. Dari percakapan dengan pemilik toko, kebutuhannya dirumuskan
+sebagai berikut.</p>
+
+<table class="data compact">
+  <caption>Kebutuhan program kasir</caption>
+  <thead><tr><th>No</th><th>Kebutuhan</th><th>Aturan</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Menampilkan daftar barang dan harga</td><td>6 barang, dengan kode seperti <code>B01</code></td></tr>
+    <tr><td>2</td><td>Mencatat belanjaan</td><td>kode barang dan jumlah; kode tidak peduli huruf besar atau kecil; barang yang sama digabung</td></tr>
+    <tr><td>3</td><td>Menghitung total dan diskon</td><td>diskon 10% bila belanja minimal Rp 100.000</td></tr>
+    <tr><td>4</td><td>Menerima uang tunai</td><td>harus cukup; bila kurang, ditanya ulang</td></tr>
+    <tr><td>5</td><td>Mencetak struk</td><td>ke layar dan ke <code>struk.txt</code>, isinya sama persis</td></tr>
+    <tr><td>6</td><td>Tahan salah ketik</td><td>angka yang bukan angka tidak membuat program berhenti</td></tr>
+  </tbody>
+</table>
+
+<h3>Rancangan</h3>
+
+<p>Data barang bersifat tetap, jadi disimpan sebagai <b>konstanta bertipe larik</b> berisi <i>record</i> <code>TBarang</code>
+(kode, nama, harga). Keranjang belanja adalah larik <i>record</i> <code>TBelanja</code> yang hanya menyimpan <b>nomor
+barang</b> dan <b>jumlah</b>. Tidak perlu menyalin nama dan harga: cukup rujuk ke daftar barang lewat nomornya. Cara ini menghindari
+data ganda yang bisa saling bertentangan.</p>
+
+<figure class="grafik" id="gb-kasir-data">
+<svg viewBox="0 0 680 250">
+  <text class="h c" x="10" y="20">DaftarBarang  (konstanta, 6 elemen)</text>
+  <rect class="box-w" x="10" y="30" width="270" height="22"/>
+  <text class="b s" x="18" y="45">[i]  Kode</text><text class="b s" x="76" y="45">Nama</text><text class="b s" x="210" y="45">Harga</text>
+  <g class="s mono">
+    <rect class="ok" x="10" y="52" width="270" height="22"/><text x="18" y="67">[1]  B01</text><text x="76" y="67">Beras 5 kg</text><text x="210" y="67">72000</text>
+    <rect class="box-w" x="10" y="74" width="270" height="22"/><text x="18" y="89">[2]  B02</text><text x="76" y="89">Minyak goreng 1L</text><text x="210" y="89">18500</text>
+    <rect class="box-w" x="10" y="96" width="270" height="22"/><text x="18" y="111">[3]  B03</text><text x="76" y="111">Gula pasir 1 kg</text><text x="210" y="111">17000</text>
+    <rect class="box-w" x="10" y="118" width="270" height="22"/><text x="18" y="133">[4]  B04</text><text x="76" y="133">Telur 1 kg</text><text x="210" y="133">29000</text>
+    <rect class="ok" x="10" y="140" width="270" height="22"/><text x="18" y="155">[5]  B05</text><text x="76" y="155">Teh celup</text><text x="210" y="155">7500</text>
+    <rect class="box-w" x="10" y="162" width="270" height="22"/><text x="18" y="177">[6]  B06</text><text x="76" y="177">Sabun mandi</text><text x="210" y="177">4500</text>
+  </g>
+  <text class="h c" x="400" y="20">Belanja  (keranjang, MaksBelanja = 20)</text>
+  <rect class="box-w" x="400" y="30" width="270" height="22"/>
+  <text class="b s" x="408" y="45">[i]</text><text class="b s" x="458" y="45">Barang</text><text class="b s" x="570" y="45">Jumlah</text>
+  <g class="s mono">
+    <rect class="dec" x="400" y="52" width="270" height="26"/><text x="408" y="69">[1]</text><text x="470" y="69">1</text><text x="590" y="69">2</text>
+    <rect class="dec" x="400" y="78" width="270" height="26"/><text x="408" y="95">[2]</text><text x="470" y="95">5</text><text x="590" y="95">3</text>
+  </g>
+  <path class="arrow" d="M460 65 H300 V63 H282"/>
+  <path class="arrow" d="M460 91 H330 V151 H282"/>
+  <text class="s muted" x="10" y="208">BanyakBelanja = 2</text>
+  <text class="s" x="10" y="228">Ani membeli 2 beras dan 3 teh: keranjang tidak menyimpan nama atau harga, hanya nomor barang yang menunjuk ke daftar.</text>
+</svg>
+<figcaption>Dua struktur data kasir: daftar barang (tetap) dan keranjang (berubah) yang merujuk daftar lewat nomor.</figcaption>
+</figure>
+
+<p>Program dipecah menjadi enam rutin kecil. Setiap rutin mengurus satu hal, dan program utama hanya menyusunnya
+dalam urutan yang benar.</p>
+
+<figure class="grafik" id="gb-kasir-struktur">
+<svg viewBox="0 0 680 300">
+  <rect class="term" x="240" y="10" width="200" height="34" rx="17"/>
+  <text class="white mid b" x="340" y="32">Program utama</text>
+  <path class="line" d="M340 44 V62 M80 62 H600 M80 62 V76 M200 62 V76 M340 62 V76 M470 62 V76 M600 62 V76"/>
+  <g>
+    <rect class="box" x="10" y="78" width="140" height="62" rx="6"/>
+    <text class="b mid" x="80" y="98">TampilkanDaftar</text><text class="xs mid muted" x="80" y="114">daftar barang + harga</text><text class="xs mid muted" x="80" y="128">memakai Rupiah</text>
+  </g>
+  <rect class="box" x="160" y="78" width="80" height="62" rx="6"/>
+  <text class="b mid" x="200" y="98">CatatBelanja</text><text class="xs mid muted" x="200" y="114">kode, jumlah</text><text class="xs mid muted" x="200" y="128">keranjang</text>
+  <rect class="io" x="270" y="78" width="140" height="62" rx="6"/>
+  <text class="b mid" x="340" y="98">Hitung total</text><text class="xs mid muted" x="340" y="114">Total, Diskon</text><text class="xs mid muted" x="340" y="128">(di program utama)</text>
+  <rect class="box" x="420" y="78" width="100" height="62" rx="6"/>
+  <text class="b mid" x="470" y="98">BacaBilangan</text><text class="xs mid muted" x="470" y="114">uang tunai</text><text class="xs mid muted" x="470" y="128">validasi Val</text>
+  <rect class="box" x="530" y="78" width="140" height="62" rx="6"/>
+  <text class="b mid" x="600" y="98">CetakStruk(F)</text><text class="xs mid muted" x="600" y="114">sekali ke Output</text><text class="xs mid muted" x="600" y="128">sekali ke file</text>
+  <rect class="ok" x="160" y="176" width="140" height="44" rx="6"/>
+  <text class="b mid" x="230" y="196">CariBarang</text><text class="xs mid muted" x="230" y="210">kode -> nomor, 0 bila tak ada</text>
+  <path class="dash" d="M200 140 V176"/>
+  <rect class="ok" x="320" y="176" width="140" height="44" rx="6"/>
+  <text class="b mid" x="390" y="196">BacaBilangan</text><text class="xs mid muted" x="390" y="210">dipakai juga oleh CatatBelanja</text>
+  <path class="dash" d="M200 140 L360 176"/>
+  <rect class="ok" x="480" y="176" width="190" height="44" rx="6"/>
+  <text class="b mid" x="575" y="196">Rupiah(N)</text><text class="xs mid muted" x="575" y="210">72000 -> Rp 72.000, dipakai di banyak tempat</text>
+  <path class="dash" d="M600 140 V176"/>
+  <text class="s muted" x="10" y="252">Garis tegas: dipanggil dari program utama.  Garis putus-putus: dipanggil oleh rutin di atasnya.</text>
+  <text class="s muted" x="10" y="270">Fungsi bantu (hijau) ditulis lebih dulu dalam kode, rutin yang memanggilnya menyusul.</text>
+</svg>
+<figcaption>Struktur rutin program kasir dan siapa memanggil siapa.</figcaption>
+</figure>
+
+<p>Alur kerja program utama sangat lurus: tampilkan daftar, catat belanja, hitung, bayar, cetak. Perhatikan bahwa bila
+tidak ada belanjaan, program berhenti lebih cepat tanpa mencetak struk kosong.</p>
+
+<figure class="grafik" id="gb-kasir-alur">
+<svg viewBox="0 0 680 120">
+  <rect class="term" x="6" y="40" width="90" height="34" rx="17"/><text class="white mid b" x="51" y="62">Mulai</text>
+  <path class="arrow" d="M96 57 H112"/>
+  <rect class="box" x="114" y="36" width="100" height="42" rx="6"/><text class="mid s" x="164" y="54">TampilkanDaftar</text><text class="mid xs muted" x="164" y="68">+ CatatBelanja</text>
+  <path class="arrow" d="M214 57 H236"/>
+  <polygon class="dec" points="290,24 340,57 290,90 240,57"/><text class="mid xs" x="290" y="54">Keranjang</text><text class="mid xs" x="290" y="66">kosong?</text>
+  <path class="arrow" d="M290 24 V10 H51 V38"/><text class="xs b" x="300" y="22" style="fill:#b42318">Ya: Exit</text>
+  <path class="arrow" d="M340 57 H360"/><text class="xs b" x="342" y="50" style="fill:#11743f">Tidak</text>
+  <rect class="box" x="362" y="36" width="90" height="42" rx="6"/><text class="mid s" x="407" y="54">Hitung Total</text><text class="mid xs muted" x="407" y="68">dan Diskon</text>
+  <path class="arrow" d="M452 57 H468"/>
+  <rect class="io" x="470" y="36" width="90" height="42" rx="6"/><text class="mid s" x="515" y="54">Uang tunai</text><text class="mid xs muted" x="515" y="68">&gt;= dibayar</text>
+  <path class="arrow" d="M560 57 H576"/>
+  <rect class="ok" x="578" y="36" width="96" height="42" rx="6"/><text class="mid s" x="626" y="54">CetakStruk</text><text class="mid xs muted" x="626" y="68">layar + file</text>
+</svg>
+<figcaption>Alur program utama kasir.</figcaption>
+</figure>
+
+<h3>Listing lengkap</h3>
+
+<p>Buka <code>bab20_01_kasir_sederhana.pas</code> lewat <span class="menu">File ▸ Examples...</span>. Listing ini cukup panjang;
+penjelasannya dibagi per blok di bawahnya. Kenali bagian yang sudah Anda pelajari: <code>record</code> (Bab 13),
+konstanta larik, <code>with</code>, <code>Val</code> (Bab 12), <code>Insert</code>, dan <code>Assign</code>/<code>Rewrite</code>/<code>Close</code> (Bab 17).</p>
+
+<x-listing src="bab20_01_kasir_sederhana.pas"></x-listing>
+
+<h3>Penjelasan per blok</h3>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>11–16</td><td>Konstanta pengaturan: nama berkas struk, batas dan persen diskon, jumlah barang, dan kapasitas keranjang. Mengubah kebijakan toko (misalnya diskon 15%) cukup di sini.</td></tr>
+    <tr><td>18–27</td><td>Dua tipe <i>record</i>. <code>TBarang</code> berisi kode (<code>string[3]</code>), nama, dan harga <code>LongInt</code> (harga bisa melebihi 32767). <code>TBelanja</code> hanya berisi nomor barang dan jumlah.</td></tr>
+    <tr><td>29–36</td><td><code>DaftarBarang</code>: konstanta larik dari record, diisi dengan sintaks <code>(Kode: ...; Nama: ...; Harga: ...)</code>. Data awal tertanam di program.</td></tr>
+    <tr><td>38–41</td><td>Variabel global: keranjang, jumlah isi keranjang, serta <code>Total</code>, <code>Diskon</code>, <code>Bayar</code>, semuanya <code>LongInt</code>.</td></tr>
+    <tr><td>43–56</td><td><code>Rupiah</code> mengubah bilangan menjadi teks bertitik ribuan. <code>Str</code> menghasilkan teks angka, lalu dari belakang setiap tiga digit disisipkan titik dengan <code>Insert</code>: untuk <code>72000</code>, posisi <code>Length - 2</code> = 3 sehingga hasilnya <code>72.000</code>; untuk <code>144000</code> posisi 4 menghasilkan <code>144.000</code>. Perulangan berhenti saat <code>P</code> tidak lebih dari 1.</td></tr>
+    <tr><td>58–73</td><td><code>BacaBilangan</code> membaca <i>string</i> lebih dulu, lalu <code>Val</code> mengubahnya. Bila <code>Kode &lt;&gt; 0</code> (bukan angka) atau nilainya kurang dari <code>Minimal</code>, pesan galat tampil dan perulangan <code>repeat</code> mengulang. Inilah cara membuat program tidak jatuh bila pemakai mengetik huruf.</td></tr>
+    <tr><td>75–85</td><td><code>CariBarang</code> membandingkan kode dengan setiap barang. Parameter <code>Kode</code> adalah parameter nilai, jadi perubahan huruf besar (baris 80–81) hanya berlaku di salinan lokal. Hasil 0 berarti tidak ditemukan.</td></tr>
+    <tr><td>87–95</td><td><code>TampilkanDaftar</code> memakai <code>with</code> agar <code>Kode</code>, <code>Nama</code>, <code>Harga</code> bisa ditulis tanpa awalan. Bantalan <code>'':18 - Length(Nama)</code> meratakan kolom, dan <code>Rupiah(Harga):11</code> merapatkan harga ke kanan.</td></tr>
+    <tr><td>97–133</td><td><code>CatatBelanja</code>: perulangan membaca kode sampai kosong. Kode dicari (baris 109); bila 0, tampil pesan. Bila ada, jumlah dibaca dengan <code>BacaBilangan</code> minimal 1. Baris 116–119 mencari apakah barang sudah ada di keranjang; bila ya, jumlahnya ditambah (baris 121), bila tidak, ditambahkan sebagai baris baru (122–127) selama keranjang belum penuh.</td></tr>
+    <tr><td>135–160</td><td><code>CetakStruk(var F: Text)</code> menulis struk ke <code>F</code>. Karena <code>Output</code> juga berjenis <code>Text</code>, prosedur ini dipanggil dua kali dengan sasaran berbeda. Setiap <code>WriteLn(F, ...)</code> memakai format lebar (<code>:11</code>, <code>:20</code>, <code>:31</code>) agar kolom rupiah sejajar.</td></tr>
+    <tr><td>153–154</td><td>Baris diskon hanya dicetak bila <code>Diskon &gt; 0</code>.</td></tr>
+    <tr><td>168–175</td><td>Program utama: daftar, catat belanja. Bila keranjang kosong, <code>Exit</code> di program utama menghentikan program dengan rapi.</td></tr>
+    <tr><td>177–184</td><td>Total dijumlahkan dengan mengalikan harga (diambil dari <code>DaftarBarang</code> lewat nomor) dengan jumlah. Diskon dihitung dengan <code>Total * PersenDiskon div 100</code>: dikali dulu baru dibagi supaya tidak ada pembulatan.</td></tr>
+    <tr><td>186–187</td><td>Jumlah yang harus dibayar ditampilkan, lalu uang tunai dibaca dengan <code>BacaBilangan</code> yang batas minimalnya adalah <code>Total - Diskon</code>: uang kurang otomatis ditolak.</td></tr>
+    <tr><td>189–197</td><td>Struk dicetak ke layar, lalu file <code>struk.txt</code> dibuat dengan <code>Assign</code>, <code>Rewrite</code>, dan diisi ulang dengan prosedur yang sama, kemudian ditutup. <code>GetDir(0, Folder)</code> memberi tahu pemakai letak berkasnya.</td></tr>
+  </tbody>
+</table>
+
+<div class="tip"><p>Pola <code>procedure Cetak(var F: Text)</code> sangat berguna: satu rutin untuk dua tujuan. Tidak ada
+dua versi rumus yang harus dijaga kembaran. Hal ini juga menjamin isi layar dan isi berkas selalu sama.</p></div>
+
+<h3>Skenario uji</h3>
+
+<p><b>Skenario 1: belanja normal dengan diskon.</b> Pelanggan membeli 2 beras (<code>b01</code>, huruf kecil sengaja),
+salah mengetik kode <code>x99</code>, membeli 3 teh (<code>B05</code>), lalu mengosongkan kode untuk selesai. Total
+<code>2 x 72000 + 3 x 7500 = 166500</code>, melewati batas diskon. Uang yang diketik pertama (<code>100</code>) kurang dan
+ditolak, lalu <code>200000</code> diterima.</p>
+
+<x-run src="bab20_01_kasir_sederhana.pas" caption="Skenario 1: kode huruf kecil, kode salah, uang kurang, lalu diskon 10%"></x-run>
+
+<p>Periksa hitungannya: diskon <code>166500 * 10 div 100 = 16650</code>, dibayar <code>166500 - 16650 = 149850</code>, dan kembalian
+<code>200000 - 149850 = 50150</code>. Angka di struk sesuai dengan hitungan tangan. Itulah cara menguji program: hitung dulu
+hasil yang benar, baru bandingkan dengan hasil program.</p>
+
+<p><b>Skenario 2: belanja kecil, tanpa diskon.</b> Satu sabun mandi (<code>b06</code>) kali 4 = 18000, di bawah
+batas 100000, sehingga baris diskon tidak muncul. Uang pas.</p>
+
+<x-run src="bab20_01_kasir_sederhana.pas" input="b06\n4\n\n18000\n" caption="Skenario 2: 4 sabun, total di bawah batas diskon, uang pas"></x-run>
+
+<p><b>Skenario 3: tidak ada belanjaan.</b> Kasir langsung menekan <kbd>Enter</kbd> pada pertanyaan kode.</p>
+
+<x-run src="bab20_01_kasir_sederhana.pas" input="\n" caption="Skenario 3: keranjang kosong, program berhenti dengan <code>Exit</code>"></x-run>
+
+<p>Anda juga dapat memakai debugger untuk mengamati hitungan di <code>CetakStruk</code>. Pasang <i>breakpoint</i> pada baris 147
+dan jalankan dengan <span class="menu">Debug ▸ Start debugging</span>; jendela <i>watch</i> menampilkan
+<code>Subtotal</code> untuk setiap barang di keranjang.</p>
+
+<x-ide file="bab20_01_kasir_sederhana.pas" top="140" rows="14" cursor="147:7" breakpoints="147" exec="147" watches="Subtotal: 144000;I: 1" caption="Debugger pada baris 147: barang pertama (beras) sudah dihitung subtotalnya 2 x 72000 = 144000"></x-ide>
+
+<h3>Ide pengembangan</h3>
+
+<ul>
+  <li>Baca daftar barang dari file teks sehingga pemilik toko dapat mengubah harga tanpa mengubah program.</li>
+  <li>Tambahkan nomor struk yang naik otomatis dan disimpan di file, serta tanggal dari unit <code>Dos</code>.</li>
+  <li>Tambahkan menu <i>batalkan barang</i> yang mengurangi jumlah di keranjang.</li>
+  <li>Simpan seluruh transaksi hari itu dan buat laporan penjualan per barang.</li>
+</ul>
+
+<h2>Proyek 2: Pengolah Nilai Siswa</h2>
+
+<h3>Analisis kebutuhan</h3>
+
+<p>Seorang guru ingin program yang membantunya merekap nilai satu kelas. Ia mencatat tiga nilai setiap siswa: tugas,
+ujian tengah semester (UTS), dan ujian akhir semester (UAS), dengan bobot masing-masing 30%, 30%, dan 40%.</p>
+
+<table class="data compact">
+  <caption>Kebutuhan program nilai siswa</caption>
+  <thead><tr><th>No</th><th>Kebutuhan</th><th>Aturan</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Memasukkan data hingga 40 siswa</td><td>nama dan tiga nilai bulat 0 sampai 100</td></tr>
+    <tr><td>2</td><td>Menghitung nilai akhir berbobot</td><td>0,3 tugas + 0,3 UTS + 0,4 UAS</td></tr>
+    <tr><td>3</td><td>Memberi nilai huruf</td><td>A (85 ke atas), B (70), C (55), D (40), E</td></tr>
+    <tr><td>4</td><td>Menyusun peringkat</td><td>dari nilai akhir tertinggi</td></tr>
+    <tr><td>5</td><td>Menentukan ketuntasan</td><td>KKM 75: tuntas atau remedial</td></tr>
+    <tr><td>6</td><td>Statistik kelas</td><td>rata-rata, tertinggi, terendah, jumlah tuntas</td></tr>
+    <tr><td>7</td><td>Menyimpan rekap ke berkas</td><td><code>rekap_nilai.txt</code>, isi sama dengan layar</td></tr>
+  </tbody>
+</table>
+
+<h3>Rancangan</h3>
+
+<p>Datanya sebuah larik <i>record</i> <code>TSiswa</code>. Alurnya tiga tahap berurutan: data dibaca, diurutkan, lalu
+dicetak dua kali. Kunci urutannya bukan nama, tetapi <code>Akhir</code> (nilai akhir), sehingga setelah pengurutan
+<code>Siswa[1]</code> adalah yang tertinggi dan <code>Siswa[N]</code> yang terendah. Statistik tertinggi dan terendah
+karenanya cukup membaca dua ujung larik.</p>
+
+<figure class="grafik" id="gb-nilai-alur">
+<svg viewBox="0 0 680 250">
+  <rect class="io" x="6" y="20" width="150" height="70" rx="8"/>
+  <text class="b mid" x="81" y="42">IsiData</text><text class="xs mid muted" x="81" y="58">BacaNilai: 0..100</text><text class="xs mid muted" x="81" y="72">Akhir dihitung berbobot</text>
+  <path class="arrow" d="M156 55 H186"/>
+  <rect class="box" x="188" y="20" width="150" height="70" rx="8"/>
+  <text class="b mid" x="263" y="42">UrutkanPeringkat</text><text class="xs mid muted" x="263" y="58">insertion sort</text><text class="xs mid muted" x="263" y="72">kunci: Akhir, menurun</text>
+  <path class="arrow" d="M338 55 H368"/>
+  <rect class="ok" x="370" y="20" width="150" height="70" rx="8"/>
+  <text class="b mid" x="445" y="42">CetakRekap(Output)</text><text class="xs mid muted" x="445" y="58">tabel, statistik</text><text class="xs mid muted" x="445" y="72">ke layar</text>
+  <path class="arrow" d="M520 55 H540"/>
+  <rect class="ok" x="542" y="20" width="132" height="70" rx="8"/>
+  <text class="b mid" x="608" y="42">CetakRekap(F)</text><text class="xs mid muted" x="608" y="58">rekap_nilai.txt</text><text class="xs mid muted" x="608" y="72">rutin yang sama</text>
+  <text class="h c" x="6" y="120">Rumus dan pemetaan nilai</text>
+  <rect class="box" x="6" y="130" width="320" height="108" rx="8"/>
+  <text class="mono s" x="18" y="152">Akhir = 0.3*Tugas + 0.3*UTS + 0.4*UAS</text>
+  <text class="s" x="18" y="174">Contoh Ani: 0.3*80 + 0.3*85 + 0.4*90</text>
+  <text class="s" x="18" y="190">= 24 + 25.5 + 36 = 85.5</text>
+  <text class="s" x="18" y="212">85.5 &gt;= 85: huruf A.  85.5 &gt;= 75: Tuntas.</text>
+  <text class="xs muted" x="18" y="228">Bobot berjumlah 1.0 (30% + 30% + 40%).</text>
+  <g>
+    <rect x="350" y="150" width="64" height="30" style="fill:#e5484d"/><text class="mid s white" x="382" y="169">E</text><text class="xs mid" x="382" y="196">&lt; 40</text>
+    <rect x="414" y="150" width="64" height="30" style="fill:#e2680b"/><text class="mid s white" x="446" y="169">D</text><text class="xs mid" x="446" y="196">40 - 54,9</text>
+    <rect x="478" y="150" width="64" height="30" style="fill:#d99a00"/><text class="mid s white" x="510" y="169">C</text><text class="xs mid" x="510" y="196">55 - 69,9</text>
+    <rect x="542" y="150" width="64" height="30" style="fill:#1a9e58"/><text class="mid s white" x="574" y="169">B</text><text class="xs mid" x="574" y="196">70 - 84,9</text>
+    <rect x="606" y="150" width="68" height="30" style="fill:#1d4ed8"/><text class="mid s white" x="640" y="169">A</text><text class="xs mid" x="640" y="196">&gt;= 85</text>
+  </g>
+  <text class="s b" x="350" y="224">Rantai else if dari yang terbesar: syarat berikutnya</text>
+  <text class="s b" x="350" y="238">otomatis hanya untuk nilai di bawahnya.</text>
+</svg>
+<figcaption>Alur data program nilai siswa, rumus nilai akhir, dan pemetaan nilai huruf.</figcaption>
+</figure>
+
+<h3>Listing lengkap</h3>
+
+<p>Buka <code>bab20_02_nilai_siswa.pas</code>. Perhatikan bahwa <code>CetakRekap</code> memakai trik yang sama seperti
+<code>CetakStruk</code>, dan <code>UrutkanPeringkat</code> adalah <i>insertion sort</i> dari Bab 16, hanya saja
+elemen yang diurutkan adalah seluruh <i>record</i>.</p>
+
+<x-listing src="bab20_02_nilai_siswa.pas"></x-listing>
+
+<h3>Penjelasan per blok</h3>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–15</td><td>Konstanta. Bobot ditulis sebagai konstanta bernama, bukan angka tersebar, sehingga guru dapat mengubah kebijakan di satu tempat. <code>KKM</code> adalah batas ketuntasan 75.</td></tr>
+    <tr><td>17–22</td><td><code>TSiswa</code> berisi nama, tiga nilai bulat, dan <code>Akhir</code> bertipe <code>Real</code>. Nilai akhir disimpan, bukan dihitung ulang setiap kali, karena dipakai oleh pengurutan, nilai huruf, dan statistik.</td></tr>
+    <tr><td>28–45</td><td><code>BacaNilai(Pesan, Min, Max)</code> adalah versi umum dari <code>BacaBilangan</code> di proyek kasir. Batas atas dan bawah dilewatkan sebagai parameter, jadi fungsi yang sama dipakai untuk jumlah siswa (1–40) dan untuk nilai (0–100). Baris 41 memaksa <code>Kode</code> menjadi 1 bila di luar rentang supaya perulangan mengulang.</td></tr>
+    <tr><td>47–54</td><td><code>Huruf</code> mengembalikan <code>Char</code> lewat rantai <code>else if</code> dari batas terbesar. Karena dicek dari atas, tidak perlu menulis batas atas setiap rentang.</td></tr>
+    <tr><td>56–71</td><td><code>IsiData</code> membaca jumlah siswa, lalu untuk setiap siswa (dengan <code>with Siswa[I]</code>) membaca nama dan tiga nilai, serta menghitung <code>Akhir</code> (baris 69).</td></tr>
+    <tr><td>73–89</td><td><code>UrutkanPeringkat</code>: untuk setiap <code>Siswa[I]</code> (kunci), elemen yang nilainya <b>lebih kecil</b> digeser ke kanan, lalu kunci disisipkan (baris 82–87). Tanda <code>&lt;</code> pada baris 82 menghasilkan urutan menurun. Karena yang digeser seluruh <i>record</i>, nama dan nilai tetap bersama.</td></tr>
+    <tr><td>91–123</td><td><code>CetakRekap(var F: Text)</code>: judul dan kepala tabel, lalu satu baris per siswa dengan format lebar (<code>Tugas:6</code>, <code>Akhir:7:1</code>). Keterangan <code>Tuntas</code> atau <code>Remedial</code> bergantung <code>Akhir &gt;= KKM</code> (baris 107–113). Sambil berjalan, <code>Jumlah</code> dan <code>Lulus</code> dikumpulkan.</td></tr>
+    <tr><td>117</td><td><code>Jumlah / N:0:1</code>: pembagian dengan <code>/</code> menghasilkan <code>Real</code>, lalu diformat satu desimal. Tanpa format, <code>Real</code> akan tampil dalam notasi ilmiah.</td></tr>
+    <tr><td>118–121</td><td>Setelah diurutkan, tertinggi dan terendah ada di <code>Siswa[1]</code> dan <code>Siswa[N]</code>.</td></tr>
+    <tr><td>129–141</td><td>Program utama: isi data, urutkan, cetak ke layar, lalu tulis ke berkas dengan rutin yang sama.</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p>Semua <code>Real</code> dicetak dengan format <code>:lebar:desimal</code> (<code>Akhir:7:1</code>,
+<code>Jumlah / N:0:1</code>). Tanpa format, Turbo Pascal 7 dan Free Pascal dengan <code>-Mtp</code> menampilkan notasi
+ilmiah seperti <code> 8.5500000000E+01</code>.</p></div>
+
+<h3>Skenario uji</h3>
+
+<p><b>Skenario 1: dua siswa.</b> Masukan standar: Ani (80, 85, 90) dan Budi (60, 70, 65). Ani memperoleh
+85,5 (huruf A, tuntas), Budi 65,0 (huruf C, remedial), sehingga Ani berperingkat pertama.</p>
+
+<x-run src="bab20_02_nilai_siswa.pas" caption="Skenario 1: dua siswa, satu tuntas dan satu remedial"></x-run>
+
+<p><b>Skenario 2: tiga siswa dengan masukan salah.</b> Nilai diketik tidak berurutan dari terbaik ke terburuk, dan beberapa
+masukan salah sengaja diberikan: UAS Eko diketik <code>abc</code>, UAS Fani diketik <code>150</code> (di luar 0–100).
+Program menolak keduanya dan meminta ulang. Eko dan Fani dimasukkan setelah Dina, tetapi hasilnya diurutkan ulang
+berdasarkan nilai akhir.</p>
+
+<x-run src="bab20_02_nilai_siswa.pas" input="3\nDina\n90\n88\n95\nEko\n40\n55\nabc\n30\nFani\n75\n80\n150\n70\n" caption="Skenario 2: validasi menolak <code>abc</code> dan <code>150</code>; tabel tetap berurutan menurun"></x-run>
+
+<p>Hitung beberapa baris dengan tangan. Dina: <code>0,3 x 90 + 0,3 x 88 + 0,4 x 95 = 27 + 26,4 + 38 = 91,4</code>. Eko:
+<code>12 + 16,5 + 12 = 40,5</code>, tepat di atas batas D. Fani: <code>22,5 + 24 + 28 = 74,5</code>, hanya setengah poin
+di bawah KKM, sehingga remedial. Contoh ini menunjukkan mengapa pengujian dengan nilai yang dekat batas penting.</p>
+
+<div class="coba"><p>Jalankan skenario dengan satu siswa saja, lalu dengan nilai semua 100. Apakah tertinggi dan terendah menunjuk siswa
+yang sama? Bagaimana rata-ratanya? Bila Anda mengetik jumlah siswa <code>0</code>, apa yang terjadi?</p></div>
+
+<h3>Ide pengembangan</h3>
+
+<ul>
+  <li>Minta guru memilih urutan: peringkat nilai atau abjad nama (dua rutin pengurutan, atau satu rutin dengan parameter).</li>
+  <li>Tambahkan histogram sederhana: berapa siswa mendapat A, B, C, D, dan E, ditampilkan dengan baris bintang.</li>
+  <li>Simpan data mentah (bukan hanya rekap) di file bertipe sehingga nilai dapat dikoreksi di lain hari.</li>
+  <li>Hitung median dan simpangan baku sebagai statistik tambahan.</li>
+</ul>
+
+<h2>Proyek 3: Buku Telepon</h2>
+
+<h3>Analisis kebutuhan</h3>
+
+<p>Dua proyek sebelumnya menyimpan hasil ke berkas teks yang hanya dibaca manusia. Proyek ketiga lebih menantang: data
+harus <b>bertahan</b> setelah program ditutup dan <b>dimuat kembali</b> pada pemakaian berikutnya, seperti aplikasi
+sungguhan. Buku telepon menyimpan nama, nomor telepon, dan surel setiap kontak.</p>
+
+<table class="data compact">
+  <caption>Kebutuhan program buku telepon</caption>
+  <thead><tr><th>No</th><th>Kebutuhan</th><th>Aturan</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Menampilkan semua kontak</td><td>rapi dalam kolom, bernomor</td></tr>
+    <tr><td>2</td><td>Menambah kontak</td><td>nama wajib; telepon hanya angka, +, -, spasi, minimal 6 karakter; surel boleh kosong</td></tr>
+    <tr><td>3</td><td>Menjaga urutan nama</td><td>kontak selalu terurut abjad, tanpa memedulikan huruf besar/kecil</td></tr>
+    <tr><td>4</td><td>Mencari kontak</td><td>sebagian nama cukup; tidak peduli huruf besar/kecil</td></tr>
+    <tr><td>5</td><td>Menghapus kontak</td><td>dengan konfirmasi Y/T</td></tr>
+    <tr><td>6</td><td>Menyimpan permanen</td><td>dimuat saat mulai, ditulis saat keluar bila ada perubahan</td></tr>
+  </tbody>
+</table>
+
+<h3>Rancangan</h3>
+
+<p>Ada dua tempat data: <b>berkas</b> <code>kontak.dat</code> (permanen) dan <b>larik</b> <code>Kontak</code> di memori
+(sementara). Program membaca isi berkas ke larik saat mulai (<code>Muat</code>), semua pekerjaan terjadi di larik, dan
+isi larik ditulis kembali ke berkas hanya bila ada perubahan (<code>Simpan</code>). Penanda <code>Berubah</code>
+mencatat apakah penyimpanan diperlukan.</p>
+
+<figure class="grafik" id="gb-telp-siklus">
+<svg viewBox="0 0 680 210">
+  <rect class="box" x="10" y="70" width="130" height="70" rx="8"/>
+  <text class="b mid" x="75" y="96">kontak.dat</text><text class="xs mid muted" x="75" y="112">file bertipe</text><text class="xs mid muted" x="75" y="126">(di disk, permanen)</text>
+  <path class="arrow" d="M140 88 H200"/><text class="s b mid" x="170" y="82" style="fill:#11743f">Muat</text>
+  <path class="arrow" d="M200 124 H140"/><text class="s b mid" x="170" y="140" style="fill:#b42318">Simpan</text>
+  <rect class="ok" x="202" y="40" width="160" height="130" rx="8"/>
+  <text class="b mid" x="282" y="62">Kontak[1..100]</text>
+  <text class="xs mid muted" x="282" y="76">larik record di memori</text>
+  <rect class="box-w" x="216" y="86" width="132" height="22" rx="3"/><text class="mono s mid" x="282" y="101">Andi</text>
+  <rect class="box-w" x="216" y="110" width="132" height="22" rx="3"/><text class="mono s mid" x="282" y="125">Budi</text>
+  <rect class="box-w" x="216" y="134" width="132" height="22" rx="3"/><text class="mono s mid" x="282" y="149">Siti Aminah</text>
+  <path class="arrow" d="M362 105 H400"/>
+  <rect class="term" x="402" y="30" width="268" height="150" rx="10"/>
+  <text class="white b" x="418" y="54">Menu (repeat..until)</text>
+  <text class="white s" x="418" y="76">1  TampilkanSemua</text>
+  <text class="white s" x="418" y="94">2  Tambah   (menyisip urut, Berubah := True)</text>
+  <text class="white s" x="418" y="112">3  Cari     (Pos pada nama berhuruf kapital)</text>
+  <text class="white s" x="418" y="130">4  Hapus    (geser kiri, Berubah := True)</text>
+  <text class="white s" x="418" y="148">0  keluar; bila Berubah: Simpan</text>
+  <text class="xs white" x="418" y="168">Pilihan tak dikenal: pesan, menu diulang</text>
+  <text class="s muted" x="10" y="198">Muat dijalankan sekali di awal, Simpan sekali di akhir (hanya bila Berubah).</text>
+</svg>
+<figcaption>Siklus data buku telepon: dimuat ke larik, dikerjakan di memori, ditulis kembali saat keluar.</figcaption>
+</figure>
+
+<p>Menjaga larik selalu terurut dilakukan saat <b>menyisipkan</b>: posisi yang benar dicari dari belakang, elemen lebih
+besar digeser ke kanan satu langkah, lalu kontak baru ditaruh pada celah. Ini bagian dalam <i>insertion sort</i>.
+Penghapusan sebaliknya: elemen di kanan digeser ke kiri menutup celah.</p>
+
+<figure class="grafik" id="gb-telp-sisip">
+<svg viewBox="0 0 680 190">
+  <text class="h c" x="10" y="20">Sebelum: menyisipkan "Budi" (Jumlah = 2)</text>
+  <g class="mono s">
+    <rect class="box-w" x="10" y="30" width="110" height="30"/><text x="20" y="50">[1] Andi</text>
+    <rect class="box-w" x="120" y="30" width="110" height="30"/><text x="130" y="50">[2] Siti</text>
+    <rect class="box-w" x="230" y="30" width="110" height="30" style="stroke-dasharray:4"/><text x="240" y="50">[3] kosong</text>
+  </g>
+  <text class="s muted" x="360" y="50">Posisi := Jumlah + 1 = 3, lalu mundur selama nama di [Posisi - 1] &gt; "Budi"</text>
+  <text class="h c" x="10" y="100">Sesudah: Siti bergeser ke [3], "Budi" masuk ke [2]</text>
+  <g class="mono s">
+    <rect class="box-w" x="10" y="110" width="110" height="30"/><text x="20" y="130">[1] Andi</text>
+    <rect class="ok" x="120" y="110" width="110" height="30"/><text x="130" y="130">[2] Budi</text>
+    <rect class="dec" x="230" y="110" width="110" height="30"/><text x="240" y="130">[3] Siti</text>
+  </g>
+  <text class="s muted" x="360" y="130">for I := Jumlah downto Posisi do Kontak[I+1] := Kontak[I];</text>
+  <text class="s muted" x="360" y="148">Kontak[Posisi] := Baru;  Jumlah := Jumlah + 1;</text>
+  <text class="s" x="10" y="172">Penggeseran dilakukan dari kanan ke kiri supaya tidak ada elemen yang tertimpa sebelum sempat disalin.</text>
+</svg>
+<figcaption>Menyisipkan kontak pada posisi urut: geser ke kanan, lalu isi celah.</figcaption>
+</figure>
+
+<h3>Listing lengkap</h3>
+
+<p>Buka <code>bab20_03_buku_telepon.pas</code>. Ini program terpanjang dalam buku. Berkas data berupa
+<code>file of TKontak</code>, yaitu berkas bertipe: setiap elemen adalah satu <i>record</i> utuh dengan ukuran tetap
+(Bab 17), sehingga tidak perlu mengurai teks baris demi baris.</p>
+
+<x-listing src="bab20_03_buku_telepon.pas"></x-listing>
+
+<h3>Penjelasan per blok</h3>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10–13</td><td>Nama berkas, kapasitas, dan himpunan karakter telepon yang sah: <code>['0'..'9', '+', '-', ' ']</code>, yaitu <i>set</i> dari Bab 14.</td></tr>
+    <tr><td>15–25</td><td><code>TKontak</code> dengan tiga <i>string</i> berpanjang tetap. Karena <i>record</i> berukuran tetap, ia dapat ditulis ke file bertipe. <code>Berubah</code> adalah penanda "belum disimpan".</td></tr>
+    <tr><td>27–34</td><td><code>Kapital</code> mengubah seluruh <i>string</i> ke huruf besar dengan <code>UpCase</code>. Dipakai untuk membandingkan nama tanpa memedulikan huruf besar atau kecil, baik saat mengurutkan maupun mencari.</td></tr>
+    <tr><td>36–53</td><td><code>Muat</code>: <code>Assign</code>, lalu <code>Reset</code> dengan <code>{$I-}</code>/<code>{$I+}</code> (baris 42–44) mematikan pemeriksaan galat otomatis. Bila berkas belum ada, <code>IOResult</code> bukan nol dan program mulai dengan daftar kosong (baris 45–46), bukan terhenti dengan galat. Berkas yang ada dibaca <i>record</i> demi <i>record</i> sampai <code>Eof</code> (baris 47–51).</td></tr>
+    <tr><td>55–66</td><td><code>Simpan</code>: <code>Rewrite</code> menimpa seluruh isi, lalu setiap kontak ditulis, dan penanda <code>Berubah</code> dikembalikan ke <code>False</code>.</td></tr>
+    <tr><td>68–87</td><td><code>TampilkanSatu</code> dan <code>TampilkanSemua</code>: kolom dirapikan dengan bantalan <code>'':26 - Length(Nama)</code>. Daftar kosong mendapat pesan sendiri.</td></tr>
+    <tr><td>89–97</td><td><code>TeleponSah</code> memeriksa panjang minimal 6 dan setiap karakter dengan operator <code>in</code> terhadap himpunan <code>KarakterTelepon</code>.</td></tr>
+    <tr><td>99–132</td><td><code>Tambah</code>: baca nama dan telepon (diulang sampai sah), siapkan <code>Baru</code>, cari posisi dari belakang (baris 122–125), geser ke kanan (126–127), lalu sisipkan (128–130). Nama kosong membatalkan penambahan (baris 111).</td></tr>
+    <tr><td>134–148</td><td><code>Cari</code>: <code>Pos</code> mencari potongan nama (keduanya berhuruf kapital) pada setiap kontak, menampilkan yang cocok dan menghitungnya.</td></tr>
+    <tr><td>150–175</td><td><code>Hapus</code>: tampilkan daftar, baca nomor dengan <code>Val</code> agar aman, minta konfirmasi, lalu geser elemen ke kiri menutup celah (baris 169–170).</td></tr>
+    <tr><td>181–205</td><td>Program utama: <code>Muat</code>, tampilkan banyaknya kontak dan folder data, perulangan menu dengan rantai <code>if..else if</code>, lalu <code>Simpan</code> hanya bila <code>Berubah</code>.</td></tr>
+  </tbody>
+</table>
+
+<h3>Skenario uji berurutan</h3>
+
+<p>Karena data tersimpan di berkas, ketiga skenario berikut dijalankan <b>berurutan di folder yang sama</b>. Hasil
+skenario sebelumnya menjadi masukan skenario berikutnya. Ini cara menguji persistensi.</p>
+
+<p><b>Skenario 1: berkas belum ada.</b> Program mulai dengan 0 kontak. Kita menambahkan tiga kontak dalam urutan
+sembarang (Siti, Andi, Budi), termasuk satu telepon yang salah (<code>12</code>, kurang dari 6 karakter), tampilkan, lalu
+keluar. Perhatikan bahwa daftar tampil terurut abjad walaupun dimasukkan tidak berurutan.</p>
+
+<x-run src="bab20_03_buku_telepon.pas" input="2\nSiti Aminah\n08123456789\nsiti@mail.id\n2\nAndi\n0811111111\n\n2\nBudi\n12\n0812222333\nbudi@mail.id\n1\n0\n" caption="Skenario 1: berkas kosong; tiga kontak ditambahkan, daftar terurut, lalu disimpan"></x-run>
+
+<p><b>Skenario 2: memuat, mencari, menghapus.</b> Program mulai kembali dan <b>memuat 3 kontak</b> dari
+<code>kontak.dat</code>: bukti data bertahan. Lalu mencari <code>andi</code> (huruf kecil), mencari <code>zzz</code> (tidak
+ada), menghapus kontak nomor 2 (Budi) setelah konfirmasi, menampilkan hasilnya, dan keluar.</p>
+
+<x-run src="bab20_03_buku_telepon.pas" input="3\nandi\n3\nzzz\n4\n2\nY\n1\n0\n" caption="Skenario 2: kontak dimuat dari berkas; pencarian tak peduli huruf besar; penghapusan dengan konfirmasi"></x-run>
+
+<p><b>Skenario 3: memuat tanpa perubahan.</b> Hanya melihat daftar lalu keluar. Karena <code>Berubah</code> tetap
+<code>False</code>, berkas tidak ditulis ulang, dan program melaporkan <i>Tidak ada perubahan</i>.</p>
+
+<x-run src="bab20_03_buku_telepon.pas" input="1\n0\n" caption="Skenario 3: dua kontak yang tersisa dimuat; tidak ada perubahan, tidak ada penyimpanan"></x-run>
+
+<h3>Mengapa {$I-} diperlukan</h3>
+
+<p>Pada pemakaian pertama, <code>kontak.dat</code> belum ada. Tanpa <code>{$I-}</code>, <code>Reset</code> pada berkas yang tidak
+ada langsung menghentikan program dengan <i>runtime error</i>. Contoh berikut menunjukkannya.</p>
+
+<x-error name="tanpa_io.pas" run caption="<code>Reset</code> pada berkas yang tidak ada tanpa <code>{$I-}</code>: program berhenti dengan runtime error 2">program TanpaIO;
+var
+  F: Text;
+  Baris: string;
+begin
+  Assign(F, 'tidak_ada.dat');
+  Reset(F);
+  ReadLn(F, Baris);
+  WriteLn(Baris);
+end.</x-error>
+
+<p>Dengan <code>{$I-}</code>, kegagalan tidak menghentikan program; kode galatnya disimpan dan dibaca dengan
+<code>IOResult</code>. Setelah dibaca, <code>{$I+}</code> menyalakan kembali pemeriksaan otomatis. Pola inilah yang dipakai
+prosedur <code>Muat</code>.</p>
+
+<h3>Ide pengembangan</h3>
+
+<ul>
+  <li>Tambahkan menu <i>ubah kontak</i> dengan menampilkan nilai lama dan membiarkan Enter berarti "tidak diubah".</li>
+  <li>Tambahkan kolom alamat atau tanggal lahir. Karena berkas bertipe, ukuran <i>record</i> berubah dan berkas lama tidak
+  lagi cocok: pikirkan cara migrasi data lama.</li>
+  <li>Tulis cadangan <code>kontak.bak</code> sebelum menimpa <code>kontak.dat</code> di <code>Simpan</code>.</li>
+  <li>Pisahkan menjadi dua unit (<code>data_kontak</code> dan <code>tampilan</code>) dengan teknik Bab 19.</li>
+</ul>
+
+<h2>Kesalahan yang Sering Terjadi di Proyek</h2>
+
+<ul>
+  <li><b>Menyalin data yang sama ke banyak tempat.</b> Keranjang kasir hanya menyimpan nomor barang, bukan harga, sehingga harga hanya hidup di satu tempat.</li>
+  <li><b>Lupa memvalidasi masukan.</b> Pembaca yang mengetik huruf pada pertanyaan angka akan menjatuhkan program bila memakai <code>ReadLn</code> ke bilangan langsung. Gunakan <i>string</i> + <code>Val</code>.</li>
+  <li><b>Menulis dua versi kode cetak.</b> Pakai satu rutin dengan parameter <code>var F: Text</code>.</li>
+  <li><b>Melewatkan kasus pinggir:</b> daftar kosong, satu elemen, penuh, nilai tepat di batas (75, 100000).</li>
+  <li><b>Tidak menguji persistensi:</b> jalankan program dua kali dan periksa data tidak hilang.</li>
+</ul>
+
+<p>Dua contoh galat kompilasi khas di proyek berukuran besar: memakai <code>div</code> pada bilangan <code>Real</code> saat menghitung rata-rata, dan menulis
+nilai yang tipenya tidak cocok ke file bertipe.</p>
+
+<x-error name="rata_rata.pas" caption="<code>div</code> hanya untuk bilangan bulat: untuk <code>Real</code> pakai <code>/</code>">program RataRata;
+var
+  Jumlah, Rata: Real;
+  N: Integer;
+begin
+  Jumlah := 255.5;
+  N := 3;
+  Rata := Jumlah div N;
+  WriteLn(Rata:0:1);
+end.</x-error>
+
+<x-error name="tipe_file.pas" caption="Menulis larik utuh ke file yang bertipe satu record: tipe tidak cocok">program TipeFile;
+type
+  TKontak = record
+    Nama: string[25];
+  end;
+var
+  F: file of TKontak;
+  Kontak: array[1..3] of TKontak;
+begin
+  Assign(F, 'k.dat');
+  Rewrite(F);
+  Write(F, Kontak);
+  Close(F);
+end.</x-error>
+
+<h2>Peta Konsep: Perjalanan Anda</h2>
+
+<p>Anda telah menempuh seluruh buku. Peta berikut merangkum enam bagian dan semua bab yang telah Anda pelajari. Bagian
+bawahnya menunjukkan bagaimana ketiga proyek akhir menggabungkan hampir semuanya.</p>
+
+<figure class="grafik" id="gb-peta">
+<svg viewBox="0 0 680 400">
+  <rect class="box-w" x="10" y="10" width="212" height="132" rx="10" style="stroke:#1d4ed8;stroke-width:2"/>
+  <rect x="10" y="10" width="212" height="24" rx="10" style="fill:#1d4ed8"/><rect x="10" y="22" width="212" height="12" style="fill:#1d4ed8"/>
+  <text class="b white" x="22" y="27">I  Fondasi</text>
+  <text class="s" x="22" y="54">1  Mengenal Pascal dan Odin</text><text class="s" x="22" y="72">2  Struktur program</text><text class="s" x="22" y="90">3  Tipe data, variabel, konstanta</text><text class="s" x="22" y="108">4  Masukan dan keluaran</text><text class="s" x="22" y="126">5  Operator dan ekspresi</text>
+  <rect class="box-w" x="234" y="10" width="212" height="132" rx="10" style="stroke:#0f8f84;stroke-width:2"/>
+  <rect x="234" y="10" width="212" height="24" rx="10" style="fill:#0f8f84"/><rect x="234" y="22" width="212" height="12" style="fill:#0f8f84"/>
+  <text class="b white" x="246" y="27">II  Alur Kendali</text>
+  <text class="s" x="246" y="54">6  Percabangan</text><text class="s" x="246" y="72">7  Perulangan</text><text class="s" x="246" y="90">8  Berlatih algoritma</text>
+  <rect class="box-w" x="458" y="10" width="212" height="132" rx="10" style="stroke:#e2680b;stroke-width:2"/>
+  <rect x="458" y="10" width="212" height="24" rx="10" style="fill:#e2680b"/><rect x="458" y="22" width="212" height="12" style="fill:#e2680b"/>
+  <text class="b white" x="470" y="27">III  Prosedur, Fungsi, Rekursi</text>
+  <text class="s" x="470" y="54">9  Prosedur dan fungsi</text><text class="s" x="470" y="72">10  Rekursi</text>
+  <rect class="box-w" x="10" y="156" width="212" height="132" rx="10" style="stroke:#7c3aed;stroke-width:2"/>
+  <rect x="10" y="156" width="212" height="24" rx="10" style="fill:#7c3aed"/><rect x="10" y="168" width="212" height="12" style="fill:#7c3aed"/>
+  <text class="b white" x="22" y="173">IV  Struktur Data</text>
+  <text class="s" x="22" y="200">11  Array</text><text class="s" x="22" y="218">12  Mengolah string</text><text class="s" x="22" y="236">13  Record</text><text class="s" x="22" y="254">14  Enumerasi, subrange, set</text>
+  <rect class="box-w" x="234" y="156" width="212" height="132" rx="10" style="stroke:#d0266e;stroke-width:2"/>
+  <rect x="234" y="156" width="212" height="24" rx="10" style="fill:#d0266e"/><rect x="234" y="168" width="212" height="12" style="fill:#d0266e"/>
+  <text class="b white" x="246" y="173">V  Pencarian dan Pengurutan</text>
+  <text class="s" x="246" y="200">15  Pencarian data</text><text class="s" x="246" y="218">16  Pengurutan data</text>
+  <rect class="box-w" x="458" y="156" width="212" height="132" rx="10" style="stroke:#3f3cbb;stroke-width:2"/>
+  <rect x="458" y="156" width="212" height="24" rx="10" style="fill:#3f3cbb"/><rect x="458" y="168" width="212" height="12" style="fill:#3f3cbb"/>
+  <text class="b white" x="470" y="173">VI  File, Pointer, Unit, Proyek</text>
+  <text class="s" x="470" y="200">17  Bekerja dengan file</text><text class="s" x="470" y="218">18  Pointer dan linked list</text><text class="s" x="470" y="236">19  Unit dan layar Crt</text><text class="s" x="470" y="254">20  Proyek akhir</text>
+  <path class="arrow" d="M222 76 H234"/><path class="arrow" d="M446 76 H458"/>
+  <path class="arrow" d="M340 142 V156"/><path class="arrow" d="M116 142 V156"/><path class="arrow" d="M564 142 V156"/>
+  <path class="arrow" d="M222 222 H234"/><path class="arrow" d="M446 222 H458"/>
+  <rect class="term" x="10" y="310" width="660" height="82" rx="12"/>
+  <text class="white b" x="26" y="334">Proyek akhir menggabungkan hampir semuanya</text>
+  <text class="white s" x="26" y="354">Kasir: record, array, fungsi, Val, Insert, file teks, var F: Text</text>
+  <text class="white s" x="26" y="372">Nilai siswa: record, insertion sort, rantai else if, statistik, file teks</text>
+  <text class="white s" x="26" y="388">Buku telepon: record, file bertipe, set, penyisipan urut, pencarian Pos, menu</text>
+</svg>
+<figcaption>Peta konsep seluruh buku: enam bagian dari fondasi sampai proyek akhir.</figcaption>
+</figure>
+
+<p>Tiap panah dalam peta mewakili ketergantungan: fondasi diperlukan untuk alur kendali, dan alur kendali untuk
+prosedur dan seterusnya. Bila Anda tersangkut pada satu bab, kembali ke bagian sebelumnya sering menjawab masalahnya.
+Berikut kamus singkat gagasan inti tiap bagian.</p>
+
+<table class="data">
+  <caption>Gagasan inti setiap bagian buku</caption>
+  <thead><tr><th>Bagian</th><th>Pertanyaan yang dijawab</th><th>Kunci</th></tr></thead>
+  <tbody>
+    <tr><td>I Fondasi</td><td>Bagaimana program menyimpan dan menampilkan data?</td><td>variabel bertipe, <code>Write</code>/<code>ReadLn</code>, operator</td></tr>
+    <tr><td>II Alur Kendali</td><td>Bagaimana program memilih dan mengulang?</td><td><code>if</code>, <code>case</code>, <code>for</code>, <code>while</code>, <code>repeat</code></td></tr>
+    <tr><td>III Prosedur dan Fungsi</td><td>Bagaimana memecah masalah?</td><td>parameter, nilai kembali, rekursi</td></tr>
+    <tr><td>IV Struktur Data</td><td>Bagaimana menyimpan banyak data?</td><td><code>array</code>, <code>string</code>, <code>record</code>, <code>set</code></td></tr>
+    <tr><td>V Pencarian dan Pengurutan</td><td>Bagaimana menemukan dan menyusun?</td><td>pencarian linear dan biner, urutan, efisiensi</td></tr>
+    <tr><td>VI File, Pointer, Unit, Proyek</td><td>Bagaimana membuat program yang utuh?</td><td>file, memori dinamis, unit, Crt, proyek</td></tr>
+  </tbody>
+</table>
+
+<h3>Langkah berikutnya</h3>
+
+<ul>
+  <li><b>Kerjakan proyek sendiri.</b> Pilih masalah dari lingkungan Anda (inventaris, jadwal piket, nilai ekstrakurikuler) dan kerjakan dengan empat langkah: analisis, rancangan, kode, uji.</li>
+  <li><b>Baca kode orang lain.</b> Bandingkan cara orang lain menyelesaikan masalah yang sama.</li>
+  <li><b>Pelajari Free Pascal dan Lazarus</b> untuk aplikasi berjendela, atau lanjutkan ke bahasa lain: konsep yang Anda pelajari di sini (variabel, alur kendali, fungsi, struktur data, berkas) hadir di hampir semua bahasa pemrograman.</li>
+</ul>
+
+<div class="rangkuman"><h2>Rangkuman</h2><ul>
+  <li>Program yang baik berawal dari <b>analisis kebutuhan</b>, dilanjutkan <b>rancangan</b>, <b>kode</b>, dan <b>pengujian</b> dengan skenario normal dan skenario salah.</li>
+  <li>Pecah program menjadi rutin kecil yang masing-masing mengurus satu hal; program utama hanya menyusunnya dalam urutan yang benar.</li>
+  <li>Simpan data sekali dan rujuk lewat nomor atau kunci (keranjang kasir menyimpan nomor barang), supaya tidak ada data ganda yang bertentangan.</li>
+  <li><code>procedure Cetak(var F: Text)</code> memungkinkan satu rutin mencetak ke layar (<code>Output</code>) dan ke berkas.</li>
+  <li>Masukan pemakai harus divalidasi: baca sebagai <i>string</i>, ubah dengan <code>Val</code>, dan ulangi sampai sah dan berada dalam rentang.</li>
+  <li>Data yang harus bertahan disimpan ke berkas (teks untuk laporan, bertipe untuk data) dan dimuat saat program mulai; penanda <code>Berubah</code> menghindari penulisan yang tidak perlu.</li>
+  <li><code>{$I-}</code> dan <code>IOResult</code> memungkinkan program menangani berkas yang belum ada tanpa berhenti.</li>
+  <li>Uji dengan nilai di batas (75, 100000, 0, 100), daftar kosong, dan pemakaian berulang untuk persistensi.</li>
+</ul></div>
+
+<div class="latihan"><h2>Latihan</h2><ol>
+  <li><span class="lv dasar">Dasar</span> Ubah kasir agar diskon berlaku bila belanja minimal Rp 200.000 dan besarnya 5%. Berapa baris yang perlu Anda ubah? Mengapa jumlah baris itu sedikit?</li>
+  <li><span class="lv dasar">Dasar</span> Tambahkan dua barang ke <code>DaftarBarang</code> (ingat mengubah <code>JumlahBarang</code>). Jalankan dan beli barang baru itu.</li>
+  <li><span class="lv dasar">Dasar</span> Pada program nilai, ubah bobot menjadi 20%, 30%, 50%, lalu hitung dengan tangan nilai akhir Ani (80, 85, 90) dan bandingkan dengan hasil program.</li>
+  <li><span class="lv menengah">Menengah</span> Tambahkan ke program nilai statistik jumlah siswa untuk setiap nilai huruf (A sampai E) dan tampilkan di akhir rekap.</li>
+  <li><span class="lv menengah">Menengah</span> Tambahkan menu <i>Ubah</i> pada buku telepon: pilih nomor kontak, lalu ubah telepon atau surelnya. Bila nama berubah, kontak harus dipindahkan agar urutan abjad terjaga. Bagaimana caranya dengan rutin yang sudah ada?</li>
+  <li><span class="lv tantangan">Tantangan</span> Ubah kasir agar daftar barang dibaca dari berkas teks <code>barang.txt</code> (satu baris per barang: kode, nama, harga). Bagaimana bila berkas tidak ada?</li>
+  <li><span class="lv tantangan">Tantangan</span> Rancang dan buat proyek Anda sendiri (misalnya inventaris perpustakaan kelas): tuliskan analisis kebutuhan, gambarkan diagram struktur, kerjakan, dan siapkan minimal lima skenario uji termasuk yang salah.</li>
+</ol></div>

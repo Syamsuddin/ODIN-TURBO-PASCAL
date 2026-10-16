@@ -4,3 +4,8 @@ __pycache__/
 .claude/
 CLAUDE.md
 toolchain/target/
+# Data files the tutorial programs (Bab 17, Bab 20) write next to themselves.
+examples/*.txt
+examples/*.dat
+# Build cache of scripts/build_book.py (compiled programs, recorded runs, draft PDFs).
+book/.cache/

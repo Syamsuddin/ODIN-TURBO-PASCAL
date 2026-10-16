@@ -1,0 +1,591 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menjelaskan mengapa sederet data sejenis lebih baik disimpan dalam satu <i>array</i> daripada dalam banyak variabel.</li>
+  <li>Mendeklarasikan array satu dimensi, mengisinya, membacanya, dan mengubah elemennya lewat indeks.</li>
+  <li>Mengolah array dengan perulangan <code>for</code>: mencetak, membalik urutan, mencari nilai terbesar, terkecil, dan rata-rata.</li>
+  <li>Mengenali runtime error 201 yang muncul saat indeks keluar dari batas array.</li>
+  <li>Memakai array dua dimensi (tabel baris dan kolom) dan konstanta bertipe untuk mengisinya.</li>
+  <li>Menjumlahkan dan mengalikan matriks, serta meneruskan array ke prosedur lewat tipe buatan sendiri.</li>
+</ul>
+
+<p class="lead">Bayangkan program yang harus mengolah nilai ujian tiga puluh siswa. Dengan cara yang sudah Anda pelajari,
+program itu membutuhkan tiga puluh variabel, masing-masing dengan nama sendiri, dan tiga puluh perintah <code>ReadLn</code>
+yang hampir sama. Pekerjaan semacam ini membosankan dan mudah salah. Pascal menyediakan jalan keluar yang rapi:
+<b>array</b>, satu nama untuk sederet variabel sejenis. Dengan array dan perulangan, mengolah tiga puluh data sama mudahnya
+dengan mengolah tiga data.</p>
+
+<h2>Satu Nama, Banyak Kotak</h2>
+
+<p>Array (<i>array</i>, larik) adalah kumpulan variabel bertipe sama yang disimpan berurutan di memori dan diberi satu
+nama bersama. Setiap anggotanya disebut <b>elemen</b> dan dibedakan oleh nomor urut yang disebut <b>indeks</b>
+(<i>index</i>). Analoginya deretan loker di sekolah: seluruh deretan punya satu nama ("loker kelas X"), dan setiap loker
+punya nomor sendiri. Untuk mengambil isi loker nomor 3, Anda cukup menyebut deretannya dan nomornya. Di Pascal, nomor itu
+ditulis di dalam kurung siku: <code>Nilai[3]</code>.</p>
+
+<div class="sintaks"><pre><b>var</b>
+  <i>NamaArray</i>: <b>array</b>[<i>indeksAwal</i>..<i>indeksAkhir</i>] <b>of</b> <i>TipeElemen</i>;
+
+<i>NamaArray</i>[<i>indeks</i>]            <i>{ satu elemen: boleh dibaca maupun diisi }</i></pre></div>
+
+<p>Contoh <code>Nilai: array[1..5] of Integer;</code> membuat lima variabel <code>Integer</code> sekaligus, dengan
+indeks 1, 2, 3, 4, dan 5. Rentang indeks <code>1..5</code> menentukan <b>batas bawah</b> dan <b>batas atas</b>. Di
+Pascal, Anda bebas memilih batas itu, jadi <code>array[0..4]</code> atau <code>array[10..14]</code> juga sah, selama
+batas bawah tidak lebih besar dari batas atas. Buku ini memakai indeks mulai dari 1 supaya cocok dengan cara kita
+menghitung sehari-hari. Banyak elemen dihitung dengan rumus <i>batas atas - batas bawah + 1</i>.</p>
+
+<figure class="grafik" id="gb-array-memori">
+<svg viewBox="0 0 680 232">
+  <text class="h c" x="10" y="20">var Nilai: array[1..5] of Integer;</text>
+  <text class="s muted" x="10" y="38">Satu nama, lima kotak berurutan. Nomor di atas kotak adalah indeks.</text>
+  <text class="mono mid c" x="100" y="68">[1]</text>
+  <text class="mono mid c" x="200" y="68">[2]</text>
+  <text class="mono mid c" x="300" y="68">[3]</text>
+  <text class="mono mid c" x="400" y="68">[4]</text>
+  <text class="mono mid c" x="500" y="68">[5]</text>
+  <rect class="box-w" x="55" y="76" width="90" height="46" rx="4"/>
+  <rect class="box-w" x="155" y="76" width="90" height="46" rx="4"/>
+  <rect class="ok" x="255" y="76" width="90" height="46" rx="4"/>
+  <rect class="box-w" x="355" y="76" width="90" height="46" rx="4"/>
+  <rect class="box-w" x="455" y="76" width="90" height="46" rx="4"/>
+  <text class="h mid" x="100" y="106">70</text>
+  <text class="h mid" x="200" y="106">85</text>
+  <text class="h mid" x="300" y="106">90</text>
+  <text class="h mid" x="400" y="106">60</text>
+  <text class="h mid" x="500" y="106">75</text>
+  <text class="s muted mid" x="100" y="140">Nilai[1]</text>
+  <text class="s muted mid" x="200" y="140">Nilai[2]</text>
+  <text class="s b mid" x="300" y="140">Nilai[3]</text>
+  <text class="s muted mid" x="400" y="140">Nilai[4]</text>
+  <text class="s muted mid" x="500" y="140">Nilai[5]</text>
+  <path class="arrow" d="M300 188 V148"/>
+  <rect class="box" x="195" y="190" width="210" height="34" rx="6"/>
+  <text class="mono mid" x="300" y="211">WriteLn(Nilai[3]);</text>
+  <text class="s" x="420" y="204">menulis 90: isi kotak</text>
+  <text class="s" x="420" y="218">bernomor 3, bukan angka 3.</text>
+  <path class="line" d="M55 130 H545"/>
+  <text class="s muted" x="560" y="100">batas bawah 1</text>
+  <text class="s muted" x="560" y="114">batas atas 5</text>
+</svg>
+<figcaption>Array <code>Nilai</code> berisi lima <code>Integer</code>. Nomor indeks menunjuk kotak, nilai di dalamnya yang diolah.</figcaption>
+</figure>
+
+<p>Bedakan dua angka yang sama-sama hadir di <code>Nilai[3] = 90</code>: angka dalam kurung siku adalah <b>indeks</b>
+(letak kotak), sedangkan 90 adalah <b>isi</b> kotak itu. Gambar berikut menunjukkan hal yang sama dengan komponen
+sederhana yang akan dipakai di sepanjang bab ini.</p>
+
+<div class="arr"><em>Nilai</em><span><b>70</b><i>[1]</i></span><span><b>85</b><i>[2]</i></span><span class="hi"><b>90</b><i>[3]</i></span><span><b>60</b><i>[4]</i></span><span><b>75</b><i>[5]</i></span></div>
+
+<p>Kekuatan sebenarnya muncul karena indeks boleh berupa <b>variabel</b>. Tulisan <code>Nilai[I]</code> dengan
+<code>I</code> yang berubah dalam perulangan <code>for</code> berarti "elemen yang nomornya sedang ditunjuk <code>I</code>".
+Satu rangkaian perintah yang sama dapat mengolah seluruh elemen, berapa pun jumlahnya.</p>
+
+<div class="trio">
+  <div class="card"><h4><span class="ikon">1</span>Deklarasi</h4><p><code>array[1..5] of Integer</code> memesan
+  lima kotak <code>Integer</code> sekaligus di bawah satu nama.</p></div>
+  <div class="card"><h4><span class="ikon">2</span>Akses</h4><p><code>Nilai[3]</code> menunjuk satu kotak. Boleh
+  dibaca (<code>WriteLn</code>) dan boleh diisi (<code>:=</code>, <code>ReadLn</code>).</p></div>
+  <div class="card"><h4><span class="ikon">3</span>Perulangan</h4><p><code>for I := 1 to 5</code> membuat
+  <code>Nilai[I]</code> menyentuh semua kotak satu per satu.</p></div>
+</div>
+
+<h2>Array Satu Dimensi</h2>
+
+<p>Array dengan satu deret indeks, seperti <code>Nilai</code> di atas, disebut array <b>satu dimensi</b>. Program 11.1
+memakainya untuk empat pekerjaan dasar: mengisi array dari keyboard, mencetak isinya, mencetaknya dari belakang, dan
+mengubah satu elemen. Perhatikan bahwa jumlah elemen ditulis sekali saja sebagai konstanta <code>Banyak</code>. Bila
+suatu hari datanya menjadi sepuluh, Anda hanya mengubah satu angka di baris 10.</p>
+
+<p>Buka <code>bab11_01_array_satu_dimensi.pas</code> lewat <span class="menu">File ▸ Examples...</span>, lalu jalankan
+dengan <kbd>Ctrl</kbd>+<kbd>F9</kbd> dan ketik lima nilai, masing-masing diakhiri <kbd>Enter</kbd>.</p>
+
+<x-listing src="bab11_01_array_satu_dimensi.pas"></x-listing>
+
+<x-run src="bab11_01_array_satu_dimensi.pas" caption="Masukan 70, 85, 90, 60, dan 75"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–10</td><td>Konstanta <code>Banyak = 5</code>. Memakai konstanta untuk ukuran array adalah kebiasaan baik: batas atas array dan batas perulangan selalu sama, dan perubahan cukup dilakukan di satu tempat.</td></tr>
+    <tr><td>13</td><td>Deklarasi array: lima <code>Integer</code> dengan indeks 1 sampai 5. Batas atas boleh berupa konstanta, tidak boleh variabel.</td></tr>
+    <tr><td>18–22</td><td>Perulangan pengisian. Pada putaran ke-<code>I</code>, baris 20 menulis "Nilai siswa ke-<code>I</code>" dan baris 21 menyimpan angka yang diketik ke dalam <code>Nilai[I]</code>.</td></tr>
+    <tr><td>26–27</td><td>Perulangan pencetakan dari indeks 1 ke 5. Satu <code>WriteLn</code> menulis nomor indeks dan isi elemennya.</td></tr>
+    <tr><td>30–31</td><td><code>for I := Banyak downto 1</code> menghitung mundur sehingga elemen terakhir tercetak lebih dulu. Itulah urutan terbalik yang tampak di layar: <code>75 60 90 85 70</code>.</td></tr>
+    <tr><td>35</td><td>Elemen diperlakukan seperti variabel biasa: <code>Nilai[1]</code> dibaca di sisi kanan, ditambah 5, lalu disimpan kembali ke <code>Nilai[1]</code>. Nilai 70 menjadi 75.</td></tr>
+    <tr><td>38–39</td><td>Komentar yang mengingatkan bahwa <code>Nilai[6]</code> tidak ada. Bagian berikut menunjukkan apa yang terjadi bila Anda tetap menulisnya.</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p>Indeks array boleh bertipe ordinal apa saja, bukan hanya angka mulai 1. Karena <code>Integer</code> di
+Turbo Pascal 7 hanya 16 bit (-32768 sampai 32767), variabel indeks dan penghitung yang nilainya mungkin melebihi 32767
+harus bertipe <code>LongInt</code>. Contoh buku ini selalu memakai array kecil, jadi <code>Integer</code> sudah cukup.</p></div>
+
+<div class="coba"><p>Ubah <code>Banyak</code> pada baris 10 menjadi 3. Jalankan kembali dan perhatikan bahwa seluruh perulangan
+menyesuaikan diri tanpa Anda menyentuh baris lainnya. Lalu ubah baris 30 menjadi <code>for I := 1 to Banyak do</code>
+dan lihat bahwa "urutan terbalik" kini menjadi urutan biasa.</p></div>
+
+<h3>Memeriksa isi array dengan debugger</h3>
+
+<p>Untuk benar-benar melihat array bekerja, jalankan program langkah demi langkah. Pasang <i>breakpoint</i> pada baris 27
+dengan <span class="menu">Debug ▸ Toggle breakpoint</span>, jalankan dengan <span class="menu">Debug ▸ Start debugging</span>,
+lalu tambahkan <i>watch</i> pada <code>I</code> dan <code>Nilai[I]</code> lewat <span class="menu">Debug ▸ Add watch...</span>.
+Setiap kali Anda menekan <kbd>F8</kbd> (<span class="menu">Step over</span>), nilai <code>I</code> naik satu dan
+<code>Nilai[I]</code> menunjukkan isi kotak berikutnya.</p>
+
+<x-ide file="bab11_01_array_satu_dimensi.pas" top="14" rows="16" breakpoints="27" exec="27" watches="I: 3;Nilai[I]: 90" marks="gutter,editor,watches" caption="Debugger berhenti di baris 27 pada putaran ketiga: <code>I</code> bernilai 3 dan <code>Nilai[I]</code> adalah 90"></x-ide>
+
+<table class="baris">
+  <thead><tr><th>Nomor</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td><span class="marknum">1</span></td><td><b>Gutter.</b> Titik merah dan sorotan hijau menandai baris 27 sebagai tempat program berhenti.</td></tr>
+    <tr><td><span class="marknum">2</span></td><td><b>Editor.</b> Baris di dalam perulangan yang dieksekusi berikutnya.</td></tr>
+    <tr><td><span class="marknum">3</span></td><td><b>Jendela Watches.</b> Menampilkan nilai <code>I</code> dan elemen yang sedang ditunjuknya.</td></tr>
+  </tbody>
+</table>
+
+<h2>Indeks di Luar Batas</h2>
+
+<p>Array <code>Nilai</code> hanya punya kotak nomor 1 sampai 5. Apa yang terjadi bila program meminta <code>Nilai[6]</code>
+atau <code>Nilai[0]</code>? Kotak itu tidak ada, dan menulis ke sana berarti menimpa memori milik variabel lain,
+kesalahan yang sangat sulit dilacak. Karena itu Pascal menyediakan <b>pemeriksaan batas</b> (<i>range checking</i>):
+setiap kali program memakai indeks, nilainya dicocokkan dengan batas array. Bila keluar dari batas, program langsung
+dihentikan dengan <b>runtime error 201</b> (<i>range check error</i>).</p>
+
+<p>Program berikut sengaja memakai perulangan yang terlalu panjang: array berisi lima elemen, tetapi perulangan berjalan
+sampai 6.</p>
+
+<x-error name="batas.pas" run caption="Perulangan sampai 6 untuk array berindeks 1..5">program Batas;
+var
+  Nilai: array[1..5] of Integer;
+  I: Integer;
+begin
+  for I := 1 to 6 do
+  begin
+    Nilai[I] := I * 10;
+    WriteLn('Nilai[', I, '] diisi');
+  end;
+  WriteLn('Selesai');
+end.</x-error>
+
+<p>Lima putaran pertama berjalan normal. Pada putaran keenam, <code>I</code> bernilai 6, indeks itu di luar
+<code>1..5</code>, dan program berhenti dengan galat 201 sebelum sempat menulis "Selesai". Galat ini adalah <i>teman</i>
+Anda: ia menunjukkan bahwa ada kesalahan hitung di perulangan. Perbaikannya selalu pada logika program, misalnya
+mengubah batas perulangan menjadi konstanta yang sama dengan ukuran array.</p>
+
+<div class="awas"><p>Runtime error 201 hanya muncul bila pemeriksaan batas aktif. Di Odin Turbo Pascal pemeriksaan ini
+aktif sehingga kesalahan indeks tertangkap. Jangan berharap bahwa kompiler lain atau pengaturan lain akan menolong Anda
+dengan cara yang sama: pastikan indeks Anda benar sejak awal.</p></div>
+
+<div class="duo">
+  <div class="card good"><h4><span class="ikon">V</span>Indeks aman</h4><p><code>for I := 1 to Banyak do</code> dengan
+  <code>Banyak</code> sama dengan batas atas array.</p></div>
+  <div class="card bad"><h4><span class="ikon">X</span>Indeks berbahaya</h4><p>Angka batas ditulis langsung berkali-kali
+  (<code>to 5</code>, <code>to 6</code>), sehingga mudah tidak sinkron dengan deklarasi.</p></div>
+</div>
+
+<h2>Nilai Terbesar, Terkecil, dan Rata-rata</h2>
+
+<p>Salah satu pola paling berguna pada array adalah mencari nilai terbesar dan terkecil. Caranya mirip menentukan siswa
+tertinggi di barisan: tunjuk siswa pertama sebagai "tertinggi sementara", lalu bandingkan dengan setiap siswa berikutnya.
+Bila ada yang lebih tinggi, dia menggantikan juara sementara. Setelah semua dibandingkan, juara sementara adalah juara
+sebenarnya. Pola yang sama dipakai untuk terkecil, dan sambil lewat kita bisa menjumlahkan semua nilai untuk menghitung
+rata-rata.</p>
+
+<div class="alur">
+  <div><span class="ikon">1</span><b>Tebak awal</b>Terbesar dan Terkecil diisi <code>Data[1]</code>.</div>
+  <div><span class="ikon">2</span><b>Bandingkan</b>Untuk I = 1 sampai N, periksa <code>Data[I]</code>.</div>
+  <div><span class="ikon">3</span><b>Perbarui</b>Lebih besar? Ganti Terbesar. Lebih kecil? Ganti Terkecil.</div>
+  <div><span class="ikon">4</span><b>Jumlahkan</b>Tambahkan <code>Data[I]</code> ke Jumlah, lalu bagi N.</div>
+</div>
+
+<p>Program 11.2 menerapkannya pada data yang banyaknya ditentukan pengguna. Array dipesan untuk 20 elemen
+(<code>MaksData</code>), tetapi hanya sebanyak <code>N</code> elemen yang dipakai. Ini cara umum bila jumlah data belum
+diketahui saat program ditulis: pesan kapasitas maksimum, lalu catat berapa yang terpakai. Perulangan <code>repeat</code>
+pada baris 18–21 memastikan <code>N</code> tidak melebihi kapasitas, sehingga indeks tidak akan keluar batas.</p>
+
+<x-listing src="bab11_02_maks_min_rata.pas"></x-listing>
+
+<x-run src="bab11_02_maks_min_rata.pas" caption="Empat data: 12, 45, 7, dan 30"></x-run>
+
+<p>Gambar berikut melacak isi variabel untuk keempat data tersebut. Sel hijau menandai saat nilai berubah.</p>
+
+<figure class="grafik" id="gb-jejak-maks">
+<svg viewBox="0 0 680 240">
+  <text class="h c" x="10" y="20">Jejak perulangan baris 33-43 untuk Data = 12, 45, 7, 30</text>
+  <rect class="box" x="10" y="36" width="140" height="30" rx="3"/>
+  <text class="b" x="20" y="56">Putaran</text>
+  <rect class="box" x="154" y="36" width="116" height="30" rx="3"/>
+  <rect class="box" x="274" y="36" width="116" height="30" rx="3"/>
+  <rect class="box" x="394" y="36" width="116" height="30" rx="3"/>
+  <rect class="box" x="514" y="36" width="116" height="30" rx="3"/>
+  <text class="mono mid b" x="212" y="56">I = 1</text>
+  <text class="mono mid b" x="332" y="56">I = 2</text>
+  <text class="mono mid b" x="452" y="56">I = 3</text>
+  <text class="mono mid b" x="572" y="56">I = 4</text>
+  <rect class="box-w" x="10" y="70" width="140" height="30" rx="3"/>
+  <text class="mono" x="20" y="90">Data[I]</text>
+  <rect class="io" x="154" y="70" width="116" height="30" rx="3"/>
+  <rect class="io" x="274" y="70" width="116" height="30" rx="3"/>
+  <rect class="io" x="394" y="70" width="116" height="30" rx="3"/>
+  <rect class="io" x="514" y="70" width="116" height="30" rx="3"/>
+  <text class="mono mid" x="212" y="90">12</text>
+  <text class="mono mid" x="332" y="90">45</text>
+  <text class="mono mid" x="452" y="90">7</text>
+  <text class="mono mid" x="572" y="90">30</text>
+  <rect class="box-w" x="10" y="104" width="140" height="30" rx="3"/>
+  <text class="mono" x="20" y="124">Terbesar</text>
+  <rect class="box-w" x="154" y="104" width="116" height="30" rx="3"/>
+  <rect class="ok" x="274" y="104" width="116" height="30" rx="3"/>
+  <rect class="box-w" x="394" y="104" width="116" height="30" rx="3"/>
+  <rect class="box-w" x="514" y="104" width="116" height="30" rx="3"/>
+  <text class="mono mid" x="212" y="124">12</text>
+  <text class="mono mid" x="332" y="124">45</text>
+  <text class="mono mid" x="452" y="124">45</text>
+  <text class="mono mid" x="572" y="124">45</text>
+  <rect class="box-w" x="10" y="138" width="140" height="30" rx="3"/>
+  <text class="mono" x="20" y="158">Terkecil</text>
+  <rect class="box-w" x="154" y="138" width="116" height="30" rx="3"/>
+  <rect class="box-w" x="274" y="138" width="116" height="30" rx="3"/>
+  <rect class="ok" x="394" y="138" width="116" height="30" rx="3"/>
+  <rect class="box-w" x="514" y="138" width="116" height="30" rx="3"/>
+  <text class="mono mid" x="212" y="158">12</text>
+  <text class="mono mid" x="332" y="158">12</text>
+  <text class="mono mid" x="452" y="158">7</text>
+  <text class="mono mid" x="572" y="158">7</text>
+  <rect class="box-w" x="10" y="172" width="140" height="30" rx="3"/>
+  <text class="mono" x="20" y="192">Jumlah</text>
+  <rect class="box-w" x="154" y="172" width="116" height="30" rx="3"/>
+  <rect class="box-w" x="274" y="172" width="116" height="30" rx="3"/>
+  <rect class="box-w" x="394" y="172" width="116" height="30" rx="3"/>
+  <rect class="box-w" x="514" y="172" width="116" height="30" rx="3"/>
+  <text class="mono mid" x="212" y="192">12</text>
+  <text class="mono mid" x="332" y="192">57</text>
+  <text class="mono mid" x="452" y="192">64</text>
+  <text class="mono mid" x="572" y="192">94</text>
+  <text class="s" x="10" y="226">Hasil akhir: Terbesar 45 (data ke-2), Terkecil 7, Jumlah 94, rata-rata 94 / 4 = 23.50.</text>
+</svg>
+<figcaption>Isi variabel pada setiap putaran. Terbesar berubah pada putaran 2, Terkecil berubah pada putaran 3.</figcaption>
+</figure>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>8–9</td><td><code>MaksData = 20</code> adalah kapasitas array. Array dideklarasikan satu kali di baris 12 dan tidak bisa membesar saat program berjalan.</td></tr>
+    <tr><td>13</td><td><code>N</code> mencatat banyaknya data yang benar-benar dipakai (1 sampai 20).</td></tr>
+    <tr><td>15</td><td><code>Jumlah</code> bertipe <code>LongInt</code> karena jumlah banyak data <code>Integer</code> dapat melebihi 32767.</td></tr>
+    <tr><td>18–21</td><td>Meminta <code>N</code> berulang kali sampai nilainya sah. Selama <code>N</code> di luar 1..20, pertanyaan diulang.</td></tr>
+    <tr><td>23–27</td><td>Mengisi <code>Data[1]</code> sampai <code>Data[N]</code>. Elemen sesudah <code>N</code> tidak disentuh.</td></tr>
+    <tr><td>29–32</td><td>Persiapan: <code>Terbesar</code> dan <code>Terkecil</code> diisi elemen pertama, posisi terbesar diisi 1, jumlah dimulai dari 0.</td></tr>
+    <tr><td>35–39</td><td>Bila elemen lebih besar dari <code>Terbesar</code>, simpan nilainya dan juga posisinya (baris 38), supaya program dapat melaporkan "data ke-2".</td></tr>
+    <tr><td>40–41</td><td>Bila elemen lebih kecil dari <code>Terkecil</code>, ganti <code>Terkecil</code>.</td></tr>
+    <tr><td>42</td><td>Setiap elemen ditambahkan ke <code>Jumlah</code>, tanpa syarat.</td></tr>
+    <tr><td>49</td><td><code>Jumlah / N</code> memakai operator <code>/</code> yang selalu menghasilkan bilangan real, lalu <code>:0:2</code> memformatnya dengan dua angka di belakang koma: 23.50.</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p>Hasil operator <code>/</code> bertipe <code>Real</code> walaupun kedua operandnya bulat, dan di Turbo Pascal
+7 bilangan <code>Real</code> harus diformat dengan <code>:lebar:desimal</code> bila dicetak (<code>:0:2</code> berarti
+lebar secukupnya, dua desimal). Untuk pembagian bulat gunakan <code>div</code>.</p></div>
+
+<div class="coba"><p>Jalankan Program 11.2 dengan data yang semuanya sama, misalnya 5, 5, 5. Data ke berapa yang dilaporkan
+sebagai terbesar, dan mengapa? Lalu ubah <code>&gt;</code> pada baris 35 menjadi <code>&gt;=</code> dan coba lagi.</p></div>
+
+<h2>Array Dua Dimensi</h2>
+
+<p>Sebagian data lebih alami berbentuk tabel daripada deretan: nilai tiga siswa untuk empat mata pelajaran, denah kursi,
+papan catur. Untuk itu Pascal menyediakan array <b>dua dimensi</b>, yaitu array yang elemennya ditunjuk oleh dua indeks:
+indeks pertama untuk <b>baris</b>, indeks kedua untuk <b>kolom</b>. Seperti menyebut posisi kursi di bioskop: "baris C,
+nomor 7".</p>
+
+<div class="sintaks"><pre><b>var</b>
+  <i>Tabel</i>: <b>array</b>[<i>barisAwal</i>..<i>barisAkhir</i>, <i>kolomAwal</i>..<i>kolomAkhir</i>] <b>of</b> <i>TipeElemen</i>;
+
+<i>Tabel</i>[<i>baris</i>, <i>kolom</i>]</pre></div>
+
+<figure class="grafik" id="gb-grid2d">
+<svg viewBox="0 0 680 250">
+  <text class="h c" x="10" y="20">Nilai: array[1..3, 1..4] of Integer</text>
+  <text class="s muted" x="190" y="46">kolom 1</text>
+  <text class="s muted" x="250" y="46">kolom 2</text>
+  <text class="s muted" x="310" y="46">kolom 3</text>
+  <text class="s muted" x="370" y="46">kolom 4</text>
+  <text class="s muted mid" x="90" y="46">(mata pelajaran)</text>
+  <text class="s muted end" x="150" y="84">baris 1</text>
+  <text class="s muted end" x="150" y="124">baris 2</text>
+  <text class="s muted end" x="150" y="164">baris 3</text>
+  <rect class="box-w" x="160" y="58" width="60" height="40"/>
+  <rect class="box-w" x="220" y="58" width="60" height="40"/>
+  <rect class="box-w" x="280" y="58" width="60" height="40"/>
+  <rect class="box-w" x="340" y="58" width="60" height="40"/>
+  <rect class="io" x="160" y="98" width="60" height="40"/>
+  <rect class="io" x="220" y="98" width="60" height="40"/>
+  <rect class="ok" x="280" y="98" width="60" height="40"/>
+  <rect class="io" x="340" y="98" width="60" height="40"/>
+  <rect class="box-w" x="160" y="138" width="60" height="40"/>
+  <rect class="box-w" x="220" y="138" width="60" height="40"/>
+  <rect class="dec" x="280" y="138" width="60" height="40"/>
+  <rect class="box-w" x="340" y="138" width="60" height="40"/>
+  <text class="mono mid" x="190" y="83">80</text>
+  <text class="mono mid" x="250" y="83">75</text>
+  <text class="mono mid" x="310" y="83">90</text>
+  <text class="mono mid" x="370" y="83">85</text>
+  <text class="mono mid" x="190" y="123">65</text>
+  <text class="mono mid" x="250" y="123">70</text>
+  <text class="mono mid b" x="310" y="123">60</text>
+  <text class="mono mid" x="370" y="123">75</text>
+  <text class="mono mid" x="190" y="163">95</text>
+  <text class="mono mid" x="250" y="163">88</text>
+  <text class="mono mid" x="310" y="163">92</text>
+  <text class="mono mid" x="370" y="163">90</text>
+  <text class="b c" x="430" y="84">Nilai[2, 3] = 60</text>
+  <text class="s" x="430" y="104">baris 2 (siswa kedua), kolom 3</text>
+  <text class="s" x="430" y="118">(mata pelajaran ketiga).</text>
+  <rect class="io" x="430" y="134" width="14" height="12" rx="2"/>
+  <text class="s" x="452" y="144">satu baris: nilai satu siswa</text>
+  <rect class="dec" x="430" y="154" width="14" height="12" rx="2"/>
+  <text class="s" x="452" y="164">satu kolom: satu mata pelajaran</text>
+  <text class="s" x="10" y="206">Untuk menghitung rata-rata siswa, kolom bergerak dalam satu baris (perulangan dalam = kolom).</text>
+  <text class="s" x="10" y="224">Untuk rata-rata mata pelajaran, baris bergerak dalam satu kolom (perulangan dalam = baris).</text>
+</svg>
+<figcaption>Array dua dimensi sebagai tabel. Indeks pertama memilih baris, indeks kedua memilih kolom.</figcaption>
+</figure>
+
+<p>Untuk menelusuri seluruh tabel, dipakai dua perulangan <code>for</code> yang <b>bersarang</b>: perulangan luar
+memilih satu baris, dan untuk setiap baris itu perulangan dalam berjalan melewati semua kolomnya. Urutan penelusuran
+adalah baris 1 kolom 1, baris 1 kolom 2, dan seterusnya sampai ujung baris, lalu pindah ke baris 2.</p>
+
+<p>Program 11.3 menampilkan daftar nilai tiga siswa dalam empat mata pelajaran beserta rata-rata tiap siswa dan tiap
+mata pelajaran. Karena mengetik dua belas angka akan melelahkan, isi tabel ditulis langsung di program sebagai
+<b>konstanta bertipe</b> (<i>typed constant</i>): konstanta yang tipenya ditentukan, sehingga boleh berupa array.
+Setiap pasang kurung bagian dalam adalah satu baris tabel.</p>
+
+<x-listing src="bab11_03_array_dua_dimensi.pas"></x-listing>
+
+<x-run src="bab11_03_array_dua_dimensi.pas" caption="Tabel nilai dan rata-ratanya"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>14–17</td><td>Konstanta bertipe dengan format <code>(baris1), (baris2), (baris3)</code>. Jumlah angka di tiap baris harus sama dengan banyak kolom, dan jumlah barisnya sama dengan banyak siswa.</td></tr>
+    <tr><td>24</td><td>Judul kolom, ditulis dengan <code>WriteLn</code> biasa.</td></tr>
+    <tr><td>25–35</td><td>Perulangan luar (<code>Baris</code>) untuk setiap siswa. Baris 27 mencetak nomor siswa dan baris 28 mengosongkan <code>Total</code> sebelum setiap siswa dijumlahkan.</td></tr>
+    <tr><td>29–33</td><td>Perulangan dalam (<code>Kolom</code>) berjalan sepanjang satu baris. <code>Nilai[Baris, Kolom]:5</code> mencetak setiap nilai rata kanan dalam lima kolom layar, dan nilainya ditambahkan ke <code>Total</code>.</td></tr>
+    <tr><td>34</td><td>Setelah kolom habis, <code>Total / JumlahMapel</code> dicetak dengan lebar 7 dan dua desimal, lalu <code>WriteLn</code> berpindah baris.</td></tr>
+    <tr><td>38–46</td><td>Urutan perulangan dibalik: kolom di luar, baris di dalam. Sekarang yang dijumlahkan adalah satu kolom (satu mata pelajaran) untuk semua siswa, dan <code>:5:0</code> mencetak rata-ratanya tanpa desimal.</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p>Konstanta bertipe adalah fasilitas khas Turbo Pascal: sintaks <code>Nama: Tipe = nilai;</code> di
+bagian <code>const</code>. Isinya dapat diubah saat program berjalan seperti variabel yang sudah punya nilai awal. Pada
+Program 11.3 isinya hanya dibaca. Format <code>:5:0</code> pada baris 44 mencetak bilangan real tanpa desimal dengan
+pembulatan.</p></div>
+
+<div class="ingat"><p>Urutan indeks selalu <b>[baris, kolom]</b>. Menukarnya, misalnya <code>Nilai[Kolom, Baris]</code>,
+tidak ditolak bila batasnya kebetulan cocok, tetapi hasilnya salah. Bila batas tidak cocok, Anda akan bertemu galat 201.</p></div>
+
+<h2>Matriks dan Penjumlahannya</h2>
+
+<p>Dalam matematika, tabel angka berbentuk persegi panjang disebut <b>matriks</b>, dan array dua dimensi adalah wadah
+yang tepat untuknya. Dua matriks berukuran sama dijumlahkan dengan menjumlahkan elemen yang letaknya sama:
+<code>C[i, j] = A[i, j] + B[i, j]</code>. Matriks 3 x 3 berarti tiga baris dan tiga kolom, jadi hasilnya pun 3 x 3.</p>
+
+<div class="mem">
+  <div class="cell"><b>A[2, 3]</b><span>6</span><i>baris 2, kolom 3</i></div>
+  <div class="cell"><b>B[2, 3]</b><span>4</span><i>baris 2, kolom 3</i></div>
+  <div class="cell"><b>C[2, 3]</b><span>10</span><i>6 + 4</i></div>
+</div>
+
+<p>Program 11.4 memperkenalkan satu hal baru: <b>tipe buatan sendiri</b>. Deklarasi
+<code>TMatriks = array[1..Ukuran, 1..Ukuran] of Integer</code> di bagian <code>type</code> memberi nama pada bentuk
+array tertentu. Nama itu kemudian dipakai untuk konstanta <code>A</code> dan <code>B</code>, variabel <code>C</code>,
+dan juga <b>parameter prosedur</b>. Ini penting: di Pascal, parameter prosedur harus berupa nama tipe, sehingga
+<code>procedure Tampil(M: array[1..3, 1..3] of Integer)</code> tidak diperbolehkan.</p>
+
+<div class="sintaks"><pre><b>type</b>
+  <i>NamaTipe</i> = <b>array</b>[<i>batas</i>] <b>of</b> <i>TipeElemen</i>;
+
+<b>procedure</b> <i>Nama</i>(<i>P</i>: <i>NamaTipe</i>);</pre></div>
+
+<x-listing src="bab11_04_penjumlahan_matriks.pas"></x-listing>
+
+<x-run src="bab11_04_penjumlahan_matriks.pas" caption="Matriks A, matriks B, dan jumlahnya"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–10</td><td>Konstanta <code>Ukuran = 3</code> dipakai di semua tempat sehingga ukuran matriks dapat diubah dari satu titik.</td></tr>
+    <tr><td>12–13</td><td>Bagian <code>type</code>: <code>TMatriks</code> adalah nama untuk array 3 x 3 berisi <code>Integer</code>. Awalan <code>T</code> adalah kebiasaan penamaan tipe.</td></tr>
+    <tr><td>15–21</td><td>Dua konstanta bertipe <code>TMatriks</code> dengan isi yang langsung diberikan. Dengan <code>A</code> dan <code>B</code> terisi, program tidak perlu meminta masukan.</td></tr>
+    <tr><td>23–34</td><td>Prosedur <code>Tampilkan</code> menerima judul dan sebuah <code>TMatriks</code>. Parameter <code>M</code> adalah salinan matriks, jadi perubahan di dalam prosedur tidak mengubah aslinya. Dua perulangan bersarang mencetak tiap elemen dalam lima kolom layar, dan baris 32 pindah baris di akhir setiap baris matriks.</td></tr>
+    <tr><td>36–38</td><td>Variabel global <code>C</code> untuk hasil, serta <code>I</code> dan <code>J</code> sebagai penghitung baris dan kolom.</td></tr>
+    <tr><td>41–43</td><td>Inti penjumlahan. Untuk setiap baris <code>I</code> dan kolom <code>J</code>, <code>C[I, J]</code> diisi jumlah elemen yang bersesuaian. Perintah baris 43 dijalankan sembilan kali.</td></tr>
+    <tr><td>45–47</td><td>Prosedur yang sama dipanggil tiga kali dengan matriks berbeda. Satu prosedur menggantikan tiga pasang perulangan.</td></tr>
+  </tbody>
+</table>
+
+<p>Perhatikan hasil <code>A + B</code>: setiap elemennya sama dengan 10. Itu bukan kebetulan. Elemen <code>A</code> naik
+dari 1 sampai 9, elemen <code>B</code> turun dari 9 sampai 1, sehingga pasangan yang sama letaknya selalu berjumlah 10.</p>
+
+<div class="coba"><p>Tambahkan matriks ketiga <code>D</code> dan hitung <code>A - B</code> dengan mengubah tanda
+penjumlahan di baris 43. Apakah hasil pengurangan juga bersifat simetris seperti penjumlahan?</p></div>
+
+<h2>Perkalian Matriks</h2>
+
+<p>Perkalian matriks lebih menarik daripada penjumlahan, dan bukan perkalian elemen demi elemen. Matriks A berukuran
+2 x 3 (dua baris, tiga kolom) boleh dikalikan dengan matriks B berukuran 3 x 2 karena <b>jumlah kolom A sama dengan
+jumlah baris B</b>. Hasilnya, matriks C, berukuran <b>baris A x kolom B</b>, yaitu 2 x 2. Setiap elemen
+<code>C[i, j]</code> dihitung dari <b>baris i</b> matriks A dan <b>kolom j</b> matriks B: kalikan pasangan elemen yang
+berurutan, lalu jumlahkan semuanya.</p>
+
+<figure class="grafik" id="gb-matmul">
+<svg viewBox="0 0 680 290">
+  <text class="h c" x="30" y="24">A (2 x 3)</text>
+  <text class="h c" x="200" y="24">B (3 x 2)</text>
+  <text class="h c" x="340" y="24">C = A x B (2 x 2)</text>
+  <rect class="io" x="30" y="50" width="40" height="32"/>
+  <rect class="io" x="70" y="50" width="40" height="32"/>
+  <rect class="io" x="110" y="50" width="40" height="32"/>
+  <rect class="box-w" x="30" y="82" width="40" height="32"/>
+  <rect class="box-w" x="70" y="82" width="40" height="32"/>
+  <rect class="box-w" x="110" y="82" width="40" height="32"/>
+  <text class="mono mid" x="50" y="71">1</text>
+  <text class="mono mid" x="90" y="71">2</text>
+  <text class="mono mid" x="130" y="71">3</text>
+  <text class="mono mid" x="50" y="103">4</text>
+  <text class="mono mid" x="90" y="103">5</text>
+  <text class="mono mid" x="130" y="103">6</text>
+  <text class="h mid" x="175" y="87">x</text>
+  <rect class="dec" x="200" y="34" width="40" height="32"/>
+  <rect class="box-w" x="240" y="34" width="40" height="32"/>
+  <rect class="dec" x="200" y="66" width="40" height="32"/>
+  <rect class="box-w" x="240" y="66" width="40" height="32"/>
+  <rect class="dec" x="200" y="98" width="40" height="32"/>
+  <rect class="box-w" x="240" y="98" width="40" height="32"/>
+  <text class="mono mid" x="220" y="55">7</text>
+  <text class="mono mid" x="260" y="55">8</text>
+  <text class="mono mid" x="220" y="87">9</text>
+  <text class="mono mid" x="260" y="87">10</text>
+  <text class="mono mid" x="220" y="119">11</text>
+  <text class="mono mid" x="260" y="119">12</text>
+  <text class="h mid" x="310" y="87">=</text>
+  <rect class="ok" x="340" y="50" width="50" height="32"/>
+  <rect class="box-w" x="390" y="50" width="50" height="32"/>
+  <rect class="box-w" x="340" y="82" width="50" height="32"/>
+  <rect class="box-w" x="390" y="82" width="50" height="32"/>
+  <text class="mono mid b" x="365" y="71">58</text>
+  <text class="mono mid" x="415" y="71">64</text>
+  <text class="mono mid" x="365" y="103">139</text>
+  <text class="mono mid" x="415" y="103">154</text>
+  <text class="b c" x="470" y="48">Syarat dan ukuran</text>
+  <text class="s" x="470" y="66">kolom A (3) harus sama dengan</text>
+  <text class="s" x="470" y="80">baris B (3).</text>
+  <text class="s" x="470" y="100">Hasil: baris A (2) x kolom B (2).</text>
+  <text class="s" x="470" y="120">Biru: baris 1 dari A.</text>
+  <text class="s" x="470" y="134">Kuning: kolom 1 dari B.</text>
+  <rect class="box" x="10" y="156" width="660" height="124" rx="6"/>
+  <text class="b c" x="24" y="178">C[i, j] = A[i,1] x B[1,j] + A[i,2] x B[2,j] + A[i,3] x B[3,j]</text>
+  <text class="mono" x="24" y="202">C[1,1] = 1x7 + 2x9  + 3x11 =  7 + 18 + 33 = 58</text>
+  <text class="mono" x="24" y="222">C[1,2] = 1x8 + 2x10 + 3x12 =  8 + 20 + 36 = 64</text>
+  <text class="mono" x="24" y="242">C[2,1] = 4x7 + 5x9  + 6x11 = 28 + 45 + 66 = 139</text>
+  <text class="mono" x="24" y="262">C[2,2] = 4x8 + 5x10 + 6x12 = 32 + 50 + 72 = 154</text>
+</svg>
+<figcaption>Setiap elemen C adalah jumlah perkalian satu baris A dengan satu kolom B. Elemen C[1,1] ditandai hijau.</figcaption>
+</figure>
+
+<p>Dalam program, rumus itu membutuhkan <b>tiga</b> perulangan bersarang. Perulangan <code>I</code> memilih baris
+A, perulangan <code>J</code> memilih kolom B, dan perulangan terdalam <code>K</code> berjalan sepanjang baris A sekaligus
+sepanjang kolom B, menjumlahkan <code>A[I, K] * B[K, J]</code>. Sebelum menjumlahkan, <code>C[I, J]</code> harus
+dikosongkan lebih dulu agar jumlah elemen sebelumnya tidak ikut terbawa.</p>
+
+<x-listing src="bab11_05_perkalian_matriks.pas"></x-listing>
+
+<x-run src="bab11_05_perkalian_matriks.pas" caption="Hasil perkalian dan rincian satu elemen"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10–12</td><td>Ukuran matriks ditulis sebagai konstanta: <code>KolomA</code> dipakai bersama sebagai banyak kolom A sekaligus banyak baris B, sehingga syarat perkalian otomatis terpenuhi.</td></tr>
+    <tr><td>13–17</td><td>Dua konstanta bertipe, masing-masing langsung menyebut bentuk arraynya (tanpa nama tipe, karena tidak dipakai sebagai parameter).</td></tr>
+    <tr><td>20</td><td>Matriks hasil <code>C</code> berukuran <code>BarisA x KolomB</code>, yaitu 2 x 2.</td></tr>
+    <tr><td>24–26</td><td>Dua perulangan luar: untuk setiap elemen <code>C[I, J]</code> yang akan dihitung. Karena isi perulangan <code>J</code> lebih dari satu perintah, dibungkus <code>begin..end</code>.</td></tr>
+    <tr><td>27</td><td>Mengosongkan elemen hasil sebelum dijumlahkan. Tanpa baris ini, hasilnya bergantung pada isi awal <code>C</code>.</td></tr>
+    <tr><td>28–29</td><td>Perulangan <code>K</code> mengumpulkan perkalian <code>A[I, K] * B[K, J]</code> ke <code>C[I, J]</code>. Indeks <code>K</code> bergerak di kolom A dan di baris B pada saat yang sama.</td></tr>
+    <tr><td>33–38</td><td>Mencetak matriks hasil, enam kolom layar per elemen, satu baris matriks per baris layar.</td></tr>
+    <tr><td>41</td><td>Mencetak rincian <code>C[1,1]</code> sebagai pembuktian: <code>1x7 + 2x9 + 3x11</code> memang 58.</td></tr>
+  </tbody>
+</table>
+
+<div class="info"><p>Perkalian matriks tidak bersifat komutatif: pada umumnya <code>A x B</code> tidak sama dengan
+<code>B x A</code>. Pada contoh ini <code>B x A</code> bahkan menghasilkan matriks 3 x 3, bukan 2 x 2.</p></div>
+
+<div class="coba"><p>Ubah <code>KolomB</code> menjadi 3 dan tambahkan satu kolom pada konstanta <code>B</code>
+(misalnya <code>13, 14, 15</code> pada baris-barisnya). Hasil kini 2 x 3. Perhatikan bahwa kode perulangan tidak perlu
+diubah sama sekali.</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Indeks melewati batas</h3>
+
+<p>Kesalahan terbesar pada array sudah Anda lihat: perulangan yang kelebihan satu putaran, atau indeks yang dimulai dari
+0 padahal array dimulai dari 1. Gejalanya runtime error 201. Cara menghindarinya: tulis batas perulangan dengan konstanta
+yang sama dengan deklarasi array, dan periksa batas awal serta akhir.</p>
+
+<h3>Tipe elemen tidak cocok</h3>
+
+<p>Setiap elemen array bertipe sama dengan yang disebut setelah <code>of</code>. Mengisi elemen dengan nilai bertipe lain
+ditolak kompiler.</p>
+
+<x-error name="tipe.pas" caption="Array berisi Integer, tetapi diisi teks">program Tipe;
+var
+  Nilai: array[1..3] of Integer;
+begin
+  Nilai[1] := 'tujuh puluh';
+  WriteLn(Nilai[1]);
+end.</x-error>
+
+<h3>Indeks salah jumlah</h3>
+
+<p>Array dua dimensi memerlukan dua indeks, dan array satu dimensi memerlukan satu. Salah menghitung kurung siku
+adalah kesalahan ketik yang umum.</p>
+
+<x-error name="dimensi.pas" caption="Array satu dimensi dipanggil dengan dua indeks">program Dimensi;
+var
+  Nilai: array[1..3] of Integer;
+begin
+  Nilai[1, 2] := 70;
+  WriteLn(Nilai[1]);
+end.</x-error>
+
+<h3>Lupa mengosongkan penampung</h3>
+
+<p>Pada perkalian matriks, lupa menulis <code>C[I, J] := 0</code> sebelum perulangan <code>K</code> adalah kesalahan
+logika yang tidak ditolak kompiler. Program menghasilkan angka, tetapi angka yang salah, terutama bila array sudah pernah
+dipakai untuk hal lain. Aturan umumnya: variabel yang dipakai sebagai penjumlah harus diberi nilai awal tepat sebelum
+dipakai, seperti <code>Jumlah := 0</code> pada Program 11.2 dan <code>Total := 0</code> pada Program 11.3.</p>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>Array adalah sederet variabel sejenis dengan satu nama. Elemennya ditunjuk oleh indeks dalam kurung siku, misalnya <code>Nilai[3]</code>.</li>
+  <li>Deklarasinya <code>array[batasBawah..batasAtas] of Tipe</code>. Banyak elemen adalah batas atas dikurangi batas bawah ditambah 1.</li>
+  <li>Indeks boleh berupa variabel, sehingga perulangan <code>for</code> dapat mengolah seluruh elemen dengan satu kumpulan perintah.</li>
+  <li>Indeks di luar batas menghentikan program dengan runtime error 201. Gunakan konstanta yang sama untuk ukuran array dan batas perulangan.</li>
+  <li>Mencari nilai terbesar atau terkecil: mulai dari elemen pertama, bandingkan dengan elemen lain, dan simpan juga posisinya bila diperlukan. Rata-rata adalah jumlah dibagi banyak data.</li>
+  <li>Array dua dimensi <code>array[1..B, 1..K]</code> ditulis <code>Tabel[baris, kolom]</code> dan ditelusuri dengan dua perulangan bersarang.</li>
+  <li>Konstanta bertipe memberi nilai awal pada array; tipe buatan sendiri (<code>type</code>) diperlukan agar array dapat menjadi parameter prosedur.</li>
+  <li>Penjumlahan matriks bekerja elemen demi elemen; perkalian matriks memerlukan tiga perulangan, dan jumlah kolom A harus sama dengan jumlah baris B.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Buat program yang membaca 7 suhu harian ke dalam array, lalu menampilkannya dengan format <code>Hari ke-1: 31</code> dan seterusnya.</li>
+  <li><span class="lv dasar">Dasar</span>Ubah Program 11.1 agar membaca 8 nilai dan menampilkan jumlah seluruh elemen. Pastikan hanya konstanta <code>Banyak</code> yang berubah.</li>
+  <li><span class="lv menengah">Menengah</span>Tambahkan ke Program 11.2 perhitungan banyaknya data yang nilainya di atas rata-rata. Petunjuk: rata-rata baru diketahui setelah perulangan pertama selesai, jadi dibutuhkan perulangan kedua.</li>
+  <li><span class="lv menengah">Menengah</span>Buat program yang membaca 10 bilangan, lalu menukar elemen pertama dengan terakhir, kedua dengan kedua terakhir, dan seterusnya, sehingga seluruh array terbalik di tempat. Tampilkan hasilnya.</li>
+  <li><span class="lv menengah">Menengah</span>Ubah Program 11.3 agar juga menampilkan nilai tertinggi tiap siswa di kolom terakhir tabel.</li>
+  <li><span class="lv tantangan">Tantangan</span>Tulis prosedur yang menerima matriks 3 x 3 dan menampilkan <b>transposnya</b> (baris menjadi kolom, kolom menjadi baris). Gunakan tipe <code>TMatriks</code> seperti pada Program 11.4.</li>
+  <li><span class="lv tantangan">Tantangan</span>Buat program yang membaca matriks 3 x 3 dari keyboard dan menghitung jumlah elemen pada <b>diagonal utama</b> (elemen yang indeks baris dan kolomnya sama).</li>
+</ol>
+</div>

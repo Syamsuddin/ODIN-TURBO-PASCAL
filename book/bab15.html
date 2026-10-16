@@ -1,0 +1,701 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menjelaskan apa itu pencarian data, kunci pencarian, dan mengapa data yang banyak membutuhkan algoritma yang tepat.</li>
+  <li>Menulis pencarian beruntun (<i>sequential search</i>) dengan perulangan <code>while</code> dan penanda <code>Ketemu</code>.</li>
+  <li>Menulis pencarian biner (<i>binary search</i>) dengan variabel <code>Kiri</code>, <code>Kanan</code>, dan <code>Tengah</code>, serta menyebutkan syaratnya: data harus terurut.</li>
+  <li>Menghitung dan membandingkan jumlah langkah pencarian beruntun (sebanding dengan n) dan pencarian biner (sebanding dengan log<sub>2</sub> n).</li>
+  <li>Mencari data di <i>array of record</i> menurut kode yang harus sama persis dan menurut sebagian nama.</li>
+</ul>
+
+<p class="lead">Kita mencari sesuatu setiap hari: nomor telepon di daftar kontak, nama siswa di daftar hadir, satu kata di
+kamus. Komputer pun terus mencari, dan karena komputer cepat, kita jarang menyadari bahwa cara mencari menentukan seberapa
+cepat jawaban muncul. Bab ini memperkenalkan dua algoritma pencarian klasik: pencarian beruntun yang sederhana, dan
+pencarian biner yang jauh lebih hemat langkah tetapi menuntut data terurut. Anda akan menjalankan keduanya, menelusuri
+langkahnya satu per satu, lalu menerapkannya pada data berbentuk <i>record</i>.</p>
+
+<h2>Apa yang Dimaksud Mencari Data</h2>
+
+<p><b>Pencarian</b> (<i>searching</i>) adalah proses menemukan satu atau beberapa elemen dalam sekumpulan data yang
+cocok dengan sesuatu yang kita inginkan. Sesuatu yang kita inginkan itu disebut <b>kunci pencarian</b>
+(<i>search key</i>). Pada program bab ini, kunci pencarian berupa bilangan (untuk array <code>Integer</code>), kode barang,
+atau sepotong nama (untuk array <i>record</i>). Hasil pencarian selalu salah satu dari dua kemungkinan:
+data <b>ditemukan</b>, biasanya bersama <b>posisinya</b> (nomor indeks array), atau data <b>tidak ditemukan</b>.</p>
+
+<p>Bayangkan guru yang mencari lembar jawaban milik seorang siswa di tumpukan 40 lembar yang tercampur. Ia membuka lembar
+pertama, kedua, ketiga, dan seterusnya sampai bertemu nama yang tepat. Itulah pencarian beruntun. Sekarang bayangkan Anda
+mencari kata <i>"komputer"</i> di kamus. Tidak seorang pun membuka kamus dari halaman pertama: kita membuka bagian tengah,
+melihat huruf apa yang muncul, lalu melompat ke kiri atau ke kanan. Itulah pencarian biner, dan ia hanya mungkin karena
+kata di kamus tersusun menurut abjad.</p>
+
+<div class="duo">
+  <div class="card"><h4><span class="ikon">1</span>Pencarian beruntun</h4><p>Memeriksa elemen satu per satu dari depan.
+  Berlaku untuk data apa pun, terurut atau tidak. Pada data n elemen, paling banyak n perbandingan.</p></div>
+  <div class="card"><h4><span class="ikon">2</span>Pencarian biner</h4><p>Membandingkan dengan elemen tengah lalu membuang
+  separuh data. <b>Data wajib terurut.</b> Pada data n elemen, hanya sekitar log<sub>2</sub> n perbandingan.</p></div>
+</div>
+
+<p>Semua program di bab ini memakai array dengan indeks mulai dari 1 (Bab 11) dan menyimpan hasil pencarian dalam sebuah
+variabel posisi atau penanda <code>Boolean</code>. Perulangan yang dipakai adalah <code>while</code> (Bab 7), karena kita tidak
+tahu sebelumnya berapa kali perulangan harus berjalan: ia boleh berhenti begitu data ditemukan.</p>
+
+<h2>Pencarian Beruntun</h2>
+
+<p>Pencarian beruntun (<i>sequential search</i> atau <i>linear search</i>) bekerja persis seperti guru tadi. Mulai dari elemen
+pertama, bandingkan elemen dengan kunci. Bila sama, berhenti dan laporkan posisinya. Bila berbeda, pindah ke elemen
+berikutnya. Bila elemen terakhir sudah diperiksa dan tidak ada yang sama, kunci itu tidak ada dalam data.</p>
+
+<div class="sintaks"><pre>I := 1;
+Ketemu := False;
+<b>while</b> (I &lt;= N) <b>and not</b> Ketemu <b>do</b>
+  <b>if</b> Data[I] = <i>Kunci</i> <b>then</b>
+    Ketemu := True
+  <b>else</b>
+    I := I + 1;
+<span style="color:#667">{ Ketemu = True: posisinya I.   Ketemu = False: I = N + 1 }</span></pre></div>
+
+<p>Dua hal penting pada pola ini. Pertama, syarat perulangan punya <b>dua alasan berhenti</b>: elemen ditemukan
+(<code>Ketemu</code> menjadi <code>True</code>) atau data habis (<code>I</code> melewati <code>N</code>). Kedua, ketika elemen
+ditemukan, <code>I</code> sengaja <b>tidak</b> ditambah, sehingga setelah perulangan <code>I</code> tetap menunjuk posisi data yang
+cocok. Gambar berikut memperlihatkan jalannya pencarian bilangan 32 pada data yang dipakai Program 15.1.</p>
+
+<figure class="grafik" id="gb-seq-32"><svg viewBox="0 0 680 232">
+<text class="s muted mid" x="137" y="18">[1]</text>
+<text class="s muted mid" x="191" y="18">[2]</text>
+<text class="s muted mid" x="245" y="18">[3]</text>
+<text class="s muted mid" x="299" y="18">[4]</text>
+<text class="s muted mid" x="353" y="18">[5]</text>
+<text class="s muted mid" x="407" y="18">[6]</text>
+<text class="s muted mid" x="461" y="18">[7]</text>
+<text class="s muted mid" x="515" y="18">[8]</text>
+<text class="s muted mid" x="569" y="18">[9]</text>
+<text class="s muted mid" x="623" y="18">[10]</text>
+<text class="b" x="4" y="46">Langkah 1</text>
+<rect class="dec" x="112" y="26" width="52" height="30" rx="3"/><text class="mid b" x="138" y="46">34</text>
+<rect class="box-w" x="166" y="26" width="52" height="30" rx="3"/><text class="mid muted" x="192" y="46">7</text>
+<rect class="box-w" x="220" y="26" width="52" height="30" rx="3"/><text class="mid muted" x="246" y="46">23</text>
+<rect class="box-w" x="274" y="26" width="52" height="30" rx="3"/><text class="mid muted" x="300" y="46">32</text>
+<rect class="box-w" x="328" y="26" width="52" height="30" rx="3"/><text class="mid muted" x="354" y="46">5</text>
+<rect class="box-w" x="382" y="26" width="52" height="30" rx="3"/><text class="mid muted" x="408" y="46">62</text>
+<rect class="box-w" x="436" y="26" width="52" height="30" rx="3"/><text class="mid muted" x="462" y="46">32</text>
+<rect class="box-w" x="490" y="26" width="52" height="30" rx="3"/><text class="mid muted" x="516" y="46">18</text>
+<rect class="box-w" x="544" y="26" width="52" height="30" rx="3"/><text class="mid muted" x="570" y="46">9</text>
+<rect class="box-w" x="598" y="26" width="52" height="30" rx="3"/><text class="mid muted" x="624" y="46">41</text>
+<text class="b" x="4" y="86">Langkah 2</text>
+<rect class="no" x="112" y="66" width="52" height="30" rx="3"/><text class="mid" x="138" y="86">34</text>
+<rect class="dec" x="166" y="66" width="52" height="30" rx="3"/><text class="mid b" x="192" y="86">7</text>
+<rect class="box-w" x="220" y="66" width="52" height="30" rx="3"/><text class="mid muted" x="246" y="86">23</text>
+<rect class="box-w" x="274" y="66" width="52" height="30" rx="3"/><text class="mid muted" x="300" y="86">32</text>
+<rect class="box-w" x="328" y="66" width="52" height="30" rx="3"/><text class="mid muted" x="354" y="86">5</text>
+<rect class="box-w" x="382" y="66" width="52" height="30" rx="3"/><text class="mid muted" x="408" y="86">62</text>
+<rect class="box-w" x="436" y="66" width="52" height="30" rx="3"/><text class="mid muted" x="462" y="86">32</text>
+<rect class="box-w" x="490" y="66" width="52" height="30" rx="3"/><text class="mid muted" x="516" y="86">18</text>
+<rect class="box-w" x="544" y="66" width="52" height="30" rx="3"/><text class="mid muted" x="570" y="86">9</text>
+<rect class="box-w" x="598" y="66" width="52" height="30" rx="3"/><text class="mid muted" x="624" y="86">41</text>
+<text class="b" x="4" y="126">Langkah 3</text>
+<rect class="no" x="112" y="106" width="52" height="30" rx="3"/><text class="mid" x="138" y="126">34</text>
+<rect class="no" x="166" y="106" width="52" height="30" rx="3"/><text class="mid" x="192" y="126">7</text>
+<rect class="dec" x="220" y="106" width="52" height="30" rx="3"/><text class="mid b" x="246" y="126">23</text>
+<rect class="box-w" x="274" y="106" width="52" height="30" rx="3"/><text class="mid muted" x="300" y="126">32</text>
+<rect class="box-w" x="328" y="106" width="52" height="30" rx="3"/><text class="mid muted" x="354" y="126">5</text>
+<rect class="box-w" x="382" y="106" width="52" height="30" rx="3"/><text class="mid muted" x="408" y="126">62</text>
+<rect class="box-w" x="436" y="106" width="52" height="30" rx="3"/><text class="mid muted" x="462" y="126">32</text>
+<rect class="box-w" x="490" y="106" width="52" height="30" rx="3"/><text class="mid muted" x="516" y="126">18</text>
+<rect class="box-w" x="544" y="106" width="52" height="30" rx="3"/><text class="mid muted" x="570" y="126">9</text>
+<rect class="box-w" x="598" y="106" width="52" height="30" rx="3"/><text class="mid muted" x="624" y="126">41</text>
+<text class="b" x="4" y="166">Langkah 4</text>
+<rect class="no" x="112" y="146" width="52" height="30" rx="3"/><text class="mid" x="138" y="166">34</text>
+<rect class="no" x="166" y="146" width="52" height="30" rx="3"/><text class="mid" x="192" y="166">7</text>
+<rect class="no" x="220" y="146" width="52" height="30" rx="3"/><text class="mid" x="246" y="166">23</text>
+<rect class="ok" x="274" y="146" width="52" height="30" rx="3"/><text class="mid b" x="300" y="166">32</text>
+<rect class="box-w" x="328" y="146" width="52" height="30" rx="3"/><text class="mid muted" x="354" y="166">5</text>
+<rect class="box-w" x="382" y="146" width="52" height="30" rx="3"/><text class="mid muted" x="408" y="166">62</text>
+<rect class="box-w" x="436" y="146" width="52" height="30" rx="3"/><text class="mid muted" x="462" y="166">32</text>
+<rect class="box-w" x="490" y="146" width="52" height="30" rx="3"/><text class="mid muted" x="516" y="166">18</text>
+<rect class="box-w" x="544" y="146" width="52" height="30" rx="3"/><text class="mid muted" x="570" y="166">9</text>
+<rect class="box-w" x="598" y="146" width="52" height="30" rx="3"/><text class="mid muted" x="624" y="166">41</text>
+<rect class="dec" x="112" y="192" width="22" height="14" rx="2"/><text class="s" x="140" y="203">sedang dibandingkan dengan 32</text>
+<rect class="no" x="326" y="192" width="22" height="14" rx="2"/><text class="s" x="354" y="203">sudah diperiksa, bukan 32</text>
+<rect class="ok" x="520" y="192" width="22" height="14" rx="2"/><text class="s" x="548" y="203">ketemu</text>
+<text class="s muted" x="112" y="224">Elemen [7] juga bernilai 32, tetapi tidak pernah dibandingkan: perulangan sudah berhenti di langkah 4.</text>
+</svg><figcaption>Pencarian 32 pada data Program 15.1: empat perbandingan, lalu berhenti</figcaption></figure>
+
+<h3>Program 15.1: Mencari Bilangan di Dalam Array</h3>
+
+<p>Program ini menyimpan sepuluh bilangan pada konstanta bertipe <code>Data</code>, meminta satu bilangan, lalu mencarinya
+dengan pola di atas sambil menghitung berapa perbandingan yang dilakukan. Buka lewat <span class="menu">File ▸ Examples...</span>,
+pilih <code>bab15_01_sequential_search.pas</code>, lalu tekan <kbd>Ctrl</kbd>+<kbd>F9</kbd>.</p>
+
+<x-listing src="bab15_01_sequential_search.pas"></x-listing>
+
+<x-run src="bab15_01_sequential_search.pas" caption="Mencari 32: ditemukan di posisi 4 setelah 4 perbandingan"></x-run>
+
+<table class="baris">
+  <caption>Penjelasan Program 15.1</caption>
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–10</td><td><code>N</code> adalah banyaknya data. <code>Data</code> adalah array konstanta berisi sepuluh <code>Integer</code> yang sengaja tidak terurut, dan <b>bilangan 32 muncul dua kali</b> (posisi 4 dan 7).</td></tr>
+    <tr><td>13–14</td><td><code>Dicari</code> menyimpan kunci, <code>I</code> adalah penunjuk posisi, <code>Langkah</code> menghitung perbandingan, <code>Ketemu</code> adalah penanda.</td></tr>
+    <tr><td>17–22</td><td>Menampilkan seluruh data dengan <code>for</code>, lalu meminta kunci dengan <code>ReadLn(Dicari)</code>.</td></tr>
+    <tr><td>24–26</td><td>Keadaan awal: mulai dari posisi 1, belum ketemu, belum ada perbandingan.</td></tr>
+    <tr><td>27</td><td>Syarat dua alasan berhenti: <code>(I &lt;= N) and not Ketemu</code>. Kurung wajib (lihat bagian kesalahan).</td></tr>
+    <tr><td>29</td><td>Setiap putaran melakukan satu perbandingan, sehingga <code>Langkah</code> naik satu.</td></tr>
+    <tr><td>30–33</td><td>Bila <code>Data[I]</code> sama dengan kunci, <code>Ketemu := True</code> dan <code>I</code> dibiarkan. Bila tidak, <code>I</code> maju satu. Perhatikan tidak ada titik koma sebelum <code>else</code>.</td></tr>
+    <tr><td>36–40</td><td>Melaporkan hasil: posisi dan jumlah perbandingan bila ketemu, atau pemberitahuan bahwa semua data sudah diperiksa.</td></tr>
+    <tr><td>42–47</td><td>Variasi: perulangan <code>for</code> yang memeriksa <b>semua</b> elemen dan mencetak setiap posisi yang cocok.</td></tr>
+  </tbody>
+</table>
+
+<p>Dengan kunci 32, program berhenti di posisi 4 setelah 4 perbandingan: elemen 34, 7, dan 23 gagal, elemen ke-4 berhasil. Baris
+terakhir keluaran, <code>Semua posisi: 4 7</code>, datang dari perulangan variasi (baris 42–47) yang tidak berhenti di temuan
+pertama, sehingga posisi 7 ikut tercetak. Dua kasus lain memperlihatkan batas atas dan batas bawah jumlah langkah.</p>
+
+<x-run src="bab15_01_sequential_search.pas" input="34\n" caption="Kasus terbaik: 34 ada di posisi pertama, cukup satu perbandingan"></x-run>
+
+<x-run src="bab15_01_sequential_search.pas" input="99\n" caption="Kasus terburuk: 99 tidak ada, sehingga kesepuluh data diperiksa"></x-run>
+
+<p>Kasus terbaik hanya satu perbandingan, kasus terburuk n perbandingan (di sini 10), yaitu ketika data berada di posisi terakhir
+atau tidak ada sama sekali. Perhatikan bahwa pada kasus 99 baris <code>Semua posisi:</code> kosong, karena tidak ada posisi yang cocok.</p>
+
+<div class="coba"><p><b>Coba Sendiri.</b> Jalankan program dengan kunci 62, 9, dan 5, lalu catat jumlah perbandingannya. Apakah
+jumlahnya selalu sama dengan posisi data? Lalu ubah isi <code>Data</code> agar 5 berada di depan, dan jalankan lagi.</p></div>
+
+<h2>Pencarian Biner</h2>
+
+<p>Pencarian beruntun jujur tetapi boros: untuk sejuta data, kasus terburuknya sejuta perbandingan. Bila data sudah <b>terurut</b>,
+ada cara yang jauh lebih cerdik. Seperti membuka kamus, kita membandingkan kunci dengan elemen di <b>tengah</b> rentang. Ada tiga
+kemungkinan:</p>
+
+<div class="alur">
+  <div><span class="ikon">=</span><b>Sama</b>ketemu, berhenti</div>
+  <div><span class="ikon">&lt;</span><b>Kunci lebih kecil</b>buang separuh kanan: <code>Kanan := Tengah - 1</code></div>
+  <div><span class="ikon">&gt;</span><b>Kunci lebih besar</b>buang separuh kiri: <code>Kiri := Tengah + 1</code></div>
+</div>
+
+<p>Rentang yang masih mungkin berisi kunci dibatasi dua penunjuk: <code>Kiri</code> (awal rentang) dan <code>Kanan</code> (akhir
+rentang). Pada awalnya <code>Kiri = 1</code> dan <code>Kanan = N</code>, yaitu seluruh array. Elemen tengah dihitung dengan
+<code>Tengah := (Kiri + Kanan) div 2</code>. Setiap putaran, rentang menyusut sekitar separuh; bila <code>Kiri</code> melampaui
+<code>Kanan</code>, rentang kosong dan kunci pasti tidak ada.</p>
+
+<div class="sintaks"><pre>Kiri := 1;  Kanan := N;  Posisi := 0;
+<b>while</b> (Kiri &lt;= Kanan) <b>and</b> (Posisi = 0) <b>do</b>
+<b>begin</b>
+  Tengah := (Kiri + Kanan) <b>div</b> 2;
+  <b>if</b> Data[Tengah] = <i>Kunci</i> <b>then</b> Posisi := Tengah
+  <b>else if</b> <i>Kunci</i> &lt; Data[Tengah] <b>then</b> Kanan := Tengah - 1
+  <b>else</b> Kiri := Tengah + 1;
+<b>end</b>;</pre></div>
+
+<figure class="grafik" id="gb-flow-biner"><svg viewBox="0 0 680 410">
+  <rect class="box" x="210" y="6" width="180" height="30" rx="6"/>
+  <text class="mono mid" x="300" y="25">Kiri := 1; Kanan := N</text>
+  <path class="arrow" d="M300 36 V64"/>
+  <polygon class="dec" points="300,66 400,100 300,134 200,100"/>
+  <text class="mono mid" x="300" y="97">Kiri &lt;= Kanan</text>
+  <text class="mono mid" x="300" y="112">dan Posisi = 0 ?</text>
+  <path class="arrow" d="M400 100 H470"/>
+  <text class="s b" x="408" y="92" style="fill:#b42318">False</text>
+  <rect class="term" x="472" y="84" width="150" height="32" rx="16"/>
+  <text class="white mid" x="547" y="104">Loop selesai</text>
+  <path class="arrow" d="M300 134 V160"/>
+  <text class="s b" x="308" y="152" style="fill:#11743f">True</text>
+  <rect class="box" x="170" y="162" width="260" height="42" rx="6"/>
+  <text class="mono mid" x="300" y="180">Tengah := (Kiri + Kanan) div 2;</text>
+  <text class="mono mid" x="300" y="196">Langkah := Langkah + 1</text>
+  <path class="arrow" d="M300 204 V232"/>
+  <polygon class="dec" points="300,234 410,264 300,294 190,264"/>
+  <text class="mono mid" x="300" y="268">Data[Tengah] = Dicari ?</text>
+  <path class="arrow" d="M410 264 H440"/>
+  <text class="s b" x="414" y="256" style="fill:#11743f">True</text>
+  <rect class="ok" x="442" y="248" width="180" height="32" rx="6"/>
+  <text class="mono mid" x="532" y="268">Posisi := Tengah</text>
+  <path class="arrow" d="M547 248 V118"/>
+  <text class="s muted" x="556" y="190">syarat loop</text>
+  <text class="s muted" x="556" y="202">menjadi False</text>
+  <path class="arrow" d="M300 294 V322"/>
+  <text class="s b" x="308" y="314" style="fill:#b42318">False</text>
+  <polygon class="dec" points="300,324 410,350 300,376 190,350"/>
+  <text class="mono mid" x="300" y="354">Dicari &lt; Data[Tengah] ?</text>
+  <path class="arrow" d="M190 350 H170"/>
+  <text class="s b" x="150" y="342" style="fill:#11743f">True</text>
+  <rect class="no" x="20" y="334" width="148" height="32" rx="6"/>
+  <text class="mono mid" x="94" y="354">Kanan := Tengah - 1</text>
+  <path class="arrow" d="M410 350 H440"/>
+  <text class="s b" x="414" y="342" style="fill:#b42318">False</text>
+  <rect class="ok" x="442" y="334" width="180" height="32" rx="6"/>
+  <text class="mono mid" x="532" y="354">Kiri := Tengah + 1</text>
+  <path class="line" d="M94 366 V394"/>
+  <path class="arrow" d="M532 366 V394 H10 V100 H198"/>
+  <text class="s muted" x="190" y="406">kembali memeriksa syarat loop</text>
+</svg><figcaption>Diagram alir pencarian biner pada Program 15.2: setiap putaran membuang separuh rentang</figcaption></figure>
+
+<div class="awas"><p><b>Syarat mutlak: data terurut.</b> Seluruh logika "buang separuh" bersandar pada satu fakta, yaitu elemen di kiri
+<code>Tengah</code> pasti lebih kecil dan elemen di kanannya pasti lebih besar. Bila data tidak terurut, program membuang separuh
+yang salah dan melaporkan "tidak ditemukan" untuk data yang sebenarnya ada. Contohnya dibuktikan di bagian kesalahan.</p></div>
+
+<h3>Program 15.2: Pencarian Biner dengan Jejak Langkah</h3>
+
+<p>Program ini mencari bilangan di array 15 elemen yang sudah terurut naik. Ia mencetak <b>setiap langkah</b> (rentang dan
+elemen tengahnya), sehingga Anda bisa mengikuti penyusutan rentang. Buka <code>bab15_02_binary_search.pas</code> dari
+<span class="menu">File ▸ Examples...</span>.</p>
+
+<x-listing src="bab15_02_binary_search.pas"></x-listing>
+
+<table class="baris">
+  <caption>Penjelasan Program 15.2</caption>
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>11–13</td><td>Lima belas bilangan <b>terurut naik</b> dari 3 sampai 90. Banyak data 15 dipilih karena 15 = 2<sup>4</sup> − 1: rentang habis dibagi dua tepat empat kali.</td></tr>
+    <tr><td>16</td><td>Semua penunjuk dan penghitung bertipe <code>Integer</code>. <code>Posisi</code> menyimpan hasil, <code>Tengah</code> posisi elemen yang sedang dibandingkan.</td></tr>
+    <tr><td>26–29</td><td>Rentang awal adalah seluruh array. <code>Posisi := 0</code> berarti belum ketemu; angka 0 aman dipakai karena indeks array dimulai dari 1.</td></tr>
+    <tr><td>30</td><td>Perulangan berjalan selama rentang masih berisi elemen (<code>Kiri &lt;= Kanan</code>) dan data belum ditemukan.</td></tr>
+    <tr><td>32–33</td><td>Menghitung posisi tengah dengan <code>div</code> (pembagian bulat), lalu menambah <code>Langkah</code>.</td></tr>
+    <tr><td>34–35</td><td>Mencetak jejak: nomor langkah, rentang <code>Kiri..Kanan</code>, posisi tengah dan isinya.</td></tr>
+    <tr><td>36–41</td><td>Tiga kemungkinan: sama (simpan posisi), lebih kecil (<code>Kanan := Tengah - 1</code>), atau lebih besar (<code>Kiri := Tengah + 1</code>). Tanda <code>-1</code> dan <code>+1</code> membuang elemen tengah yang sudah diperiksa.</td></tr>
+    <tr><td>44–49</td><td>Melaporkan hasil, lalu membandingkan jumlah langkah dengan batas atas pencarian beruntun, yaitu <code>N</code> perbandingan.</td></tr>
+  </tbody>
+</table>
+
+<x-run src="bab15_02_binary_search.pas" caption="Mencari 68: empat langkah, ditemukan di posisi 13"></x-run>
+
+<p>Telusuri jejak untuk kunci 68. Langkah 1: rentang 1..15, tengah <code>Data[8]</code> = 34. Karena 68 &gt; 34, <code>Kiri</code>
+menjadi 9. Langkah 2: rentang 9..15, tengah <code>Data[12]</code> = 60; 68 &gt; 60, <code>Kiri</code> menjadi 13. Langkah 3: rentang
+13..15, tengah <code>Data[14]</code> = 75; 68 &lt; 75, <code>Kanan</code> menjadi 13. Langkah 4: rentang 13..13, tengah
+<code>Data[13]</code> = 68, ketemu. Dari lima belas elemen, hanya empat yang dibandingkan.</p>
+
+<figure class="grafik" id="gb-biner-68"><svg viewBox="0 0 680 198">
+<text class="s muted mid" x="123" y="22">[1]</text>
+<text class="s muted mid" x="161" y="22">[2]</text>
+<text class="s muted mid" x="199" y="22">[3]</text>
+<text class="s muted mid" x="237" y="22">[4]</text>
+<text class="s muted mid" x="275" y="22">[5]</text>
+<text class="s muted mid" x="313" y="22">[6]</text>
+<text class="s muted mid" x="351" y="22">[7]</text>
+<text class="s muted mid" x="389" y="22">[8]</text>
+<text class="s muted mid" x="427" y="22">[9]</text>
+<text class="s muted mid" x="465" y="22">[10]</text>
+<text class="s muted mid" x="503" y="22">[11]</text>
+<text class="s muted mid" x="541" y="22">[12]</text>
+<text class="s muted mid" x="579" y="22">[13]</text>
+<text class="s muted mid" x="617" y="22">[14]</text>
+<text class="s muted mid" x="655" y="22">[15]</text>
+<text class="b" x="4" y="45">Langkah 1</text>
+<text class="s muted" x="4" y="58">Kiri 1, Kanan 15</text>
+<rect class="box" x="104" y="30" width="36" height="28" rx="3"/><text class="mid" x="122" y="48">3</text>
+<rect class="box" x="142" y="30" width="36" height="28" rx="3"/><text class="mid" x="160" y="48">8</text>
+<rect class="box" x="180" y="30" width="36" height="28" rx="3"/><text class="mid" x="198" y="48">12</text>
+<rect class="box" x="218" y="30" width="36" height="28" rx="3"/><text class="mid" x="236" y="48">17</text>
+<rect class="box" x="256" y="30" width="36" height="28" rx="3"/><text class="mid" x="274" y="48">21</text>
+<rect class="box" x="294" y="30" width="36" height="28" rx="3"/><text class="mid" x="312" y="48">25</text>
+<rect class="box" x="332" y="30" width="36" height="28" rx="3"/><text class="mid" x="350" y="48">30</text>
+<rect class="dec" x="370" y="30" width="36" height="28" rx="3"/><text class="mid b" x="388" y="48">34</text>
+<rect class="box" x="408" y="30" width="36" height="28" rx="3"/><text class="mid" x="426" y="48">41</text>
+<rect class="box" x="446" y="30" width="36" height="28" rx="3"/><text class="mid" x="464" y="48">47</text>
+<rect class="box" x="484" y="30" width="36" height="28" rx="3"/><text class="mid" x="502" y="48">52</text>
+<rect class="box" x="522" y="30" width="36" height="28" rx="3"/><text class="mid" x="540" y="48">60</text>
+<rect class="box" x="560" y="30" width="36" height="28" rx="3"/><text class="mid" x="578" y="48">68</text>
+<rect class="box" x="598" y="30" width="36" height="28" rx="3"/><text class="mid" x="616" y="48">75</text>
+<rect class="box" x="636" y="30" width="36" height="28" rx="3"/><text class="mid" x="654" y="48">90</text>
+<text class="b" x="4" y="83">Langkah 2</text>
+<text class="s muted" x="4" y="96">Kiri 9, Kanan 15</text>
+<rect class="box-w" x="104" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="122" y="86">3</text>
+<rect class="box-w" x="142" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="160" y="86">8</text>
+<rect class="box-w" x="180" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="198" y="86">12</text>
+<rect class="box-w" x="218" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="236" y="86">17</text>
+<rect class="box-w" x="256" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="274" y="86">21</text>
+<rect class="box-w" x="294" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="312" y="86">25</text>
+<rect class="box-w" x="332" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="350" y="86">30</text>
+<rect class="box-w" x="370" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="388" y="86">34</text>
+<rect class="box" x="408" y="68" width="36" height="28" rx="3"/><text class="mid" x="426" y="86">41</text>
+<rect class="box" x="446" y="68" width="36" height="28" rx="3"/><text class="mid" x="464" y="86">47</text>
+<rect class="box" x="484" y="68" width="36" height="28" rx="3"/><text class="mid" x="502" y="86">52</text>
+<rect class="dec" x="522" y="68" width="36" height="28" rx="3"/><text class="mid b" x="540" y="86">60</text>
+<rect class="box" x="560" y="68" width="36" height="28" rx="3"/><text class="mid" x="578" y="86">68</text>
+<rect class="box" x="598" y="68" width="36" height="28" rx="3"/><text class="mid" x="616" y="86">75</text>
+<rect class="box" x="636" y="68" width="36" height="28" rx="3"/><text class="mid" x="654" y="86">90</text>
+<text class="b" x="4" y="121">Langkah 3</text>
+<text class="s muted" x="4" y="134">Kiri 13, Kanan 15</text>
+<rect class="box-w" x="104" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="122" y="124">3</text>
+<rect class="box-w" x="142" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="160" y="124">8</text>
+<rect class="box-w" x="180" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="198" y="124">12</text>
+<rect class="box-w" x="218" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="236" y="124">17</text>
+<rect class="box-w" x="256" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="274" y="124">21</text>
+<rect class="box-w" x="294" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="312" y="124">25</text>
+<rect class="box-w" x="332" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="350" y="124">30</text>
+<rect class="box-w" x="370" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="388" y="124">34</text>
+<rect class="box-w" x="408" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="426" y="124">41</text>
+<rect class="box-w" x="446" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="464" y="124">47</text>
+<rect class="box-w" x="484" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="502" y="124">52</text>
+<rect class="box-w" x="522" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="540" y="124">60</text>
+<rect class="box" x="560" y="106" width="36" height="28" rx="3"/><text class="mid" x="578" y="124">68</text>
+<rect class="dec" x="598" y="106" width="36" height="28" rx="3"/><text class="mid b" x="616" y="124">75</text>
+<rect class="box" x="636" y="106" width="36" height="28" rx="3"/><text class="mid" x="654" y="124">90</text>
+<text class="b" x="4" y="159">Langkah 4</text>
+<text class="s muted" x="4" y="172">Kiri 13, Kanan 13</text>
+<rect class="box-w" x="104" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="122" y="162">3</text>
+<rect class="box-w" x="142" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="160" y="162">8</text>
+<rect class="box-w" x="180" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="198" y="162">12</text>
+<rect class="box-w" x="218" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="236" y="162">17</text>
+<rect class="box-w" x="256" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="274" y="162">21</text>
+<rect class="box-w" x="294" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="312" y="162">25</text>
+<rect class="box-w" x="332" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="350" y="162">30</text>
+<rect class="box-w" x="370" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="388" y="162">34</text>
+<rect class="box-w" x="408" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="426" y="162">41</text>
+<rect class="box-w" x="446" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="464" y="162">47</text>
+<rect class="box-w" x="484" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="502" y="162">52</text>
+<rect class="box-w" x="522" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="540" y="162">60</text>
+<rect class="ok" x="560" y="144" width="36" height="28" rx="3"/><text class="mid b" x="578" y="162">68</text>
+<rect class="box-w" x="598" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="616" y="162">75</text>
+<rect class="box-w" x="636" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="654" y="162">90</text>
+</svg><figcaption>Penyusutan rentang saat mencari 68: biru muda = masih mungkin, putih = sudah dibuang, kuning = elemen tengah, hijau = ketemu</figcaption></figure>
+
+<p>Kunci yang berada di ujung kiri pun hanya butuh empat langkah, karena setiap langkah selalu memotong rentang menjadi sekitar
+separuh. Kasus kunci yang <b>tidak ada</b> diperlihatkan oleh dua run berikut.</p>
+
+<x-run src="bab15_02_binary_search.pas" input="3\n" caption="Mencari 3, elemen paling kiri: tetap empat langkah"></x-run>
+
+<x-run src="bab15_02_binary_search.pas" input="50\n" caption="Mencari 50, yang tidak ada: rentang menyusut sampai kosong"></x-run>
+
+<p>Untuk kunci 50, langkah ke-4 memeriksa <code>Data[11]</code> = 52. Karena 50 &lt; 52, <code>Kanan</code> menjadi 10 sementara
+<code>Kiri</code> tetap 11. Syarat <code>Kiri &lt;= Kanan</code> kini salah, perulangan berhenti, dan <code>Posisi</code> masih 0,
+sehingga program melaporkan "tidak ada dalam data". Gambar berikut menunjukkan akhir yang sama.</p>
+
+<figure class="grafik" id="gb-biner-50"><svg viewBox="0 0 680 236">
+<text class="s muted mid" x="123" y="22">[1]</text>
+<text class="s muted mid" x="161" y="22">[2]</text>
+<text class="s muted mid" x="199" y="22">[3]</text>
+<text class="s muted mid" x="237" y="22">[4]</text>
+<text class="s muted mid" x="275" y="22">[5]</text>
+<text class="s muted mid" x="313" y="22">[6]</text>
+<text class="s muted mid" x="351" y="22">[7]</text>
+<text class="s muted mid" x="389" y="22">[8]</text>
+<text class="s muted mid" x="427" y="22">[9]</text>
+<text class="s muted mid" x="465" y="22">[10]</text>
+<text class="s muted mid" x="503" y="22">[11]</text>
+<text class="s muted mid" x="541" y="22">[12]</text>
+<text class="s muted mid" x="579" y="22">[13]</text>
+<text class="s muted mid" x="617" y="22">[14]</text>
+<text class="s muted mid" x="655" y="22">[15]</text>
+<text class="b" x="4" y="45">Langkah 1</text>
+<text class="s muted" x="4" y="58">Kiri 1, Kanan 15</text>
+<rect class="box" x="104" y="30" width="36" height="28" rx="3"/><text class="mid" x="122" y="48">3</text>
+<rect class="box" x="142" y="30" width="36" height="28" rx="3"/><text class="mid" x="160" y="48">8</text>
+<rect class="box" x="180" y="30" width="36" height="28" rx="3"/><text class="mid" x="198" y="48">12</text>
+<rect class="box" x="218" y="30" width="36" height="28" rx="3"/><text class="mid" x="236" y="48">17</text>
+<rect class="box" x="256" y="30" width="36" height="28" rx="3"/><text class="mid" x="274" y="48">21</text>
+<rect class="box" x="294" y="30" width="36" height="28" rx="3"/><text class="mid" x="312" y="48">25</text>
+<rect class="box" x="332" y="30" width="36" height="28" rx="3"/><text class="mid" x="350" y="48">30</text>
+<rect class="dec" x="370" y="30" width="36" height="28" rx="3"/><text class="mid b" x="388" y="48">34</text>
+<rect class="box" x="408" y="30" width="36" height="28" rx="3"/><text class="mid" x="426" y="48">41</text>
+<rect class="box" x="446" y="30" width="36" height="28" rx="3"/><text class="mid" x="464" y="48">47</text>
+<rect class="box" x="484" y="30" width="36" height="28" rx="3"/><text class="mid" x="502" y="48">52</text>
+<rect class="box" x="522" y="30" width="36" height="28" rx="3"/><text class="mid" x="540" y="48">60</text>
+<rect class="box" x="560" y="30" width="36" height="28" rx="3"/><text class="mid" x="578" y="48">68</text>
+<rect class="box" x="598" y="30" width="36" height="28" rx="3"/><text class="mid" x="616" y="48">75</text>
+<rect class="box" x="636" y="30" width="36" height="28" rx="3"/><text class="mid" x="654" y="48">90</text>
+<text class="b" x="4" y="83">Langkah 2</text>
+<text class="s muted" x="4" y="96">Kiri 9, Kanan 15</text>
+<rect class="box-w" x="104" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="122" y="86">3</text>
+<rect class="box-w" x="142" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="160" y="86">8</text>
+<rect class="box-w" x="180" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="198" y="86">12</text>
+<rect class="box-w" x="218" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="236" y="86">17</text>
+<rect class="box-w" x="256" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="274" y="86">21</text>
+<rect class="box-w" x="294" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="312" y="86">25</text>
+<rect class="box-w" x="332" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="350" y="86">30</text>
+<rect class="box-w" x="370" y="68" width="36" height="28" rx="3"/><text class="mid muted" x="388" y="86">34</text>
+<rect class="box" x="408" y="68" width="36" height="28" rx="3"/><text class="mid" x="426" y="86">41</text>
+<rect class="box" x="446" y="68" width="36" height="28" rx="3"/><text class="mid" x="464" y="86">47</text>
+<rect class="box" x="484" y="68" width="36" height="28" rx="3"/><text class="mid" x="502" y="86">52</text>
+<rect class="dec" x="522" y="68" width="36" height="28" rx="3"/><text class="mid b" x="540" y="86">60</text>
+<rect class="box" x="560" y="68" width="36" height="28" rx="3"/><text class="mid" x="578" y="86">68</text>
+<rect class="box" x="598" y="68" width="36" height="28" rx="3"/><text class="mid" x="616" y="86">75</text>
+<rect class="box" x="636" y="68" width="36" height="28" rx="3"/><text class="mid" x="654" y="86">90</text>
+<text class="b" x="4" y="121">Langkah 3</text>
+<text class="s muted" x="4" y="134">Kiri 9, Kanan 11</text>
+<rect class="box-w" x="104" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="122" y="124">3</text>
+<rect class="box-w" x="142" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="160" y="124">8</text>
+<rect class="box-w" x="180" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="198" y="124">12</text>
+<rect class="box-w" x="218" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="236" y="124">17</text>
+<rect class="box-w" x="256" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="274" y="124">21</text>
+<rect class="box-w" x="294" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="312" y="124">25</text>
+<rect class="box-w" x="332" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="350" y="124">30</text>
+<rect class="box-w" x="370" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="388" y="124">34</text>
+<rect class="box" x="408" y="106" width="36" height="28" rx="3"/><text class="mid" x="426" y="124">41</text>
+<rect class="dec" x="446" y="106" width="36" height="28" rx="3"/><text class="mid b" x="464" y="124">47</text>
+<rect class="box" x="484" y="106" width="36" height="28" rx="3"/><text class="mid" x="502" y="124">52</text>
+<rect class="box-w" x="522" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="540" y="124">60</text>
+<rect class="box-w" x="560" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="578" y="124">68</text>
+<rect class="box-w" x="598" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="616" y="124">75</text>
+<rect class="box-w" x="636" y="106" width="36" height="28" rx="3"/><text class="mid muted" x="654" y="124">90</text>
+<text class="b" x="4" y="159">Langkah 4</text>
+<text class="s muted" x="4" y="172">Kiri 11, Kanan 11</text>
+<rect class="box-w" x="104" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="122" y="162">3</text>
+<rect class="box-w" x="142" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="160" y="162">8</text>
+<rect class="box-w" x="180" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="198" y="162">12</text>
+<rect class="box-w" x="218" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="236" y="162">17</text>
+<rect class="box-w" x="256" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="274" y="162">21</text>
+<rect class="box-w" x="294" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="312" y="162">25</text>
+<rect class="box-w" x="332" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="350" y="162">30</text>
+<rect class="box-w" x="370" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="388" y="162">34</text>
+<rect class="box-w" x="408" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="426" y="162">41</text>
+<rect class="box-w" x="446" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="464" y="162">47</text>
+<rect class="dec" x="484" y="144" width="36" height="28" rx="3"/><text class="mid b" x="502" y="162">52</text>
+<rect class="box-w" x="522" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="540" y="162">60</text>
+<rect class="box-w" x="560" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="578" y="162">68</text>
+<rect class="box-w" x="598" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="616" y="162">75</text>
+<rect class="box-w" x="636" y="144" width="36" height="28" rx="3"/><text class="mid muted" x="654" y="162">90</text>
+<text class="b" x="4" y="197">Berhenti</text>
+<text class="s muted" x="4" y="210">Kiri 11, Kanan 10</text>
+<rect class="box-w" x="104" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="122" y="200">3</text>
+<rect class="box-w" x="142" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="160" y="200">8</text>
+<rect class="box-w" x="180" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="198" y="200">12</text>
+<rect class="box-w" x="218" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="236" y="200">17</text>
+<rect class="box-w" x="256" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="274" y="200">21</text>
+<rect class="box-w" x="294" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="312" y="200">25</text>
+<rect class="box-w" x="332" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="350" y="200">30</text>
+<rect class="box-w" x="370" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="388" y="200">34</text>
+<rect class="box-w" x="408" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="426" y="200">41</text>
+<rect class="box-w" x="446" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="464" y="200">47</text>
+<rect class="box-w" x="484" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="502" y="200">52</text>
+<rect class="box-w" x="522" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="540" y="200">60</text>
+<rect class="box-w" x="560" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="578" y="200">68</text>
+<rect class="box-w" x="598" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="616" y="200">75</text>
+<rect class="box-w" x="636" y="182" width="36" height="28" rx="3"/><text class="mid muted" x="654" y="200">90</text>
+</svg><figcaption>Pencarian 50: setelah langkah 4, Kiri = 11 melampaui Kanan = 10, jadi tidak ada elemen yang tersisa</figcaption></figure>
+
+<p>Pencarian ini bisa dilacak langsung di debugger Odin. Pasang titik henti (<i>breakpoint</i>) pada baris 34 dengan
+<kbd>Ctrl</kbd>+<kbd>F8</kbd>, jalankan lewat <span class="menu">Debug ▸ Start debugging</span>, dan buka jendela
+<span class="menu">Debug ▸ Watch window</span> untuk mengamati <code>Kiri</code>, <code>Kanan</code>, <code>Tengah</code>, dan
+<code>Langkah</code> setiap putaran.</p>
+
+<x-ide file="bab15_02_binary_search.pas" top="26" rows="14" breakpoints="34" exec="34" watches="Kiri: 9;Kanan: 15;Tengah: 12;Langkah: 2" caption="Debugger berhenti di baris 34 pada putaran ke-2 saat mencari 68: rentang sudah menyempit menjadi 9..15"></x-ide>
+
+<h2>Membandingkan Jumlah Langkah</h2>
+
+<p>Mengapa repot mengurutkan data dan menulis pencarian biner? Karena selisih jumlah langkahnya membesar dengan cepat. Pada n
+elemen, pencarian beruntun paling banyak melakukan <b>n</b> perbandingan. Pencarian biner paling banyak melakukan
+<b>⌊log<sub>2</sub> n⌋ + 1</b> perbandingan, yaitu berapa kali n dapat dibagi dua sampai tersisa satu elemen, ditambah satu.
+Untuk n = 15 hasilnya 4, sama dengan "Jumlah langkah: 4" pada keluaran Program 15.2.</p>
+
+<table class="data" id="tb-langkah">
+  <caption>Langkah terburuk pencarian beruntun dan pencarian biner (hasil hitungan matematika)</caption>
+  <thead><tr><th>Jumlah data (n)</th><th>Beruntun (paling banyak n)</th><th>Biner (⌊log<sub>2</sub> n⌋ + 1)</th></tr></thead>
+  <tbody>
+    <tr><td>15</td><td>15</td><td>4</td></tr>
+    <tr><td>100</td><td>100</td><td>7</td></tr>
+    <tr><td>1.000</td><td>1.000</td><td>10</td></tr>
+    <tr><td>1.000.000</td><td>1.000.000</td><td>20</td></tr>
+    <tr><td>1.000.000.000</td><td>1.000.000.000</td><td>30</td></tr>
+  </tbody>
+</table>
+
+<div class="fakta">
+  <div><b>10</b>langkah biner untuk 1.000 data</div>
+  <div><b>20</b>langkah biner untuk 1 juta data</div>
+  <div><b>30</b>langkah biner untuk 1 miliar data</div>
+</div>
+
+<figure class="grafik" id="gb-bar-langkah"><svg viewBox="0 0 680 236">
+<text class="h c" x="4" y="18">Langkah terburuk untuk mencari satu data</text>
+<text class="b" x="4" y="49">n = 15</text>
+<rect class="no" x="62" y="34" width="45" height="16" rx="2"/><text class="s" x="113" y="46">beruntun: 15 langkah</text>
+<rect class="ok" x="62" y="54" width="12" height="16" rx="2"/><text class="s" x="80" y="66">biner: 4 langkah</text>
+<text class="b" x="4" y="97">n = 31</text>
+<rect class="no" x="62" y="82" width="93" height="16" rx="2"/><text class="s" x="161" y="94">beruntun: 31 langkah</text>
+<rect class="ok" x="62" y="102" width="15" height="16" rx="2"/><text class="s" x="83" y="114">biner: 5 langkah</text>
+<text class="b" x="4" y="145">n = 63</text>
+<rect class="no" x="62" y="130" width="189" height="16" rx="2"/><text class="s" x="257" y="142">beruntun: 63 langkah</text>
+<rect class="ok" x="62" y="150" width="18" height="16" rx="2"/><text class="s" x="86" y="162">biner: 6 langkah</text>
+<text class="b" x="4" y="193">n = 127</text>
+<rect class="no" x="62" y="178" width="381" height="16" rx="2"/><text class="s" x="449" y="190">beruntun: 127 langkah</text>
+<rect class="ok" x="62" y="198" width="21" height="16" rx="2"/><text class="s" x="89" y="210">biner: 7 langkah</text>
+<text class="s muted" x="62" y="228">Setiap data bertambah dua kali lipat, pencarian biner hanya menambah satu langkah.</text>
+</svg><figcaption>Pencarian beruntun tumbuh sebanding dengan jumlah data, pencarian biner hanya bertambah satu langkah setiap data berlipat dua</figcaption></figure>
+
+<p>Perbandingan ini tidak berarti pencarian biner selalu lebih baik. Data harus terurut dulu, dan mengurutkan data itu sendiri
+memakan langkah (Bab 16 membahasnya). Bila data hanya dicari sekali, lalu dibuang, pencarian beruntun yang sederhana sudah
+cukup. Bila data dicari berulang kali, mengurutkan satu kali lalu memakai pencarian biner berkali-kali jauh lebih hemat.</p>
+
+<table class="data" id="tb-pilih">
+  <caption>Memilih algoritma pencarian</caption>
+  <thead><tr><th>Keadaan</th><th>Pilihan yang masuk akal</th></tr></thead>
+  <tbody>
+    <tr><td>Data sedikit, atau hanya dicari sekali</td><td>Pencarian beruntun</td></tr>
+    <tr><td>Data tidak terurut dan tidak akan diurutkan</td><td>Pencarian beruntun</td></tr>
+    <tr><td>Data besar, sudah terurut, dicari berulang kali</td><td>Pencarian biner</td></tr>
+    <tr><td>Ingin semua kemunculan, bukan satu</td><td>Pencarian beruntun dengan <code>for</code> seperti baris 42–47 Program 15.1</td></tr>
+  </tbody>
+</table>
+
+<h2>Mencari Data di Array of Record</h2>
+
+<p>Data nyata jarang berupa bilangan polos. Daftar barang punya kode, nama, harga, dan stok; daftar siswa punya nama dan
+nilai. Bab 13 memperkenalkan <i>record</i> untuk menggabungkan beberapa <i>field</i> menjadi satu satuan, dan array of record
+menyimpan banyak satuan seperti itu. Prinsip pencarian tidak berubah: yang dibandingkan adalah <b>satu field</b> sebagai
+kunci, sedangkan hasilnya adalah satu record utuh.</p>
+
+<p>Program 15.3 mengelola enam barang alat tulis dan menawarkan dua jenis pencarian yang berbeda sifatnya:</p>
+
+<div class="duo">
+  <div class="card"><h4><span class="ikon">K</span>Menurut kode</h4><p>Kecocokan <b>persis</b>. Kode itu unik, jadi pencarian cukup
+  menemukan satu record lalu berhenti. Pola sama dengan Program 15.1.</p></div>
+  <div class="card"><h4><span class="ikon">N</span>Menurut nama</h4><p>Kecocokan <b>sebagian</b>. Banyak barang bisa memuat kata yang
+  sama, jadi semua record diperiksa dan setiap yang cocok ditampilkan.</p></div>
+</div>
+
+<p>Kecocokan sebagian memakai fungsi <code>Pos(Cari, Teks)</code>, yang mengembalikan posisi pertama <code>Cari</code> di dalam
+<code>Teks</code>, atau 0 bila tidak ada. Karena huruf besar dan kecil dianggap berbeda oleh <code>Pos</code>, program lebih dulu mengubah
+kedua string menjadi huruf kapital dengan fungsi <code>Kapital</code> buatannya sendiri, memakai <code>UpCase</code> pada tiap karakter
+(Bab 12).</p>
+
+<figure class="grafik" id="gb-rec-cari"><svg viewBox="0 0 680 240">
+<text class="h c" x="4" y="16">Menurut kode: B001 (berhenti)</text><text class="h c" x="360" y="16">Menurut nama: "pensil" (semua diperiksa)</text>
+<text class="s muted" x="4" y="47">[1]</text><rect class="no" x="26" y="28" width="300" height="28" rx="3"/><text class="mono" x="34" y="46">A001  Buku tulis</text><text class="s end" x="318" y="46">bukan</text>
+<text class="s muted" x="360" y="47">[1]</text><rect class="box-w" x="382" y="28" width="290" height="28" rx="3"/><text class="mono" x="390" y="46">Buku tulis</text><text class="s end" x="664" y="46">Pos = 0: lewati</text>
+<text class="s muted" x="4" y="81">[2]</text><rect class="no" x="26" y="62" width="300" height="28" rx="3"/><text class="mono" x="34" y="80">A002  Pensil 2B</text><text class="s end" x="318" y="80">bukan</text>
+<text class="s muted" x="360" y="81">[2]</text><rect class="ok" x="382" y="62" width="290" height="28" rx="3"/><text class="mono" x="390" y="80">Pensil 2B</text><text class="s end" x="664" y="80">Pos > 0: tampil</text>
+<text class="s muted" x="4" y="115">[3]</text><rect class="no" x="26" y="96" width="300" height="28" rx="3"/><text class="mono" x="34" y="114">A003  Penghapus</text><text class="s end" x="318" y="114">bukan</text>
+<text class="s muted" x="360" y="115">[3]</text><rect class="box-w" x="382" y="96" width="290" height="28" rx="3"/><text class="mono" x="390" y="114">Penghapus</text><text class="s end" x="664" y="114">Pos = 0: lewati</text>
+<text class="s muted" x="4" y="149">[4]</text><rect class="ok" x="26" y="130" width="300" height="28" rx="3"/><text class="mono" x="34" y="148">B001  Buku gambar</text><text class="s end" x="318" y="148">ketemu</text>
+<text class="s muted" x="360" y="149">[4]</text><rect class="box-w" x="382" y="130" width="290" height="28" rx="3"/><text class="mono" x="390" y="148">Buku gambar</text><text class="s end" x="664" y="148">Pos = 0: lewati</text>
+<text class="s muted" x="4" y="183">[5]</text><rect class="box-w" x="26" y="164" width="300" height="28" rx="3"/><text class="mono" x="34" y="182">B002  Pensil warna</text><text class="s end" x="318" y="182">tidak diperiksa</text>
+<text class="s muted" x="360" y="183">[5]</text><rect class="ok" x="382" y="164" width="290" height="28" rx="3"/><text class="mono" x="390" y="182">Pensil warna</text><text class="s end" x="664" y="182">Pos > 0: tampil</text>
+<text class="s muted" x="4" y="217">[6]</text><rect class="box-w" x="26" y="198" width="300" height="28" rx="3"/><text class="mono" x="34" y="216">C001  Penggaris 30</text><text class="s end" x="318" y="216">tidak diperiksa</text>
+<text class="s muted" x="360" y="217">[6]</text><rect class="box-w" x="382" y="198" width="290" height="28" rx="3"/><text class="mono" x="390" y="216">Penggaris 30</text><text class="s end" x="664" y="216">Pos = 0: lewati</text>
+<text class="s muted" x="26" y="236">Pencarian kode berhenti begitu Posisi terisi.</text><text class="s muted" x="382" y="236">Pencarian nama selalu memeriksa keenam record.</text>
+</svg><figcaption>Dua cara mencari di array of record pada Program 15.3: satu hasil lalu berhenti, atau semua hasil</figcaption></figure>
+
+<h3>Program 15.3: Mencari Barang di Gudang</h3>
+
+<p>Buka <code>bab15_03_cari_data_record.pas</code>. Program meminta kode barang, lalu kata kunci nama.</p>
+
+<x-listing src="bab15_03_cari_data_record.pas"></x-listing>
+
+<x-run src="bab15_03_cari_data_record.pas" caption="Kode b001 (ditulis huruf kecil) tetap ditemukan; kata kunci pensil cocok dengan dua barang"></x-run>
+
+<table class="baris">
+  <caption>Penjelasan Program 15.3</caption>
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–15</td><td>Tipe <code>TBarang</code> adalah <i>record</i> dengan empat field: <code>Kode</code> (maksimal 4 karakter), <code>Nama</code> (maksimal 20), <code>Harga</code> (<code>LongInt</code> karena bisa melebihi 32767), dan <code>Stok</code>.</td></tr>
+    <tr><td>18–25</td><td>Konstanta array enam <code>TBarang</code>. Setiap record ditulis dengan pasangan <code>Field: nilai</code> yang dipisah titik koma.</td></tr>
+    <tr><td>27–34</td><td>Fungsi <code>Kapital</code> mengubah semua huruf string menjadi kapital. Parameter <code>S</code> adalah salinan (parameter nilai), sehingga mengubahnya tidak merusak string aslinya.</td></tr>
+    <tr><td>36–41</td><td>Prosedur <code>Tampilkan</code> mencetak satu record. <code>with Gudang[I] do</code> membuat nama field bisa ditulis tanpa awalan. Ekspresi <code>'':14 - Length(Nama)</code> mencetak string kosong selebar sisa kolom, sehingga kolom harga rata.</td></tr>
+    <tr><td>49–51</td><td>Membaca kode dan menyeragamkannya menjadi kapital, jadi <code>b001</code> sama dengan <code>B001</code>.</td></tr>
+    <tr><td>52–59</td><td>Pencarian beruntun menurut kode: <code>Posisi</code> terisi ketika <code>Gudang[I].Kode = Kode</code>, dan perulangan berhenti karena <code>Posisi = 0</code> tidak benar lagi.</td></tr>
+    <tr><td>60–63</td><td>Bila <code>Posisi &gt; 0</code>, record ditampilkan; bila tidak, ada pesan tidak ditemukan.</td></tr>
+    <tr><td>66–75</td><td>Pencarian menurut nama memakai <code>for</code> penuh. Setiap record yang namanya memuat kata kunci (<code>Pos(...) &gt; 0</code>) ditampilkan dan dihitung di <code>Banyak</code>.</td></tr>
+  </tbody>
+</table>
+
+<p>Kode <code>b001</code> ditemukan sebagai "Buku gambar", sedangkan kata kunci <code>pensil</code> cocok dengan "Pensil 2B" dan
+"Pensil warna", sehingga laporan akhirnya <code>2 barang cocok.</code> Run berikut menunjukkan kode yang tidak ada, dan kata kunci
+yang memuat dua barang berbeda.</p>
+
+<x-run src="bab15_03_cari_data_record.pas" input="z9\nbuku\n" caption="Kode z9 tidak ada; kata kunci buku cocok dengan Buku tulis dan Buku gambar"></x-run>
+
+<div class="coba"><p><b>Coba Sendiri.</b> Tambahkan record ketujuh (jangan lupa mengubah <code>N</code> menjadi 7), lalu cari kodenya.
+Kemudian cari kata kunci <code>an</code> dan perhatikan barang mana saja yang cocok, termasuk yang kata itu berada di tengah nama.</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Lupa kurung pada syarat gabungan</h3>
+
+<p>Dalam Pascal, <code>and</code> memiliki prioritas lebih tinggi daripada operator pembanding. Syarat <code>I &lt;= N and not Ketemu</code>
+tanpa kurung dibaca sebagai <code>I &lt;= (N and not Ketemu)</code>, yaitu membandingkan bilangan dengan hasil operasi
+<code>and</code> antara bilangan dan <code>Boolean</code>, dan kompiler menolaknya.</p>
+
+<x-error name="kurung.pas" caption="Syarat tanpa kurung: and dihitung lebih dulu daripada &lt;=">program Kurung;
+const
+  N = 5;
+var
+  I: Integer;
+  Ketemu: Boolean;
+begin
+  I := 1;
+  Ketemu := False;
+  while I <= N and not Ketemu do
+    I := I + 1;
+end.</x-error>
+
+<p>Perbaikannya: bungkus setiap pembanding dengan kurung, <code>(I &lt;= N) and not Ketemu</code>, seperti baris 27 Program 15.1.</p>
+
+<h3>Pencarian biner pada data yang tidak terurut</h3>
+
+<p>Ini kesalahan logika, bukan kesalahan sintaks: program lolos kompilasi tetapi memberi jawaban salah. Data di bawah ini
+berisi 5 di posisi terakhir, tetapi tidak terurut.</p>
+
+<x-error name="takurut.pas" run caption="5 ada di posisi 5, tetapi pencarian biner melaporkan tidak ditemukan">program TakUrut;
+const
+  N = 5;
+  Data: array[1..N] of Integer = (9, 3, 7, 1, 5);
+var
+  Kiri, Kanan, Tengah, Posisi: Integer;
+begin
+  Kiri := 1;
+  Kanan := N;
+  Posisi := 0;
+  while (Kiri <= Kanan) and (Posisi = 0) do
+  begin
+    Tengah := (Kiri + Kanan) div 2;
+    if Data[Tengah] = 5 then
+      Posisi := Tengah
+    else if 5 < Data[Tengah] then
+      Kanan := Tengah - 1
+    else
+      Kiri := Tengah + 1;
+  end;
+  if Posisi > 0 then
+    WriteLn('Ditemukan di posisi ', Posisi)
+  else
+    WriteLn('Tidak ditemukan, padahal 5 ada di posisi 5');
+end.</x-error>
+
+<p>Langkah pertama membandingkan 5 dengan <code>Data[3]</code> = 7; karena 5 lebih kecil, separuh kanan (yang justru berisi 5) dibuang.
+Langkah kedua membandingkan dengan 9 dan membuang lagi, hingga rentang kosong. Pencarian biner percaya bahwa data terurut;
+bila kepercayaan itu salah, hasilnya salah tanpa peringatan apa pun. Urutkan dulu datanya, atau pakai pencarian beruntun.</p>
+
+<h3>Lupa memberi indeks pada array of record</h3>
+
+<p>Pada array of record, nama field tidak berdiri sendiri: ia milik satu elemen tertentu. Menulis <code>Gudang.Kode</code> tanpa
+<code>[I]</code> berarti meminta field milik seluruh array, dan kompiler menolak.</p>
+
+<x-error name="tanpaindeks.pas" caption="Gudang adalah array; field Kode hanya ada pada elemennya, misalnya Gudang[1].Kode">program TanpaIndeks;
+type
+  TBarang = record
+    Kode: string[4];
+    Harga: LongInt;
+  end;
+var
+  Gudang: array[1..3] of TBarang;
+begin
+  Gudang[1].Kode := 'A001';
+  if Gudang.Kode = 'A001' then
+    WriteLn('Ada');
+end.</x-error>
+
+<div class="tp7"><p>Dua batasan Turbo Pascal 7 yang terlihat di bab ini: <code>Integer</code> hanya 16 bit (−32768..32767), sehingga harga
+barang memakai <code>LongInt</code>; dan string pendek <code>string[4]</code> memotong teks yang lebih panjang dari 4 karakter tanpa
+pemberitahuan. Selain itu, tidak ada fungsi bawaan untuk mencari tanpa membedakan huruf besar/kecil: itulah sebabnya
+Program 15.3 membuat fungsi <code>Kapital</code> sendiri.</p></div>
+
+<div class="rangkuman"><h2>Rangkuman</h2><ul>
+  <li>Pencarian menemukan elemen yang cocok dengan <b>kunci pencarian</b>; hasilnya berupa posisi atau pernyataan bahwa data tidak ada.</li>
+  <li>Pencarian beruntun memeriksa elemen satu per satu dengan <code>while (I &lt;= N) and not Ketemu</code>; data tidak perlu terurut; paling banyak n perbandingan.</li>
+  <li>Pada pencarian beruntun, <code>I</code> tidak ditambah ketika data ditemukan, sehingga <code>I</code> menunjuk posisi hasil.</li>
+  <li>Pencarian biner memakai <code>Kiri</code>, <code>Kanan</code>, dan <code>Tengah := (Kiri + Kanan) div 2</code>, lalu membuang separuh rentang pada setiap langkah.</li>
+  <li>Pencarian biner <b>hanya benar bila data terurut</b>; pada data tak terurut ia dapat melaporkan "tidak ada" untuk data yang ada.</li>
+  <li>Jumlah langkah terburuk: beruntun n, biner ⌊log<sub>2</sub> n⌋ + 1 (15 data: 4 langkah; sejuta data: 20 langkah).</li>
+  <li>Pada array of record, satu field menjadi kunci dan hasilnya satu record utuh; kunci unik cukup satu hasil, kunci sebagian perlu memeriksa semua record.</li>
+  <li>Selalu beri kurung pada syarat gabungan dan indeks pada elemen array of record.</li>
+</ul></div>
+
+<div class="latihan"><h2>Latihan</h2><ol>
+  <li><span class="lv dasar">Dasar</span> Jalankan Program 15.1 dengan kunci 41, 18, dan 100. Berapa perbandingan untuk masing-masing? Jelaskan mengapa jawabannya berbeda.</li>
+  <li><span class="lv dasar">Dasar</span> Pada data Program 15.2, tuliskan di buku catatan Anda urutan nilai <code>Kiri</code>, <code>Kanan</code>, dan <code>Tengah</code> untuk kunci 90, lalu cocokkan dengan hasil menjalankan program.</li>
+  <li><span class="lv dasar">Dasar</span> Berapa langkah terburuk pencarian biner untuk 255 data? Untuk 1.023 data? (Petunjuk: bagi dua berulang kali.)</li>
+  <li><span class="lv menengah">Menengah</span> Ubah Program 15.1 agar mencetak <i>berapa kali</i> kunci muncul, bukan daftar posisinya. Tambahkan variabel penghitung.</li>
+  <li><span class="lv menengah">Menengah</span> Ubah Program 15.2 agar array berisi 15 bilangan genap yang terurut, lalu cari bilangan ganjil. Berapa langkah yang dipakai sebelum program menyimpulkan data tidak ada?</li>
+  <li><span class="lv menengah">Menengah</span> Pada Program 15.3, tambahkan pencarian menurut <code>Stok</code>: tampilkan semua barang yang stoknya di bawah 50.</li>
+  <li><span class="lv tantangan">Tantangan</span> Tulis fungsi <code>CariBiner(Kunci: Integer): Integer</code> yang mengembalikan posisi atau 0, lalu panggil dari program utama. Setelah itu tambahkan penghitung langkah global dan bandingkan dengan pencarian beruntun untuk setiap elemen array.</li>
+</ol></div>

@@ -1,0 +1,14 @@
+(program bab04_01_write_writeln
+  (var (Umur) Integer)
+  (begin
+    (:= Umur 16)
+    (do (call Write 'Satu '))
+    (do (call Write 'baris '))
+    (do (call WriteLn 'yang sama.'))
+    (do (call WriteLn 'Baris kedua.'))
+    (do WriteLn)
+    (do (call WriteLn 'Umur saya ' Umur ' tahun.'))
+    (do (call WriteLn 'Lima tahun lagi: ' (+ Umur 5) ' tahun.'))
+    (do (call WriteLn 'Hasil 7 x 6 = ' (* 7 6)))
+    (do (call WriteLn 'Hari ini hari Jum''at.'))
+    (empty)))

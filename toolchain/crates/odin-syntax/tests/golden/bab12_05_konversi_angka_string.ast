@@ -1,0 +1,36 @@
+(program bab12_05_konversi_angka_string
+  (function FormatRibuan (N: LongInt) : string
+    (var (S) string)
+    (var (P) Integer)
+    (begin
+      (do (call Str N S))
+      (:= P (- (call Length S) 2))
+      (while (> P 1)
+        (begin
+          (do (call Insert '.' S P))
+          (:= P (- P 3))
+          (empty)))
+      (:= FormatRibuan S)
+      (empty)))
+  (var (Teks Hasil) string)
+  (var (Harga) LongInt)
+  (var (Kode) Integer)
+  (var (Pajak) Real)
+  (begin
+    (repeat-until (and (= Kode 0) (>= Harga 0))
+      (do (call Write 'Harga barang (angka saja): '))
+      (do (call ReadLn Teks))
+      (do (call Val Teks Harga Kode))
+      (if (<> Kode 0)
+        (do (call WriteLn '  "' Teks '" bukan angka (salah di karakter ke-' Kode '). Coba lagi.'))
+        (else
+          (if (< Harga 0)
+            (do (call WriteLn '  Harga tidak boleh negatif.')))))
+      (empty))
+    (do (call WriteLn 'Harga      : Rp ' (call FormatRibuan Harga)))
+    (:= Pajak (* Harga 0.11))
+    (do (call Str Pajak:0:2 Hasil))
+    (do (call WriteLn 'PPN 11%    : Rp ' Hasil ' (' (call Length Hasil) ' karakter)'))
+    (do (call Str Harga Hasil))
+    (do (call WriteLn 'Jumlah digit harga: ' (call Length Hasil)))
+    (empty)))

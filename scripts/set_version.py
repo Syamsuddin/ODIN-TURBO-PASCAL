@@ -8,7 +8,8 @@
 odin/__init__.py is the source the IDE reads at runtime (desktop, status bar,
 About). This script also rewrites the copies that cannot read it: the toolchain
 workspace (odinpc version), the installer banner, the README/docs headers, the
-README badge and install line, the tag comment in examples/HELLO.PAS, and it
+README badge and install line, the tag comment in the default page
+examples/bab01_01_halo_dunia.pas, and it
 turns CHANGELOG's [Unreleased] section into the new release. Every pattern must
 match before anything is written, so a reworded file stops the bump instead of
 being skipped silently.
@@ -48,7 +49,7 @@ def edits(old, new, date):
         ("README.md", rf"badge/rilis-{re.escape(badge(old))}-", f"badge/rilis-{badge(new)}-", 1),
         ("README.md", rf"Pemasang ini memasang \*\*rilis {o}\*\*", f"Pemasang ini memasang **rilis {new}**", 1),
         # Whatever tag the comment carries; package_app.py restamps it on every build too.
-        ("examples/HELLO.PAS", r"\{ Odin Turbo Pascal v\S+ - program pertama \}", f"{{ Odin Turbo Pascal v{new} - program pertama }}", 1),
+        ("examples/bab01_01_halo_dunia.pas", r"\{ Odin Turbo Pascal v\S+ - program pertama \}", f"{{ Odin Turbo Pascal v{new} - program pertama }}", 1),
         ("CHANGELOG.md", r"^## \[Unreleased\]\n", f"## [Unreleased]\n\n## [{new}] - {date}\n", 1),
         ("CHANGELOG.md", rf"^\[Unreleased\]: {re.escape(REPO_URL)}/compare/v{o}\.\.\.HEAD$",
          f"[Unreleased]: {REPO_URL}/compare/v{new}...HEAD\n[{new}]: {REPO_URL}/compare/v{old}...v{new}", 1),
@@ -106,7 +107,7 @@ Tinjau dan tulis sendiri (klaim pengujian dan prosa rilis):
 
 Langkah berikutnya:
   (cd toolchain && cargo build --release)   # odinpc version {new}
-  python3 scripts/package_app.py            # bundle .app, Info.plist, HELLO.PAS
+  python3 scripts/package_app.py            # bundle .app, Info.plist, tag di halaman bawaan
   python3 -m unittest discover -s tests     # dan cargo test di toolchain/
   python3 scripts/update_checksums.py       # SHA256SUMS.json
   git commit, lalu git tag -a v{new}""")

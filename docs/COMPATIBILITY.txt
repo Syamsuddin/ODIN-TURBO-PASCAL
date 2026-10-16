@@ -1,4 +1,4 @@
-KOMPATIBILITAS DAN CAKUPAN VERSI 2.2.0
+KOMPATIBILITAS DAN CAKUPAN VERSI 2.3.0
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Implementasi baru dengan penampilan terinspirasi IDE Turbo Pascal era DOS.
@@ -10,7 +10,7 @@ Editor dan operasi berkas         Diimplementasikan, diuji GUI Linux
 Kompilasi FPC mode TP              Diimplementasikan, diuji FPC 3.2.2 Linux
 ReadLn, WriteLn                    Diuji melalui binary dan PTY
 CRT warna/GotoXY/ClrScr/ReadKey     Diuji melalui program CRT nyata di Linux
-Unit Pascal                       Diuji dengan UMATH dan UNITDEMO
+Unit Pascal                       Diuji dengan unit matematika (tutorial Bab 19)
 LF/CRLF, UTF-8/BOM, CP437          Diuji round-trip
 Shell injection via arguments     Tidak memakai shell untuk compile/run
 LLDB                              Integrasi tersedia, belum diuji macOS
@@ -163,7 +163,8 @@ Pemeriksaan akhir di Mac yang masih diperlukan:
 2. Pastikan pemeriksaan compile/run native berhasil pada kedua chip.
 3. Buka .app dari Finder, tutup, buka kembali, dan uji Open With untuk .pas.
 4. Uji Fn+F1..F12, Command shortcuts, clipboard, dialog, dan display Retina.
-5. Run INPUT.PAS dan CRTDEMO.PAS, lalu uji LLDB step dan breakpoint.
+5. Run bab04_02_read_readln.pas dan bab19_02_unit_crt.pas, lalu uji LLDB
+   step dan breakpoint.
 6. Uji izin Privacy & Security, Gatekeeper, pembaruan app, dan Uninstall.
 
 Hasil Linux tidak menggantikan enam pemeriksaan macOS tersebut.

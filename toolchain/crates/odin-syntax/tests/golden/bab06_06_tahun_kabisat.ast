@@ -1,0 +1,23 @@
+(program bab06_06_tahun_kabisat
+  (var (Tahun) Integer)
+  (var (Kabisat) Boolean)
+  (begin
+    (do (call Write 'Masukkan tahun: '))
+    (do (call ReadLn Tahun))
+    (if (= (mod Tahun 400) 0)
+      (:= Kabisat True)
+      (else
+        (if (= (mod Tahun 100) 0)
+          (:= Kabisat False)
+          (else
+            (if (= (mod Tahun 4) 0)
+              (:= Kabisat True)
+              (else
+                (:= Kabisat False)))))))
+    (if (<> Kabisat (or (and (= (mod Tahun 4) 0) (<> (mod Tahun 100) 0)) (= (mod Tahun 400) 0)))
+      (do (call WriteLn 'Aneh, kedua cara memberi hasil berbeda!')))
+    (if Kabisat
+      (do (call WriteLn Tahun ' adalah tahun kabisat (Februari 29 hari).'))
+      (else
+        (do (call WriteLn Tahun ' bukan tahun kabisat (Februari 28 hari).'))))
+    (empty)))

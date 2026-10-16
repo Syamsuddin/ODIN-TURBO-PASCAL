@@ -1,0 +1,25 @@
+(program bab09_03_parameter_nilai
+  (procedure Gandakan (X: Integer)
+    (begin
+      (:= X (* X 2))
+      (do (call WriteLn '  Di dalam prosedur, X = ' X))
+      (empty)))
+  (procedure CetakBaris (Karakter: Char; Panjang: Integer)
+    (var (I) Integer)
+    (begin
+      (for I 1 to Panjang
+        (do (call Write Karakter)))
+      (do WriteLn)
+      (empty)))
+  (var (Angka) Integer)
+  (begin
+    (:= Angka 5)
+    (do (call WriteLn 'Sebelum dipanggil, Angka = ' Angka))
+    (do (call Gandakan Angka))
+    (do (call WriteLn 'Sesudah dipanggil, Angka = ' Angka ' (tidak berubah)'))
+    (do WriteLn)
+    (do (call Gandakan (+ 10 3)))
+    (do (call CetakBaris '=' 30))
+    (do (call CetakBaris '*' Angka))
+    (do (call CetakBaris '-' (* Angka 6)))
+    (empty)))

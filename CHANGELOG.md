@@ -6,6 +6,41 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-10-16
+
+Rilis 2.3.0. Odin Turbo Pascal kini menyertakan buku tutorial berwarna penuh, *Belajar Pemrograman Bahasa Pascal dengan ODIN Turbo Pascal*, yang dibuka dari menu **Help › Buku**. Rilis ini juga mengganti contoh bawaan dengan tutorial 20 bab (90 berkas) dan memberi editor warna sintaks **Turbo Biru Lembut**. Toolchain Odin tidak berubah selain nomor versinya.
+
+### Ditambahkan
+
+- Buku tutorial **Belajar Pemrograman Bahasa Pascal dengan ODIN Turbo Pascal** (`docs/Belajar_Pemrograman_Bahasa_Pascal.pdf`), buku PDF berwarna penuh karya Syams Ideris dengan sampul, kata pengantar, daftar isi, 20 bab dalam enam bagian, penutup, dan enam lampiran. Buku memakai ke-89 program dan unit contoh tutorial, lengkap dengan infografik, gambar layar IDE, rangkuman, dan latihan. Listing dicetak dari `examples/`, dan keluaran program adalah hasil menjalankan program itu dengan `odinpc`. Sumbernya ada di `book/`, dan `scripts/build_book.py` membangunnya dengan Google Chrome dan PyMuPDF.
+- Menu **Help › Buku**, di atas **About Odin**, membuka buku itu di aplikasi PDF bawaan sistem.
+- Warna sintaks **Turbo Biru Lembut** di editor: latar biru tua `#000080` (seperti skema "Pascal Classic" Lazarus) dengan warna pastel yang lebih tenang untuk sesi panjang. Warnanya: kata tercadang putih tebal; variabel dan nama buatan sendiri lainnya kuning lembut; prosedur dan fungsi buatan sendiri jingga muda; rutin bawaan seperti `WriteLn` biru langit; tipe bawaan hijau muda; angka, termasuk heksadesimal (`$0E`), dan konstanta bawaan (`True`, `False`, `nil`) merah muda; string dan konstanta karakter (`#13`) hijau toska; operator lavender; komentar biru keabuan dan miring; direktif kompiler (`{$R+}`) merah salem. Sebelumnya hanya empat jenis token yang diwarnai.
+
+### Diubah
+
+- Warna sintaks kini aktif secara bawaan. Pengaturannya pindah ke kunci `syntax_colors` di `settings.json`, sehingga nilai `"syntax": false` yang tersimpan dari versi lama tidak lagi mematikannya. Mematikan **Syntax colors** di **Options › Editor** mengembalikan teks kuning klasik di latar biru.
+- Pewarnaan sintaks sekitar 30 kali lebih cepat pada berkas besar (4.666 baris: sekitar 0,12 detik, sebelumnya 3,6 detik), karena tag dipasang sekaligus per jenis token dengan indeks baris.kolom. String yang belum ditutup kini hanya diwarnai sampai akhir baris.
+
+- Contoh bawaan di **File › Examples** diganti total dengan tutorial Pascal untuk pemula: 90 berkas dalam 20 bab dan enam bagian (fondasi, alur kendali, modularisasi, struktur data, algoritma dasar, lanjutan ringan), yaitu 89 program `babNN_MM_topik.pas` dan unit `matematika.pas` untuk Bab 19. Setiap kode penting diberi komentar penjelasan singkat. Program Bab 17 dan Bab 20 menulis berkas data yang namanya ditetapkan sebagai konstanta, dan menampilkan folder tempat berkas itu dibuat.
+- Halaman bawaan IDE yang membawa tag versi kini `examples/bab01_01_halo_dunia.pas` (sebelumnya `HELLO.PAS`). `scripts/package_app.py` dan `scripts/set_version.py` menyamakan tag di berkas itu.
+- Dialog **Examples** memakai scrollbar bila daftarnya lebih dari 15 baris, dan mengenali nama berkas `.pas` huruf kecil.
+- `HELLO.PAS`, `INPUT.PAS`, `KALKULATOR.PAS`, `PARAMETER.PAS`, `ARRAY.PAS`, `BERKAS.PAS`, `CRTDEMO.PAS`, `UNITDEMO.PAS`, dan `UMATH.PAS` dihapus. `VISION.PAS` pindah ke `tests/pascal/vision/` dan `REKURSI.PAS` ke `tests/pascal/debug/`, karena tes Odin Vision dan tes debugger memakainya.
+- `scripts/package_app.py` dan `scripts/stage_windows.py` hanya menyalin berkas `.pas` dari `examples/`, sehingga berkas data yang dibuat saat mencoba tutorial dari repositori tidak ikut terbawa ke paket.
+
+### Diperbaiki
+
+- Windows: program tidak lagi sesekali berhenti dengan runtime error 216 saat `Exec` menjalankan program lewat PATH. Handler pengecualian hanya menangani pelanggaran akses di kode program sendiri; pelanggaran akses di DLL sistem (yang bisa ditangani DLL itu sendiri) diteruskan, dan yang tidak tertangani tetap menjadi runtime error lewat filter terakhir.
+
+### Pengujian
+
+Di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2, Rust 1.99): 97 tes Python lulus (6 dilewati), termasuk tes GUI untuk menu **Help › Buku**, dan 177 tes Rust lulus. Universal `odinpc` 2.3.0 (x86_64 dan arm64) berhasil dibangun; hanya bagian x86_64 yang bisa dijalankan di mesin ini.
+
+Buku dibangun dari `examples/` dengan `scripts/build_book.py`, dan setiap keluaran program di dalamnya berasal dari menjalankan program itu dengan `odinpc` 2.3.0. Halaman buku diperiksa lewat gambar hasil render, belum satu per satu di aplikasi pembaca PDF.
+
+Di GitHub Actions, kelima job CI lulus untuk rilis ini: macOS 15 Apple Silicon, macOS 15 Intel, Ubuntu 24.04 x86_64 dan arm64, dan Windows Server 2025 x86_64. `odinpc.exe` 2.3.0 berasal dari job Windows itu.
+
+Yang belum diverifikasi langsung: Apple Silicon, PC Linux dan Windows fisik, serta pembukaan buku lewat **Help › Buku** di sistem selain Mac Intel.
+
 ## [2.2.0] - 2026-10-15
 
 Rilis 2.2.0. IDE, toolchain Odin, debugger terpadu, dan Odin Vision kini juga berjalan di Windows 10 1809 atau lebih baru (x86_64). Rilis ini juga membawa dukungan Apple Silicon dan Linux (x86_64 dan arm64) dari 2.1.0-alpha.1 (rinciannya di entri itu); tidak ada rilis 2.1.0 terpisah.
@@ -244,7 +279,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.1.0-alpha.1...v2.2.0
 [2.1.0-alpha.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.1...v2.1.0-alpha.1
 [2.0.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.0...v2.0.1

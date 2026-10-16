@@ -1,0 +1,234 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Mengenal tujuh bagian program Pascal dan urutannya yang tetap.</li>
+  <li>Membedakan bagian deklarasi (<code>uses</code>, <code>const</code>, <code>type</code>, <code>var</code>) dari blok perintah.</li>
+  <li>Menulis komentar dalam tiga gaya dan memahami kapan dipakai.</li>
+  <li>Memahami peran <code>begin</code>, <code>end</code>, dan titik koma dalam mengelompokkan pernyataan.</li>
+  <li>Membaca pesan kesalahan akibat struktur yang keliru dan memperbaikinya.</li>
+</ul>
+
+<p class="lead">Di Bab 1 Anda menjalankan program tanpa memikirkan susunannya. Sekarang kita bedah kerangkanya. Setiap
+program Pascal mengikuti pola yang sama: beberapa bagian pengumuman di atas, lalu satu blok perintah di bawah. Begitu
+Anda mengenali pola ini, program sepanjang apa pun akan terasa akrab.</p>
+
+<h2>Tujuh Bagian Program</h2>
+
+<p>Program Pascal yang lengkap tersusun dari tujuh bagian berurutan. Tidak semua bagian selalu ada: program kecil cukup
+punya judul dan blok perintah. Namun bila sebuah bagian dipakai, <b>urutannya tidak boleh ditukar</b>. Inilah
+susunannya, dari atas ke bawah.</p>
+
+<figure class="grafik" id="gb-struktur">
+<svg viewBox="0 0 680 320">
+  <g>
+    <rect class="term" x="150" y="4" width="380" height="34" rx="7"/>
+    <text class="white b" x="170" y="25">1 · program</text>
+    <text class="white s" x="300" y="25">Nama program, diakhiri titik koma</text>
+  </g>
+  <rect class="io" x="150" y="44" width="380" height="34" rx="7"/>
+  <text class="c b" x="170" y="65">2 · uses</text>
+  <text class="s" x="300" y="65">Daftar unit tambahan, misalnya Crt</text>
+  <rect class="io" x="150" y="84" width="380" height="34" rx="7"/>
+  <text class="c b" x="170" y="105">3 · const</text>
+  <text class="s" x="300" y="105">Konstanta: nilai bernama yang tetap</text>
+  <rect class="io" x="150" y="124" width="380" height="34" rx="7"/>
+  <text class="c b" x="170" y="145">4 · type</text>
+  <text class="s" x="300" y="145">Tipe data buatan sendiri</text>
+  <rect class="io" x="150" y="164" width="380" height="34" rx="7"/>
+  <text class="c b" x="170" y="185">5 · var</text>
+  <text class="s" x="300" y="185">Variabel: tempat menyimpan data</text>
+  <g>
+    <rect class="box" x="150" y="206" width="380" height="74" rx="7"/>
+    <text class="c b" x="170" y="228">6 · begin … end.</text>
+    <text class="s" x="170" y="248">Blok utama: perintah yang dijalankan,</text>
+    <text class="s" x="170" y="264">berurutan dari atas ke bawah</text>
+  </g>
+  <text class="xs muted end" x="140" y="26">JUDUL</text>
+  <text class="xs muted end" x="140" y="150">DEKLARASI</text>
+  <text class="xs muted end" x="140" y="246">PERINTAH</text>
+  <path class="dash" d="M60 86 H140"/><path class="dash" d="M60 86 V186"/><path class="dash" d="M60 186 H140"/>
+  <text class="b c2 mid" x="340" y="305">Bagian 2–5 boleh dihilangkan bila tidak diperlukan, tetapi urutannya tetap</text>
+</svg>
+<figcaption>Kerangka program Pascal. Bagian judul dan blok perintah wajib; empat bagian deklarasi di tengah bersifat pilihan.</figcaption>
+</figure>
+
+<p>Bagian 2 sampai 5 disebut <b>bagian deklarasi</b> (<i>declaration</i>): di sinilah segala sesuatu "diperkenalkan"
+kepada kompiler sebelum dipakai, mulai dari unit, konstanta, tipe, sampai variabel. Bagian 6 adalah <b>blok perintah</b>
+(<i>statement part</i>): daftar perintah yang benar-benar dijalankan. Mari lihat semuanya dalam satu program.</p>
+
+<x-listing src="bab02_01_struktur_dasar.pas"></x-listing>
+
+<p>Program ini menghitung total bayar tiket. Jalankan dengan <kbd>Ctrl</kbd>+<kbd>F9</kbd>; karena tidak meminta masukan,
+hasilnya langsung muncul.</p>
+
+<x-run src="bab02_01_struktur_dasar.pas"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>7</td><td><b>Judul program.</b> <code>program bab02_01_struktur_dasar;</code>. Nama program sebaiknya sama dengan nama berkas. Diakhiri titik koma.</td></tr>
+    <tr><td>9</td><td><b>uses.</b> Di sini hanya berupa komentar karena program belum butuh unit tambahan. Bila perlu unit <code>Crt</code>, barisnya menjadi <code>uses Crt;</code>.</td></tr>
+    <tr><td>11–12</td><td><b>const.</b> <code>HargaTiket = 25000</code> adalah konstanta: nilainya tetap selama program berjalan. Perhatikan tanda <code>=</code> (bukan <code>:=</code>) pada konstanta.</td></tr>
+    <tr><td>14–15</td><td><b>type.</b> <code>TJumlah = Integer</code> membuat nama tipe baru yang sama dengan <code>Integer</code>. Nama tipe buatan sendiri biasanya diawali huruf <code>T</code>.</td></tr>
+    <tr><td>17–19</td><td><b>var.</b> Dua variabel diumumkan beserta tipenya: <code>JumlahOrang</code> bertipe <code>TJumlah</code>, <code>TotalBayar</code> bertipe <code>LongInt</code>.</td></tr>
+    <tr><td>21–28</td><td><b>Blok perintah.</b> Antara <code>begin</code> dan <code>end.</code> perintah dijalankan berurutan: mengisi variabel dengan <code>:=</code>, lalu menuliskannya.</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p>Tanda <code>:=</code> (titik dua lalu sama dengan) berarti "isi dengan", disebut <b>penugasan</b>
+(<i>assignment</i>). Tanda <code>=</code> sendirian hanya untuk konstanta dan perbandingan. Keduanya mudah tertukar;
+Bab 5 membahasnya lebih jauh.</p></div>
+
+<h2>Kata Tercadang dan Nama Buatan Sendiri</h2>
+
+<p>Perhatikan dua jenis kata di program tadi. Ada <b>kata tercadang</b> seperti <code>program</code>, <code>const</code>,
+<code>var</code>, <code>begin</code>, dan <code>end</code>, yang artinya sudah ditetapkan Pascal dan tidak boleh dipakai
+sebagai nama sendiri. Ada pula <b>pengenal</b> (<i>identifier</i>), yaitu nama yang Anda buat sendiri, seperti
+<code>HargaTiket</code> dan <code>JumlahOrang</code>. Di editor keduanya diberi warna berbeda.</p>
+
+<div class="duo">
+  <div class="card good"><h4><span class="ikon">✓</span>Nama yang sah</h4>
+  <p>Diawali huruf atau garis bawah, lalu boleh huruf, angka, garis bawah. Tanpa spasi.</p>
+  <x-code>JumlahOrang
+Total_Bayar
+Nilai2
+_sementara</x-code></div>
+  <div class="card bad"><h4><span class="ikon">✗</span>Nama yang salah</h4>
+  <p>Tidak boleh diawali angka, memakai spasi, tanda hubung, atau kata tercadang.</p>
+  <x-code>2Nilai      { diawali angka }
+Total Bayar { ada spasi }
+Harga-Tiket { ada tanda - }
+begin       { kata tercadang }</x-code></div>
+</div>
+
+<div class="info"><p>Pascal <b>tidak membedakan huruf besar dan kecil</b> pada nama. <code>JumlahOrang</code>,
+<code>jumlahorang</code>, dan <code>JUMLAHORANG</code> dianggap sama. Walau begitu, biasakan menulis konsisten, misalnya
+gaya <code>HurufDepanKapital</code>, agar program rapi dan mudah dibaca.</p></div>
+
+<h2>Komentar</h2>
+
+<p>Komentar adalah catatan untuk pembaca manusia. Kompiler melewatinya sama sekali, sehingga komentar tidak pernah
+mengubah jalannya program. Gunanya menjelaskan maksud kode, menandai bagian penting, atau sementara "mematikan" baris
+tertentu. Pascal mengenal tiga gaya komentar.</p>
+
+<figure class="grafik" id="gb-komentar">
+<svg viewBox="0 0 680 150">
+  <rect class="box" x="10" y="20" width="210" height="110" rx="10"/>
+  <text class="h c mid" x="115" y="48">{ ... }</text>
+  <text class="s mid" x="115" y="72">Kurung kurawal</text>
+  <text class="xs mid muted" x="115" y="92">Paling umum di</text>
+  <text class="xs mid muted" x="115" y="106">Turbo Pascal.</text>
+  <text class="xs mid muted" x="115" y="120">Boleh beberapa baris.</text>
+  <rect class="box" x="235" y="20" width="210" height="110" rx="10"/>
+  <text class="h c mid" x="340" y="48">(* ... *)</text>
+  <text class="s mid" x="340" y="72">Kurung dan bintang</text>
+  <text class="xs mid muted" x="340" y="92">Sama seperti kurawal.</text>
+  <text class="xs mid muted" x="340" y="106">Berguna membungkus</text>
+  <text class="xs mid muted" x="340" y="120">komentar kurawal.</text>
+  <rect class="box" x="460" y="20" width="210" height="110" rx="10"/>
+  <text class="h c mid" x="565" y="48">// ...</text>
+  <text class="s mid" x="565" y="72">Dua garis miring</text>
+  <text class="xs mid muted" x="565" y="92">Sampai akhir baris.</text>
+  <text class="xs mid muted" x="565" y="106">Tidak ada di TP7 asli;</text>
+  <text class="xs mid muted" x="565" y="120">dikenal Odin dan FPC.</text>
+</svg>
+<figcaption>Tiga gaya komentar. Teks di dalamnya diabaikan kompiler.</figcaption>
+</figure>
+
+<x-listing src="bab02_02_komentar.pas"></x-listing>
+
+<x-run src="bab02_02_komentar.pas"></x-run>
+
+<p>Meski programnya panjang karena banyak komentar, hanya dua baris yang tampil di layar. Semua teks di dalam
+<code>{ }</code>, <code>(* *)</code>, dan setelah <code>//</code> dilewati. Perhatikan baris yang sengaja "dimatikan":
+sebuah <code>WriteLn</code> yang diletakkan di dalam komentar tidak pernah dijalankan. Teknik ini sering dipakai untuk
+mencoba-coba tanpa menghapus kode.</p>
+
+<div class="awas"><p>Komentar kurung kurawal <b>tidak bisa bersarang</b>: <code>{ luar { dalam } luar }</code> akan membingungkan
+kompiler, karena <code>}</code> pertama sudah menutup komentar. Bila perlu membungkus komentar kurawal, pakai gaya
+berbeda di luarnya: <code>(* { ini aman } *)</code>.</p></div>
+
+<h2>Blok begin..end dan Titik Koma</h2>
+
+<p>Kata <code>begin</code> dan <code>end</code> mengelompokkan beberapa pernyataan menjadi <b>satu blok</b>, sehingga
+diperlakukan sebagai satu kesatuan. Ini penting karena banyak perintah Pascal, seperti <code>if</code> dan
+<code>for</code>, hanya menguasai <b>satu</b> pernyataan sesudahnya. Bila Anda ingin perintah itu menguasai beberapa
+pernyataan, bungkus dengan <code>begin</code>..<code>end</code>.</p>
+
+<div class="sintaks"><pre><b>begin</b>
+  <i>pernyataan1</i>;
+  <i>pernyataan2</i>;
+  <i>pernyataan3</i>
+<b>end</b></pre></div>
+
+<p>Di dalam blok, <b>titik koma memisahkan pernyataan satu dari yang lain</b>. Titik koma bukan penutup pernyataan,
+melainkan pemisah, sehingga pernyataan terakhir sebelum <code>end</code> boleh tanpa titik koma. Banyak programmer tetap
+menambahkannya demi kerapian, agar mudah menyisipkan baris baru.</p>
+
+<x-listing src="bab02_03_blok_begin_end.pas"></x-listing>
+
+<x-run src="bab02_03_blok_begin_end.pas"></x-run>
+
+<p>Perhatikan dua pemakaian <code>if</code> di baris 14 dan 18. Yang pertama hanya menguasai satu <code>WriteLn</code>.
+Yang kedua, karena diikuti <code>begin</code>..<code>end</code>, menguasai tiga <code>WriteLn</code> sekaligus. Bagian
+akhir menunjukkan blok bersarang: sebuah <code>begin</code>..<code>end</code> di dalam <code>begin</code>..<code>end</code>
+lain. Indentasi (menjorokkan baris ke dalam) memperjelas blok mana milik siapa.</p>
+
+<div class="ingat"><p>Perhatikan dua tanda akhir yang berbeda: <code>end;</code> (dengan titik koma) menutup sebuah blok di
+tengah program, sedangkan <code>end.</code> (dengan <b>titik</b>) menutup seluruh program dan hanya muncul sekali, di
+paling bawah.</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<p>Struktur yang keliru adalah sumber kesalahan pemula yang paling umum. Berikut beberapa yang sering muncul, lengkap
+dengan pesan kompiler Odin yang sebenarnya.</p>
+
+<p><b>Lupa titik di akhir program.</b> Mengganti <code>end.</code> dengan <code>end;</code> membuat kompiler terus
+menunggu program yang tidak kunjung ditutup.</p>
+
+<x-error name="akhir.pas" caption="Kompiler mencapai akhir berkas tanpa menemukan titik penutup">program Akhir;
+begin
+  WriteLn('Halo');
+end;</x-error>
+
+<p><b>Menukar urutan bagian.</b> Menaruh <code>var</code> sebelum <code>const</code> masih boleh di Pascal modern, tetapi
+menaruh deklarasi <b>setelah</b> <code>begin</code> tidak diperbolehkan: semua pengumuman harus selesai sebelum blok
+perintah dimulai.</p>
+
+<x-error name="urutan.pas" caption="Variabel diumumkan setelah begin, padahal deklarasi harus mendahuluinya">program Urutan;
+begin
+  var Jumlah: Integer;
+  Jumlah := 5;
+  WriteLn(Jumlah);
+end.</x-error>
+
+<p><b>Memakai variabel yang belum diumumkan.</b> Setiap nama harus dikenalkan di bagian <code>var</code> dulu.</p>
+
+<x-error name="belum.pas" caption="Nama dipakai tanpa diumumkan di bagian var">program Belum;
+begin
+  Hasil := 10;
+  WriteLn(Hasil);
+end.</x-error>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>Program Pascal tersusun dari tujuh bagian berurutan: <code>program</code>, <code>uses</code>, <code>const</code>, <code>type</code>, <code>var</code>, blok <code>begin</code>..<code>end.</code> Bagian deklarasi boleh dihilangkan, tetapi urutannya tetap.</li>
+  <li>Bagian deklarasi memperkenalkan unit, konstanta, tipe, dan variabel sebelum dipakai. Blok perintah berisi langkah yang dijalankan.</li>
+  <li>Kata tercadang sudah ditetapkan bahasa; pengenal adalah nama buatan sendiri yang diawali huruf atau garis bawah, tanpa spasi. Pascal tidak membedakan huruf besar dan kecil.</li>
+  <li>Komentar ditulis dengan <code>{ }</code>, <code>(* *)</code>, atau <code>//</code>. Isinya diabaikan kompiler.</li>
+  <li><code>begin</code>..<code>end</code> mengelompokkan beberapa pernyataan menjadi satu blok. Titik koma memisahkan pernyataan.</li>
+  <li><code>end;</code> menutup blok; <code>end.</code> dengan titik menutup seluruh program.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Tulis program yang mengumumkan konstanta <code>Pi = 3.14</code> dan variabel <code>Jari</code>, lalu menampilkan keliling lingkaran untuk <code>Jari := 7</code>.</li>
+  <li><span class="lv dasar">Dasar</span>Tambahkan komentar pada program <code>bab02_01_struktur_dasar.pas</code> yang menjelaskan maksud setiap variabel. Pastikan program tetap berjalan sama.</li>
+  <li><span class="lv menengah">Menengah</span>Buat program dengan dua <code>if</code>: satu menguasai satu <code>WriteLn</code>, satu lagi menguasai blok <code>begin</code>..<code>end</code> berisi tiga <code>WriteLn</code>.</li>
+  <li><span class="lv menengah">Menengah</span>Sengaja hapus satu titik koma di antara dua pernyataan, kompilasi, lalu catat dan jelaskan pesan kesalahannya.</li>
+  <li><span class="lv tantangan">Tantangan</span>Pindahkan bagian <code>var</code> ke bawah <code>begin</code>. Apa pesan kompilernya? Jelaskan mengapa Pascal mengharuskan deklarasi mendahului perintah.</li>
+</ol>
+</div>

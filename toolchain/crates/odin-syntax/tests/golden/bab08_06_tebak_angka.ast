@@ -1,0 +1,22 @@
+(program bab08_06_tebak_angka
+  (var (Rahasia Tebakan Percobaan) Integer)
+  (begin
+    (do Randomize)
+    (:= Rahasia (+ (call Random 100) 1))
+    (:= Percobaan 0)
+    (do (call WriteLn 'Saya memilih angka 1 sampai 100. Tebaklah!'))
+    (repeat-until (= Tebakan Rahasia)
+      (do (call Write 'Tebakan Anda: '))
+      (do (call ReadLn Tebakan))
+      (:= Percobaan (+ Percobaan 1))
+      (if (< Tebakan Rahasia)
+        (do (call WriteLn '  Terlalu kecil.'))
+        (else
+          (if (> Tebakan Rahasia)
+            (do (call WriteLn '  Terlalu besar.')))))
+      (empty))
+    (do (call WriteLn 'Benar! Angkanya ' Rahasia '.'))
+    (do (call WriteLn 'Anda menebak dalam ' Percobaan ' kali percobaan.'))
+    (if (<= Percobaan 7)
+      (do (call WriteLn 'Hebat, strategi yang jitu!')))
+    (empty)))

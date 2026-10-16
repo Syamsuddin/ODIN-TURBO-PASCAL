@@ -1,0 +1,37 @@
+(program bab11_02_maks_min_rata
+  (const MaksData = 20)
+  (var (Data) (array [(.. 1 MaksData)] Integer))
+  (var (N I) Integer)
+  (var (Terbesar Terkecil PosisiBesar) Integer)
+  (var (Jumlah) LongInt)
+  (begin
+    (repeat-until (and (>= N 1) (<= N MaksData))
+      (do (call Write 'Banyak data (1-' MaksData '): '))
+      (do (call ReadLn N))
+      (empty))
+    (for I 1 to N
+      (begin
+        (do (call Write 'Data ke-' I ': '))
+        (do (call ReadLn (index Data I)))
+        (empty)))
+    (:= Terbesar (index Data 1))
+    (:= Terkecil (index Data 1))
+    (:= PosisiBesar 1)
+    (:= Jumlah 0)
+    (for I 1 to N
+      (begin
+        (if (> (index Data I) Terbesar)
+          (begin
+            (:= Terbesar (index Data I))
+            (:= PosisiBesar I)
+            (empty)))
+        (if (< (index Data I) Terkecil)
+          (:= Terkecil (index Data I)))
+        (:= Jumlah (+ Jumlah (index Data I)))
+        (empty)))
+    (do WriteLn)
+    (do (call WriteLn 'Terbesar  : ' Terbesar ' (data ke-' PosisiBesar ')'))
+    (do (call WriteLn 'Terkecil  : ' Terkecil))
+    (do (call WriteLn 'Jumlah    : ' Jumlah))
+    (do (call WriteLn 'Rata-rata : ' (/ Jumlah N):0:2))
+    (empty)))

@@ -1,0 +1,34 @@
+(program bab15_02_binary_search
+  (const N = 15)
+  (const Data : (array [(.. 1 N)] Integer) = (3, 8, 12, 17, 21, 25, 30, 34, 41, 47, 52, 60, 68, 75, 90))
+  (var (Dicari Kiri Kanan Tengah Langkah Posisi I) Integer)
+  (begin
+    (do (call Write 'Data terurut: '))
+    (for I 1 to N
+      (do (call Write (index Data I) ' ')))
+    (do WriteLn)
+    (do (call Write 'Bilangan yang dicari: '))
+    (do (call ReadLn Dicari))
+    (:= Kiri 1)
+    (:= Kanan N)
+    (:= Posisi 0)
+    (:= Langkah 0)
+    (while (and (<= Kiri Kanan) (= Posisi 0))
+      (begin
+        (:= Tengah (div (+ Kiri Kanan) 2))
+        (:= Langkah (+ Langkah 1))
+        (do (call WriteLn '  Langkah ' Langkah ': rentang ' Kiri '..' Kanan ', tengah Data[' Tengah '] = ' (index Data Tengah)))
+        (if (= (index Data Tengah) Dicari)
+          (:= Posisi Tengah)
+          (else
+            (if (< Dicari (index Data Tengah))
+              (:= Kanan (- Tengah 1))
+              (else
+                (:= Kiri (+ Tengah 1))))))
+        (empty)))
+    (if (> Posisi 0)
+      (do (call WriteLn Dicari ' ditemukan di posisi ' Posisi '.'))
+      (else
+        (do (call WriteLn Dicari ' tidak ada dalam data.'))))
+    (do (call WriteLn 'Jumlah langkah: ' Langkah ' (pencarian beruntun bisa sampai ' N ')'))
+    (empty)))

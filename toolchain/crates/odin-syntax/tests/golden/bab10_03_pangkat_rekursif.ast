@@ -1,0 +1,41 @@
+(program bab10_03_pangkat_rekursif
+  (var (Langkah) Integer)
+  (function Pangkat (A: Real; N: Integer) : Real
+    (begin
+      (:= Langkah (+ Langkah 1))
+      (if (= N 0)
+        (:= Pangkat 1)
+        (else
+          (:= Pangkat (* A (call Pangkat A (- N 1))))))
+      (empty)))
+  (function PangkatCepat (A: Real; N: Integer) : Real
+    (var (Separuh) Real)
+    (begin
+      (:= Langkah (+ Langkah 1))
+      (if (= N 0)
+        (:= PangkatCepat 1)
+        (else
+          (begin
+            (:= Separuh (call PangkatCepat A (div N 2)))
+            (if (= (mod N 2) 0)
+              (:= PangkatCepat (* Separuh Separuh))
+              (else
+                (:= PangkatCepat (* (* Separuh Separuh) A))))
+            (empty))))
+      (empty)))
+  (var (Basis Hasil) Real)
+  (var (N) Integer)
+  (begin
+    (do (call Write 'Bilangan pokok : '))
+    (do (call ReadLn Basis))
+    (repeat-until (and (>= N 0) (<= N 100))
+      (do (call Write 'Pangkat (0-100): '))
+      (do (call ReadLn N))
+      (empty))
+    (:= Langkah 0)
+    (:= Hasil (call Pangkat Basis N))
+    (do (call WriteLn 'Cara biasa : ' Hasil:0:2 '  (' Langkah ' pemanggilan)'))
+    (:= Langkah 0)
+    (:= Hasil (call PangkatCepat Basis N))
+    (do (call WriteLn 'Cara cepat : ' Hasil:0:2 '  (' Langkah ' pemanggilan)'))
+    (empty)))

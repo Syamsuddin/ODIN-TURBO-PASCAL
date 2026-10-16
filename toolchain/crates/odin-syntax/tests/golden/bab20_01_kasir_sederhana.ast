@@ -1,0 +1,148 @@
+(program bab20_01_kasir_sederhana
+  (const NamaFileStruk = 'struk.txt')
+  (const BatasDiskon = 100000)
+  (const PersenDiskon = 10)
+  (const JumlahBarang = 6)
+  (const MaksBelanja = 20)
+  (type TBarang = (record (Kode: string[3]) (Nama: string[18]) (Harga: LongInt)))
+  (type TBelanja = (record (Barang: Integer) (Jumlah: Integer)))
+  (const DaftarBarang : (array [(.. 1 JumlahBarang)] TBarang) = ((Kode: 'B01'; Nama: 'Beras 5 kg'; Harga: 72000), (Kode: 'B02'; Nama: 'Minyak goreng 1L'; Harga: 18500), (Kode: 'B03'; Nama: 'Gula pasir 1 kg'; Harga: 17000), (Kode: 'B04'; Nama: 'Telur 1 kg'; Harga: 29000), (Kode: 'B05'; Nama: 'Teh celup'; Harga: 7500), (Kode: 'B06'; Nama: 'Sabun mandi'; Harga: 4500)))
+  (var (Belanja) (array [(.. 1 MaksBelanja)] TBelanja))
+  (var (BanyakBelanja) Integer)
+  (var (Total Diskon Bayar) LongInt)
+  (function Rupiah (N: LongInt) : string
+    (var (S) string)
+    (var (P) Integer)
+    (begin
+      (do (call Str N S))
+      (:= P (- (call Length S) 2))
+      (while (> P 1)
+        (begin
+          (do (call Insert '.' S P))
+          (:= P (- P 3))
+          (empty)))
+      (:= Rupiah (+ 'Rp ' S))
+      (empty)))
+  (function BacaBilangan (Pesan: string; Minimal: LongInt) : LongInt
+    (var (Teks) string)
+    (var (Nilai) LongInt)
+    (var (Kode) Integer)
+    (begin
+      (repeat-until (and (= Kode 0) (>= Nilai Minimal))
+        (do (call Write Pesan))
+        (do (call ReadLn Teks))
+        (do (call Val Teks Nilai Kode))
+        (if (or (<> Kode 0) (< Nilai Minimal))
+          (do (call WriteLn '  Masukkan angka minimal ' Minimal '.')))
+        (empty))
+      (:= BacaBilangan Nilai)
+      (empty)))
+  (function CariBarang (Kode: string) : Integer
+    (var (I) Integer)
+    (begin
+      (:= CariBarang 0)
+      (for I 1 to (call Length Kode)
+        (:= (index Kode I) (call UpCase (index Kode I))))
+      (for I 1 to JumlahBarang
+        (if (= (. (index DaftarBarang I) Kode) Kode)
+          (:= CariBarang I)))
+      (empty)))
+  (procedure TampilkanDaftar
+    (var (I) Integer)
+    (begin
+      (do (call WriteLn 'Kode  Barang                  Harga'))
+      (for I 1 to JumlahBarang
+        (with (index DaftarBarang I)
+          (do (call WriteLn Kode '   ' Nama '':(- 18 (call Length Nama)) (call Rupiah Harga):11))))
+      (empty)))
+  (procedure CatatBelanja
+    (var (Kode) string)
+    (var (Nomor I Ada) Integer)
+    (var (Jumlah) LongInt)
+    (begin
+      (:= BanyakBelanja 0)
+      (repeat-until (= Kode '')
+        (do (call Write 'Kode barang (kosong = selesai): '))
+        (do (call ReadLn Kode))
+        (if (<> Kode '')
+          (begin
+            (:= Nomor (call CariBarang Kode))
+            (if (= Nomor 0)
+              (do (call WriteLn '  Kode tidak dikenal.'))
+              (else
+                (begin
+                  (:= Jumlah (call BacaBilangan (+ (+ '  Jumlah ' (. (index DaftarBarang Nomor) Nama)) ': ') 1))
+                  (:= Ada 0)
+                  (for I 1 to BanyakBelanja
+                    (if (= (. (index Belanja I) Barang) Nomor)
+                      (:= Ada I)))
+                  (if (> Ada 0)
+                    (:= (. (index Belanja Ada) Jumlah) (+ (. (index Belanja Ada) Jumlah) Jumlah))
+                    (else
+                      (if (< BanyakBelanja MaksBelanja)
+                        (begin
+                          (:= BanyakBelanja (+ BanyakBelanja 1))
+                          (:= (. (index Belanja BanyakBelanja) Barang) Nomor)
+                          (:= (. (index Belanja BanyakBelanja) Jumlah) Jumlah)
+                          (empty))
+                        (else
+                          (do (call WriteLn '  Keranjang penuh.'))))))
+                  (empty))))
+            (empty)))
+        (empty))
+      (empty)))
+  (procedure CetakStruk (var F: Text)
+    (var (I) Integer)
+    (var (Subtotal) LongInt)
+    (begin
+      (do (call WriteLn F '========================================'))
+      (do (call WriteLn F '          TOKO SERBA ADA PELITA'))
+      (do (call WriteLn F '========================================'))
+      (for I 1 to BanyakBelanja
+        (with (index DaftarBarang (. (index Belanja I) Barang))
+          (begin
+            (:= Subtotal (* Harga (. (index Belanja I) Jumlah)))
+            (do (call WriteLn F Nama))
+            (do (call WriteLn F '  ' (. (index Belanja I) Jumlah):3 ' x ' (call Rupiah Harga):11 (call Rupiah Subtotal):20))
+            (empty))))
+      (do (call WriteLn F '----------------------------------------'))
+      (do (call WriteLn F 'Total    ' (call Rupiah Total):31))
+      (if (> Diskon 0)
+        (do (call WriteLn F 'Diskon ' PersenDiskon '%' (call Rupiah Diskon):30)))
+      (do (call WriteLn F 'Dibayar  ' (call Rupiah (- Total Diskon)):31))
+      (do (call WriteLn F 'Tunai    ' (call Rupiah Bayar):31))
+      (do (call WriteLn F 'Kembali  ' (call Rupiah (- Bayar (- Total Diskon))):31))
+      (do (call WriteLn F '========================================'))
+      (do (call WriteLn F '      Terima kasih atas kunjungan Anda'))
+      (empty)))
+  (var (I) Integer)
+  (var (FileStruk) Text)
+  (var (Folder) string)
+  (begin
+    (do TampilkanDaftar)
+    (do WriteLn)
+    (do CatatBelanja)
+    (if (= BanyakBelanja 0)
+      (begin
+        (do (call WriteLn 'Tidak ada belanjaan.'))
+        (do Exit)
+        (empty)))
+    (:= Total 0)
+    (for I 1 to BanyakBelanja
+      (:= Total (+ Total (* (. (index DaftarBarang (. (index Belanja I) Barang)) Harga) (. (index Belanja I) Jumlah)))))
+    (if (>= Total BatasDiskon)
+      (:= Diskon (div (* Total PersenDiskon) 100))
+      (else
+        (:= Diskon 0)))
+    (do (call WriteLn 'Yang harus dibayar: ' (call Rupiah (- Total Diskon))))
+    (:= Bayar (call BacaBilangan 'Uang tunai        : ' (- Total Diskon)))
+    (do WriteLn)
+    (do (call CetakStruk Output))
+    (do (call Assign FileStruk NamaFileStruk))
+    (do (call Rewrite FileStruk))
+    (do (call CetakStruk FileStruk))
+    (do (call Close FileStruk))
+    (do (call GetDir 0 Folder))
+    (do WriteLn)
+    (do (call WriteLn 'Struk disimpan ke ' NamaFileStruk ' di folder ' Folder))
+    (empty)))

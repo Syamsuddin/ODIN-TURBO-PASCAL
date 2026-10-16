@@ -26,6 +26,8 @@ from .terminal import Process, Screen, TerminalView
 from .windows import BLACK, BLUE, CYAN, GRAY, WHITE, Editor, LocalsWindow, StackWindow, WatchWindow
 
 ASSETS = Path(__file__).resolve().parent.parent
+# Help > Buku opens this PDF in docs/.
+BOOK = "Belajar_Pemrograman_Bahasa_Pascal.pdf"
 TEMPLATE = "program Untitled;\n\nbegin\n  WriteLn('Hello, Pascal!');\nend.\n"
 # Compile actions that need a debug build and run under the debugger.
 DEBUG_ACTIONS = ("debug", "step", "cursor")
@@ -110,7 +112,7 @@ class App:
         self.bind_keys()
         self.restore_session()
         if not self.editors:
-            example = ASSETS / "examples" / "HELLO.PAS"
+            example = ASSETS / "examples" / "bab01_01_halo_dunia.pas"
             self.new_document(Document.read(example) if example.exists() else Document(TEMPLATE))
         self.update_status()
         root.after(40, self.poll)
@@ -218,7 +220,8 @@ class App:
         self.menu("Window", [("Tile",self.tile,""),("Cascade",self.cascade,""),("Zoom",self.zoom,"F5"),
                             ("Next",self.next_editor,"F6"),("Close",self.close_window,"Alt+F3"),("List...",self.window_list,"")])
         self.menu("Help", [("Contents",self.help,"F1"),("Pascal reference",self.reference,""),
-                          ("Keyboard shortcuts",lambda:self.help("SHORTCUTS.txt"),""),("About Odin",self.about,"")])
+                          ("Keyboard shortcuts",lambda:self.help("SHORTCUTS.txt"),""),("Buku",self.book,""),
+                          ("About Odin",self.about,"")])
         tk.Label(self.menubar,text="◉",bg=GRAY,fg=BLUE,font=self.font).pack(side="right",padx=10)
 
     def bind_keys(self):
@@ -454,8 +457,15 @@ class App:
 
     def choose(self,title,items,callback):
         win,body=self.dialog(title)
-        listing=tk.Listbox(body,width=65,height=min(15,max(4,len(items))),bg=BLUE,fg=WHITE,selectbackground=CYAN,selectforeground=BLACK)
-        listing.pack(fill="both",expand=True)
+        box=tk.Frame(body,bg=GRAY)
+        box.pack(fill="both",expand=True)
+        listing=tk.Listbox(box,width=65,height=min(15,max(4,len(items))),bg=BLUE,fg=WHITE,selectbackground=CYAN,selectforeground=BLACK)
+        if len(items)>15:
+            # The tutorial alone has 90 examples.
+            bar=tk.Scrollbar(box,orient="vertical",command=listing.yview)
+            listing.configure(yscrollcommand=bar.set)
+            bar.pack(side="right",fill="y")
+        listing.pack(side="left",fill="both",expand=True)
         for label,value in items:listing.insert("end",label)
         def accept(e=None):
             indices=listing.curselection()
@@ -471,7 +481,7 @@ class App:
 
     def recent(self):self.choose("Recent files",[(p,p) for p in self.settings["recent"]],self.open_file)
     def window_list(self):self.choose("Windows",[(w.list_label(),w) for w in self.windows],self.activate)
-    def examples(self):self.choose("Examples",[(p.name,p) for p in sorted((ASSETS/"examples").glob("*.PAS"))],self.open_file)
+    def examples(self):self.choose("Examples",[(p.name,p) for p in sorted((ASSETS/"examples").iterdir()) if p.suffix.lower()==".pas"],self.open_file)
 
     def change_directory(self):
         path=filedialog.askdirectory(parent=self.root,title="Working directory")
@@ -1112,8 +1122,8 @@ class App:
         win,body=self.dialog("Editor options")
         size,_=self.field(body,"Font size (10..30)",str(self.settings["font_size"]))
         tab,_=self.field(body,"Tab width (1..8)",str(self.settings["tab_width"]))
-        syntax=tk.BooleanVar(value=self.settings["syntax"])
-        tk.Checkbutton(body,text="Syntax colors (off = classic yellow text)",variable=syntax,bg=GRAY,selectcolor=GRAY).pack(pady=12)
+        syntax=tk.BooleanVar(value=self.settings["syntax_colors"])
+        tk.Checkbutton(body,text="Syntax colors: Turbo Biru Lembut (off = classic yellow on blue)",variable=syntax,bg=GRAY,selectcolor=GRAY).pack(pady=12)
         def save():
             try:
                 font_size,tab_width=int(size.get()),int(tab.get())
@@ -1123,7 +1133,7 @@ class App:
                 return
             self.settings["font_size"]=font_size
             self.settings["tab_width"]=tab_width
-            self.settings["syntax"]=syntax.get()
+            self.settings["syntax_colors"]=syntax.get()
             self.font.configure(size=font_size)
             for editor in self.editors:editor.apply_options()
             self.settings.save()
@@ -1154,6 +1164,20 @@ class App:
         self.show_text("Odin Help",content)
 
     def reference(self):self.help("PASCAL.txt")
+    def book(self):
+        """Help > Buku: the tutorial book, opened in the system's PDF viewer (scripts/build_book.py makes it)."""
+        path=ASSETS/"docs"/BOOK
+        if not path.is_file():
+            messagebox.showerror("Buku",f"Buku tidak ditemukan:\n{path}",parent=self.root)
+            return
+        try:
+            if sys.platform=="win32":os.startfile(path)
+            else:subprocess.Popen(["/usr/bin/open" if sys.platform=="darwin" else "xdg-open",str(path)],stdin=subprocess.DEVNULL,
+                                  stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
+        except OSError as error:
+            messagebox.showerror("Buku",f"Buku tidak bisa dibuka: {error}\n{path}",parent=self.root)
+            return
+        self.update_status(f"Opening {BOOK}")
     def about(self):
         self.show_text("About Odin Turbo Pascal",f"ODIN TURBO PASCAL\nVersion {__version_tag__}\nCreated by {__author__}\n\nIndependent classic Pascal IDE.\nPython / Tk + Odin native toolchain; Free Pascal as alternative backend.\n\nInterface inspired by the DOS-era Turbo Pascal IDE.\nThis software is not Borland Turbo Pascal and is not affiliated with Borland.\nNo Borland binaries, logos, fonts, or help files are included.\n\nNative Pascal compilation for the host CPU.\nIntel x86_64 and Apple Silicon arm64 use the same application sources.\n\n{__copyright__}.\nThis program is free software: you can redistribute it and/or modify it\nunder the terms of the GNU General Public License, version 3 or later.\nIt comes with ABSOLUTELY NO WARRANTY. See LICENSE and THIRD_PARTY.txt.\n",self.logo_small)
 

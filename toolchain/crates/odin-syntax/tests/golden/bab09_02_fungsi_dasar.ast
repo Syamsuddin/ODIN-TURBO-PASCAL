@@ -1,0 +1,31 @@
+(program bab09_02_fungsi_dasar
+  (function Kuadrat (X: LongInt) : LongInt
+    (begin
+      (:= Kuadrat (* X X))
+      (empty)))
+  (function Terbesar (A B: Integer) : Integer
+    (begin
+      (if (> A B)
+        (:= Terbesar A)
+        (else
+          (:= Terbesar B)))
+      (empty)))
+  (function Genap (N: Integer) : Boolean
+    (begin
+      (:= Genap (= (mod N 2) 0))
+      (empty)))
+  (function LuasLingkaran (R: Real) : Real
+    (begin
+      (:= LuasLingkaran (* (* Pi R) R))
+      (empty)))
+  (var (Hasil) LongInt)
+  (begin
+    (:= Hasil (call Kuadrat 12))
+    (do (call WriteLn 'Kuadrat 12       = ' Hasil))
+    (do (call WriteLn 'Kuadrat 3 + 4    = ' (+ (call Kuadrat 3) (call Kuadrat 4))))
+    (do (call WriteLn 'Terbesar(17, 42) = ' (call Terbesar 17 42)))
+    (do (call WriteLn 'Genap(7)?          ' (call Genap 7)))
+    (do (call WriteLn 'Luas lingkaran r=7: ' (call LuasLingkaran 7):0:2))
+    (if (call Genap (call Terbesar 10 3))
+      (do (call WriteLn 'Bilangan terbesar dari 10 dan 3 adalah genap.')))
+    (empty)))

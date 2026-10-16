@@ -1,0 +1,18 @@
+(program bab05_03_operator_relasional
+  (var (A B) Integer)
+  (begin
+    (:= A 10)
+    (:= B 7)
+    (do (call WriteLn 'A = ' A ', B = ' B))
+    (do (call WriteLn 'A =  B : ' (= A B)))
+    (do (call WriteLn 'A <> B : ' (<> A B)))
+    (do (call WriteLn 'A <  B : ' (< A B)))
+    (do (call WriteLn 'A >  B : ' (> A B)))
+    (do (call WriteLn 'A <= 10: ' (<= A 10)))
+    (do (call WriteLn 'B >= 10: ' (>= B 10)))
+    (do WriteLn)
+    (do (call WriteLn '''a'' < ''b''  : ' (< 'a' 'b')))
+    (do (call WriteLn '''Z'' < ''a''  : ' (< 'Z' 'a')))
+    (do (call WriteLn '''Ani'' < ''Budi'' : ' (< 'Ani' 'Budi')))
+    (do (call WriteLn '''Pascal'' = ''pascal'' : ' (= 'Pascal' 'pascal')))
+    (empty)))

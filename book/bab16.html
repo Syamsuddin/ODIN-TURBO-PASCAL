@@ -1,0 +1,575 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menjelaskan mengapa data perlu diurutkan dan membedakan urutan naik (<i>ascending</i>) dari urutan turun (<i>descending</i>).</li>
+  <li>Menukar dua elemen dengan variabel bantu dan menjelaskan mengapa dua penugasan saja tidak cukup.</li>
+  <li>Menulis dan menelusuri tiga algoritma pengurutan dasar: <i>bubble sort</i>, <i>selection sort</i>, dan <i>insertion sort</i>.</li>
+  <li>Mengurutkan <i>array of record</i> menurut satu field dengan aturan pembanding sendiri, termasuk pemecah seri.</li>
+  <li>Menghitung jumlah perbandingan dan pemindahan, lalu membandingkan ketiga algoritma pada data acak, terurut, dan terbalik.</li>
+</ul>
+
+<p class="lead">Daftar nilai yang tercetak dari yang tertinggi, kontak telepon yang tersusun menurut abjad, hasil pencarian yang
+diurutkan dari termurah: semuanya adalah hasil <b>pengurutan</b>. Bab ini mengajak Anda membongkar cara komputer menyusun
+data, dengan tiga algoritma klasik yang bisa dibayangkan seperti menyusun kartu atau botol. Anda akan menelusuri setiap putaran
+dengan mata, lalu menghitung berapa langkah yang dibutuhkan masing-masing. Algoritma di bab ini juga menyiapkan syarat
+pencarian biner pada Bab 15: data harus terurut.</p>
+
+<h2>Mengapa Data Perlu Diurutkan</h2>
+
+<p><b>Pengurutan</b> (<i>sorting</i>) adalah menyusun ulang elemen menurut suatu aturan urutan. Bila elemen disusun dari kecil ke
+besar, urutannya <b>naik</b> (<i>ascending</i>); dari besar ke kecil, <b>turun</b> (<i>descending</i>). Untuk teks, urutan
+mengikuti abjad. Data terurut lebih enak dibaca, lebih mudah dicari (pencarian biner hanya bekerja pada data terurut), dan
+mempermudah pekerjaan lain seperti mencari nilai tertinggi, median, atau elemen kembar.</p>
+
+<p>Pascal Turbo 7 tidak menyediakan perintah pengurutan bawaan, jadi Anda sendiri yang menulisnya. Ini justru kesempatan baik
+untuk belajar: tiga algoritma di bab ini hanya memakai perulangan, perbandingan, dan satu trik penukaran. Ketiganya dijalankan pada
+data yang sama, delapan bilangan <b>29, 10, 14, 37, 13, 5, 42, 21</b>, supaya cara kerjanya bisa dibandingkan langsung.</p>
+
+<div class="arr" style="margin:4mm 0 5mm"><em style="min-width:24mm">Data awal</em><span><b>29</b><i>[1]</i></span><span><b>10</b><i>[2]</i></span><span><b>14</b><i>[3]</i></span><span><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+
+<div class="trio">
+  <div class="card"><h4><span class="ikon">B</span>Bubble sort</h4><p>Bandingkan dua elemen bersebelahan dan tukar bila
+  salah urut. Elemen terbesar "mengapung" ke ujung kanan.</p></div>
+  <div class="card"><h4><span class="ikon">S</span>Selection sort</h4><p>Pilih elemen terkecil dari bagian yang belum
+  terurut, lalu tukar ke depan. Satu pertukaran per putaran.</p></div>
+  <div class="card"><h4><span class="ikon">I</span>Insertion sort</h4><p>Ambil satu elemen, geser yang lebih besar ke kanan,
+  lalu sisipkan seperti menyusun kartu di tangan.</p></div>
+</div>
+
+<h2>Menukar Dua Elemen</h2>
+
+<p>Ketiga algoritma bertumpu pada satu operasi: <b>menukar</b> isi dua tempat. Tampaknya sederhana, tetapi ada jebakan. Bila Anda
+menulis <code>A := B; B := A;</code>, nilai awal <code>A</code> tertimpa sebelum sempat disimpan, sehingga kedua variabel akhirnya
+berisi nilai <code>B</code>. Seperti menukar isi dua gelas, Anda memerlukan gelas ketiga sebagai tempat singgah: sebuah
+<b>variabel bantu</b> (<i>temporary variable</i>).</p>
+
+<div class="sintaks"><pre>Bantu := A;      <span style="color:#667">{ 1. amankan nilai A }</span>
+A := B;          <span style="color:#667">{ 2. A boleh ditimpa }</span>
+B := Bantu;      <span style="color:#667">{ 3. B menerima nilai A yang lama }</span></pre></div>
+
+<figure class="grafik" id="gb-tukar"><svg viewBox="0 0 680 214">
+<rect class="box-w" x="4" y="6" width="162" height="120" rx="8"/>
+<text class="b c" x="12" y="26">1. Keadaan awal</text>
+<text class="s mid" x="34" y="48">A</text><rect class="io" x="12" y="54" width="44" height="34" rx="4"/><text class="mono mid b" x="34" y="76">29</text>
+<text class="s mid" x="85" y="48">B</text><rect class="io" x="63" y="54" width="44" height="34" rx="4"/><text class="mono mid b" x="85" y="76">10</text>
+<text class="s mid" x="136" y="48">Bantu</text><rect class="box" x="114" y="54" width="44" height="34" rx="4"/><text class="mono mid b" x="136" y="76">?</text>
+<text class="s muted" x="12" y="112">A dan B belum bertukar</text>
+<rect class="box-w" x="174" y="6" width="162" height="120" rx="8"/>
+<text class="b c" x="182" y="26">2. Bantu := A</text>
+<text class="s mid" x="204" y="48">A</text><rect class="io" x="182" y="54" width="44" height="34" rx="4"/><text class="mono mid b" x="204" y="76">29</text>
+<text class="s mid" x="255" y="48">B</text><rect class="io" x="233" y="54" width="44" height="34" rx="4"/><text class="mono mid b" x="255" y="76">10</text>
+<text class="s mid" x="306" y="48">Bantu</text><rect class="dec" x="284" y="54" width="44" height="34" rx="4"/><text class="mono mid b" x="306" y="76">29</text>
+<text class="s muted" x="182" y="112">Nilai A diamankan dulu</text>
+<rect class="box-w" x="344" y="6" width="162" height="120" rx="8"/>
+<text class="b c" x="352" y="26">3. A := B</text>
+<text class="s mid" x="374" y="48">A</text><rect class="dec" x="352" y="54" width="44" height="34" rx="4"/><text class="mono mid b" x="374" y="76">10</text>
+<text class="s mid" x="425" y="48">B</text><rect class="io" x="403" y="54" width="44" height="34" rx="4"/><text class="mono mid b" x="425" y="76">10</text>
+<text class="s mid" x="476" y="48">Bantu</text><rect class="box" x="454" y="54" width="44" height="34" rx="4"/><text class="mono mid b" x="476" y="76">29</text>
+<text class="s muted" x="352" y="112">A boleh ditimpa, aslinya aman</text>
+<rect class="box-w" x="514" y="6" width="162" height="120" rx="8"/>
+<text class="b c" x="522" y="26">4. B := Bantu</text>
+<text class="s mid" x="544" y="48">A</text><rect class="io" x="522" y="54" width="44" height="34" rx="4"/><text class="mono mid b" x="544" y="76">10</text>
+<text class="s mid" x="595" y="48">B</text><rect class="dec" x="573" y="54" width="44" height="34" rx="4"/><text class="mono mid b" x="595" y="76">29</text>
+<text class="s mid" x="646" y="48">Bantu</text><rect class="box" x="624" y="54" width="44" height="34" rx="4"/><text class="mono mid b" x="646" y="76">29</text>
+<text class="s muted" x="522" y="112">B diisi nilai A yang lama</text>
+<rect class="no" x="4" y="140" width="330" height="66" rx="8"/>
+<text class="b" x="14" y="160" style="fill:#b42318">Cara yang salah</text>
+<text class="mono" x="14" y="178">A := B;   { A = 10, nilai 29 hilang }</text>
+<text class="mono" x="14" y="196">B := A;   { B = 10 juga }</text>
+<rect class="ok" x="344" y="140" width="332" height="66" rx="8"/>
+<text class="b" x="354" y="160" style="fill:#11743f">Cara yang benar (tiga langkah)</text>
+<text class="mono" x="354" y="178">Bantu := A;  A := B;  B := Bantu;</text>
+<text class="s" x="354" y="196">Seperti menukar isi dua gelas memakai gelas ketiga.</text>
+</svg><figcaption>Menukar dua variabel membutuhkan variabel bantu: tanpa itu, nilai pertama tertimpa dan hilang</figcaption></figure>
+
+<p>Pada program bab ini variabel bantu bernama <code>Sementara</code> (atau <code>T</code>), dan elemen yang ditukar adalah
+<code>Data[I]</code> dengan <code>Data[I + 1]</code>. Bila Anda penasaran, kesalahan penukaran dua langkah mudah dibuktikan:</p>
+
+<x-error name="tukarsalah.pas" run caption="Tanpa variabel bantu: kedua variabel berakhir bernilai 10">program TukarSalah;
+var
+  A, B: Integer;
+begin
+  A := 29;
+  B := 10;
+  A := B;
+  B := A;
+  WriteLn('A = ', A, '  B = ', B);
+end.</x-error>
+
+<h2>Bubble Sort</h2>
+
+<p>Nama <i>bubble sort</i> (pengurutan gelembung) berasal dari cara elemen besar bergerak: seperti gelembung udara di air, elemen
+terbesar naik ke ujung kanan putaran demi putaran. Dalam satu <b>putaran</b>, algoritma menyusuri array dari kiri dan membandingkan
+setiap <b>pasangan bersebelahan</b>. Bila pasangan itu salah urut (kiri lebih besar daripada kanan), keduanya ditukar. Setelah satu
+putaran penuh, elemen terbesar pasti sudah berada di posisi paling kanan. Putaran berikutnya tidak perlu menyentuhnya lagi.</p>
+
+<p>Berikut putaran pertama pada data kita, perbandingan demi perbandingan. Sel berwarna pekat adalah pasangan yang sedang
+diperiksa, dengan hasil sesudah diperiksa.</p>
+
+<figure class="grafik" id="gb-bubble-putaran1" style="display:block"><div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Awal</em><span><b>29</b><i>[1]</i></span><span><b>10</b><i>[2]</i></span><span><b>14</b><i>[3]</i></span><span><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">1. 29 &gt; 10, tukar</em><span class="hi"><b>10</b><i>[1]</i></span><span class="hi"><b>29</b><i>[2]</i></span><span><b>14</b><i>[3]</i></span><span><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">2. 29 &gt; 14, tukar</em><span><b>10</b><i>[1]</i></span><span class="hi"><b>14</b><i>[2]</i></span><span class="hi"><b>29</b><i>[3]</i></span><span><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">3. 29 &lt; 37, tetap</em><span><b>10</b><i>[1]</i></span><span><b>14</b><i>[2]</i></span><span class="hi"><b>29</b><i>[3]</i></span><span class="hi"><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">4. 37 &gt; 13, tukar</em><span><b>10</b><i>[1]</i></span><span><b>14</b><i>[2]</i></span><span><b>29</b><i>[3]</i></span><span class="hi"><b>13</b><i>[4]</i></span><span class="hi"><b>37</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">5. 37 &gt; 5, tukar</em><span><b>10</b><i>[1]</i></span><span><b>14</b><i>[2]</i></span><span><b>29</b><i>[3]</i></span><span><b>13</b><i>[4]</i></span><span class="hi"><b>5</b><i>[5]</i></span><span class="hi"><b>37</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">6. 37 &lt; 42, tetap</em><span><b>10</b><i>[1]</i></span><span><b>14</b><i>[2]</i></span><span><b>29</b><i>[3]</i></span><span><b>13</b><i>[4]</i></span><span><b>5</b><i>[5]</i></span><span class="hi"><b>37</b><i>[6]</i></span><span class="hi"><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">7. 42 &gt; 21, tukar</em><span><b>10</b><i>[1]</i></span><span><b>14</b><i>[2]</i></span><span><b>29</b><i>[3]</i></span><span><b>13</b><i>[4]</i></span><span><b>5</b><i>[5]</i></span><span><b>37</b><i>[6]</i></span><span class="hi"><b>21</b><i>[7]</i></span><span class="hi"><b>42</b><i>[8]</i></span></div>
+<figcaption>Putaran 1 bubble sort: tujuh perbandingan, lima pertukaran, dan 42 sampai di ujung kanan (angka 42 dibawa naik sejak perbandingan ke-7)</figcaption></figure>
+
+<p>Perhatikan bahwa <b>42</b> baru dibandingkan pada langkah ke-7, sedangkan <b>37</b> terus terbawa naik dari langkah ke-4
+sampai ke-6, karena setiap kali ia lebih besar daripada tetangga kanannya. Putaran berikutnya hanya perlu memeriksa sampai
+elemen ke-7, karena elemen ke-8 sudah final. Karena itu <code>for I := 1 to N - Putaran</code>: batas atasnya mengecil satu setiap putaran.</p>
+
+<p>Bila suatu putaran tidak melakukan satu pun pertukaran, berarti semua pasangan sudah benar dan data sudah terurut, jadi
+perulangan boleh berhenti. Penanda <code>AdaTukar</code> (<code>Boolean</code>) mencatat apakah putaran itu menukar sesuatu.</p>
+
+<div class="sintaks"><pre><b>repeat</b>
+  AdaTukar := False;
+  Putaran := Putaran + 1;
+  <b>for</b> I := 1 <b>to</b> N - Putaran <b>do</b>
+    <b>if</b> Data[I] &gt; Data[I + 1] <b>then</b>
+    <b>begin</b>
+      <span style="color:#667">{ tukar Data[I] dan Data[I + 1] dengan variabel bantu }</span>
+      AdaTukar := True;
+    <b>end</b>;
+<b>until not</b> AdaTukar;</pre></div>
+
+<h3>Program 16.1: Bubble Sort Putaran demi Putaran</h3>
+
+<p>Program ini menyalin data awal ke array kerja <code>Data</code>, lalu mengurutkannya dengan bubble sort dan mencetak isi array
+sesudah <b>setiap putaran</b>. Buka <code>bab16_01_bubble_sort.pas</code> dari <span class="menu">File ▸ Examples...</span>.</p>
+
+<x-listing src="bab16_01_bubble_sort.pas"></x-listing>
+
+<table class="baris">
+  <caption>Penjelasan Program 16.1</caption>
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10–12</td><td><code>N</code> adalah banyak data, <code>Awal</code> menyimpan data yang tidak terurut sebagai konstanta (tetap tidak berubah selama program berjalan).</td></tr>
+    <tr><td>14–15</td><td>Tipe <code>TData</code> adalah array <code>1..N</code> berisi <code>Integer</code>. Tipe bernama ini diperlukan agar array dapat dipakai sebagai parameter prosedur.</td></tr>
+    <tr><td>17–25</td><td>Prosedur <code>Tampilkan</code> mencetak <code>Judul</code>, lalu semua elemen dengan lebar 4 kolom (<code>D[I]:4</code>) agar angka satu dan dua digit rata ke kanan. Parameter <code>D</code> adalah salinan, jadi array asli tidak berubah.</td></tr>
+    <tr><td>33–35</td><td>Menyalin <code>Awal</code> ke <code>Data</code> elemen demi elemen (karena <code>Awal</code> konstanta, yang diurutkan adalah salinannya), lalu mencetak keadaan awal.</td></tr>
+    <tr><td>37–40</td><td>Awal setiap putaran: <code>Putaran</code> naik satu, <code>AdaTukar</code> direset menjadi <code>False</code>.</td></tr>
+    <tr><td>41–42</td><td>Menyusuri pasangan <code>I</code> dan <code>I + 1</code> sampai <code>N - Putaran</code>, sehingga ujung kanan yang sudah terurut tidak disentuh lagi, dan memeriksa apakah pasangan itu salah urut.</td></tr>
+    <tr><td>43–48</td><td>Penukaran tiga langkah dengan <code>Sementara</code> (baris 44–46), lalu <code>AdaTukar := True</code>. Blok <code>begin..end</code> perlu karena ada empat pernyataan di bawah <code>if</code>.</td></tr>
+    <tr><td>49–50</td><td>Mencetak isi array setelah putaran: <code>Write('Putaran ', Putaran, ' :')</code> lalu <code>Tampilkan</code> dengan judul kosong.</td></tr>
+    <tr><td>51</td><td><code>until not AdaTukar</code>: ulangi sampai ada satu putaran tanpa pertukaran.</td></tr>
+    <tr><td>53</td><td>Mencetak hasil akhir.</td></tr>
+  </tbody>
+</table>
+
+<x-run src="bab16_01_bubble_sort.pas" caption="Bubble sort pada delapan bilangan: enam putaran, yang terakhir tanpa pertukaran"></x-run>
+
+<p>Bandingkan keluaran dengan gambar di atas: putaran 1 memang berakhir dengan <code>10 14 29 13 5 37 21 42</code>. Gambar
+berikut menyusun seluruh keluaran, dengan sel muda menandai bagian ujung kanan yang sudah menempati tempat akhirnya.</p>
+
+<figure class="grafik" id="gb-bubble-semua" style="display:block"><div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Awal</em><span><b>29</b><i>[1]</i></span><span><b>10</b><i>[2]</i></span><span><b>14</b><i>[3]</i></span><span><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 1</em><span><b>10</b><i>[1]</i></span><span><b>14</b><i>[2]</i></span><span><b>29</b><i>[3]</i></span><span><b>13</b><i>[4]</i></span><span><b>5</b><i>[5]</i></span><span><b>37</b><i>[6]</i></span><span><b>21</b><i>[7]</i></span><span class="lo"><b>42</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 2</em><span><b>10</b><i>[1]</i></span><span><b>14</b><i>[2]</i></span><span><b>13</b><i>[3]</i></span><span><b>5</b><i>[4]</i></span><span><b>29</b><i>[5]</i></span><span><b>21</b><i>[6]</i></span><span class="lo"><b>37</b><i>[7]</i></span><span class="lo"><b>42</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 3</em><span><b>10</b><i>[1]</i></span><span><b>13</b><i>[2]</i></span><span><b>5</b><i>[3]</i></span><span><b>14</b><i>[4]</i></span><span><b>21</b><i>[5]</i></span><span class="lo"><b>29</b><i>[6]</i></span><span class="lo"><b>37</b><i>[7]</i></span><span class="lo"><b>42</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 4</em><span><b>10</b><i>[1]</i></span><span><b>5</b><i>[2]</i></span><span><b>13</b><i>[3]</i></span><span><b>14</b><i>[4]</i></span><span class="lo"><b>21</b><i>[5]</i></span><span class="lo"><b>29</b><i>[6]</i></span><span class="lo"><b>37</b><i>[7]</i></span><span class="lo"><b>42</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 5</em><span class="lo"><b>5</b><i>[1]</i></span><span class="lo"><b>10</b><i>[2]</i></span><span class="lo"><b>13</b><i>[3]</i></span><span class="lo"><b>14</b><i>[4]</i></span><span class="lo"><b>21</b><i>[5]</i></span><span class="lo"><b>29</b><i>[6]</i></span><span class="lo"><b>37</b><i>[7]</i></span><span class="lo"><b>42</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 6 (tanpa tukar)</em><span class="lo"><b>5</b><i>[1]</i></span><span class="lo"><b>10</b><i>[2]</i></span><span class="lo"><b>13</b><i>[3]</i></span><span class="lo"><b>14</b><i>[4]</i></span><span class="lo"><b>21</b><i>[5]</i></span><span class="lo"><b>29</b><i>[6]</i></span><span class="lo"><b>37</b><i>[7]</i></span><span class="lo"><b>42</b><i>[8]</i></span></div>
+<figcaption>Isi array sesudah tiap putaran bubble sort (sama dengan keluaran Program 16.1); sel muda adalah bagian yang sudah di tempat akhirnya</figcaption></figure>
+
+<p>Putaran 5 menghasilkan array yang sudah terurut, tetapi program belum tahu itu: putaran 5 masih menukar (10 dan 5), jadi
+<code>AdaTukar</code> bernilai <code>True</code>. Hanya putaran 6, yang tidak menukar apa pun, yang memberi tahu program bahwa
+pekerjaan selesai. Itulah sebabnya keluaran menampilkan putaran 6 yang isinya sama dengan putaran 5.</p>
+
+<p>Bubble sort juga dapat ditelusuri di debugger. Pasang titik henti pada baris 45 (<code>Data[I] := Data[I + 1]</code>), mulai
+lewat <span class="menu">Debug ▸ Start debugging</span>, dan pantau <code>I</code>, <code>Putaran</code>, dan <code>Sementara</code> di jendela
+Watches. Berikut keadaan saat penukaran pertama.</p>
+
+<x-ide file="bab16_01_bubble_sort.pas" top="33" rows="14" breakpoints="45" exec="45" watches="I: 1;Putaran: 1;Sementara: 29" caption="Debugger berhenti di baris 45 pada penukaran pertama: Sementara sudah menyimpan 29, nilai Data[1] yang akan ditimpa"></x-ide>
+
+<div class="tp7"><p>Di Turbo Pascal 7, parameter prosedur harus berupa <b>nama tipe</b>: Anda tidak dapat menulis
+<code>procedure Tampilkan(D: array[1..8] of Integer)</code> langsung di daftar parameter. Itulah mengapa program mendefinisikan <code>TData</code>
+lebih dulu dan memakai <code>D: TData</code>. Kebiasaan ini membuat program tetap berjalan di kompiler Pascal lain.</p></div>
+
+<h2>Selection Sort</h2>
+
+<p>Bayangkan Anda ingin mengurutkan sebelas kartu di meja dari yang terkecil. Cara lain selain menukar tetangga terus-menerus
+adalah: cari kartu terkecil di antara semua kartu, letakkan di tempat pertama; cari yang terkecil dari sisanya, letakkan di
+tempat kedua; dan seterusnya. Itulah <i>selection sort</i> (pengurutan seleksi). Pada <b>putaran ke-I</b>, algoritma memindai
+bagian <code>I..N</code> (yang belum terurut) untuk menemukan <b>posisi</b> elemen terkecil, lalu menukarnya dengan elemen ke-I.
+Setelah putaran ke-I, elemen <code>1..I</code> sudah final.</p>
+
+<div class="sintaks"><pre><b>for</b> I := 1 <b>to</b> N - 1 <b>do</b>
+<b>begin</b>
+  PosisiMin := I;                         <span style="color:#667">{ anggap elemen ke-I terkecil }</span>
+  <b>for</b> J := I + 1 <b>to</b> N <b>do</b>
+    <b>if</b> Data[J] &lt; Data[PosisiMin] <b>then</b>
+      PosisiMin := J;                     <span style="color:#667">{ ketemu yang lebih kecil }</span>
+  <b>if</b> PosisiMin &lt;&gt; I <b>then</b>
+    <span style="color:#667">{ tukar Data[I] dan Data[PosisiMin] }</span>
+<b>end</b>;</pre></div>
+
+<p>Algoritma ini menyimpan <b>indeks</b> elemen terkecil (<code>PosisiMin</code>), bukan nilainya, karena yang dibutuhkan
+nanti adalah <i>tempat</i> untuk bertukar. Hanya ada satu penukaran per putaran, dan tidak ada sama sekali bila elemen ke-I
+sudah yang terkecil.</p>
+
+<h3>Program 16.2: Selection Sort</h3>
+
+<p>Buka <code>bab16_02_selection_sort.pas</code>. Data dan prosedur <code>Tampilkan</code> sama dengan Program 16.1, sehingga
+hasil kedua algoritma dapat dibandingkan baris demi baris.</p>
+
+<x-listing src="bab16_02_selection_sort.pas"></x-listing>
+
+<x-run src="bab16_02_selection_sort.pas" caption="Selection sort: tujuh putaran, putaran ke-2 dan ke-6 tanpa pertukaran"></x-run>
+
+<table class="baris">
+  <caption>Penjelasan Program 16.2</caption>
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>26–28</td><td>Dua penunjuk perulangan <code>I</code> (batas bagian terurut) dan <code>J</code> (pemindai), <code>PosisiMin</code> (indeks terkecil sementara), dan <code>Sementara</code> untuk penukaran.</td></tr>
+    <tr><td>31–33</td><td>Menyalin data awal dan mencetaknya, sama seperti Program 16.1.</td></tr>
+    <tr><td>35</td><td>Putaran luar <code>I</code> berjalan dari 1 sampai <code>N - 1</code>: elemen terakhir otomatis benar bila yang lain sudah benar.</td></tr>
+    <tr><td>37</td><td>Mulai dengan anggapan bahwa elemen ke-I adalah yang terkecil.</td></tr>
+    <tr><td>38–40</td><td>Putaran dalam memindai <code>I + 1</code> sampai <code>N</code>. Setiap elemen yang lebih kecil daripada <code>Data[PosisiMin]</code> menjadi calon baru.</td></tr>
+    <tr><td>41–46</td><td>Tukar hanya bila <code>PosisiMin &lt;&gt; I</code>, yaitu bila ada yang lebih kecil daripada elemen ke-I.</td></tr>
+    <tr><td>47–48</td><td>Mencetak isi array sesudah putaran.</td></tr>
+  </tbody>
+</table>
+
+<p>Selection sort selalu berjalan tepat <code>N - 1</code> putaran, tujuh untuk data kita. Berikut pergerakannya: sel pekat adalah
+dua posisi yang bertukar, sel muda adalah bagian kiri yang sudah final.</p>
+
+<figure class="grafik" id="gb-sel-putaran" style="display:block"><div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Awal</em><span><b>29</b><i>[1]</i></span><span><b>10</b><i>[2]</i></span><span><b>14</b><i>[3]</i></span><span><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 1</em><span class="hi"><b>5</b><i>[1]</i></span><span><b>10</b><i>[2]</i></span><span><b>14</b><i>[3]</i></span><span><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span class="hi"><b>29</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 2</em><span class="lo"><b>5</b><i>[1]</i></span><span class="lo"><b>10</b><i>[2]</i></span><span><b>14</b><i>[3]</i></span><span><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span><b>29</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 3</em><span class="lo"><b>5</b><i>[1]</i></span><span class="lo"><b>10</b><i>[2]</i></span><span class="hi"><b>13</b><i>[3]</i></span><span><b>37</b><i>[4]</i></span><span class="hi"><b>14</b><i>[5]</i></span><span><b>29</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 4</em><span class="lo"><b>5</b><i>[1]</i></span><span class="lo"><b>10</b><i>[2]</i></span><span class="lo"><b>13</b><i>[3]</i></span><span class="hi"><b>14</b><i>[4]</i></span><span class="hi"><b>37</b><i>[5]</i></span><span><b>29</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 5</em><span class="lo"><b>5</b><i>[1]</i></span><span class="lo"><b>10</b><i>[2]</i></span><span class="lo"><b>13</b><i>[3]</i></span><span class="lo"><b>14</b><i>[4]</i></span><span class="hi"><b>21</b><i>[5]</i></span><span><b>29</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span class="hi"><b>37</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 6</em><span class="lo"><b>5</b><i>[1]</i></span><span class="lo"><b>10</b><i>[2]</i></span><span class="lo"><b>13</b><i>[3]</i></span><span class="lo"><b>14</b><i>[4]</i></span><span class="lo"><b>21</b><i>[5]</i></span><span class="lo"><b>29</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>37</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Putaran 7</em><span class="lo"><b>5</b><i>[1]</i></span><span class="lo"><b>10</b><i>[2]</i></span><span class="lo"><b>13</b><i>[3]</i></span><span class="lo"><b>14</b><i>[4]</i></span><span class="lo"><b>21</b><i>[5]</i></span><span class="lo"><b>29</b><i>[6]</i></span><span class="hi"><b>37</b><i>[7]</i></span><span class="hi"><b>42</b><i>[8]</i></span></div>
+<figcaption>Putaran selection sort pada Program 16.2. Putaran 2 dan 6 tidak menukar karena elemen ke-I sudah terkecil di bagian sisa</figcaption></figure>
+
+<p>Putaran 1 menemukan 5 (di posisi 6) dan menukarnya dengan 29 di posisi 1, sehingga 29 berpindah ke posisi 6. Putaran 2 menemukan
+bahwa 10 di posisi 2 sudah yang terkecil di antara sisa elemen, sehingga tidak ada pertukaran. Total pertukaran pada data ini adalah
+lima (putaran 1, 3, 4, 5, dan 7), jauh lebih sedikit daripada bubble sort. Perbandingan pemindai tetap banyak, seperti terlihat di bagian
+perbandingan langkah nanti.</p>
+
+<div class="coba"><p><b>Coba Sendiri.</b> Ubah baris 39 dari <code>&lt;</code> menjadi <code>&gt;</code> lalu jalankan. Apa yang terjadi pada urutan
+hasilnya? Mengapa satu tanda perbandingan cukup untuk membalik arah urutan?</p></div>
+
+<h2>Insertion Sort</h2>
+
+<p>Saat bermain kartu, kebanyakan orang menyusun kartu di tangan seperti ini: ambil kartu baru dari meja, bandingkan dari kanan
+ke kiri dengan kartu yang sudah tersusun, <b>geser</b> kartu yang lebih besar ke kanan, lalu <b>sisipkan</b> kartu baru di celah yang
+terbuka. Itulah <i>insertion sort</i> (pengurutan sisip). Bagian kiri array selalu terurut, dan setiap putaran memperbesar bagian itu satu
+elemen. Putaran dimulai dari <code>I = 2</code>, karena satu elemen pertama dengan sendirinya sudah terurut.</p>
+
+<div class="sintaks"><pre><b>for</b> I := 2 <b>to</b> N <b>do</b>
+<b>begin</b>
+  Kunci := Data[I];                       <span style="color:#667">{ kartu yang akan disisipkan }</span>
+  J := I - 1;
+  <b>while</b> (J &gt;= 1) <b>and</b> (Data[J] &gt; Kunci) <b>do</b>
+  <b>begin</b>
+    Data[J + 1] := Data[J];               <span style="color:#667">{ geser ke kanan }</span>
+    J := J - 1;
+  <b>end</b>;
+  Data[J + 1] := Kunci;                   <span style="color:#667">{ sisipkan di tempat kosong }</span>
+<b>end</b>;</pre></div>
+
+<p>Di sini tidak ada penukaran: elemen digeser satu per satu menimpa tempat yang kosong, dan <code>Kunci</code> yang tadinya diambil
+(disimpan di variabel) diletakkan di akhir. Gambar berikut menunjukkan satu putaran lengkap, yaitu menyisipkan 13.</p>
+
+<figure class="grafik" id="gb-sisip-13"><svg viewBox="0 0 680 244">
+<text class="s muted mid" x="211" y="14">[1]</text>
+<text class="s muted mid" x="257" y="14">[2]</text>
+<text class="s muted mid" x="303" y="14">[3]</text>
+<text class="s muted mid" x="349" y="14">[4]</text>
+<text class="s muted mid" x="395" y="14">[5]</text>
+<text class="s muted mid" x="441" y="14">[6]</text>
+<text class="s muted mid" x="487" y="14">[7]</text>
+<text class="s muted mid" x="533" y="14">[8]</text>
+<text class="b c" x="4" y="42">1. Ambil Kunci</text><text class="s muted" x="4" y="56">Kunci := Data[5] = 13</text>
+<rect class="box" x="190" y="22" width="44" height="30" rx="3"/><text class="mid" x="212" y="42">10</text>
+<rect class="box" x="236" y="22" width="44" height="30" rx="3"/><text class="mid" x="258" y="42">14</text>
+<rect class="box" x="282" y="22" width="44" height="30" rx="3"/><text class="mid" x="304" y="42">29</text>
+<rect class="box" x="328" y="22" width="44" height="30" rx="3"/><text class="mid" x="350" y="42">37</text>
+<rect x="374" y="22" width="44" height="30" rx="3" style="fill:#fff;stroke:#d99a00;stroke-width:1.4;stroke-dasharray:4 3"/>
+<rect class="box-w" x="420" y="22" width="44" height="30" rx="3"/><text class="mid" x="442" y="42">5</text>
+<rect class="box-w" x="466" y="22" width="44" height="30" rx="3"/><text class="mid" x="488" y="42">42</text>
+<rect class="box-w" x="512" y="22" width="44" height="30" rx="3"/><text class="mid" x="534" y="42">21</text>
+<rect class="dec" x="564" y="22" width="64" height="30" rx="3"/><text class="mono mid b" x="596" y="42">Kunci 13</text>
+<text class="b c" x="4" y="108">2. Geser ke kanan</text><text class="s muted" x="4" y="122">37, 29, 14 lebih besar dari 13</text>
+<rect class="box-w" x="190" y="88" width="44" height="30" rx="3"/><text class="mid" x="212" y="108">10</text>
+<rect x="236" y="88" width="44" height="30" rx="3" style="fill:#fff;stroke:#d99a00;stroke-width:1.4;stroke-dasharray:4 3"/>
+<rect class="box" x="282" y="88" width="44" height="30" rx="3"/><text class="mid" x="304" y="108">14</text>
+<rect class="box" x="328" y="88" width="44" height="30" rx="3"/><text class="mid" x="350" y="108">29</text>
+<rect class="box" x="374" y="88" width="44" height="30" rx="3"/><text class="mid" x="396" y="108">37</text>
+<rect class="box-w" x="420" y="88" width="44" height="30" rx="3"/><text class="mid" x="442" y="108">5</text>
+<rect class="box-w" x="466" y="88" width="44" height="30" rx="3"/><text class="mid" x="488" y="108">42</text>
+<rect class="box-w" x="512" y="88" width="44" height="30" rx="3"/><text class="mid" x="534" y="108">21</text>
+<path class="arrow" d="M266 84 h30"/><path class="arrow" d="M312 84 h30"/><path class="arrow" d="M358 84 h30"/><text class="b c" x="4" y="174">3. Sisipkan</text><text class="s muted" x="4" y="188">Data[2] := Kunci</text>
+<rect class="box" x="190" y="154" width="44" height="30" rx="3"/><text class="mid" x="212" y="174">10</text>
+<rect class="dec" x="236" y="154" width="44" height="30" rx="3"/><text class="mid b" x="258" y="174">13</text>
+<rect class="box" x="282" y="154" width="44" height="30" rx="3"/><text class="mid" x="304" y="174">14</text>
+<rect class="box" x="328" y="154" width="44" height="30" rx="3"/><text class="mid" x="350" y="174">29</text>
+<rect class="box" x="374" y="154" width="44" height="30" rx="3"/><text class="mid" x="396" y="174">37</text>
+<rect class="box-w" x="420" y="154" width="44" height="30" rx="3"/><text class="mid" x="442" y="174">5</text>
+<rect class="box-w" x="466" y="154" width="44" height="30" rx="3"/><text class="mid" x="488" y="174">42</text>
+<rect class="box-w" x="512" y="154" width="44" height="30" rx="3"/><text class="mid" x="534" y="174">21</text>
+<rect class="box" x="190" y="226" width="22" height="12" rx="2"/><text class="s" x="218" y="236">bagian kiri yang sudah terurut</text>
+<rect x="394" y="226" width="22" height="12" rx="2" style="fill:#fff;stroke:#d99a00;stroke-width:1.4;stroke-dasharray:4 3"/><text class="s" x="422" y="236">tempat kosong sementara</text>
+</svg><figcaption>Satu langkah insertion sort (I = 5, Kunci = 13): ambil, geser elemen yang lebih besar, sisipkan di tempat kosong</figcaption></figure>
+
+<h3>Program 16.3: Insertion Sort</h3>
+
+<p>Buka <code>bab16_03_insertion_sort.pas</code>. Program mencetak isi array setelah setiap penyisipan, dan label tiap baris
+menyebut nilai <code>Kunci</code> yang baru disisipkan.</p>
+
+<x-listing src="bab16_03_insertion_sort.pas"></x-listing>
+
+<x-run src="bab16_03_insertion_sort.pas" caption="Insertion sort: tujuh penyisipan, dari Kunci 10 sampai Kunci 21"></x-run>
+
+<table class="baris">
+  <caption>Penjelasan Program 16.3</caption>
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>28</td><td><code>Kunci</code> menyimpan elemen yang sedang disisipkan, <code>J</code> menunjuk elemen yang diperiksa di bagian kiri.</td></tr>
+    <tr><td>35</td><td>Mulai dari elemen kedua: elemen pertama sendiri sudah "terurut".</td></tr>
+    <tr><td>37–38</td><td>Mengambil <code>Kunci := Data[I]</code>, lalu mulai membandingkan dari elemen tepat di kiri.</td></tr>
+    <tr><td>39–43</td><td>Selama masih ada elemen di kiri (<code>J &gt;= 1</code>) dan elemen itu lebih besar daripada <code>Kunci</code>, geser elemen itu satu tempat ke kanan dan mundur satu langkah.</td></tr>
+    <tr><td>44</td><td>Tempat kosong ada di <code>J + 1</code>; di sanalah <code>Kunci</code> diletakkan.</td></tr>
+    <tr><td>45–46</td><td>Mencetak keadaan array, dengan <code>Kunci:2</code> agar nilai satu digit tidak menggeser kolom.</td></tr>
+  </tbody>
+</table>
+
+<p>Kondisi <code>(J &gt;= 1) and (Data[J] &gt; Kunci)</code> mempunyai dua alasan berhenti: bertemu elemen yang tidak lebih besar
+(tempat sudah ketemu), atau mencapai awal array (<code>J = 0</code>, <code>Kunci</code> adalah yang terkecil dan menempati posisi 1).
+Penyisipan 5 menunjukkan kasus kedua: 5 menggeser semua elemen di kirinya dan menempati posisi pertama. Penyisipan 37 dan 42
+menunjukkan kebalikannya: keduanya sudah lebih besar daripada semua elemen di kiri, sehingga tidak ada yang digeser.</p>
+
+<figure class="grafik" id="gb-sisip-putaran" style="display:block"><div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Awal</em><span><b>29</b><i>[1]</i></span><span><b>10</b><i>[2]</i></span><span><b>14</b><i>[3]</i></span><span><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Sisip 10</em><span class="hi"><b>10</b><i>[1]</i></span><span class="lo"><b>29</b><i>[2]</i></span><span><b>14</b><i>[3]</i></span><span><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Sisip 14</em><span class="lo"><b>10</b><i>[1]</i></span><span class="hi"><b>14</b><i>[2]</i></span><span class="lo"><b>29</b><i>[3]</i></span><span><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Sisip 37</em><span class="lo"><b>10</b><i>[1]</i></span><span class="lo"><b>14</b><i>[2]</i></span><span class="lo"><b>29</b><i>[3]</i></span><span class="hi"><b>37</b><i>[4]</i></span><span><b>13</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Sisip 13</em><span class="lo"><b>10</b><i>[1]</i></span><span class="hi"><b>13</b><i>[2]</i></span><span class="lo"><b>14</b><i>[3]</i></span><span class="lo"><b>29</b><i>[4]</i></span><span class="lo"><b>37</b><i>[5]</i></span><span><b>5</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Sisip 5</em><span class="hi"><b>5</b><i>[1]</i></span><span class="lo"><b>10</b><i>[2]</i></span><span class="lo"><b>13</b><i>[3]</i></span><span class="lo"><b>14</b><i>[4]</i></span><span class="lo"><b>29</b><i>[5]</i></span><span class="lo"><b>37</b><i>[6]</i></span><span><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Sisip 42</em><span class="lo"><b>5</b><i>[1]</i></span><span class="lo"><b>10</b><i>[2]</i></span><span class="lo"><b>13</b><i>[3]</i></span><span class="lo"><b>14</b><i>[4]</i></span><span class="lo"><b>29</b><i>[5]</i></span><span class="lo"><b>37</b><i>[6]</i></span><span class="hi"><b>42</b><i>[7]</i></span><span><b>21</b><i>[8]</i></span></div>
+<div class="arr" style="margin:1.1mm 0"><em style="min-width:24mm">Sisip 21</em><span class="lo"><b>5</b><i>[1]</i></span><span class="lo"><b>10</b><i>[2]</i></span><span class="lo"><b>13</b><i>[3]</i></span><span class="lo"><b>14</b><i>[4]</i></span><span class="hi"><b>21</b><i>[5]</i></span><span class="lo"><b>29</b><i>[6]</i></span><span class="lo"><b>37</b><i>[7]</i></span><span class="lo"><b>42</b><i>[8]</i></span></div>
+<figcaption>Isi array sesudah tiap penyisipan (Program 16.3): sel pekat adalah Kunci yang baru disisipkan, sel muda bagian kiri yang terurut</figcaption></figure>
+
+<h2>Mengurutkan Array of Record</h2>
+
+<p>Data nyata jarang berupa bilangan polos. Daftar siswa berisi nama <i>dan</i> nilai. Saat mengurutkan, ada dua aturan emas:
+<b>yang dibandingkan</b> hanya satu field (atau kombinasi aturan), tetapi <b>yang dipindahkan</b> adalah record utuh. Bila hanya
+field <code>Nilai</code> yang dipindahkan, nilai berpisah dari pemiliknya.</p>
+
+<x-error name="terpisah.pas" run caption="Hanya nilai yang diurutkan: Dimas tiba-tiba mendapat 92, padahal nilai aslinya 78">program Terpisah;
+const
+  N = 3;
+  Nama: array[1..N] of string[8] = ('Dimas', 'Ayu', 'Fajar');
+var
+  Nilai: array[1..N] of Integer;
+  I, J, T: Integer;
+begin
+  Nilai[1] := 78;
+  Nilai[2] := 92;
+  Nilai[3] := 85;
+  for I := 1 to N - 1 do
+    for J := 1 to N - I do
+      if Nilai[J] < Nilai[J + 1] then
+      begin
+        T := Nilai[J];
+        Nilai[J] := Nilai[J + 1];
+        Nilai[J + 1] := T;
+      end;
+  for I := 1 to N do
+    WriteLn(Nama[I], ' ', Nilai[I]);
+end.</x-error>
+
+<p>Solusinya: simpan semua field dalam satu <i>record</i> (Bab 13), urutkan array of record itu, dan tukar atau geser
+<b>record utuh</b>. Penugasan <code>Siswa[J + 1] := Siswa[J]</code> menyalin seluruh field sekaligus.</p>
+
+<p>Aturan urutan yang lebih rumit pun mudah ditulis bila dikemas dalam sebuah fungsi pembanding. Program 16.4 mendefinisikan
+<code>LebihDulu(A, B)</code>, yang bernilai <code>True</code> bila <code>A</code> harus berada di depan <code>B</code>, dengan dua aturan:
+nilai yang lebih tinggi di depan, dan bila nilai sama, urut abjad menurut nama. Aturan kedua disebut <b>pemecah seri</b>
+(<i>tie-breaker</i>).</p>
+
+<div class="duo">
+  <div class="card good"><h4><span class="ikon">✓</span>Pindahkan record utuh</h4><p><code>Siswa[J + 1] := Siswa[J];</code> Nama dan
+  nilai selalu berpindah bersama.</p></div>
+  <div class="card bad"><h4><span class="ikon">✗</span>Pindahkan satu field</h4><p><code>Nilai[J + 1] := Nilai[J];</code> Nama tinggal di
+  tempatnya, dan pasangan nama-nilai menjadi salah.</p></div>
+</div>
+
+<h3>Program 16.4: Peringkat Siswa</h3>
+
+<p>Buka <code>bab16_04_urut_record.pas</code>. Program mengurutkan tujuh siswa dengan insertion sort (Program 16.3) memakai
+<code>LebihDulu</code> sebagai pembanding, lalu mencetak daftar peringkat. Dua pasang siswa mempunyai nilai yang sama, 92 dan 85, sehingga
+program harus menangani peringkat kembar.</p>
+
+<x-listing src="bab16_04_urut_record.pas"></x-listing>
+
+<x-run src="bab16_04_urut_record.pas" caption="Daftar peringkat: nilai sama mendapat peringkat yang sama, urut abjad di dalamnya"></x-run>
+
+<table class="baris">
+  <caption>Penjelasan Program 16.4</caption>
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–13</td><td>Tipe <code>TSiswa</code>: nama (maksimal 15 karakter) dan nilai.</td></tr>
+    <tr><td>15–21</td><td>Konstanta <code>Awal</code> berisi tujuh siswa dalam urutan acak: Dimas 78, Ayu 92, Fajar 85, Citra 92, Bayu 70, Eka 85, Gita 88.</td></tr>
+    <tr><td>23–30</td><td>Fungsi <code>LebihDulu</code>. Bila nilai berbeda, nilai yang lebih besar di depan. Bila nilai sama, nama yang lebih kecil menurut abjad (<code>A.Nama &lt; B.Nama</code>) di depan.</td></tr>
+    <tr><td>33–35</td><td>Array kerja <code>Siswa</code>, dan variabel <code>Kunci</code> bertipe <code>TSiswa</code> untuk menyimpan satu record yang sedang disisipkan.</td></tr>
+    <tr><td>38–39</td><td>Menyalin tiap record utuh dengan satu penugasan.</td></tr>
+    <tr><td>41–52</td><td>Insertion sort dengan syarat <code>LebihDulu(Kunci, Siswa[J])</code>: <code>Kunci</code> terus bergeser ke kiri selama ia harus lebih dulu daripada elemen di kirinya.</td></tr>
+    <tr><td>54–62</td><td>Mencetak daftar peringkat. Peringkat naik ke posisi <code>I</code> hanya bila nilai berbeda dari elemen sebelumnya (baris 58–59); bila sama, peringkat sebelumnya dipertahankan.</td></tr>
+  </tbody>
+</table>
+
+<p>Ayu dan Citra sama-sama 92, dan Ayu mendahului Citra karena "Ayu" lebih awal menurut abjad; keduanya mendapat peringkat 1. Peringkat
+berikutnya adalah 3, bukan 2, karena dua siswa sudah menempati posisi 1 dan 2: itu cara peringkat kembar biasa dihitung. Eka dan Fajar
+sama-sama 85 dan berperingkat 4, dengan Eka (E) lebih dulu daripada Fajar (F). Dimas peringkat 6 dan Bayu peringkat 7.</p>
+
+<div class="tip"><p>Memisahkan <b>aturan urutan</b> ke dalam fungsi <code>LebihDulu</code> membuat algoritma pengurutannya tidak perlu diubah
+bila aturannya berganti. Ingin urutan menurut nama saja? Cukup ganti isi fungsi. Dalam proyek besar, teknik ini lazim dipakai.</p></div>
+
+<h2>Membandingkan Jumlah Langkah</h2>
+
+<p>Ketiga algoritma menghasilkan hasil akhir yang sama, tetapi jumlah pekerjaannya berbeda. Ada dua macam pekerjaan yang bisa dihitung:
+<b>perbandingan</b> (berapa kali dua elemen dibandingkan) dan <b>pemindahan</b> (berapa kali elemen ditukar atau digeser). Program 16.5
+menjalankan ketiganya pada 20 data dalam tiga keadaan, yaitu <b>acak</b>, <b>sudah terurut</b>, dan <b>terurut terbalik</b>, lalu mencatat
+kedua hitungan lewat dua variabel global <code>Banding</code> dan <code>Pindah</code>.</p>
+
+<p>Program ini lebih panjang karena berisi tiga prosedur pengurutan, satu prosedur <code>Tukar</code>, dan satu prosedur <code>SiapkanData</code>.
+Buka <code>bab16_05_banding_jumlah_langkah.pas</code> dan bacalah per bagian.</p>
+
+<x-listing src="bab16_05_banding_jumlah_langkah.pas"></x-listing>
+
+<table class="baris">
+  <caption>Penjelasan Program 16.5</caption>
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–15</td><td><code>N = 20</code> dan satu set data <code>Acak</code> tetap supaya hasil selalu sama. <code>TData</code> adalah array 20 <code>Integer</code>.</td></tr>
+    <tr><td>18</td><td><code>Banding</code> dan <code>Pindah</code> bertipe <code>LongInt</code>: variabel global yang dinaikkan oleh prosedur pengurutan.</td></tr>
+    <tr><td>20–26</td><td><code>Tukar(var A, B)</code> menukar dua variabel lewat parameter <code>var</code> (Bab 9) dan sekaligus menaikkan <code>Pindah</code>.</td></tr>
+    <tr><td>28–47</td><td><code>BubbleSort</code>: sama dengan Program 16.1, hanya setiap perbandingan menaikkan <code>Banding</code> dan setiap penukaran memanggil <code>Tukar</code>.</td></tr>
+    <tr><td>49–65</td><td><code>SelectionSort</code>: <code>Banding</code> naik pada setiap perbandingan pemindai (baris 58), dan <code>Tukar</code> hanya dipanggil bila perlu (baris 62–63).</td></tr>
+    <tr><td>67–91</td><td><code>InsertionSort</code>: bentuk <code>while</code> dengan penanda <code>Lanjut</code> agar <code>Banding</code> dihitung tepat satu kali per pemeriksaan elemen (baris 79). Setiap geseran menaikkan <code>Pindah</code> (baris 83).</td></tr>
+    <tr><td>93–104</td><td><code>SiapkanData</code> mengisi <code>D</code> sesuai <code>Jenis</code> dengan <code>case</code>: 1 acak, 2 terurut (<code>I * 5</code>: 5, 10, ..., 100), 3 terbalik.</td></tr>
+    <tr><td>114–134</td><td>Tiga algoritma dalam <code>case</code> di dalam tiga keadaan data. Sebelum setiap pengurutan, hitungan direset menjadi 0, lalu hasil dicetak dengan <code>Write(Banding:5, '/', Pindah:4)</code>.</td></tr>
+  </tbody>
+</table>
+
+<x-run src="bab16_05_banding_jumlah_langkah.pas" caption="Perbandingan / pemindahan untuk 20 data: tiga algoritma, tiga keadaan data"></x-run>
+
+<table class="data" id="tb-banding">
+  <caption>Hasil Program 16.5 (perbandingan / pemindahan, N = 20)</caption>
+  <thead><tr><th>Algoritma</th><th>Acak</th><th>Terurut</th><th>Terbalik</th></tr></thead>
+  <tbody>
+    <tr><td>Bubble sort</td><td>180 / 90</td><td>19 / 0</td><td>190 / 190</td></tr>
+    <tr><td>Selection sort</td><td>190 / 18</td><td>190 / 0</td><td>190 / 10</td></tr>
+    <tr><td>Insertion sort</td><td>107 / 90</td><td>19 / 0</td><td>190 / 190</td></tr>
+  </tbody>
+</table>
+
+<figure class="grafik" id="gb-bar-banding"><svg viewBox="0 0 680 248">
+<text class="h c" x="4" y="18">Jumlah perbandingan (N = 20)</text>
+<text class="b" x="4" y="60">Acak</text>
+<rect class="no" x="90" y="30" width="360" height="15" rx="2"/><text class="s" x="456" y="41">Bubble: 180</text>
+<rect class="dec" x="90" y="48" width="380" height="15" rx="2"/><text class="s" x="476" y="59">Selection: 190</text>
+<rect class="ok" x="90" y="66" width="214" height="15" rx="2"/><text class="s" x="310" y="77">Insertion: 107</text>
+<text class="b" x="4" y="122">Terurut</text>
+<rect class="no" x="90" y="92" width="38" height="15" rx="2"/><text class="s" x="134" y="103">Bubble: 19</text>
+<rect class="dec" x="90" y="110" width="380" height="15" rx="2"/><text class="s" x="476" y="121">Selection: 190</text>
+<rect class="ok" x="90" y="128" width="38" height="15" rx="2"/><text class="s" x="134" y="139">Insertion: 19</text>
+<text class="b" x="4" y="184">Terbalik</text>
+<rect class="no" x="90" y="154" width="380" height="15" rx="2"/><text class="s" x="476" y="165">Bubble: 190</text>
+<rect class="dec" x="90" y="172" width="380" height="15" rx="2"/><text class="s" x="476" y="183">Selection: 190</text>
+<rect class="ok" x="90" y="190" width="380" height="15" rx="2"/><text class="s" x="476" y="201">Insertion: 190</text>
+<rect class="no" x="90" y="230" width="18" height="11" rx="2"/><text class="s" x="114" y="239">Bubble</text><rect class="dec" x="170" y="230" width="18" height="11" rx="2"/><text class="s" x="194" y="239">Selection</text><rect class="ok" x="260" y="230" width="18" height="11" rx="2"/><text class="s" x="284" y="239">Insertion</text>
+</svg><figcaption>Perbandingan hasil Program 16.5: selection sort selalu 190, bubble dan insertion sort sangat cepat pada data yang sudah terurut</figcaption></figure>
+
+<p>Beberapa hal yang dapat dibaca dari tabel dan grafik:</p>
+
+<ol class="langkah">
+  <li><b>Selection sort tidak peduli keadaan data.</b> Perbandingannya selalu 190, karena pemindai tetap memeriksa seluruh sisa array di setiap
+  putaran. Nilai 190 sama dengan 20 × 19 / 2, yaitu jumlah semua pasangan elemen.</li>
+  <li><b>Data terurut adalah impian bubble dan insertion sort.</b> Keduanya hanya 19 perbandingan (N − 1) dan nol pemindahan: bubble sort melihat
+  tidak ada pertukaran pada putaran pertama lalu berhenti, insertion sort mendapati tiap elemen sudah lebih besar dari elemen di kirinya.</li>
+  <li><b>Data terbalik adalah mimpi buruk.</b> Bubble sort dan insertion sort perlu 190 perbandingan dan 190 pemindahan: tiap pasangan elemen harus diputar.</li>
+  <li><b>Selection sort hemat pemindahan.</b> Dengan paling banyak satu penukaran per putaran, pemindahannya hanya 18 pada data acak dan 10 pada
+  data terbalik. Bila memindahkan elemen itu mahal (misalnya record besar), ini keunggulan nyata.</li>
+  <li><b>Bubble dan insertion sort memindahkan sama banyak pada data acak (90).</b> Itu bukan kebetulan: keduanya hanya membetulkan
+  pasangan yang urutannya terbalik, dan jumlah pasangan terbalik adalah angka yang sama. Satuannya agak berbeda (penukaran melawan geseran),
+  tetapi angkanya sama.</li>
+</ol>
+
+<figure class="grafik" id="gb-bar-pindah"><svg viewBox="0 0 680 248">
+<text class="h c" x="4" y="18">Jumlah pemindahan (N = 20)</text>
+<text class="b" x="4" y="60">Acak</text>
+<rect class="no" x="90" y="30" width="180" height="15" rx="2"/><text class="s" x="276" y="41">Bubble: 90</text>
+<rect class="dec" x="90" y="48" width="36" height="15" rx="2"/><text class="s" x="132" y="59">Selection: 18</text>
+<rect class="ok" x="90" y="66" width="180" height="15" rx="2"/><text class="s" x="276" y="77">Insertion: 90</text>
+<text class="b" x="4" y="122">Terurut</text>
+<rect class="no" x="90" y="92" width="2" height="15" rx="2"/><text class="s" x="98" y="103">Bubble: 0</text>
+<rect class="dec" x="90" y="110" width="2" height="15" rx="2"/><text class="s" x="98" y="121">Selection: 0</text>
+<rect class="ok" x="90" y="128" width="2" height="15" rx="2"/><text class="s" x="98" y="139">Insertion: 0</text>
+<text class="b" x="4" y="184">Terbalik</text>
+<rect class="no" x="90" y="154" width="380" height="15" rx="2"/><text class="s" x="476" y="165">Bubble: 190</text>
+<rect class="dec" x="90" y="172" width="20" height="15" rx="2"/><text class="s" x="116" y="183">Selection: 10</text>
+<rect class="ok" x="90" y="190" width="380" height="15" rx="2"/><text class="s" x="476" y="201">Insertion: 190</text>
+<rect class="no" x="90" y="230" width="18" height="11" rx="2"/><text class="s" x="114" y="239">Bubble</text><rect class="dec" x="170" y="230" width="18" height="11" rx="2"/><text class="s" x="194" y="239">Selection</text><rect class="ok" x="260" y="230" width="18" height="11" rx="2"/><text class="s" x="284" y="239">Insertion</text>
+</svg><figcaption>Pemindahan: selection sort paling hemat, sedangkan bubble dan insertion sort memindahkan banyak pada data terbalik</figcaption></figure>
+
+<div class="info"><p>Ketiga algoritma bekerja dalam waktu yang tumbuh seperti <b>kuadrat</b> jumlah data: dua kali lipat data berarti sekitar empat
+kali lipat pekerjaan (20 data punya 190 pasangan, 40 data punya 780). Untuk puluhan ribu data, Anda memerlukan algoritma yang lebih
+cerdas seperti <i>quicksort</i>, tetapi ketiga algoritma di bab ini adalah fondasi yang tepat untuk memahaminya, dan untuk data
+beberapa puluh sampai beberapa ratus elemen mereka sudah memadai.</p></div>
+
+<div class="coba"><p><b>Coba Sendiri.</b> Ubah <code>N</code> menjadi 10 dan data <code>Acak</code> menjadi sepuluh bilangan pertama, atau tambahkan keadaan data
+keempat (misalnya data sudah terurut kecuali elemen terakhir). Perhatikan algoritma mana yang paling cepat untuk keadaan baru itu.</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Menukar tanpa variabel bantu</h3>
+
+<p>Telah ditunjukkan pada bagian awal bab: <code>A := B; B := A;</code> membuat kedua variabel sama. Pastikan setiap penukaran memakai tiga langkah
+dengan variabel bantu, atau memakai prosedur seperti <code>Tukar</code> pada Program 16.5.</p>
+
+<h3>Memindahkan satu field, bukan record utuh</h3>
+
+<p>Telah dibuktikan pada program <code>terpisah.pas</code> di bagian record: nilai berpisah dari nama. Urutkan array of record dan pindahkan
+record, jangan field.</p>
+
+<h3>Lupa mendeklarasikan variabel bantu</h3>
+
+<p>Penukaran memerlukan variabel bantu yang harus dideklarasikan di bagian <code>var</code> seperti variabel lain. Bila terlupa, kompiler
+menolak nama itu begitu ia dipakai pertama kali.</p>
+
+<x-error name="lupabantu.pas" caption="Sementara dipakai tetapi tidak pernah dideklarasikan">program LupaBantu;
+var
+  A, B: Integer;
+begin
+  A := 29;
+  B := 10;
+  Sementara := A;
+  A := B;
+  B := Sementara;
+end.</x-error>
+
+<p>Perbaikannya: tambahkan <code>Sementara: Integer;</code> pada bagian <code>var</code>, sejajar dengan <code>A</code> dan <code>B</code>.</p>
+
+<div class="rangkuman"><h2>Rangkuman</h2><ul>
+  <li>Pengurutan menyusun elemen menurut aturan urutan, naik atau turun; data terurut adalah syarat pencarian biner.</li>
+  <li>Menukar dua elemen memerlukan <b>variabel bantu</b>: <code>Bantu := A; A := B; B := Bantu</code>.</li>
+  <li><b>Bubble sort</b> menukar pasangan bersebelahan yang salah urut; setiap putaran membawa elemen terbesar ke kanan, dan <code>AdaTukar</code> memungkinkan berhenti lebih awal.</li>
+  <li><b>Selection sort</b> memilih elemen terkecil bagian sisa dan menukarnya ke depan; paling banyak <code>N - 1</code> pertukaran.</li>
+  <li><b>Insertion sort</b> mengambil <code>Kunci</code>, menggeser elemen yang lebih besar, dan menyisipkannya; sangat cepat pada data yang hampir terurut.</li>
+  <li>Pada array of record, bandingkan satu field (atau aturan dalam fungsi <code>LebihDulu</code>) tetapi pindahkan <b>record utuh</b>; pemecah seri menangani nilai kembar.</li>
+  <li>Pada 20 data, selection sort selalu 190 perbandingan; bubble dan insertion sort hanya 19 pada data terurut, tetapi 190 perbandingan dan 190 pemindahan pada data terbalik.</li>
+  <li>Variabel bantu harus dideklarasikan; parameter array sebaiknya memakai tipe bernama seperti <code>TData</code>.</li>
+</ul></div>
+
+<div class="latihan"><h2>Latihan</h2><ol>
+  <li><span class="lv dasar">Dasar</span> Dengan pensil dan kertas, jalankan bubble sort pada data <code>4, 2, 5, 1</code>. Tulis isi array setiap putaran, lalu cocokkan dengan program Anda.</li>
+  <li><span class="lv dasar">Dasar</span> Mengapa batas atas perulangan dalam bubble sort adalah <code>N - Putaran</code> dan bukan <code>N</code>?</li>
+  <li><span class="lv dasar">Dasar</span> Ubah tanda perbandingan pada Program 16.1 agar data terurut turun (terbesar di depan) lalu jalankan.</li>
+  <li><span class="lv menengah">Menengah</span> Tambahkan penghitung perbandingan dan pertukaran pada Program 16.1. Berapa totalnya untuk data awal pada Program 16.1?</li>
+  <li><span class="lv menengah">Menengah</span> Ubah Program 16.4 agar nilai dari yang terendah (urutan naik), dengan nama menurut abjad bila seri.</li>
+  <li><span class="lv menengah">Menengah</span> Pakai data terurut pada Program 16.2. Apakah ada pertukaran? Apakah putaran tetap tujuh? Jelaskan.</li>
+  <li><span class="lv tantangan">Tantangan</span> Buat program yang mengisi array 12 bilangan, mengurutkannya dengan insertion sort, lalu meminta bilangan yang dicari dan mencarinya dengan pencarian biner dari Bab 15.</li>
+</ol></div>

@@ -1,0 +1,27 @@
+(program bab13_01_record_dasar
+  (type TBuku = (record (Judul: string[40]) (Penulis: string[30]) (Tahun: Integer) (Harga: LongInt)))
+  (var (Buku1 Buku2) TBuku)
+  (begin
+    (:= (. Buku1 Judul) 'Belajar Pemrograman Pascal')
+    (:= (. Buku1 Penulis) 'Siti Aminah')
+    (:= (. Buku1 Tahun) 2024)
+    (:= (. Buku1 Harga) 85000)
+    (with Buku2
+      (begin
+        (:= Judul 'Algoritma untuk Pemula')
+        (:= Penulis 'Ahmad Fauzi')
+        (:= Tahun 2022)
+        (:= Harga 67500)
+        (empty)))
+    (do (call WriteLn 'Buku 1: ' (. Buku1 Judul) ' (' (. Buku1 Tahun) ')'))
+    (do (call WriteLn '        oleh ' (. Buku1 Penulis) ', Rp ' (. Buku1 Harga)))
+    (with Buku2
+      (begin
+        (do (call WriteLn 'Buku 2: ' Judul ' (' Tahun ')'))
+        (do (call WriteLn '        oleh ' Penulis ', Rp ' Harga))
+        (empty)))
+    (:= Buku2 Buku1)
+    (:= (. Buku2 Harga) (- (. Buku1 Harga) 10000))
+    (do (call WriteLn 'Salinan: ' (. Buku2 Judul) ', harga diskon Rp ' (. Buku2 Harga)))
+    (do (call WriteLn 'Asli   : harga tetap Rp ' (. Buku1 Harga)))
+    (empty)))

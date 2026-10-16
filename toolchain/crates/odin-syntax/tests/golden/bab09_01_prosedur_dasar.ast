@@ -1,0 +1,24 @@
+(program bab09_01_prosedur_dasar
+  (procedure GarisPemisah
+    (begin
+      (do (call WriteLn '----------------------------------------'))
+      (empty)))
+  (procedure TampilkanJudul
+    (begin
+      (do GarisPemisah)
+      (do (call WriteLn '       DAFTAR MENU KANTIN SEKOLAH'))
+      (do GarisPemisah)
+      (empty)))
+  (procedure TampilkanMenu
+    (begin
+      (do (call WriteLn ' 1. Nasi goreng ............ Rp 12000'))
+      (do (call WriteLn ' 2. Mi ayam ................ Rp 10000'))
+      (do (call WriteLn ' 3. Soto banjar ............ Rp 15000'))
+      (do (call WriteLn ' 4. Es teh ................. Rp  3000'))
+      (empty)))
+  (begin
+    (do TampilkanJudul)
+    (do TampilkanMenu)
+    (do GarisPemisah)
+    (do (call WriteLn 'Selamat makan!'))
+    (empty)))

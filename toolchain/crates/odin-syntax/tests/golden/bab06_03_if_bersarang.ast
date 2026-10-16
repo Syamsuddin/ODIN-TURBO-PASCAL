@@ -1,0 +1,29 @@
+(program bab06_03_if_bersarang
+  (var (Umur) Integer)
+  (var (Pelajar) Char)
+  (var (Harga) LongInt)
+  (begin
+    (do (call Write 'Umur pengunjung: '))
+    (do (call ReadLn Umur))
+    (if (< Umur 5)
+      (:= Harga 0)
+      (else
+        (if (< Umur 13)
+          (:= Harga 15000)
+          (else
+            (if (< Umur 60)
+              (:= Harga 30000)
+              (else
+                (:= Harga 20000)))))))
+    (if (and (>= Umur 13) (<= Umur 22))
+      (begin
+        (do (call Write 'Apakah pelajar/mahasiswa (Y/T)? '))
+        (do (call ReadLn Pelajar))
+        (if (or (= Pelajar 'Y') (= Pelajar 'y'))
+          (:= Harga (- Harga 10000)))
+        (empty)))
+    (if (= Harga 0)
+      (do (call WriteLn 'Masuk gratis.'))
+      (else
+        (do (call WriteLn 'Harga tiket: Rp ' Harga))))
+    (empty)))

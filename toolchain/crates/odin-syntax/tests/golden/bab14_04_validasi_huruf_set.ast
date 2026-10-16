@@ -1,0 +1,60 @@
+(program bab14_04_validasi_huruf_set
+  (const HurufBesar = ['A'..'Z'])
+  (const HurufKecil = ['a'..'z'])
+  (const Angka = ['0'..'9'])
+  (const Simbol = ['!', '@', '#', '$', '%', '&', '*', '-', '_', '?'])
+  (var (Sandi NomorHP) string)
+  (var (I Skor) Integer)
+  (var (AdaBesar AdaKecil AdaAngka AdaSimbol Sah) Boolean)
+  (begin
+    (do (call Write 'Kata sandi baru: '))
+    (do (call ReadLn Sandi))
+    (:= AdaBesar False)
+    (:= AdaKecil False)
+    (:= AdaAngka False)
+    (:= AdaSimbol False)
+    (for I 1 to (call Length Sandi)
+      (begin
+        (if (in (index Sandi I) HurufBesar)
+          (:= AdaBesar True))
+        (if (in (index Sandi I) HurufKecil)
+          (:= AdaKecil True))
+        (if (in (index Sandi I) Angka)
+          (:= AdaAngka True))
+        (if (in (index Sandi I) Simbol)
+          (:= AdaSimbol True))
+        (empty)))
+    (:= Skor 0)
+    (if (>= (call Length Sandi) 8)
+      (:= Skor (+ Skor 1)))
+    (if AdaBesar
+      (:= Skor (+ Skor 1)))
+    (if AdaKecil
+      (:= Skor (+ Skor 1)))
+    (if AdaAngka
+      (:= Skor (+ Skor 1)))
+    (if AdaSimbol
+      (:= Skor (+ Skor 1)))
+    (case Skor
+      (arm 0..2
+        (do (call WriteLn 'Kekuatan: LEMAH (' Skor '/5)')))
+      (arm 3..4
+        (do (call WriteLn 'Kekuatan: SEDANG (' Skor '/5)')))
+      (arm 5
+        (do (call WriteLn 'Kekuatan: KUAT (' Skor '/5)'))))
+    (if (not AdaAngka)
+      (do (call WriteLn '  Saran: tambahkan angka.')))
+    (if (not AdaSimbol)
+      (do (call WriteLn '  Saran: tambahkan simbol seperti ! atau #.')))
+    (do WriteLn)
+    (do (call Write 'Nomor HP: '))
+    (do (call ReadLn NomorHP))
+    (:= Sah (and (and (>= (call Length NomorHP) 10) (<= (call Length NomorHP) 13)) (= (call Copy NomorHP 1 2) '08')))
+    (for I 1 to (call Length NomorHP)
+      (if (not (in (index NomorHP I) Angka))
+        (:= Sah False)))
+    (if Sah
+      (do (call WriteLn 'Nomor HP sah.'))
+      (else
+        (do (call WriteLn 'Nomor HP tidak sah.'))))
+    (empty)))

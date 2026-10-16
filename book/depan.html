@@ -1,0 +1,208 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<!-- Front matter. Each <section> becomes a page group; data-key is its anchor, data-layout="plain" hides the title. -->
+
+<section data-key="hak-cipta" data-title="Hak Cipta" data-layout="plain">
+<div class="copyright">
+<h3>Belajar Pemrograman Bahasa Pascal dengan ODIN Turbo Pascal</h3>
+<p>Penulis: Syams Ideris (syamsuddin.ideris@gmail.com)<br>
+Edisi pertama, Oktober 2026, untuk Odin Turbo Pascal {{TAG}}.</p>
+
+<p>Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.</p>
+
+<p>Buku ini adalah bagian dari Odin Turbo Pascal dan merupakan karya bebas: Anda boleh menyebarluaskan dan/atau
+mengubahnya menurut ketentuan GNU General Public License yang diterbitkan Free Software Foundation, versi 3 atau
+(sesuai pilihan Anda) versi yang lebih baru. Buku dan program contohnya disebarkan dengan harapan bermanfaat, tetapi
+<b>tanpa jaminan apa pun</b>, bahkan tanpa jaminan tersirat bahwa layak diperdagangkan atau cocok untuk tujuan tertentu.
+Naskah lengkap lisensi ada di berkas <code>LICENSE</code> yang menyertai Odin Turbo Pascal.</p>
+
+<p>Semua program contoh di buku ini tersedia di Odin Turbo Pascal melalui menu <b>File ▸ Examples</b>. Setiap listing
+dicetak langsung dari berkas contoh tersebut, dan setiap keluaran program adalah hasil kompilasi dengan kompiler Odin
+lalu menjalankan program itu. Keluaran di komputer Anda bisa sedikit berbeda bila bergantung pada sistem operasi,
+prosesor, atau bilangan acak.</p>
+
+<p>Odin Turbo Pascal adalah perangkat lunak yang ditulis secara independen. Tampilannya terinspirasi IDE Turbo Pascal
+era DOS, tetapi Odin Turbo Pascal bukan produk Borland, tidak berafiliasi dengan Borland, dan tidak memuat berkas,
+logo, maupun huruf milik Borland. Turbo Pascal, macOS, Windows, dan nama produk lain yang disebut di buku ini adalah
+merek dagang pemiliknya masing-masing dan disebut hanya untuk keperluan identifikasi.</p>
+
+<p>Gambar layar Odin Turbo Pascal di buku ini digambar ulang dari data aplikasi yang sebenarnya: menu, warna editor,
+kode, dan pesan kompiler diambil dari Odin Turbo Pascal {{TAG}}.</p>
+</div>
+</section>
+
+<section data-key="kata-pengantar" data-title="Kata Pengantar">
+<p class="lead">Puji syukur ke hadirat Tuhan Yang Maha Esa, buku <i>Belajar Pemrograman Bahasa Pascal dengan ODIN Turbo
+Pascal</i> akhirnya dapat diselesaikan. Buku ini lahir dari keinginan sederhana: membuat belajar pemrograman terasa
+dekat, jelas, dan menyenangkan, terutama bagi Anda yang baru pertama kali menulis program.</p>
+
+<p>Banyak dari kita mengenal pemrograman lewat layar biru Turbo Pascal di laboratorium komputer sekolah atau kampus.
+Layar itu sederhana, tetapi justru karena kesederhanaannya kita bisa memusatkan perhatian pada hal yang paling penting:
+cara berpikir. Menulis perintah dengan urutan yang benar, memilih tipe data yang tepat, memecah masalah besar menjadi
+bagian kecil, lalu menguji hasilnya. Kebiasaan berpikir itulah yang tetap berguna di bahasa pemrograman apa pun yang
+nanti Anda pelajari.</p>
+
+<p>Masalahnya, Turbo Pascal asli adalah program DOS yang tidak lagi berjalan dengan nyaman di komputer masa kini.
+Karena itu saya membangun <b>Odin Turbo Pascal</b>: IDE bergaya klasik yang berjalan di macOS, Windows, dan Linux,
+lengkap dengan kompiler Odin yang menghasilkan program native, layar program 80×25, debugger, dan kumpulan program
+contoh. Buku ini adalah pasangan Odin Turbo Pascal. Ke-89 program contoh di dalamnya tersedia di menu
+<b>File ▸ Examples</b>, sehingga Anda bisa membaca penjelasan di buku sambil membuka, menjalankan, dan mengubah
+programnya sendiri.</p>
+
+<p>Buku ini disusun sebagai tutorial bertahap dalam 20 bab yang dikelompokkan menjadi enam bagian, dari mengenal IDE dan
+menulis program pertama sampai menyelesaikan tiga proyek akhir yang utuh. Setiap konsep dijelaskan dengan bahasa
+sehari-hari, digambarkan dengan infografik berwarna, lalu dipraktikkan dengan program lengkap. Setiap program disertai
+keluarannya dan penjelasan baris demi baris. Di akhir bab tersedia rangkuman dan latihan bertingkat untuk menguji
+pemahaman.</p>
+
+<p>Saran saya: jangan hanya membaca. Ketik ulang sebagian program, ubah angkanya, sengaja buat kesalahan, lalu baca pesan
+kompilernya. Programmer belajar paling cepat dari program yang gagal dan dari usaha memperbaikinya.</p>
+
+<p>Terima kasih kepada keluarga, rekan, dan semua pengguna Odin Turbo Pascal yang telah mencoba, memberi masukan, dan
+melaporkan kesalahan. Buku ini tentu belum sempurna. Kritik, saran, dan laporan kesalahan sangat saya harapkan melalui
+surel <b>syamsuddin.ideris@gmail.com</b>, agar edisi berikutnya menjadi lebih baik.</p>
+
+<p>Selamat belajar, dan selamat menikmati serunya membuat program pertama Anda.</p>
+
+<div class="signature">Oktober 2026<b>Syams Ideris</b></div>
+</section>
+
+<section data-key="daftar-isi" data-title="Daftar Isi">
+[[DAFTAR-ISI]]
+</section>
+
+<section data-key="petunjuk" data-title="Cara Menggunakan Buku Ini">
+<p>Buku ini bisa dibaca berurutan dari awal sampai akhir, dan memang dirancang untuk itu: setiap bab memakai konsep dari
+bab-bab sebelumnya. Bagian ini menjelaskan susunan buku dan arti tanda-tanda yang Anda temui di setiap halaman.</p>
+
+<h2>Peta Buku</h2>
+
+<p>Kedua puluh bab dikelompokkan menjadi enam bagian. Setiap bagian punya warna sendiri, dan warna itu dipakai pada
+judul, tabel, infografik, serta tab penanda bab di tepi kanan halaman, sehingga Anda selalu tahu sedang berada di
+bagian mana.</p>
+
+<figure class="grafik" id="gb-peta-buku">
+<svg viewBox="0 0 680 300">
+  <g style="--c:#1d4ed8;--c-soft:#e8edfb">
+    <rect class="term" x="0" y="10" width="216" height="130" rx="12"/>
+    <text class="white xs b" x="16" y="34">BAGIAN I · BAB 1–5</text>
+    <text class="white h" x="16" y="58">Fondasi</text>
+    <text class="white s" x="16" y="82">Mengenal IDE, struktur program,</text>
+    <text class="white s" x="16" y="98">tipe data, masukan-keluaran,</text>
+    <text class="white s" x="16" y="114">dan operator</text>
+  </g>
+  <g style="--c:#0f8f84">
+    <rect class="term" x="232" y="10" width="216" height="130" rx="12"/>
+    <text class="white xs b" x="248" y="34">BAGIAN II · BAB 6–8</text>
+    <text class="white h" x="248" y="58">Alur Kendali</text>
+    <text class="white s" x="248" y="82">Percabangan, perulangan,</text>
+    <text class="white s" x="248" y="98">dan algoritma klasik</text>
+  </g>
+  <g style="--c:#e2680b">
+    <rect class="term" x="464" y="10" width="216" height="130" rx="12"/>
+    <text class="white xs b" x="480" y="34">BAGIAN III · BAB 9–10</text>
+    <text class="white h" x="480" y="58">Prosedur dan Rekursi</text>
+    <text class="white s" x="480" y="82">Memecah program menjadi</text>
+    <text class="white s" x="480" y="98">bagian yang bisa dipakai ulang</text>
+  </g>
+  <g style="--c:#7c3aed">
+    <rect class="term" x="0" y="160" width="216" height="130" rx="12"/>
+    <text class="white xs b" x="16" y="184">BAGIAN IV · BAB 11–14</text>
+    <text class="white h" x="16" y="208">Struktur Data</text>
+    <text class="white s" x="16" y="232">Array, string, record,</text>
+    <text class="white s" x="16" y="248">enumerasi, subrange, dan set</text>
+  </g>
+  <g style="--c:#d0266e">
+    <rect class="term" x="232" y="160" width="216" height="130" rx="12"/>
+    <text class="white xs b" x="248" y="184">BAGIAN V · BAB 15–16</text>
+    <text class="white h" x="248" y="208">Cari dan Urutkan</text>
+    <text class="white s" x="248" y="232">Pencarian sekuensial dan biner,</text>
+    <text class="white s" x="248" y="248">tiga algoritma pengurutan</text>
+  </g>
+  <g style="--c:#3f3cbb">
+    <rect class="term" x="464" y="160" width="216" height="130" rx="12"/>
+    <text class="white xs b" x="480" y="184">BAGIAN VI · BAB 17–20</text>
+    <text class="white h" x="480" y="208">File, Pointer, Unit</text>
+    <text class="white s" x="480" y="232">Menyimpan data, memori dinamis,</text>
+    <text class="white s" x="480" y="248">unit, dan tiga proyek akhir</text>
+  </g>
+  <path class="arrow" d="M216 75 H228"/><path class="arrow" d="M448 75 H460"/>
+  <path class="arrow" d="M572 140 V150 H108 V156"/>
+  <path class="arrow" d="M216 225 H228"/><path class="arrow" d="M448 225 H460"/>
+</svg>
+<figcaption>Enam bagian buku. Ikuti panah: setiap bagian dibangun di atas bagian sebelumnya.</figcaption>
+</figure>
+
+<h2>Susunan Setiap Bab</h2>
+
+<p>Setiap bab dibuka dengan halaman berwarna yang memuat <b>tujuan pembelajaran</b> dan <b>daftar program</b> yang akan
+dibahas. Isi bab mengikuti pola yang sama: konsep dijelaskan lebih dulu, lengkap dengan bentuk umum penulisannya dan
+infografik, lalu dipraktikkan dengan program contoh. Bab ditutup dengan <b>kesalahan yang sering terjadi</b>,
+<b>rangkuman</b>, dan <b>latihan</b>.</p>
+
+<div class="alur">
+  <div><span class="ikon">1</span><b>Konsep</b>Penjelasan, analogi, dan bentuk umum</div>
+  <div><span class="ikon">2</span><b>Infografik</b>Cara kerja yang digambarkan</div>
+  <div><span class="ikon">3</span><b>Praktik</b>Listing, jalankan, baca keluaran</div>
+  <div><span class="ikon">4</span><b>Penjelasan</b>Baris demi baris</div>
+  <div><span class="ikon">5</span><b>Latihan</b>Rangkuman dan soal bertingkat</div>
+</div>
+
+<h2>Membaca Listing dan Keluaran</h2>
+
+<p>Listing program dicetak dengan warna yang sama dengan editor Odin Turbo Pascal. Bilah judulnya memuat nomor program,
+nama berkas, dan judul singkat. Nomor program mengikuti nama berkas: <b>Program 6.4</b> adalah berkas
+<code>bab06_04_case_of.pas</code>, yang dibuka dari <span class="menu">File ▸ Examples...</span>. Angka di kiri adalah
+nomor baris, sama dengan nomor baris di baris status IDE, dan dipakai dalam tabel penjelasan.</p>
+
+<p>Keluaran program ditampilkan dalam jendela <b>User screen</b>, tempat program berjalan di Odin Turbo Pascal. Teks yang
+diketik pengguna, misalnya nama atau angka, dicetak <b>kuning tebal</b> agar mudah dibedakan dari tulisan program.
+Seluruh sesi ditampilkan dari awal sampai pesan <code>[Process finished, exit code 0]</code>.</p>
+
+<figure class="shot">
+<div class="win userscreen"><div class="mac"><i></i><i></i><i></i><span>Odin • User screen</span></div>
+<div class="us-bar"><span class="us-title">User screen 80×25</span><span class="btn">Copy screen</span><span class="btn">Editor</span><span class="btn">Stop</span></div>
+<pre class="us-body">Nama Anda   : <span class="ketik">Rina</span>
+Halo, Rina!
+
+[Process finished, exit code 0]</pre></div>
+<figcaption>Contoh tampilan User screen: "Rina" diketik pengguna, sisanya ditulis program.</figcaption>
+</figure>
+
+<p>Gambar layar IDE kadang diberi <span class="marknum">1</span> lingkaran bernomor. Penjelasan setiap nomor ada di
+teks atau tabel di dekat gambar.</p>
+
+<h2>Kotak-Kotak Khusus</h2>
+
+<div class="duo">
+  <div class="tip"><p>Saran praktis agar pekerjaan lebih mudah atau program lebih rapi.</p></div>
+  <div class="awas"><p>Hal yang sering menimbulkan kesalahan. Baca dengan teliti.</p></div>
+  <div class="info"><p>Pengetahuan tambahan yang memperluas pemahaman.</p></div>
+  <div class="tp7"><p>Aturan khas Turbo Pascal 7 yang dipakai buku ini.</p></div>
+  <div class="coba"><p>Eksperimen kecil: ubah program, jalankan, amati.</p></div>
+  <div class="ingat"><p>Inti penting yang perlu diingat.</p></div>
+</div>
+
+<h2>Penulisan Tombol, Menu, dan Kode</h2>
+
+<table class="data">
+  <caption>Notasi yang dipakai di buku ini</caption>
+  <thead><tr><th>Tampilan</th><th>Arti</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>F9</kbd></td><td>Tahan tombol <kbd>Ctrl</kbd>, lalu tekan <kbd>F9</kbd>. Di Mac, tombol fungsi mungkin perlu ditekan bersama <kbd>fn</kbd>.</td></tr>
+    <tr><td><span class="menu">File ▸ Examples...</span></td><td>Buka menu <b>File</b>, lalu pilih <b>Examples...</b>.</td></tr>
+    <tr><td><code>WriteLn</code></td><td>Kode, nama berkas, atau nama di dalam program.</td></tr>
+    <tr><td><span class="lv dasar">Dasar</span><span class="lv menengah">Menengah</span><span class="lv tantangan">Tantangan</span></td><td>Tingkat kesulitan soal latihan.</td></tr>
+  </tbody>
+</table>
+
+<h2>Saran Belajar</h2>
+
+<ol class="langkah">
+  <li><b>Siapkan Odin Turbo Pascal</b> sebelum mulai membaca (lihat Bab 1 dan Lampiran A).</li>
+  <li><b>Buka setiap program contoh</b> saat membahasnya, jalankan, dan bandingkan keluarannya dengan buku.</li>
+  <li><b>Kerjakan "Coba Sendiri"</b>. Simpan hasil ubahan di folder Anda sendiri dengan <span class="menu">File ▸ Save as...</span>.</li>
+  <li><b>Selesaikan latihan</b> minimal tingkat Dasar dan Menengah sebelum pindah bab.</li>
+  <li><b>Pakai lampiran</b> sebagai rujukan cepat: tombol pintasan, kata tercadang, rutin bawaan, dan arti pesan kesalahan.</li>
+</ol>
+</section>

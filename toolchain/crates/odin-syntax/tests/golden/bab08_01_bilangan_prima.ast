@@ -1,0 +1,42 @@
+(program bab08_01_bilangan_prima
+  (var (N Calon Pembagi Banyak) Integer)
+  (var (Prima) Boolean)
+  (begin
+    (do (call Write 'Periksa bilangan: '))
+    (do (call ReadLn N))
+    (:= Prima (>= N 2))
+    (:= Pembagi 2)
+    (while (and Prima (<= (* Pembagi Pembagi) N))
+      (begin
+        (if (= (mod N Pembagi) 0)
+          (:= Prima False))
+        (:= Pembagi (+ Pembagi 1))
+        (empty)))
+    (if Prima
+      (do (call WriteLn N ' adalah bilangan prima.'))
+      (else
+        (do (call WriteLn N ' bukan bilangan prima.'))))
+    (do WriteLn)
+    (do (call WriteLn 'Bilangan prima sampai 100:'))
+    (:= Banyak 0)
+    (for Calon 2 to 100
+      (begin
+        (:= Prima True)
+        (:= Pembagi 2)
+        (while (and Prima (<= (* Pembagi Pembagi) Calon))
+          (begin
+            (if (= (mod Calon Pembagi) 0)
+              (:= Prima False))
+            (:= Pembagi (+ Pembagi 1))
+            (empty)))
+        (if Prima
+          (begin
+            (do (call Write Calon:4))
+            (:= Banyak (+ Banyak 1))
+            (if (= (mod Banyak 10) 0)
+              (do WriteLn))
+            (empty)))
+        (empty)))
+    (do WriteLn)
+    (do (call WriteLn 'Ada ' Banyak ' bilangan prima.'))
+    (empty)))

@@ -1,0 +1,17 @@
+(program bab02_03_blok_begin_end
+  (var (Nilai) Integer)
+  (begin
+    (:= Nilai 80)
+    (if (>= Nilai 75)
+      (do (call WriteLn 'Satu pernyataan: Lulus')))
+    (if (>= Nilai 75)
+      (begin
+        (do (call WriteLn 'Blok dimulai'))
+        (do (call WriteLn 'Nilai Anda ' Nilai))
+        (do (call WriteLn 'Blok selesai'))
+        (empty)))
+    (begin
+      (do (call WriteLn 'Blok luar'))
+      (begin
+        (do (call WriteLn '  Blok dalam'))))
+    (empty)))

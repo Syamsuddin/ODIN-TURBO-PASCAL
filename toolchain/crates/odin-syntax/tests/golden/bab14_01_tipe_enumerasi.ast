@@ -1,0 +1,24 @@
+(program bab14_01_tipe_enumerasi
+  (type THari = (enum Senin Selasa Rabu Kamis Jumat Sabtu Minggu))
+  (const NamaHari : (array [THari] string[6]) = ('Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'))
+  (var (Hari) THari)
+  (begin
+    (for Hari Senin to Minggu
+      (begin
+        (do (call Write (call Ord Hari) '. ' (index NamaHari Hari):6 ' : '))
+        (case Hari
+          (arm Senin..Kamis
+            (do (call WriteLn 'hari sekolah')))
+          (arm Jumat
+            (do (call WriteLn 'hari sekolah, pulang lebih awal')))
+          (arm Sabtu Minggu
+            (do (call WriteLn 'libur'))))
+        (empty)))
+    (do WriteLn)
+    (:= Hari Rabu)
+    (do (call WriteLn 'Hari ini    : ' (index NamaHari Hari)))
+    (do (call WriteLn 'Besok       : ' (index NamaHari (call Succ Hari))))
+    (do (call WriteLn 'Kemarin     : ' (index NamaHari (call Pred Hari))))
+    (do (call WriteLn 'Urutan Rabu : ' (call Ord Rabu)))
+    (do (call WriteLn 'Jumat sesudah Rabu? ' (> Jumat Rabu)))
+    (empty)))

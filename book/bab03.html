@@ -1,0 +1,201 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Memahami guna tipe data dan cara memilih tipe yang tepat.</li>
+  <li>Memakai tipe bilangan (<code>Integer</code>, <code>LongInt</code>, <code>Real</code>), karakter (<code>Char</code>, <code>string</code>), dan <code>Boolean</code>.</li>
+  <li>Mengubah antar-tipe dengan <code>Trunc</code>, <code>Round</code>, <code>Ord</code>, dan <code>Chr</code>.</li>
+  <li>Membedakan variabel dari konstanta.</li>
+  <li>Mengetahui ukuran dan rentang setiap tipe, serta apa yang terjadi bila nilai melampauinya.</li>
+</ul>
+
+<p class="lead">Setiap data yang disimpan program punya jenis: bilangan bulat, bilangan pecahan, satu huruf, sepotong
+teks, atau nilai benar/salah. Jenis itu disebut <b>tipe data</b>. Memilih tipe yang tepat membuat program benar,
+hemat memori, dan mudah dibaca. Bab ini mengenalkan tipe-tipe dasar yang akan Anda pakai di sepanjang buku.</p>
+
+<h2>Variabel dan Tipenya</h2>
+
+<p>Sebuah <b>variabel</b> adalah tempat bernama di memori untuk menyimpan nilai yang bisa berubah. Sebelum dipakai,
+variabel harus diumumkan di bagian <code>var</code> beserta tipenya. Tipe menentukan tiga hal: nilai apa yang boleh
+disimpan, berapa besar memori yang dipakai, dan operasi apa yang berlaku.</p>
+
+<div class="sintaks"><pre><b>var</b>
+  <i>namaVariabel</i>: <i>Tipe</i>;
+  <i>namaLain</i>, <i>namaLagi</i>: <i>Tipe</i>;   { beberapa nama bertipe sama }</pre></div>
+
+<p>Bayangkan variabel sebagai kotak berlabel. Labelnya adalah nama, isinya adalah nilai, dan bentuk kotaknya adalah tipe,
+yang menentukan isi macam apa yang muat.</p>
+
+<div class="mem">
+  <div class="cell"><b>JumlahSiswa</b><span>32</span><i>Integer</i></div>
+  <div class="cell"><b>TinggiBadan</b><span>165.5</span><i>Real</i></div>
+  <div class="cell"><b>Huruf</b><span>'A'</span><i>Char</i></div>
+  <div class="cell"><b>SudahDewasa</b><span>True</span><i>Boolean</i></div>
+</div>
+
+<h2>Bilangan: Integer dan Real</h2>
+
+<p>Ada dua kelompok bilangan. <b>Bilangan bulat</b> (tanpa pecahan) disimpan dengan tipe seperti <code>Integer</code> dan
+<code>LongInt</code>. <b>Bilangan pecahan</b> (dengan koma) disimpan dengan <code>Real</code>. Di Pascal, pemisah desimal
+adalah <b>titik</b>, bukan koma: tulis <code>165.5</code>, bukan <code>165,5</code>.</p>
+
+<div class="tp7"><p>Dalam mode Turbo Pascal, <code>Integer</code> berukuran 2 byte dengan rentang <b>−32768 sampai
+32767</b>. Untuk bilangan yang lebih besar, misalnya jumlah penduduk, pakai <code>LongInt</code> (4 byte, sampai sekitar
+2 miliar). Memberi nilai di luar rentang akan memicu kesalahan, bukan menghasilkan angka yang salah diam-diam.</p></div>
+
+<x-listing src="bab03_01_tipe_integer_real.pas"></x-listing>
+
+<x-run src="bab03_01_tipe_integer_real.pas"></x-run>
+
+<p>Dua hal penting dari program ini. Pertama, <b>pembagian dengan <code>/</code> selalu menghasilkan <code>Real</code></b>,
+walau kedua angkanya bulat: <code>100 / 32</code> memberi <code>3.1250</code>, bukan <code>3</code>. Kedua, bilangan
+<code>Real</code> ditampilkan dengan format <code>:lebar:desimal</code>. <code>TinggiBadan:0:1</code> berarti "lebar
+secukupnya, satu angka di belakang titik". Tanpa format, <code>Real</code> tampil dalam notasi ilmiah yang sulit dibaca,
+jadi <b>selalu format setiap <code>Real</code></b> saat ditampilkan.</p>
+
+<p>Perhatikan juga perubahan antar-tipe di akhir program. <code>Integer</code> boleh langsung dimasukkan ke
+<code>Real</code> (baris 30), tetapi sebaliknya tidak: <code>Real</code> harus diubah dulu. <code>Trunc</code> membuang
+bagian pecahan (<code>165.9</code> menjadi <code>165</code>), sedangkan <code>Round</code> membulatkan ke bilangan
+terdekat (<code>165.9</code> menjadi <code>166</code>).</p>
+
+<figure class="grafik" id="gb-trunc-round">
+<svg viewBox="0 0 680 120">
+  <text class="b c mid" x="340" y="22">Dari Real 165.9 menjadi Integer</text>
+  <rect class="box" x="90" y="40" width="200" height="60" rx="10"/>
+  <text class="mono mid" x="190" y="66">Trunc(165.9)</text>
+  <text class="h c2 mid" x="190" y="90">= 165</text>
+  <text class="xs muted mid" x="190" y="38">buang pecahan</text>
+  <rect class="ok" x="390" y="40" width="200" height="60" rx="10"/>
+  <text class="mono mid" x="490" y="66">Round(165.9)</text>
+  <text class="h c2 mid" x="490" y="90">= 166</text>
+  <text class="xs muted mid" x="490" y="38">bulatkan terdekat</text>
+</svg>
+<figcaption>Dua cara mengubah <code>Real</code> menjadi <code>Integer</code>.</figcaption>
+</figure>
+
+<h2>Teks: Char dan String</h2>
+
+<p>Tipe <code>Char</code> menyimpan <b>tepat satu karakter</b>, sedangkan <code>string</code> menyimpan <b>deretan
+karakter</b>. Teks ditulis di antara tanda petik tunggal: <code>'A'</code> untuk sebuah <code>Char</code>,
+<code>'Budi Santoso'</code> untuk sebuah <code>string</code>.</p>
+
+<x-listing src="bab03_02_tipe_char_string.pas"></x-listing>
+
+<x-run src="bab03_02_tipe_char_string.pas"></x-run>
+
+<p>Beberapa ide baru muncul di sini:</p>
+
+<ul>
+  <li><b>Panjang string dibatasi.</b> <code>string[9]</code> hanya memuat 9 karakter; kelebihannya dipotong, sehingga
+  <code>'Kandangan Barat'</code> menjadi <code>'Kandangan'</code>. <code>string</code> biasa memuat hingga 255 karakter.</li>
+  <li><b>Setiap karakter punya kode.</b> <code>Ord('A')</code> memberi kode ASCII-nya, <code>65</code>. Kebalikannya,
+  <code>Chr(66)</code> memberi karakter <code>'B'</code>. <code>Ord</code> dan <code>Chr</code> saling membalik.</li>
+  <li><b>Karakter dalam string diambil lewat indeks</b>, mulai dari <b>1</b>: <code>Nama[1]</code> adalah huruf pertama.
+  <code>Length(Nama)</code> memberi jumlah karakternya.</li>
+  <li><b>Tanda <code>+</code> menyambung string.</b> Untuk menulis tanda petik di dalam teks, ketik dua kali:
+  <code>'Jum''at'</code> menghasilkan <code>Jum'at</code>.</li>
+</ul>
+
+<div class="tp7"><p>Dalam mode Turbo Pascal, <code>string</code> adalah <i>short string</i>: panjang maksimumnya 255
+karakter, dan karakter pertamanya (indeks 1) adalah isi sesungguhnya. Bab 12 membahas pengolahan string lebih dalam.</p></div>
+
+<h2>Benar atau Salah: Boolean</h2>
+
+<p>Tipe <code>Boolean</code> hanya punya dua nilai: <code>True</code> (benar) dan <code>False</code> (salah). Tipe ini
+tampak sederhana, tetapi menjadi dasar semua pengambilan keputusan di Bab 6. Hasil sebuah perbandingan, seperti
+<code>Umur &gt;= 17</code>, adalah nilai <code>Boolean</code> yang bisa disimpan dan dipakai ulang.</p>
+
+<x-listing src="bab03_03_tipe_boolean.pas"></x-listing>
+
+<x-run src="bab03_03_tipe_boolean.pas"></x-run>
+
+<p>Variabel <code>Boolean</code> ditampilkan sebagai <code>TRUE</code> atau <code>FALSE</code>. Yang menarik, variabel
+<code>Boolean</code> bisa langsung dipakai sebagai syarat <code>if</code> tanpa perbandingan tambahan: <code>if
+SudahDewasa then</code> sudah cukup. Operator <code>not</code> membalik nilainya, sehingga <code>not Hujan</code> bernilai
+<code>True</code> ketika <code>Hujan</code> bernilai <code>False</code>.</p>
+
+<h2>Konstanta</h2>
+
+<p>Kadang sebuah nilai memang tidak boleh berubah selama program berjalan: harga satuan, nilai pi, nama toko. Nilai
+seperti itu sebaiknya diberi nama lewat <b>konstanta</b> di bagian <code>const</code>. Keuntungannya dua: program lebih
+mudah dibaca (<code>Diskon</code> lebih jelas daripada angka <code>0.10</code> yang berserakan), dan bila nilainya perlu
+diganti, cukup ubah di satu tempat.</p>
+
+<div class="sintaks"><pre><b>const</b>
+  <i>NamaKonstanta</i> = <i>nilai</i>;   { pakai = , bukan := }</pre></div>
+
+<x-listing src="bab03_04_konstanta.pas"></x-listing>
+
+<x-run src="bab03_04_konstanta.pas"></x-run>
+
+<p>Perbedaan penting dari variabel: konstanta memakai tanda <code>=</code> (bukan <code>:=</code>) saat diumumkan, dan
+nilainya <b>tidak bisa diubah</b> setelah itu. Mencoba menugaskan nilai baru ke konstanta akan ditolak kompiler:</p>
+
+<x-error name="konstanta.pas" caption="Konstanta tidak bisa ditugasi nilai baru">program Toko;
+const
+  Harga = 45000;
+begin
+  Harga := 50000;
+  WriteLn(Harga);
+end.</x-error>
+
+<h2>Ukuran dan Batas Tipe</h2>
+
+<p>Setiap tipe menempati sejumlah byte di memori dan punya rentang nilai tertentu. Fungsi bawaan membantu memeriksanya:
+<code>SizeOf</code> memberi ukuran dalam byte, <code>Low</code> dan <code>High</code> memberi nilai terkecil dan terbesar.</p>
+
+<x-listing src="bab03_05_batas_tipe_data.pas"></x-listing>
+
+<x-run src="bab03_05_batas_tipe_data.pas"></x-run>
+
+<table class="data compact">
+  <caption>Tipe bilangan bulat dan rentangnya (mode Turbo Pascal)</caption>
+  <thead><tr><th>Tipe</th><th>Byte</th><th>Rentang</th><th>Pakai untuk</th></tr></thead>
+  <tbody>
+    <tr><td><code>Byte</code></td><td>1</td><td>0 … 255</td><td>Umur, nilai ujian, hitungan kecil tak-negatif</td></tr>
+    <tr><td><code>ShortInt</code></td><td>1</td><td>−128 … 127</td><td>Selisih kecil yang bisa negatif</td></tr>
+    <tr><td><code>Word</code></td><td>2</td><td>0 … 65535</td><td>Tahun, jumlah tak-negatif sedang</td></tr>
+    <tr><td><code>Integer</code></td><td>2</td><td>−32768 … 32767</td><td>Bilangan bulat umum</td></tr>
+    <tr><td><code>LongInt</code></td><td>4</td><td>≈ ±2,1 miliar</td><td>Penduduk, uang, hasil perkalian besar</td></tr>
+  </tbody>
+</table>
+
+<p>Mengapa batas ini penting? Karena memberi nilai di luar rentang tipe akan <b>menghentikan program</b>. Misalnya sebuah
+<code>Byte</code> hanya memuat 0 sampai 255; menambah 1 pada 255 melampaui batas, dan program berhenti dengan runtime
+error 201.</p>
+
+<x-error name="luap.pas" run caption="Range check menghentikan program yang melampaui batas tipe Byte (kode 201)">program Luap;
+var
+  B: Byte;
+begin
+  B := 255;
+  B := B + 1;
+  WriteLn(B);
+end.</x-error>
+
+<div class="tip"><p>Range check dan overflow check aktif secara bawaan di kompiler Odin, sehingga kesalahan seperti ini
+ketahuan langsung, bukan menghasilkan angka yang keliru. Biarkan tetap aktif selama belajar, dan pilih tipe yang
+rentangnya cukup untuk data Anda, misalnya <code>LongInt</code> untuk uang atau jumlah penduduk.</p></div>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>Tipe data menentukan nilai yang boleh disimpan, ukuran memori, dan operasi yang berlaku. Variabel diumumkan di <code>var</code> beserta tipenya.</li>
+  <li><code>Integer</code> (2 byte, ±32 ribu) dan <code>LongInt</code> (4 byte, ±2 miliar) untuk bilangan bulat; <code>Real</code> untuk pecahan dengan pemisah titik.</li>
+  <li>Pembagian <code>/</code> selalu menghasilkan <code>Real</code>. Format setiap <code>Real</code> dengan <code>:lebar:desimal</code> saat ditampilkan.</li>
+  <li><code>Trunc</code> membuang pecahan, <code>Round</code> membulatkan; <code>Ord</code> dan <code>Chr</code> mengubah antara karakter dan kodenya.</li>
+  <li><code>Char</code> satu karakter, <code>string</code> deretan karakter (maks 255 di mode TP), diambil lewat indeks mulai 1.</li>
+  <li><code>Boolean</code> bernilai <code>True</code>/<code>False</code> dan bisa langsung menjadi syarat.</li>
+  <li>Konstanta (<code>const</code>, pakai <code>=</code>) menamai nilai tetap yang tidak bisa diubah. Melampaui rentang tipe memicu runtime error 201.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Buat program yang menyimpan nama, umur, dan tinggi badan (Real) Anda, lalu menampilkannya rapi. Format tinggi badan dengan satu angka desimal.</li>
+  <li><span class="lv dasar">Dasar</span>Tampilkan kode ASCII huruf <code>'a'</code> sampai <code>'e'</code> memakai <code>Ord</code>, dan karakter untuk kode 48 sampai 57 memakai <code>Chr</code>.</li>
+  <li><span class="lv menengah">Menengah</span>Hitung dan tampilkan <code>22 / 7</code> dengan 2, 4, dan 6 angka desimal memakai format <code>:0:n</code>. Amati perbedaannya.</li>
+  <li><span class="lv menengah">Menengah</span>Simpan hasil perbandingan <code>Nilai &gt;= 75</code> ke variabel <code>Boolean</code> bernama <code>Lulus</code>, lalu pakai sebagai syarat <code>if</code>.</li>
+  <li><span class="lv tantangan">Tantangan</span>Pakai tipe <code>Byte</code> untuk sebuah umur, lalu sengaja beri nilai 300. Jalankan dan jelaskan apa yang terjadi serta mengapa.</li>
+</ol>
+</div>

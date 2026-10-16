@@ -1,0 +1,264 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<!-- Appendices. data-prefix is the letter (A, B, ...); heading/figure numbers use it. -->
+
+<section data-key="lampiran-pasang" data-prefix="A" data-title="Memasang Odin Turbo Pascal" data-color="#3f3cbb">
+<p>Odin Turbo Pascal berjalan di macOS, Windows, dan Linux. Berikut langkah pemasangan lengkap untuk setiap sistem. Versi
+yang dibahas adalah Odin Turbo Pascal {{VERSI}}. Petunjuk terbaru selalu ada di berkas <code>README</code> yang menyertai
+aplikasi.</p>
+
+<h2>Yang Diperlukan</h2>
+<table class="data">
+  <caption>Persyaratan sistem Odin Turbo Pascal {{VERSI}}</caption>
+  <thead><tr><th>Komponen</th><th>Kebutuhan</th></tr></thead>
+  <tbody>
+    <tr><td>macOS</td><td>11 Big Sur atau lebih baru, Intel (x86_64) atau Apple Silicon (arm64).</td></tr>
+    <tr><td>Windows</td><td>Windows 10 versi 1809 atau lebih baru, 64-bit (x86_64).</td></tr>
+    <tr><td>Linux</td><td>x86_64 atau arm64 dengan glibc 2.34+ (Ubuntu 22.04+, Debian 12+, Fedora 35+).</td></tr>
+    <tr><td>Python</td><td>3.10 atau lebih baru, lengkap dengan Tk (antarmuka grafis).</td></tr>
+    <tr><td>Free Pascal</td><td>3.2.2+ (opsional; hanya bila memilih backend Free Pascal). Kompiler Odin sudah termasuk dalam paket.</td></tr>
+    <tr><td>Rust</td><td>1.85+ (hanya di Linux atau saat membangun dari source, untuk membuat kompiler Odin).</td></tr>
+  </tbody>
+</table>
+
+<h2>macOS</h2>
+<ol class="langkah">
+  <li><b>Unduh dan ekstrak.</b> Unduh paket Odin Turbo Pascal (<b>Code ▸ Download ZIP</b>), lalu ekstrak seluruhnya.
+  Jangan menjalankan pemasang dari dalam pratinjau ZIP.</li>
+  <li><b>Buka <code>Install.command</code>.</b> Pemasang berjalan di Terminal. Ia mendeteksi chip Intel atau Apple Silicon;
+  memeriksa Python (Tk), Free Pascal, dan Xcode Command Line Tools, lalu menawarkan Homebrew atau tautan unduhan resmi
+  bila ada yang belum ada.</li>
+  <li><b>Tunggu pemeriksaan.</b> Pemasang mengompilasi dan menjalankan sebuah program uji kecil untuk memastikan hasilnya
+  cocok dengan CPU Mac Anda. Bila gagal, pemasangan berhenti dengan pesan kesalahan.</li>
+  <li><b>Jalankan aplikasi</b> dari <code>~/Applications/Odin Turbo Pascal.app</code>.</li>
+</ol>
+<div class="awas"><p>Bundel belum ditandatangani Apple. Bila macOS menahan pembukaannya, buka
+<span class="menu">System Settings ▸ Privacy &amp; Security ▸ Open Anyway</span>. Jangan menonaktifkan Gatekeeper secara
+menyeluruh.</p></div>
+<div class="tip"><p>Bila atribut <i>executable</i> hilang saat ZIP diekstrak, jalankan pemasang lewat Terminal:
+<code>/bin/bash "/lokasi/paket/Install.command"</code>.</p></div>
+
+<h2>Windows</h2>
+<ol class="langkah">
+  <li><b>Unduh dan ekstrak</b> paket seluruhnya.</li>
+  <li><b>Klik dua kali <code>Install.cmd</code>.</b> Pemasang berjalan di PowerShell: memeriksa Windows 10 1809+ 64-bit;
+  mencari Python (Tk) dan Free Pascal, lalu menawarkan winget atau tautan resmi bila belum ada; mengompilasi dan
+  menjalankan program uji dengan Free Pascal dan dengan kompiler Odin.</li>
+  <li><b>Jalankan</b> Odin Turbo Pascal dari menu Start atau pintasan Desktop.</li>
+</ol>
+<p>Aplikasi dipasang di <code>%LOCALAPPDATA%\Programs\OdinTurboPascal</code> tanpa memerlukan hak administrator.</p>
+
+<h2>Linux</h2>
+<p>Di Linux, Odin Turbo Pascal dijalankan dari source. Contoh untuk Ubuntu atau Debian:</p>
+<x-code>sudo apt install python3-tk git          # IDE (Python + Tk)
+curl https://sh.rustup.rs -sSf | sh      # Rust, sekali saja, untuk membangun odinpc
+git clone https://github.com/Syamsuddin/ODIN-TURBO-PASCAL.git
+cd ODIN-TURBO-PASCAL/toolchain
+cargo build --release                    # membangun kompiler odinpc
+cd ..
+python3 main.py                          # jalankan IDE</x-code>
+<p>Backend Odin, debugger, dan Odin Vision langsung aktif. Free Pascal (<code>sudo apt install fpc</code>) hanya
+diperlukan bila Anda memilih backend itu.</p>
+
+<div class="info"><p>Sebagian hal belum diuji di perangkat keras sungguhan, hanya di runner CI dan mesin virtual, antara
+lain pemasangan di Mac Apple Silicon, peluncuran lewat Finder, Gatekeeper, serta pemasang Windows lengkap. Rincian
+status pengujian ada di <code>README</code> dan <code>docs/TEST_REPORT.txt</code>.</p></div>
+</section>
+
+<section data-key="lampiran-pintasan" data-prefix="B" data-title="Pintasan Keyboard" data-color="#1d4ed8">
+<p>Daftar lengkap pintasan Odin Turbo Pascal. Sumber: menu IDE dan <code>docs/SHORTCUTS.txt</code>. Di Mac, tekan
+<kbd>fn</kbd> bersama tombol fungsi bila tombol itu dipakai untuk kontrol perangkat.</p>
+
+<div class="duo">
+<table class="compact"><caption>Berkas dan editor</caption><thead><tr><th>Tombol</th><th>Perintah</th></tr></thead><tbody>
+<tr><td><kbd>F2</kbd></td><td>Simpan (Save)</td></tr>
+<tr><td><kbd>F3</kbd></td><td>Buka (Open)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>N</kbd></td><td>Berkas baru (New)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>Buka</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Simpan</td></tr>
+<tr><td><kbd>Alt</kbd>+<kbd>Backspace</kbd></td><td>Undo</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Redo</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>Hapus baris</td></tr>
+<tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>Indentasi / kurangi</td></tr>
+<tr><td><kbd>Insert</kbd></td><td>Mode Insert / Overwrite</td></tr>
+<tr><td><kbd>Alt</kbd>+<kbd>X</kbd></td><td>Keluar (Exit)</td></tr>
+</tbody></table>
+
+<table class="compact"><caption>Cari, kompilasi, jalankan</caption><thead><tr><th>Tombol</th><th>Perintah</th></tr></thead><tbody>
+<tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Find</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>H</kbd></td><td>Replace</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>G</kbd></td><td>Search again</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>J</kbd></td><td>Go to line</td></tr>
+<tr><td><kbd>F9</kbd></td><td>Make (kompilasi)</td></tr>
+<tr><td><kbd>Alt</kbd>+<kbd>F9</kbd></td><td>Compile</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>F9</kbd></td><td>Run (kompilasi + jalankan)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>F2</kbd></td><td>Stop program</td></tr>
+<tr><td><kbd>Alt</kbd>+<kbd>F5</kbd></td><td>User screen</td></tr>
+<tr><td><kbd>Alt</kbd>+<kbd>F8</kbd></td><td>Diagnostik berikutnya</td></tr>
+<tr><td><kbd>F1</kbd></td><td>Help</td></tr>
+</tbody></table>
+</div>
+
+<div class="duo">
+<table class="compact"><caption>Debugger</caption><thead><tr><th>Tombol</th><th>Perintah</th></tr></thead><tbody>
+<tr><td><kbd>F7</kbd></td><td>Trace into (masuk prosedur)</td></tr>
+<tr><td><kbd>F8</kbd></td><td>Step over (lewati prosedur)</td></tr>
+<tr><td><kbd>F4</kbd></td><td>Go to cursor</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>F8</kbd></td><td>Toggle breakpoint</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>F7</kbd></td><td>Evaluate / Modify</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>F9</kbd></td><td>Continue</td></tr>
+</tbody></table>
+
+<table class="compact"><caption>Jendela dan Mac</caption><thead><tr><th>Tombol</th><th>Perintah</th></tr></thead><tbody>
+<tr><td><kbd>F5</kbd></td><td>Zoom jendela</td></tr>
+<tr><td><kbd>F6</kbd></td><td>Jendela berikutnya</td></tr>
+<tr><td><kbd>Alt</kbd>+<kbd>F3</kbd></td><td>Tutup jendela</td></tr>
+<tr><td><kbd>F10</kbd></td><td>Menu File</td></tr>
+<tr><td><kbd>Cmd</kbd>+<kbd>R</kbd></td><td>Run (Mac)</td></tr>
+<tr><td><kbd>Cmd</kbd>+<kbd>B</kbd></td><td>Compile (Mac)</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<section data-key="lampiran-kata" data-prefix="C" data-title="Kata Tercadang dan Rutin Bawaan" data-color="#0f8f84">
+<p>Daftar ini diambil langsung dari penyorot sintaks Odin Turbo Pascal, sehingga sama persis dengan kata yang diberi warna
+di editor. <b>Kata tercadang</b> (<i>reserved word</i>) tidak boleh dipakai sebagai nama buatan sendiri. <b>Rutin bawaan</b>
+boleh ditimpa, tetapi sebaiknya tidak.</p>
+
+<h2 id="lampiran-c-kata">Kata Tercadang</h2>
+<x-wordlist kind="reserved"></x-wordlist>
+
+<h2 id="lampiran-c-tipe">Tipe Bawaan</h2>
+<x-wordlist kind="type"></x-wordlist>
+
+<h2 id="lampiran-c-konst">Konstanta Bawaan</h2>
+<x-wordlist kind="constant"></x-wordlist>
+
+<h2 id="lampiran-c-rutin">Prosedur dan Fungsi Bawaan</h2>
+<p>Sebagian memerlukan unit tertentu, misalnya <code>ClrScr</code>, <code>GotoXY</code>, dan <code>ReadKey</code> ada di
+unit <code>Crt</code>. Rincian tiap rutin ada di <span class="menu">Help ▸ Pascal reference</span>.</p>
+<x-wordlist kind="builtin"></x-wordlist>
+</section>
+
+<section data-key="lampiran-galat" data-prefix="D" data-title="Memahami Pesan Kesalahan" data-color="#d0266e">
+<p>Ada dua jenis kesalahan. <b>Kesalahan kompilasi</b> terjadi saat kompiler memeriksa program; tidak ada executable yang
+dibuat sampai diperbaiki. <b>Kesalahan runtime</b> terjadi saat program yang sudah jadi dijalankan, lalu berhenti dengan
+<i>Runtime error</i> dan sebuah kode.</p>
+
+<h2>Kesalahan Kompilasi yang Sering Muncul</h2>
+<p>Semua pesan di bawah ini adalah keluaran kompiler Odin yang sebenarnya, diambil dengan sengaja membuat program yang
+salah. Bentuk pesan: <code>berkas(baris,kolom) Error kode: pesan</code>.</p>
+
+<table class="data">
+  <caption>Contoh kesalahan kompilasi dan penyebabnya</caption>
+  <thead><tr><th>Pesan kompiler</th><th>Penyebab umum</th></tr></thead>
+  <tbody>
+    <tr><td><x-diag name="titikkoma.pas">program T;
+begin
+  WriteLn('a')
+  WriteLn('b');
+end.</x-diag></td><td>Titik koma terlupa di akhir baris sebelumnya. Periksa akhir baris di atas yang ditunjuk.</td></tr>
+    <tr><td><x-diag name="takdikenal.pas">program U;
+begin
+  Jumlah := 5;
+end.</x-diag></td><td>Variabel dipakai tanpa diumumkan di bagian <code>var</code>, atau namanya salah ketik.</td></tr>
+    <tr><td><x-diag name="tipe.pas">program Tp;
+var N: Integer;
+begin
+  N := 'sepuluh';
+end.</x-diag></td><td>Nilai yang diberikan tidak sesuai tipe variabel (di sini String ke Integer).</td></tr>
+    <tr><td><x-diag name="real.pas">program R;
+var N: Integer;
+begin
+  N := 7 / 2;
+end.</x-diag></td><td>Operator <code>/</code> selalu menghasilkan Real. Untuk hasil bulat pakai <code>div</code>.</td></tr>
+    <tr><td><x-diag name="samadengan.pas">program S;
+var N: Integer;
+begin
+  N = 5;
+end.</x-diag></td><td>Penugasan ditulis <code>:=</code>, bukan <code>=</code>. Tanda <code>=</code> hanya untuk perbandingan.</td></tr>
+    <tr><td><x-diag name="elsekoma.pas">program E;
+var N: Integer;
+begin
+  N := 5;
+  if N > 3 then
+    WriteLn('besar');
+  else
+    WriteLn('kecil');
+end.</x-diag></td><td>Ada titik koma sebelum <code>else</code> yang berpasangan dengan <code>if</code>.</td></tr>
+    <tr><td><x-diag name="petik.pas">program P;
+begin
+  WriteLn('Halo);
+end.</x-diag></td><td>Tanda petik penutup string terlupa.</td></tr>
+    <tr><td><x-diag name="result.pas">program F;
+function Dua: Integer;
+begin
+  Result := 2;
+end;
+begin
+  WriteLn(Dua);
+end.</x-diag></td><td>Dalam mode Turbo Pascal tidak ada <code>Result</code>; nilai fungsi diberikan lewat nama fungsi.</td></tr>
+  </tbody>
+</table>
+
+<h2>Kesalahan Runtime</h2>
+<p>Program yang lolos kompilasi masih bisa berhenti saat dijalankan. Odin Turbo Pascal menandai baris penyebabnya dengan
+latar merah (gunakan <span class="menu">Search ▸ Find error</span> untuk kembali ke sana). Kode yang sering ditemui:</p>
+
+<table class="data compact">
+  <caption>Kode kesalahan runtime yang umum</caption>
+  <thead><tr><th>Kode</th><th>Arti</th><th>Contoh penyebab</th></tr></thead>
+  <tbody>
+    <tr><td><b>2</b></td><td>Berkas tidak ditemukan</td><td><code>Reset</code> pada berkas yang belum ada.</td></tr>
+    <tr><td><b>103</b></td><td>Berkas belum dibuka</td><td><code>Write</code> ke berkas tanpa <code>Rewrite</code>/<code>Reset</code> lebih dulu.</td></tr>
+    <tr><td><b>106</b></td><td>Masukan tidak sah</td><td><code>ReadLn</code> angka, tetapi pengguna mengetik huruf.</td></tr>
+    <tr><td><b>200</b></td><td>Pembagian dengan nol</td><td><code>A div 0</code> atau <code>A / 0</code>.</td></tr>
+    <tr><td><b>201</b></td><td>Di luar jangkauan</td><td>Indeks array di luar batas, atau nilai melampaui tipe (range/overflow check).</td></tr>
+    <tr><td><b>202</b></td><td>Tumpukan (stack) penuh</td><td>Rekursi tanpa kondisi berhenti.</td></tr>
+    <tr><td><b>207</b></td><td>Operasi pecahan tidak sah</td><td><code>Sqrt</code> dari bilangan negatif.</td></tr>
+    <tr><td><b>216</b></td><td>Akses memori tidak sah</td><td>Membaca atau menulis lewat pointer <code>nil</code>.</td></tr>
+  </tbody>
+</table>
+<div class="tip"><p>Range check dan overflow check aktif secara bawaan di kompiler Odin, sehingga banyak kesalahan
+tertangkap sebagai kode 201, bukan menghasilkan nilai yang salah secara diam-diam. Biarkan tetap aktif selama belajar.</p></div>
+</section>
+
+<section data-key="lampiran-daftar-program" data-prefix="E" data-title="Daftar Program Contoh" data-color="#e2680b">
+<p>Kesembilan puluh berkas di <span class="menu">File ▸ Examples...</span>, urut sesuai bab. Angka di kanan adalah
+halaman tempat listing lengkapnya dibahas.</p>
+[[DAFTAR-PROGRAM]]
+</section>
+
+<section data-key="lampiran-glosarium" data-prefix="F" data-title="Glosarium" data-color="#7c3aed">
+<p>Istilah penting yang dipakai di buku ini.</p>
+<dl class="istilah">
+  <dt>Algoritma</dt><dd>Urutan langkah yang jelas dan berhingga untuk menyelesaikan suatu masalah.</dd>
+  <dt>Array</dt><dd>Kumpulan data bertipe sama yang disimpan berurutan dan diakses lewat indeks.</dd>
+  <dt>Backend / kompiler</dt><dd>Program yang menerjemahkan kode sumber menjadi executable. Odin Turbo Pascal memakai kompiler Odin, dengan Free Pascal sebagai alternatif.</dd>
+  <dt>Breakpoint</dt><dd>Titik henti yang dipasang pada sebuah baris agar debugger berhenti di situ.</dd>
+  <dt>Debugger</dt><dd>Alat untuk menjalankan program langkah demi langkah dan memeriksa nilai variabel.</dd>
+  <dt>Deklarasi</dt><dd>Pengumuman nama (variabel, konstanta, tipe, prosedur) beserta sifatnya sebelum dipakai.</dd>
+  <dt>Direktif kompiler</dt><dd>Perintah untuk kompiler, ditulis di antara <code>{$ ... }</code>, misalnya <code>{$R+}</code>.</dd>
+  <dt>Ekspresi</dt><dd>Gabungan nilai, variabel, dan operator yang menghasilkan sebuah nilai.</dd>
+  <dt>Executable</dt><dd>Program hasil kompilasi yang bisa langsung dijalankan prosesor.</dd>
+  <dt>Fungsi</dt><dd>Subprogram yang mengembalikan sebuah nilai.</dd>
+  <dt>IDE</dt><dd>Lingkungan pengembangan terpadu: editor, kompiler, dan alat bantu dalam satu aplikasi.</dd>
+  <dt>Kata tercadang</dt><dd>Kata yang maknanya sudah ditetapkan bahasa dan tidak boleh dipakai sebagai nama sendiri.</dd>
+  <dt>Kode sumber</dt><dd>Teks program yang ditulis manusia, misalnya berkas <code>.pas</code>.</dd>
+  <dt>Komentar</dt><dd>Catatan untuk pembaca manusia yang diabaikan kompiler, ditulis di antara <code>{ ... }</code>.</dd>
+  <dt>Kompilasi</dt><dd>Proses menerjemahkan kode sumber menjadi executable.</dd>
+  <dt>Konstanta</dt><dd>Nilai bernama yang tidak berubah selama program berjalan.</dd>
+  <dt>Linked list</dt><dd>Rangkaian node yang saling terhubung lewat pointer, bisa tumbuh dan menyusut saat program berjalan.</dd>
+  <dt>Parameter</dt><dd>Data yang dikirim ke prosedur atau fungsi. Parameter nilai dikirim sebagai salinan, parameter <code>var</code> sebagai acuan.</dd>
+  <dt>Pointer</dt><dd>Variabel yang menyimpan alamat variabel lain di memori.</dd>
+  <dt>Prosedur</dt><dd>Subprogram yang mengerjakan tugas tanpa mengembalikan nilai.</dd>
+  <dt>Record</dt><dd>Tipe yang menggabungkan beberapa field bertipe berbeda menjadi satu kesatuan.</dd>
+  <dt>Rekursi</dt><dd>Prosedur atau fungsi yang memanggil dirinya sendiri.</dd>
+  <dt>Runtime error</dt><dd>Kesalahan yang terjadi saat program berjalan, menyebabkannya berhenti.</dd>
+  <dt>Set</dt><dd>Himpunan nilai dari tipe ordinal, dengan operasi gabungan, irisan, dan selisih.</dd>
+  <dt>Tipe data</dt><dd>Jenis nilai yang bisa disimpan sebuah variabel, misalnya <code>Integer</code> atau <code>Char</code>.</dd>
+  <dt>Unit</dt><dd>Berkas berisi kumpulan deklarasi yang bisa dipakai banyak program lewat <code>uses</code>.</dd>
+  <dt>User screen</dt><dd>Layar 80×25 tempat program berjalan dan menampilkan keluaran di Odin Turbo Pascal.</dd>
+  <dt>Variabel</dt><dd>Tempat bernama di memori untuk menyimpan nilai yang bisa berubah.</dd>
+</dl>
+</section>

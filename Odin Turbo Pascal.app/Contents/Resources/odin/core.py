@@ -173,9 +173,10 @@ class Document:
         self.disk_hash = hashlib.sha256(raw).hexdigest()
 
 
+# "syntax_colors" replaces the old "syntax" key, which was off by default, so saved settings start with colors on.
 DEFAULTS = {
     "compiler": "", "mode": "tp", "font_size": 17,
-    "syntax": False, "tab_width": 2, "range_checks": True,
+    "syntax_colors": True, "tab_width": 2, "range_checks": True,
     "overflow_checks": True, "debug_info": True,
     "unit_paths": [], "include_paths": [], "arguments": "",
     "recent": [], "geometry": "1120x740", "main_file": "",
@@ -493,21 +494,48 @@ def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = 
     return BuildResult(success, command, output, parse_diagnostics(output), exe if success and exe.exists() else None, source)
 
 
-KEYWORDS = set("and array asm begin case const constructor destructor div do downto else end file for function goto if implementation in inherited inline interface label mod nil not object of or packed procedure program record repeat set shl shr string then to type unit until uses var while with xor true false absolute external forward interrupt near far virtual private public protected class try except finally raise result out property threadvar".split())
-TOKENS = re.compile(r"\{[\s\S]*?\}|\(\*[\s\S]*?\*\)|//[^\n]*|'(?:[^']|'')*'|\b[a-zA-Z_][a-zA-Z_0-9]*\b|\$[0-9A-Fa-f]+|\b\d+(?:\.\d+)?\b")
+# Word lists for syntax_spans(), lower case because Pascal ignores case. RESERVED is TP7's reserved words and
+# standard directives plus the Object Pascal words FPC reserves in objfpc/delphi mode.
+RESERVED = set("""and array asm begin case const constructor destructor div do downto else end exports file for function
+goto if implementation in inherited inline interface label library mod not object of or packed procedure program record
+repeat set shl shr string then to type unit until uses var while with xor absolute assembler external far forward
+interrupt near private public protected virtual class try except finally raise out property threadvar""".split())
+CONSTANTS = set("true false nil maxint maxlongint".split())
+TYPES = set("""integer shortint smallint longint int64 byte word cardinal qword real single double extended comp char
+boolean bytebool wordbool longbool shortstring text pointer""".split())
+# Standard procedures and functions of the System and Crt units.
+BUILTINS = set("""abs append arctan assign assigned blockread blockwrite break chdir chr close clreol clrscr concat
+continue copy cos dec delay delete delline dispose eof eoln erase exclude exit exp filepos filesize fillchar frac freemem
+getdir getmem gotoxy halt high highvideo inc include insert insline int ioresult keypressed length ln low lowvideo
+maxavail memavail mkdir move new normvideo nosound odd ord paramcount paramstr pi pos pred random randomize read readkey
+readln rename reset rewrite rmdir round runerror seek seekeof seekeoln sin sizeof sound sqr sqrt str succ textbackground
+textcolor textmode trunc truncate upcase val wherex wherey window write writeln""".split())
+TOKENS = re.compile("|".join((
+    r"(?P<directive>\{\$[^}]*\}|\(\*\$[\s\S]*?\*\))",
+    r"(?P<comment>\{[^}]*\}|\(\*[\s\S]*?\*\)|//[^\n]*)",
+    r"(?P<string>'(?:[^'\n]|'')*'?|#(?:\$[0-9A-Fa-f]+|[0-9]+))",
+    r"(?P<number>\$[0-9A-Fa-f]+|[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)",
+    r"(?P<word>[A-Za-z_][A-Za-z0-9_]*)",
+    r"(?P<operator>:=|<=|>=|<>|\.\.|[-+*/=<>()\[\];:,.^@])")))
 
 
 def syntax_spans(text: str):
-    for match in TOKENS.finditer(text):
-        token = match.group()
-        kind = ""
-        if token.startswith(("{", "(*", "//")):
-            kind = "comment"
-        elif token.startswith("'"):
-            kind = "string"
-        elif token.lower() in KEYWORDS:
-            kind = "keyword"
-        elif token[0].isdigit() or token[0] == "$":
-            kind = "number"
-        if kind:
-            yield kind, match.start(), match.end()
+    """Yields (kind, start, end) for each token the editor colors. kind is one of directive, comment, string (also
+    #13 character constants), number, operator, reserved, constant, type, routine, builtin, identifier. A name
+    declared after procedure or function is a routine wherever it appears; an unterminated string ends the line."""
+    tokens = [(match.lastgroup, match.start(), match.end()) for match in TOKENS.finditer(text)]
+    routines, declaring = set(), False
+    for kind, start, end in tokens:
+        if kind == "word":
+            word = text[start:end].lower()
+            if declaring:
+                routines.add(word)
+            declaring = word in ("procedure", "function")
+        elif kind not in ("comment", "directive"):
+            declaring = False
+    for kind, start, end in tokens:
+        if kind == "word":
+            word = text[start:end].lower()
+            kind = ("reserved" if word in RESERVED else "constant" if word in CONSTANTS else "type" if word in TYPES
+                    else "routine" if word in routines else "builtin" if word in BUILTINS else "identifier")
+        yield kind, start, end

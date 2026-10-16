@@ -1,0 +1,104 @@
+(program bab13_04_data_mahasiswa
+  (const MaksData = 50)
+  (type TMahasiswa = (record (NIM: string[10]) (Nama: string[25]) (IPK: Real)))
+  (var (Data) (array [(.. 1 MaksData)] TMahasiswa))
+  (var (Jumlah) Integer)
+  (procedure Tambah (NIM Nama: string; IPK: Real)
+    (begin
+      (if (>= Jumlah MaksData)
+        (do (call WriteLn 'Data penuh.'))
+        (else
+          (begin
+            (:= Jumlah (+ Jumlah 1))
+            (:= (. (index Data Jumlah) NIM) NIM)
+            (:= (. (index Data Jumlah) Nama) Nama)
+            (:= (. (index Data Jumlah) IPK) IPK)
+            (empty))))
+      (empty)))
+  (procedure TampilkanSatu (I: Integer)
+    (begin
+      (with (index Data I)
+        (do (call WriteLn NIM '':(- 12 (call Length NIM)) Nama '':(- 27 (call Length Nama)) IPK:4:2)))
+      (empty)))
+  (procedure TampilkanSemua
+    (var (I) Integer)
+    (begin
+      (do (call WriteLn 'NIM         Nama                        IPK'))
+      (for I 1 to Jumlah
+        (do (call TampilkanSatu I)))
+      (do (call WriteLn '(' Jumlah ' mahasiswa)'))
+      (empty)))
+  (function CariNIM (NIM: string) : Integer
+    (var (I) Integer)
+    (begin
+      (:= CariNIM 0)
+      (for I 1 to Jumlah
+        (if (= (. (index Data I) NIM) NIM)
+          (:= CariNIM I)))
+      (empty)))
+  (procedure Statistik
+    (var (I Terbaik) Integer)
+    (var (Total) Real)
+    (begin
+      (if (= Jumlah 0)
+        (begin
+          (do (call WriteLn 'Belum ada data.'))
+          (do Exit)
+          (empty)))
+      (:= Total 0)
+      (:= Terbaik 1)
+      (for I 1 to Jumlah
+        (begin
+          (:= Total (+ Total (. (index Data I) IPK)))
+          (if (> (. (index Data I) IPK) (. (index Data Terbaik) IPK))
+            (:= Terbaik I))
+          (empty)))
+      (do (call WriteLn 'Rata-rata IPK : ' (/ Total Jumlah):0:2))
+      (do (call WriteLn 'IPK tertinggi : ' (. (index Data Terbaik) Nama) ' (' (. (index Data Terbaik) IPK):0:2 ')'))
+      (empty)))
+  (var (Pilihan Posisi) Integer)
+  (var (NIM Nama) string)
+  (var (IPK) Real)
+  (begin
+    (:= Jumlah 0)
+    (do (call Tambah '2601001' 'Andi Pratama' 3.45))
+    (do (call Tambah '2601002' 'Bunga Lestari' 3.8))
+    (do (call Tambah '2601003' 'Candra Wijaya' 2.95))
+    (repeat-until (= Pilihan 0)
+      (do WriteLn)
+      (do (call WriteLn '== DATA MAHASISWA =='))
+      (do (call WriteLn '1. Tambah  2. Tampilkan  3. Cari NIM  4. Statistik  0. Keluar'))
+      (do (call Write 'Pilihan: '))
+      (do (call ReadLn Pilihan))
+      (case Pilihan
+        (arm 1
+          (begin
+            (do (call Write 'NIM  : '))
+            (do (call ReadLn NIM))
+            (if (> (call CariNIM NIM) 0)
+              (do (call WriteLn 'NIM sudah terdaftar.'))
+              (else
+                (begin
+                  (do (call Write 'Nama : '))
+                  (do (call ReadLn Nama))
+                  (do (call Write 'IPK  : '))
+                  (do (call ReadLn IPK))
+                  (do (call Tambah NIM Nama IPK))
+                  (empty))))
+            (empty)))
+        (arm 2
+          (do TampilkanSemua))
+        (arm 3
+          (begin
+            (do (call Write 'NIM yang dicari: '))
+            (do (call ReadLn NIM))
+            (:= Posisi (call CariNIM NIM))
+            (if (= Posisi 0)
+              (do (call WriteLn 'Tidak ditemukan.'))
+              (else
+                (do (call TampilkanSatu Posisi))))
+            (empty)))
+        (arm 4
+          (do Statistik)))
+      (empty))
+    (empty)))

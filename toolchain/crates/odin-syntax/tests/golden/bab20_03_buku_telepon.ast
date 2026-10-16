@@ -1,0 +1,179 @@
+(program bab20_03_buku_telepon
+  (const NamaFileData = 'kontak.dat')
+  (const MaksKontak = 100)
+  (const KarakterTelepon = ['0'..'9', '+', '-', ' '])
+  (type TKontak = (record (Nama: string[25]) (Telepon: string[15]) (Email: string[30])))
+  (var (Kontak) (array [(.. 1 MaksKontak)] TKontak))
+  (var (Jumlah) Integer)
+  (var (Berubah) Boolean)
+  (function Kapital (S: string) : string
+    (var (I) Integer)
+    (begin
+      (for I 1 to (call Length S)
+        (:= (index S I) (call UpCase (index S I))))
+      (:= Kapital S)
+      (empty)))
+  (procedure Muat
+    (var (F) (file-of TKontak))
+    (begin
+      (:= Jumlah 0)
+      (do (call Assign F NamaFileData))
+      (do (call Reset F))
+      (if (<> IOResult 0)
+        (do Exit))
+      (while (and (not (call Eof F)) (< Jumlah MaksKontak))
+        (begin
+          (:= Jumlah (+ Jumlah 1))
+          (do (call Read F (index Kontak Jumlah)))
+          (empty)))
+      (do (call Close F))
+      (empty)))
+  (procedure Simpan
+    (var (F) (file-of TKontak))
+    (var (I) Integer)
+    (begin
+      (do (call Assign F NamaFileData))
+      (do (call Rewrite F))
+      (for I 1 to Jumlah
+        (do (call Write F (index Kontak I))))
+      (do (call Close F))
+      (:= Berubah False)
+      (empty)))
+  (procedure TampilkanSatu (I: Integer)
+    (begin
+      (with (index Kontak I)
+        (do (call WriteLn I:3 '. ' Nama '':(- 26 (call Length Nama)) Telepon '':(- 16 (call Length Telepon)) Email)))
+      (empty)))
+  (procedure TampilkanSemua
+    (var (I) Integer)
+    (begin
+      (if (= Jumlah 0)
+        (do (call WriteLn 'Buku telepon masih kosong.'))
+        (else
+          (begin
+            (do (call WriteLn 'No.  Nama                      Telepon         Email'))
+            (for I 1 to Jumlah
+              (do (call TampilkanSatu I)))
+            (empty))))
+      (empty)))
+  (function TeleponSah (T: string) : Boolean
+    (var (I) Integer)
+    (begin
+      (:= TeleponSah (>= (call Length T) 6))
+      (for I 1 to (call Length T)
+        (if (not (in (index T I) KarakterTelepon))
+          (:= TeleponSah False)))
+      (empty)))
+  (procedure Tambah
+    (var (Baru) TKontak)
+    (var (Nama Telepon) string)
+    (var (Posisi I) Integer)
+    (begin
+      (if (= Jumlah MaksKontak)
+        (begin
+          (do (call WriteLn 'Buku telepon penuh.'))
+          (do Exit)
+          (empty)))
+      (do (call Write 'Nama    : '))
+      (do (call ReadLn Nama))
+      (if (= Nama '')
+        (do Exit))
+      (repeat-until (call TeleponSah Telepon)
+        (do (call Write 'Telepon : '))
+        (do (call ReadLn Telepon))
+        (if (not (call TeleponSah Telepon))
+          (do (call WriteLn '  Hanya angka, +, -, spasi; minimal 6 karakter.')))
+        (empty))
+      (:= (. Baru Nama) Nama)
+      (:= (. Baru Telepon) Telepon)
+      (do (call Write 'Email   : '))
+      (do (call ReadLn (. Baru Email)))
+      (:= Posisi (+ Jumlah 1))
+      (while (and (> Posisi 1) (> (call Kapital (. (index Kontak (- Posisi 1)) Nama)) (call Kapital (. Baru Nama))))
+        (:= Posisi (- Posisi 1)))
+      (for I Jumlah downto Posisi
+        (:= (index Kontak (+ I 1)) (index Kontak I)))
+      (:= (index Kontak Posisi) Baru)
+      (:= Jumlah (+ Jumlah 1))
+      (:= Berubah True)
+      (do (call WriteLn 'Kontak ditambahkan.'))
+      (empty)))
+  (procedure Cari
+    (var (Kata) string)
+    (var (I Ketemu) Integer)
+    (begin
+      (do (call Write 'Cari nama: '))
+      (do (call ReadLn Kata))
+      (:= Ketemu 0)
+      (for I 1 to Jumlah
+        (if (> (call Pos (call Kapital Kata) (call Kapital (. (index Kontak I) Nama))) 0)
+          (begin
+            (do (call TampilkanSatu I))
+            (:= Ketemu (+ Ketemu 1))
+            (empty))))
+      (do (call WriteLn Ketemu ' kontak ditemukan.'))
+      (empty)))
+  (procedure Hapus
+    (var (Nomor I) Integer)
+    (var (Teks) string)
+    (var (Kode) Integer)
+    (var (Yakin) Char)
+    (begin
+      (do TampilkanSemua)
+      (if (= Jumlah 0)
+        (do Exit))
+      (do (call Write 'Nomor yang dihapus: '))
+      (do (call ReadLn Teks))
+      (do (call Val Teks Nomor Kode))
+      (if (or (or (<> Kode 0) (< Nomor 1)) (> Nomor Jumlah))
+        (begin
+          (do (call WriteLn 'Nomor tidak ada.'))
+          (do Exit)
+          (empty)))
+      (do (call Write 'Hapus ' (. (index Kontak Nomor) Nama) ' (Y/T)? '))
+      (do (call ReadLn Yakin))
+      (if (= (call UpCase Yakin) 'Y')
+        (begin
+          (for I Nomor to (- Jumlah 1)
+            (:= (index Kontak I) (index Kontak (+ I 1))))
+          (:= Jumlah (- Jumlah 1))
+          (:= Berubah True)
+          (do (call WriteLn 'Kontak dihapus.'))
+          (empty)))
+      (empty)))
+  (var (Pilihan) string)
+  (var (Folder) string)
+  (begin
+    (do Muat)
+    (:= Berubah False)
+    (do (call GetDir 0 Folder))
+    (do (call WriteLn 'BUKU TELEPON - ' Jumlah ' kontak dimuat dari ' NamaFileData))
+    (do (call WriteLn 'Folder data: ' Folder))
+    (repeat-until (= Pilihan '0')
+      (do WriteLn)
+      (do (call WriteLn '1. Tampilkan  2. Tambah  3. Cari  4. Hapus  0. Simpan & keluar'))
+      (do (call Write 'Pilihan: '))
+      (do (call ReadLn Pilihan))
+      (if (= Pilihan '1')
+        (do TampilkanSemua)
+        (else
+          (if (= Pilihan '2')
+            (do Tambah)
+            (else
+              (if (= Pilihan '3')
+                (do Cari)
+                (else
+                  (if (= Pilihan '4')
+                    (do Hapus)
+                    (else
+                      (if (<> Pilihan '0')
+                        (do (call WriteLn 'Pilihan tidak tersedia.')))))))))))
+      (empty))
+    (if Berubah
+      (begin
+        (do Simpan)
+        (do (call WriteLn Jumlah ' kontak disimpan ke ' NamaFileData '.'))
+        (empty))
+      (else
+        (do (call WriteLn 'Tidak ada perubahan.'))))
+    (empty)))

@@ -1,0 +1,17 @@
+(program bab04_03_format_keluaran
+  (var (X) Real)
+  (begin
+    (do (call WriteLn '[' 42 ']'))
+    (do (call WriteLn '[' 42:6 ']'))
+    (do (call WriteLn '[' 'Ani':6 ']'))
+    (:= X 3.14159265)
+    (do (call WriteLn X))
+    (do (call WriteLn X:0:2))
+    (do (call WriteLn X:10:4))
+    (do WriteLn)
+    (do (call WriteLn 'No  Barang        Jumlah      Harga'))
+    (do (call WriteLn '------------------------------------'))
+    (do (call WriteLn 1:2 '  ' 'Pensil    ' 8:8 2500.0:11:2))
+    (do (call WriteLn 2:2 '  ' 'Buku tulis' 5:8 6000.0:11:2))
+    (do (call WriteLn 3:2 '  ' 'Penghapus ' 12:8 1500.0:11:2))
+    (empty)))

@@ -1,0 +1,36 @@
+(program bab16_01_bubble_sort
+  (const N = 8)
+  (const Awal : (array [(.. 1 N)] Integer) = (29, 10, 14, 37, 13, 5, 42, 21))
+  (type TData = (array [(.. 1 N)] Integer))
+  (procedure Tampilkan (Judul: string; D: TData)
+    (var (I) Integer)
+    (begin
+      (do (call Write Judul))
+      (for I 1 to N
+        (do (call Write (index D I):4)))
+      (do WriteLn)
+      (empty)))
+  (var (Data) TData)
+  (var (I Putaran Sementara) Integer)
+  (var (AdaTukar) Boolean)
+  (begin
+    (for I 1 to N
+      (:= (index Data I) (index Awal I)))
+    (do (call Tampilkan 'Awal      :' Data))
+    (:= Putaran 0)
+    (repeat-until (not AdaTukar)
+      (:= AdaTukar False)
+      (:= Putaran (+ Putaran 1))
+      (for I 1 to (- N Putaran)
+        (if (> (index Data I) (index Data (+ I 1)))
+          (begin
+            (:= Sementara (index Data I))
+            (:= (index Data I) (index Data (+ I 1)))
+            (:= (index Data (+ I 1)) Sementara)
+            (:= AdaTukar True)
+            (empty))))
+      (do (call Write 'Putaran ' Putaran ' :'))
+      (do (call Tampilkan '' Data))
+      (empty))
+    (do (call Tampilkan 'Hasil     :' Data))
+    (empty)))

@@ -1,0 +1,43 @@
+(program bab14_02_tipe_subrange
+  (type TNilai = (.. 0 100))
+  (type TBulan = (.. 1 12))
+  (type THurufBesar = (.. 'A' 'Z'))
+  (type THari = (enum Senin Selasa Rabu Kamis Jumat Sabtu Minggu))
+  (type THariKerja = (.. Senin Jumat))
+  (const JumlahHari : (array [TBulan] Integer) = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31))
+  (var (Nilai) TNilai)
+  (var (Bulan) TBulan)
+  (var (Inisial) THurufBesar)
+  (var (Masukan) Integer)
+  (var (Huruf) Char)
+  (begin
+    (do (call Write 'Nomor bulan (1-12): '))
+    (do (call ReadLn Masukan))
+    (if (and (>= Masukan 1) (<= Masukan 12))
+      (begin
+        (:= Bulan Masukan)
+        (do (call WriteLn 'Bulan ' Bulan ' punya ' (index JumlahHari Bulan) ' hari (tahun biasa).'))
+        (empty))
+      (else
+        (do (call WriteLn 'Bulan tidak sah.'))))
+    (do (call Write 'Nilai ujian (0-100): '))
+    (do (call ReadLn Masukan))
+    (if (and (>= Masukan (call Low TNilai)) (<= Masukan (call High TNilai)))
+      (begin
+        (:= Nilai Masukan)
+        (do (call WriteLn 'Nilai ' Nilai ' disimpan.'))
+        (empty))
+      (else
+        (do (call WriteLn 'Nilai harus ' (call Low TNilai) ' sampai ' (call High TNilai) '.'))))
+    (do (call Write 'Huruf awal nama: '))
+    (do (call ReadLn Huruf))
+    (:= Huruf (call UpCase Huruf))
+    (if (and (>= Huruf 'A') (<= Huruf 'Z'))
+      (begin
+        (:= Inisial Huruf)
+        (do (call WriteLn 'Inisial: ' Inisial))
+        (empty))
+      (else
+        (do (call WriteLn 'Inisial harus berupa huruf.'))))
+    (do (call WriteLn 'Hari kerja: ' (+ (- (call Ord (call High THariKerja)) (call Ord (call Low THariKerja))) 1) ' hari'))
+    (empty)))

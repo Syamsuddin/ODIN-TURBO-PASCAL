@@ -1,0 +1,774 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Memecah masalah menjadi langkah-langkah algoritma, lalu menerjemahkannya menjadi perulangan Pascal.</li>
+  <li>Menguji bilangan prima dengan pembagi sampai akar bilangan, dan mencetak semua prima sampai 100.</li>
+  <li>Menghitung FPB dengan algoritma Euclid dan KPK dari FPB.</li>
+  <li>Membangkitkan deret Fibonacci dengan dua variabel yang bergeser, serta mengenali batas tipe <code>LongInt</code>.</li>
+  <li>Menggambar pola bintang dengan perulangan bersarang dengan mencari rumus baris dan kolom.</li>
+  <li>Mencari bilangan sempurna dan memahami permainan tebak angka beserta strategi pencarian biner.</li>
+</ul>
+
+<p class="lead">Mengetahui sintaks perulangan belum sama dengan bisa memecahkan masalah. Di bab ini Anda berlatih bagian
+yang lebih menantang: <b>algoritma</b>, yaitu urutan langkah yang jelas untuk menyelesaikan suatu masalah. Enam program
+klasik akan kita bedah satu per satu: bilangan prima, FPB dan KPK, deret Fibonacci, segitiga bintang, bilangan sempurna,
+dan permainan tebak angka. Semuanya hanya memakai perulangan dan percabangan dari bab-bab sebelumnya, tetapi cara
+berpikirnya akan melatih Anda untuk menyusun solusi sendiri.</p>
+
+<h2>Dari Masalah ke Algoritma</h2>
+
+<p>Menulis program dimulai dari <i>berpikir</i>, bukan dari mengetik. Sebelum menyentuh <code>for</code> atau
+<code>while</code>, Anda perlu menjawab: apa masukannya, apa keluaran yang diinginkan, dan langkah apa yang membawa dari
+yang pertama ke yang kedua. Daftar langkah itulah algoritma. Algoritma yang baik berhingga (pasti berakhir), jelas pada
+setiap langkahnya, dan benar untuk semua masukan yang sah, termasuk kasus batas.</p>
+
+<div class="alur">
+  <div><span class="ikon">1</span><b>Pahami</b>masukan, keluaran, dan contoh kecil yang dihitung dengan tangan</div>
+  <div><span class="ikon">2</span><b>Rancang</b>cari pola, pilih perulangan dan variabel penampung</div>
+  <div><span class="ikon">3</span><b>Tulis</b>terjemahkan ke Pascal, sedikit demi sedikit</div>
+  <div><span class="ikon">4</span><b>Uji</b>nilai batas dan kasus khusus, bandingkan dengan hitungan tangan</div>
+</div>
+
+<p>Keempat langkah ini akan terlihat berulang di setiap program bab ini. Perhatikan juga bahwa hampir setiap program
+menggunakan satu dari empat "pola" yang sudah Anda kenal: <b>akumulator</b> (menjumlahkan), <b>penghitung</b>
+(menambah satu), <b>penanda</b> (variabel Boolean seperti <code>Prima</code>), dan <b>pembagi bersarang</b> (perulangan di
+dalam perulangan).</p>
+
+<div class="info"><p>Seluruh program di bab ini sudah tersedia di
+<span class="menu">File ▸ Examples...</span> dengan nama <code>bab08_01</code> sampai <code>bab08_06</code>. Anda dianjurkan
+membuka satu per satu, menjalankannya, lalu mencoba kasus lain sebelum membaca penjelasannya.</p></div>
+
+<h2>Bilangan Prima</h2>
+
+<p><b>Bilangan prima</b> adalah bilangan bulat lebih besar dari 1 yang hanya habis dibagi 1 dan dirinya sendiri:
+2, 3, 5, 7, 11, 13, dan seterusnya. Angka 1 bukan prima, dan 2 adalah satu-satunya prima genap. Bagaimana
+memeriksa apakah <code>N</code> prima? Idenya mudah: coba bagi <code>N</code> dengan 2, 3, 4, dan seterusnya. Bila ada yang
+membagi habis (<code>N mod Pembagi = 0</code>), <code>N</code> bukan prima.</p>
+
+<p>Pertanyaan berikutnya: sampai pembagi berapa kita harus mencoba? Mencoba sampai <code>N - 1</code> benar, tetapi
+boros. Perhatikan pasangan pembagi <code>N = 36</code> pada gambar berikut. Setiap pembagi di sisi kiri akar kuadrat
+(6) punya pasangan di sisi kanan. Bila <code>N = A x B</code>, tidak mungkin <i>keduanya</i> lebih besar dari akar
+<code>N</code>, sebab hasil kalinya akan melebihi <code>N</code>. Jadi bila <code>N</code> punya pembagi, pasti ada satu yang
+tidak lebih dari akar <code>N</code>. Cukup uji pembagi sampai <code>Pembagi * Pembagi &lt;= N</code>, dan
+itu menghindari perhitungan akar kuadrat.</p>
+
+<figure class="grafik" id="gb-pasangan">
+<svg viewBox="0 0 680 200">
+  <path class="line" d="M30 130 H650"/>
+  <rect class="ok" x="38" y="120" width="44" height="26" rx="5"/>
+  <text class="mono mid" x="60" y="137">1</text>
+  <rect class="ok" x="108" y="120" width="44" height="26" rx="5"/>
+  <text class="mono mid" x="130" y="137">2</text>
+  <rect class="ok" x="178" y="120" width="44" height="26" rx="5"/>
+  <text class="mono mid" x="200" y="137">3</text>
+  <rect class="ok" x="248" y="120" width="44" height="26" rx="5"/>
+  <text class="mono mid" x="270" y="137">4</text>
+  <rect class="dec" x="318" y="120" width="44" height="26" rx="5"/>
+  <text class="mono mid" x="340" y="137">6</text>
+  <rect class="io" x="388" y="120" width="44" height="26" rx="5"/>
+  <text class="mono mid" x="410" y="137">9</text>
+  <rect class="io" x="458" y="120" width="44" height="26" rx="5"/>
+  <text class="mono mid" x="480" y="137">12</text>
+  <rect class="io" x="528" y="120" width="44" height="26" rx="5"/>
+  <text class="mono mid" x="550" y="137">18</text>
+  <rect class="io" x="598" y="120" width="44" height="26" rx="5"/>
+  <text class="mono mid" x="620" y="137">36</text>
+  <path class="line" d="M60 118 A280.0 92 0 0 1 620 118" style="fill:none"/>
+  <text class="xs mid" x="340.0" y="22">1 x 36 = 36</text>
+  <path class="line" d="M130 118 A210.0 69 0 0 1 550 118" style="fill:none"/>
+  <text class="xs mid" x="340.0" y="45">2 x 18 = 36</text>
+  <path class="line" d="M200 118 A140.0 46 0 0 1 480 118" style="fill:none"/>
+  <text class="xs mid" x="340.0" y="68">3 x 12 = 36</text>
+  <path class="line" d="M270 118 A70.0 23 0 0 1 410 118" style="fill:none"/>
+  <text class="xs mid" x="340.0" y="91">4 x 9 = 36</text>
+  <path class="dash" d="M340 40 V118"/>
+  <text class="s b c mid" x="340" y="34">akar 36 = 6</text>
+  <text class="s mid" x="190" y="170">pembagi yang perlu diuji (sampai akar)</text>
+  <text class="s mid" x="500" y="170">pasangannya, tidak perlu diuji</text>
+  <text class="xs muted" x="340" y="192">6 x 6 = 36: pasangan kembar tepat di akar.</text>
+</svg>
+<figcaption>Pembagi 36 berpasangan di sekitar akar kuadrat 6. Cukup memeriksa pembagi sampai 6: pasangannya otomatis ikut ketemu.</figcaption>
+</figure>
+
+<p>Dengan penanda Boolean <code>Prima</code>, algoritmanya menjadi: anggap <code>N</code> prima (bila
+<code>N &gt;= 2</code>), lalu uji pembagi 2, 3, 4, ... selama masih ada kemungkinan dan <code>Prima</code> masih
+<code>True</code>. Sekali ketemu pembagi, <code>Prima</code> diubah menjadi <code>False</code> dan perulangan berhenti karena syarat
+<code>while</code> tidak terpenuhi lagi.</p>
+
+<figure class="grafik" id="gb-flow-prima">
+<svg viewBox="0 0 680 296">
+  <rect class="box" x="30" y="8" width="240" height="32" rx="6"/>
+  <text class="mid" x="150" y="29">Prima := N &gt;= 2;  Pembagi := 2</text>
+  <path class="arrow" d="M150 40 V60"/>
+  <polygon class="dec" points="150,62 262,92 150,122 38,92"/>
+  <text class="mono mid" x="150" y="88">Prima dan</text>
+  <text class="mono mid" x="150" y="102">Pembagi^2 &lt;= N ?</text>
+  <path class="arrow" d="M150 122 V148"/>
+  <text class="s b" x="158" y="141" style="fill:#11743f">True</text>
+  <polygon class="dec" points="150,150 250,176 150,202 50,176"/>
+  <text class="mono mid" x="150" y="180">N mod Pembagi = 0 ?</text>
+  <path class="arrow" d="M250 176 H290"/>
+  <text class="s b" x="256" y="168" style="fill:#11743f">True</text>
+  <rect class="no" x="290" y="160" width="140" height="32" rx="6"/>
+  <text class="mid" x="360" y="180">Prima := False</text>
+  <path class="arrow" d="M150 202 V226"/>
+  <text class="s b" x="158" y="218" style="fill:#b42318">False</text>
+  <rect class="box" x="45" y="228" width="210" height="30" rx="6"/>
+  <text class="mid" x="150" y="248">Pembagi := Pembagi + 1</text>
+  <path class="arrow" d="M360 192 V243 H257"/>
+  <path class="arrow" d="M45 243 H14 V92 H36"/>
+  <path class="arrow" d="M262 92 H470"/>
+  <text class="s b" x="300" y="84" style="fill:#b42318">False</text>
+  <rect class="term" x="470" y="76" width="190" height="32" rx="16"/>
+  <text class="white mid" x="565" y="96">Hasil sudah ada di Prima</text>
+  <text class="s" x="470" y="136">Perulangan berhenti karena salah satu:</text>
+  <text class="s" x="470" y="152">1) Prima menjadi False (ada pembagi), atau</text>
+  <text class="s" x="470" y="168">2) Pembagi sudah melewati akar N.</text>
+  <text class="s b" x="470" y="196">Sesudah itu: bila Prima True maka N prima.</text>
+</svg>
+<figcaption>Diagram alir pemeriksaan bilangan prima pada Program 8.1: dua syarat berhenti dan satu penanda hasil.</figcaption>
+</figure>
+
+<p>Program 8.1 menerapkan algoritma ini dua kali: sekali untuk bilangan yang Anda ketik, lalu untuk setiap bilangan
+2 sampai 100 di dalam perulangan <code>for</code>, sehingga terbentuk daftar semua prima sampai 100.</p>
+
+<x-listing src="bab08_01_bilangan_prima.pas"></x-listing>
+
+<x-run src="bab08_01_bilangan_prima.pas" caption="Program 8.1 dengan masukan 97 (prima) dan daftar prima sampai 100"></x-run>
+
+<p>Sekarang coba bilangan komposit. Untuk 91, tidak ada pembagi kecil yang jelas (91 bukan genap dan jumlah digitnya
+10), tetapi 7 x 13 = 91, jadi program harus menemukannya.</p>
+
+<x-run src="bab08_01_bilangan_prima.pas" input="91\n" caption="Masukan 91: bukan prima karena habis dibagi 7"></x-run>
+
+<table class="data compact" id="tb-jejak-prima">
+  <caption>Jejak pemeriksaan <code>N = 91</code> pada baris 18–23</caption>
+  <thead><tr><th><code>Pembagi</code></th><th><code>Pembagi * Pembagi</code></th><th><code>91 mod Pembagi</code></th><th><code>Prima</code> sesudah</th></tr></thead>
+  <tbody>
+    <tr><td>2</td><td>4</td><td>1</td><td><code>True</code></td></tr>
+    <tr><td>3</td><td>9</td><td>1</td><td><code>True</code></td></tr>
+    <tr><td>4</td><td>16</td><td>3</td><td><code>True</code></td></tr>
+    <tr><td>5</td><td>25</td><td>1</td><td><code>True</code></td></tr>
+    <tr><td>6</td><td>36</td><td>1</td><td><code>True</code></td></tr>
+    <tr><td>7</td><td>49</td><td>0</td><td><code>False</code>, perulangan berhenti</td></tr>
+  </tbody>
+</table>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10–11</td><td><code>Calon</code> dan <code>Pembagi</code> bertipe <code>Integer</code>; <code>Prima</code> bertipe <code>Boolean</code> sebagai penanda hasil.</td></tr>
+    <tr><td>16</td><td><code>Prima := N &gt;= 2</code> memberi nilai awal sekaligus menangani 0 dan 1 (bukan prima): bila <code>N</code> kurang dari 2, <code>Prima</code> langsung <code>False</code> dan perulangan tidak dijalankan.</td></tr>
+    <tr><td>18</td><td>Syarat <code>while</code> gabungan: <code>Prima</code> masih <code>True</code> dan <code>Pembagi * Pembagi &lt;= N</code>. Kurung wajib di sekitar perbandingan karena <code>and</code> lebih kuat daripada operator pembanding (Bab 6).</td></tr>
+    <tr><td>20–21</td><td>Bila <code>Pembagi</code> membagi habis, <code>N</code> pasti bukan prima.</td></tr>
+    <tr><td>22</td><td>Pembagi berikutnya. Baris ini selalu dijalankan sehingga perulangan pasti berakhir (<code>Pembagi * Pembagi</code> akhirnya melewati <code>N</code>).</td></tr>
+    <tr><td>24–27</td><td>Hasil dilaporkan dengan <code>if..then..else</code>. Perhatikan: tidak ada titik koma sebelum <code>else</code>.</td></tr>
+    <tr><td>32</td><td><code>Banyak</code> menghitung prima yang ditemukan, untuk dicetak sepuluh per baris.</td></tr>
+    <tr><td>33–49</td><td>Perulangan <code>for</code> terluar mencoba setiap <code>Calon</code> dari 2 sampai 100. Di dalamnya, baris 35–42 mengulang algoritma yang sama dengan <code>Calon</code> sebagai pengganti <code>N</code>. Penanda <code>Prima</code> harus diatur ulang ke <code>True</code> (baris 35) di setiap putaran luar.</td></tr>
+    <tr><td>43–48</td><td>Bila <code>Calon</code> prima: cetak selebar 4 karakter, tambah <code>Banyak</code>, dan setiap kelipatan 10 pindah baris.</td></tr>
+    <tr><td>51</td><td>Mencetak jumlah akhir, yaitu 25 bilangan prima sampai 100.</td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p>Ubah batas pada baris 33 menjadi 1000 dan jalankan. Berapa bilangan prima di bawah 1000? Tebak dulu,
+lalu bandingkan dengan keluaran program. Perhatikan juga bahwa tipe <code>Integer</code> masih aman karena hasil kali
+<code>Pembagi * Pembagi</code> tidak melewati 32767.</p></div>
+
+<h2>FPB dan KPK: Algoritma Euclid</h2>
+
+<p><b>Faktor Persekutuan Terbesar (FPB)</b> dua bilangan adalah bilangan terbesar yang membagi habis keduanya; FPB(84, 36)
+adalah 12. <b>Kelipatan Persekutuan Terkecil (KPK)</b> adalah bilangan terkecil yang habis dibagi keduanya. Cara di sekolah
+memakai pohon faktor, tetapi lebih dari dua ribu tahun lalu Euclid menemukan cara yang jauh lebih singkat, dan cara itu
+masih dipakai komputer sampai sekarang.</p>
+
+<p>Idenya: FPB dari <code>A</code> dan <code>B</code> sama dengan FPB dari <code>B</code> dan <code>A mod B</code>. Ganti terus
+pasangan (A, B) dengan (B, sisa), dan bilangan-bilangan itu mengecil. Ketika yang kedua menjadi 0, yang pertama
+adalah FPB.</p>
+
+<div class="sintaks"><pre><i>selama</i> B &lt;&gt; 0 <i>lakukan:</i>
+    Sisa := A <b>mod</b> B
+    A := B
+    B := Sisa
+<i>FPB adalah</i> A</pre></div>
+
+<figure class="grafik" id="gb-euclid">
+<svg viewBox="0 0 680 262">
+  <text class="s b mid" x="105" y="22">X</text>
+  <text class="s b mid" x="235" y="22">Y</text>
+  <text class="s b mid" x="365" y="22">Sisa = X mod Y</text>
+  <rect class="box" x="60" y="40" width="90" height="34" rx="6"/><text class="mono mid" x="105" y="62">84</text>
+  <rect class="box" x="190" y="40" width="90" height="34" rx="6"/><text class="mono mid" x="235" y="62">36</text>
+  <rect class="box-w" x="320" y="40" width="90" height="34" rx="6"/><text class="mono mid" x="365" y="62">12</text>
+  <path class="arrow" d="M235 74 L105 106"/>
+  <path class="arrow" d="M365 74 L235 106"/>
+  <rect class="box" x="60" y="106" width="90" height="34" rx="6"/><text class="mono mid" x="105" y="128">36</text>
+  <rect class="box" x="190" y="106" width="90" height="34" rx="6"/><text class="mono mid" x="235" y="128">12</text>
+  <rect class="box-w" x="320" y="106" width="90" height="34" rx="6"/><text class="mono mid" x="365" y="128">0</text>
+  <path class="arrow" d="M235 140 L105 172"/>
+  <path class="arrow" d="M365 140 L235 172"/>
+  <rect class="ok" x="60" y="172" width="90" height="34" rx="6"/><text class="mono mid" x="105" y="194">12</text>
+  <rect class="no" x="190" y="172" width="90" height="34" rx="6"/><text class="mono mid" x="235" y="194">0</text>
+  <text class="s" x="440" y="62">84 mod 36 = 12</text>
+  <text class="s" x="440" y="128">36 mod 12 = 0</text>
+  <text class="s b" x="440" y="194" style="fill:#b42318">Y = 0: berhenti</text>
+  <text class="s b" x="440" y="210" style="fill:#11743f">FPB = X = 12</text>
+  <text class="s" x="440" y="232">KPK = 84 div 12 x 36 = 252</text>
+</svg>
+<figcaption>Algoritma Euclid untuk 84 dan 36: pada setiap baris, <code>Y</code> turun menjadi <code>X</code> berikutnya, dan <code>Sisa</code> turun menjadi <code>Y</code> berikutnya.</figcaption>
+</figure>
+
+<p>Setelah FPB diketahui, KPK mudah dihitung: KPK = (A x B) / FPB. Program 8.2 membagi lebih dulu
+(<code>A div FPB * B</code>) agar hasil antara tidak meluap, sebab A x B bisa jauh lebih besar dari A atau B. Program ini juga
+menampilkan setiap langkah Euclid supaya prosesnya terlihat.</p>
+
+<x-listing src="bab08_02_fpb_kpk.pas"></x-listing>
+
+<x-run src="bab08_02_fpb_kpk.pas" caption="Program 8.2 untuk 84 dan 36"></x-run>
+
+<p>Bagaimana bila bilangan pertama lebih kecil? Euclid tetap bekerja tanpa penanganan khusus, karena langkah pertama
+menukar posisi keduanya: <code>36 mod 84 = 36</code>, sehingga pasangan menjadi (84, 36).</p>
+
+<x-run src="bab08_02_fpb_kpk.pas" input="36\n84\n" caption="Masukan dibalik (36 dan 84): langkah pertama menukar posisi"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10</td><td>Semua variabel bertipe <code>LongInt</code>, agar KPK dua bilangan besar masih muat.</td></tr>
+    <tr><td>13–14</td><td>Dua bilangan dibaca; dua pernyataan ditulis di satu baris, dipisah titik koma.</td></tr>
+    <tr><td>16–17</td><td>Salinan <code>X</code> dan <code>Y</code> dibuat karena algoritma merusak nilainya; <code>A</code> dan <code>B</code> masih diperlukan untuk menghitung KPK dan untuk tampilan akhir.</td></tr>
+    <tr><td>19–25</td><td>Perulangan <code>while Y &lt;&gt; 0</code>. Sisa dihitung (baris 21), ditulis agar langkahnya terlihat (22), lalu pasangan digeser (23–24). Urutan baris 23 dan 24 penting: <code>Sisa</code> sudah menyimpan hasil sebelum <code>Y</code> ditimpa.</td></tr>
+    <tr><td>26</td><td>Saat perulangan selesai, <code>Y = 0</code> dan <code>X</code> adalah FPB.</td></tr>
+    <tr><td>28</td><td>KPK dihitung dengan membagi lebih dulu. Hasilnya sama dengan A x B / FPB karena FPB pasti membagi habis <code>A</code>.</td></tr>
+  </tbody>
+</table>
+
+<p>Perhatikan juga bahwa perulangan berhenti pasti terjadi: pada setiap putaran, sisa selalu lebih kecil dari pembagi, sehingga
+nilai <code>Y</code> menyusut sampai 0. Berikut jejak untuk 84 dan 36 sesuai gambar tadi.</p>
+
+<table class="data compact" id="tb-jejak-euclid">
+  <caption>Jejak Program 8.2 untuk 84 dan 36</caption>
+  <thead><tr><th>Putaran</th><th><code>X</code></th><th><code>Y</code></th><th><code>Sisa := X mod Y</code></th><th>Sesudah geser (<code>X</code>, <code>Y</code>)</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>84</td><td>36</td><td>12</td><td>(36, 12)</td></tr>
+    <tr><td>2</td><td>36</td><td>12</td><td>0</td><td>(12, 0)</td></tr>
+    <tr><td>(cek)</td><td>12</td><td>0</td><td colspan="2">berhenti, FPB = 12, KPK = 84 div 12 * 36 = 252</td></tr>
+  </tbody>
+</table>
+
+<h3>Melihat Euclid di debugger</h3>
+
+<p>Pasang breakpoint di baris 21 (<code>Sisa := X mod Y</code>), tambahkan watch untuk <code>X</code>, <code>Y</code>, dan
+<code>Sisa</code>, lalu mulai debugging dengan masukan 84 dan 36. Setiap kali program berhenti di baris 21, tekan
+<span class="menu">Debug ▸ Continue</span> untuk maju satu putaran. Pada gambar di bawah, program berhenti di putaran kedua:
+<code>X</code> dan <code>Y</code> sudah bergeser, tetapi <code>Sisa</code> masih menyimpan nilai putaran pertama.</p>
+
+<x-ide file="bab08_02_fpb_kpk.pas" top="13" rows="14" breakpoints="21" exec="21" cursor="21:5" watches="X: 36;Y: 12;Sisa: 12" marks="gutter,watches" id="gb-dbg-euclid" caption="Program 8.2 berhenti di baris 21 pada putaran kedua: X = 36, Y = 12"></x-ide>
+
+<table class="baris">
+  <thead><tr><th>Nomor</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td><span class="marknum">1</span></td><td>Gutter dengan breakpoint pada baris 21 (titik merah).</td></tr>
+    <tr><td><span class="marknum">2</span></td><td>Jendela Watches: pada saat berhenti, <code>X = 36</code> dan <code>Y = 12</code>, sama dengan baris pertama tabel jejak sesudah pergeseran.</td></tr>
+  </tbody>
+</table>
+
+<h2>Deret Fibonacci</h2>
+
+<p>Deret Fibonacci dimulai dari 1, 1, lalu setiap suku adalah jumlah dua suku sebelumnya: 1, 1, 2, 3, 5, 8, 13, 21, 34, ...
+Deret ini muncul pada banyak hal, mulai dari susunan biji bunga matahari sampai soal pertumbuhan populasi. Untuk
+membangkitkannya kita tidak perlu menyimpan seluruh deret; cukup <b>dua suku terakhir</b>. Setiap putaran, kita hitung
+suku berikutnya, lalu "menggeser" kedua variabel satu langkah ke depan.</p>
+
+<figure class="grafik" id="gb-fib">
+<svg viewBox="0 0 680 260">
+  <text class="s b" x="40" y="20">Putaran 1: cetak Suku 1 = 1;  Berikut = 0 + 1 = 1</text>
+  <rect class="io" x="40" y="28" width="56" height="34" rx="6"/><text class="mono mid" x="68" y="50">0</text>
+  <rect class="ok" x="110" y="28" width="56" height="34" rx="6"/><text class="mono mid" x="138" y="50">1</text>
+  <rect class="dec" x="180" y="28" width="56" height="34" rx="6"/><text class="mono mid" x="208" y="50">1</text>
+  <rect class="box-w" x="250" y="28" width="56" height="34" rx="6"/><text class="mono mid" x="278" y="50">2</text>
+  <rect class="box-w" x="320" y="28" width="56" height="34" rx="6"/><text class="mono mid" x="348" y="50">3</text>
+  <rect class="box-w" x="390" y="28" width="56" height="34" rx="6"/><text class="mono mid" x="418" y="50">5</text>
+  <rect class="box-w" x="460" y="28" width="56" height="34" rx="6"/><text class="mono mid" x="488" y="50">8</text>
+  <rect class="box-w" x="530" y="28" width="56" height="34" rx="6"/><text class="mono mid" x="558" y="50">13</text>
+  <rect class="box-w" x="600" y="28" width="56" height="34" rx="6"/><text class="mono mid" x="628" y="50">21</text>
+  <text class="s b" x="40" y="102">Putaran 2: cetak Suku 2 = 1;  Berikut = 1 + 1 = 2</text>
+  <rect class="box-w" x="40" y="110" width="56" height="34" rx="6"/><text class="mono mid" x="68" y="132">0</text>
+  <rect class="io" x="110" y="110" width="56" height="34" rx="6"/><text class="mono mid" x="138" y="132">1</text>
+  <rect class="ok" x="180" y="110" width="56" height="34" rx="6"/><text class="mono mid" x="208" y="132">1</text>
+  <rect class="dec" x="250" y="110" width="56" height="34" rx="6"/><text class="mono mid" x="278" y="132">2</text>
+  <rect class="box-w" x="320" y="110" width="56" height="34" rx="6"/><text class="mono mid" x="348" y="132">3</text>
+  <rect class="box-w" x="390" y="110" width="56" height="34" rx="6"/><text class="mono mid" x="418" y="132">5</text>
+  <rect class="box-w" x="460" y="110" width="56" height="34" rx="6"/><text class="mono mid" x="488" y="132">8</text>
+  <rect class="box-w" x="530" y="110" width="56" height="34" rx="6"/><text class="mono mid" x="558" y="132">13</text>
+  <rect class="box-w" x="600" y="110" width="56" height="34" rx="6"/><text class="mono mid" x="628" y="132">21</text>
+  <text class="s b" x="40" y="184">Putaran 3: cetak Suku 3 = 2;  Berikut = 1 + 2 = 3</text>
+  <rect class="box-w" x="40" y="192" width="56" height="34" rx="6"/><text class="mono mid" x="68" y="214">0</text>
+  <rect class="box-w" x="110" y="192" width="56" height="34" rx="6"/><text class="mono mid" x="138" y="214">1</text>
+  <rect class="io" x="180" y="192" width="56" height="34" rx="6"/><text class="mono mid" x="208" y="214">1</text>
+  <rect class="ok" x="250" y="192" width="56" height="34" rx="6"/><text class="mono mid" x="278" y="214">2</text>
+  <rect class="dec" x="320" y="192" width="56" height="34" rx="6"/><text class="mono mid" x="348" y="214">3</text>
+  <rect class="box-w" x="390" y="192" width="56" height="34" rx="6"/><text class="mono mid" x="418" y="214">5</text>
+  <rect class="box-w" x="460" y="192" width="56" height="34" rx="6"/><text class="mono mid" x="488" y="214">8</text>
+  <rect class="box-w" x="530" y="192" width="56" height="34" rx="6"/><text class="mono mid" x="558" y="214">13</text>
+  <rect class="box-w" x="600" y="192" width="56" height="34" rx="6"/><text class="mono mid" x="628" y="214">21</text>
+  <text class="xs muted" x="40" y="254">Setelah setiap putaran, ketiga penanda bergeser satu kotak ke kanan.</text>
+</svg>
+<figcaption>Tiga putaran pertama Program 8.3: tiga variabel bergeser sepanjang deret. Biru = <code>Sebelum</code>, hijau = <code>Sekarang</code>, kuning = <code>Berikut</code>.</figcaption>
+</figure>
+
+<p>Urutan tiga baris pergeseran sangat penting: <code>Berikut</code> dihitung dari nilai lama, <code>Sebelum</code> diisi
+<code>Sekarang</code>, baru <code>Sekarang</code> diisi <code>Berikut</code>. Kalau urutannya terbalik, nilai lama sudah
+tertimpa sebelum dipakai. Program 8.3 juga memakai <code>const</code> untuk batas jumlah suku dan <code>repeat..until</code>
+untuk memvalidasi jumlah suku yang diminta.</p>
+
+<x-listing src="bab08_03_deret_fibonacci.pas"></x-listing>
+
+<x-run src="bab08_03_deret_fibonacci.pas" input="50\n12\n" caption="Masukan 50 ditolak (di atas batas 40), lalu 12 suku ditampilkan"></x-run>
+
+<table class="data compact" id="tb-jejak-fib">
+  <caption>Jejak pergeseran pada baris 23–29 (enam putaran pertama)</caption>
+  <thead><tr><th><code>I</code></th><th><code>Sebelum</code></th><th><code>Sekarang</code> (dicetak)</th><th><code>Berikut</code></th><th>Sesudah geser (<code>Sebelum</code>, <code>Sekarang</code>)</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>0</td><td>1</td><td>1</td><td>(1, 1)</td></tr>
+    <tr><td>2</td><td>1</td><td>1</td><td>2</td><td>(1, 2)</td></tr>
+    <tr><td>3</td><td>1</td><td>2</td><td>3</td><td>(2, 3)</td></tr>
+    <tr><td>4</td><td>2</td><td>3</td><td>5</td><td>(3, 5)</td></tr>
+    <tr><td>5</td><td>3</td><td>5</td><td>8</td><td>(5, 8)</td></tr>
+    <tr><td>6</td><td>5</td><td>8</td><td>13</td><td>(8, 13)</td></tr>
+  </tbody>
+</table>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>8–9</td><td>Konstanta <code>BatasSuku = 40</code>. Memakai konstanta bernama membuat batas mudah diubah di satu tempat dan dipakai ulang di baris 17 dan 19.</td></tr>
+    <tr><td>12–13</td><td>Pencacah dan jumlah suku bertipe <code>Integer</code>; nilai deret bertipe <code>LongInt</code>.</td></tr>
+    <tr><td>16–19</td><td>Validasi: ulangi pertanyaan sampai <code>N</code> berada di 1..40. Syarat <code>until</code> menyatakan masukan yang sah.</td></tr>
+    <tr><td>21–22</td><td>Nilai awal: <code>Sebelum = 0</code> (suku ke-0), <code>Sekarang = 1</code> (suku ke-1).</td></tr>
+    <tr><td>23–29</td><td>Satu putaran: cetak suku ke-<code>I</code> selebar 10 (baris 25), hitung suku berikutnya (26), lalu geser (27–28).</td></tr>
+  </tbody>
+</table>
+
+<div class="awas"><p><b>Mengapa batasnya 40?</b> Suku Fibonacci tumbuh cepat. <code>LongInt</code> hanya menampung sampai
+2.147.483.647, dan suku ke-47 (2.971.215.073) sudah melampauinya. Bila tipe terlalu kecil, Pascal tidak memberi
+peringatan, melainkan membalik ke bilangan negatif yang salah. Bagian Kesalahan yang Sering Terjadi di akhir bab ini
+memperlihatkannya dengan <code>Integer</code>.</p></div>
+
+<h2>Segitiga Bintang</h2>
+
+<p>Pola gambar dari karakter adalah latihan terbaik untuk perulangan bersarang. Rahasianya satu: <b>cari hubungan antara
+nomor baris dan jumlah karakter</b> di baris itu. Setelah rumusnya ketemu, kodenya hampir selalu berupa perulangan luar
+untuk baris dan satu atau dua perulangan dalam untuk karakter.</p>
+
+<p>Program 8.4 menggambar tiga pola dengan tinggi <code>T</code>. Berikut rumusnya, dengan <code>B</code> sebagai nomor
+baris dari atas (1 sampai <code>T</code>).</p>
+
+<figure class="grafik" id="gb-bintang">
+<svg viewBox="0 0 680 252">
+  <rect class="navy" x="10" y="8" width="214" height="152" rx="8"/>
+  <text class="s b" x="10" y="182">Segitiga siku-siku</text>
+  <text class="s" x="10" y="198">spasi 0, bintang B</text>
+  <text class="xs" x="18" y="35" style="fill:#9fb3c8">B=1</text>
+  <circle cx="79" cy="31" r="7" style="fill:#f5c542"/>
+  <text class="xs" x="18" y="69" style="fill:#9fb3c8">B=2</text>
+  <circle cx="79" cy="65" r="7" style="fill:#f5c542"/>
+  <circle cx="97" cy="65" r="7" style="fill:#f5c542"/>
+  <text class="xs" x="18" y="103" style="fill:#9fb3c8">B=3</text>
+  <circle cx="79" cy="99" r="7" style="fill:#f5c542"/>
+  <circle cx="97" cy="99" r="7" style="fill:#f5c542"/>
+  <circle cx="115" cy="99" r="7" style="fill:#f5c542"/>
+  <text class="xs" x="18" y="137" style="fill:#9fb3c8">B=4</text>
+  <circle cx="79" cy="133" r="7" style="fill:#f5c542"/>
+  <circle cx="97" cy="133" r="7" style="fill:#f5c542"/>
+  <circle cx="115" cy="133" r="7" style="fill:#f5c542"/>
+  <circle cx="133" cy="133" r="7" style="fill:#f5c542"/>
+  <rect class="navy" x="238" y="8" width="214" height="152" rx="8"/>
+  <text class="s b" x="238" y="182">Segitiga terbalik</text>
+  <text class="s" x="238" y="198">spasi 0, bintang B (B turun)</text>
+  <text class="xs" x="246" y="35" style="fill:#9fb3c8">B=4</text>
+  <circle cx="307" cy="31" r="7" style="fill:#f5c542"/>
+  <circle cx="325" cy="31" r="7" style="fill:#f5c542"/>
+  <circle cx="343" cy="31" r="7" style="fill:#f5c542"/>
+  <circle cx="361" cy="31" r="7" style="fill:#f5c542"/>
+  <text class="xs" x="246" y="69" style="fill:#9fb3c8">B=3</text>
+  <circle cx="307" cy="65" r="7" style="fill:#f5c542"/>
+  <circle cx="325" cy="65" r="7" style="fill:#f5c542"/>
+  <circle cx="343" cy="65" r="7" style="fill:#f5c542"/>
+  <text class="xs" x="246" y="103" style="fill:#9fb3c8">B=2</text>
+  <circle cx="307" cy="99" r="7" style="fill:#f5c542"/>
+  <circle cx="325" cy="99" r="7" style="fill:#f5c542"/>
+  <text class="xs" x="246" y="137" style="fill:#9fb3c8">B=1</text>
+  <circle cx="307" cy="133" r="7" style="fill:#f5c542"/>
+  <rect class="navy" x="466" y="8" width="214" height="152" rx="8"/>
+  <text class="s b" x="466" y="182">Piramida</text>
+  <text class="s" x="466" y="198">spasi T-B, bintang 2B-1</text>
+  <text class="xs" x="474" y="35" style="fill:#9fb3c8">B=1</text>
+  <circle cx="535" cy="31" r="3" style="fill:#2f6f5f"/>
+  <circle cx="553" cy="31" r="3" style="fill:#2f6f5f"/>
+  <circle cx="571" cy="31" r="3" style="fill:#2f6f5f"/>
+  <circle cx="589" cy="31" r="7" style="fill:#f5c542"/>
+  <text class="xs" x="474" y="69" style="fill:#9fb3c8">B=2</text>
+  <circle cx="535" cy="65" r="3" style="fill:#2f6f5f"/>
+  <circle cx="553" cy="65" r="3" style="fill:#2f6f5f"/>
+  <circle cx="571" cy="65" r="7" style="fill:#f5c542"/>
+  <circle cx="589" cy="65" r="7" style="fill:#f5c542"/>
+  <circle cx="607" cy="65" r="7" style="fill:#f5c542"/>
+  <text class="xs" x="474" y="103" style="fill:#9fb3c8">B=3</text>
+  <circle cx="535" cy="99" r="3" style="fill:#2f6f5f"/>
+  <circle cx="553" cy="99" r="7" style="fill:#f5c542"/>
+  <circle cx="571" cy="99" r="7" style="fill:#f5c542"/>
+  <circle cx="589" cy="99" r="7" style="fill:#f5c542"/>
+  <circle cx="607" cy="99" r="7" style="fill:#f5c542"/>
+  <circle cx="625" cy="99" r="7" style="fill:#f5c542"/>
+  <text class="xs" x="474" y="137" style="fill:#9fb3c8">B=4</text>
+  <circle cx="535" cy="133" r="7" style="fill:#f5c542"/>
+  <circle cx="553" cy="133" r="7" style="fill:#f5c542"/>
+  <circle cx="571" cy="133" r="7" style="fill:#f5c542"/>
+  <circle cx="589" cy="133" r="7" style="fill:#f5c542"/>
+  <circle cx="607" cy="133" r="7" style="fill:#f5c542"/>
+  <circle cx="625" cy="133" r="7" style="fill:#f5c542"/>
+  <circle cx="643" cy="133" r="7" style="fill:#f5c542"/>
+  <text class="xs muted" x="10" y="226">Piramida: spasi pengisi di kiri membuat bintang tampak di tengah.</text>
+</svg>
+<figcaption>Tiga pola Program 8.4 untuk <code>T = 4</code>. Titik hijau muda adalah spasi, bintang digambar sebagai titik pejal.</figcaption>
+</figure>
+
+<table class="data compact" id="tb-rumus-bintang">
+  <caption>Rumus ketiga pola untuk tinggi <code>T</code> dan nomor baris <code>B</code></caption>
+  <thead><tr><th>Pola</th><th>Perulangan baris</th><th>Spasi di baris <code>B</code></th><th>Bintang di baris <code>B</code></th></tr></thead>
+  <tbody>
+    <tr><td>Segitiga siku-siku</td><td><code>B</code> = 1 sampai <code>T</code></td><td>0</td><td><code>B</code></td></tr>
+    <tr><td>Segitiga terbalik</td><td><code>B</code> = <code>T</code> turun ke 1</td><td>0</td><td><code>B</code></td></tr>
+    <tr><td>Piramida</td><td><code>B</code> = 1 sampai <code>T</code></td><td><code>T - B</code></td><td><code>2B - 1</code></td></tr>
+  </tbody>
+</table>
+
+<p>Segitiga terbalik memakai <code>downto</code>: perulangan baris cukup dibalik, sedangkan isi barisnya sama persis dengan
+segitiga siku-siku. Piramida membutuhkan dua perulangan dalam berurutan: pertama spasi pengisi di kiri agar
+bintang terlihat di tengah, kemudian bintang dengan jumlah ganjil (1, 3, 5, ...).</p>
+
+<x-listing src="bab08_04_segitiga_bintang.pas"></x-listing>
+
+<x-run src="bab08_04_segitiga_bintang.pas" input="5\n" caption="Program 8.4 dengan tinggi 5"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>13–16</td><td>Tinggi dibaca. Bila di luar 1..20, dipakai nilai bawaan 5 agar program tidak menggambar pola yang terlalu lebar atau kosong.</td></tr>
+    <tr><td>19–23</td><td>Segitiga siku-siku. Perulangan dalam (baris 21) menulis <code>Baris</code> buah bintang. Satu pernyataan <code>for</code> tunggal ditulis di satu baris bersama <code>Write('*')</code>. <code>WriteLn</code> di baris 22 pindah baris setelah itu.</td></tr>
+    <tr><td>26–30</td><td>Segitiga terbalik: <code>Baris</code> menurun dari <code>Tinggi</code> ke 1, sehingga baris pertama paling panjang.</td></tr>
+    <tr><td>33–38</td><td>Piramida. Baris 35 menulis <code>Tinggi - Baris</code> spasi, baris 36 menulis <code>2 * Baris - 1</code> bintang. Di baris pertama, 1 bintang berdiri di tengah; di baris terakhir tidak ada spasi dan bintangnya paling lebar.</td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p>Buat pola <b>belah ketupat</b>: piramida diikuti piramida terbalik. Atau gambar kotak
+<code>Tinggi x Tinggi</code> berongga (bintang hanya di tepi). Gambar dulu pada kertas dengan memberi nomor baris dan
+kolom, lalu cari rumusnya sebelum menulis kode.</p></div>
+
+<h2>Bilangan Sempurna</h2>
+
+<p>Sebuah bilangan disebut <b>sempurna</b> bila sama dengan jumlah semua pembaginya selain dirinya sendiri. Contoh 6 =
+1 + 2 + 3, dan 28 = 1 + 2 + 4 + 7 + 14. Bilangan yang jumlah pembaginya lebih kecil disebut kurang (misalnya 8, jumlah
+pembaginya 1 + 2 + 4 = 7), dan yang lebih besar disebut berlimpah (misalnya 12, jumlahnya 1 + 2 + 3 + 4 + 6 = 16).</p>
+
+<figure class="grafik" id="gb-sempurna">
+<svg viewBox="0 0 680 232">
+  <text class="s b" x="10" y="32">N = 8</text>
+  <rect x="150" y="14" width="112" height="30" rx="3" style="fill:none;stroke:#555;stroke-dasharray:4 3"/>
+  <rect class="ok" x="150" y="18" width="14" height="22" rx="2"/>
+  <text class="xs mid" x="157.0" y="33">1</text>
+  <rect class="io" x="164" y="18" width="28" height="22" rx="2"/>
+  <text class="xs mid" x="178.0" y="33">2</text>
+  <rect class="ok" x="192" y="18" width="56" height="22" rx="2"/>
+  <text class="xs mid" x="220.0" y="33">4</text>
+  <text class="s b" x="270" y="33" style="fill:#b42318">jumlah 7: kurang</text>
+  <text class="s b" x="10" y="86">N = 6</text>
+  <rect x="150" y="68" width="84" height="30" rx="3" style="fill:none;stroke:#555;stroke-dasharray:4 3"/>
+  <rect class="ok" x="150" y="72" width="14" height="22" rx="2"/>
+  <text class="xs mid" x="157.0" y="87">1</text>
+  <rect class="io" x="164" y="72" width="28" height="22" rx="2"/>
+  <text class="xs mid" x="178.0" y="87">2</text>
+  <rect class="ok" x="192" y="72" width="42" height="22" rx="2"/>
+  <text class="xs mid" x="213.0" y="87">3</text>
+  <text class="s b" x="242" y="87" style="fill:#11743f">jumlah 6: sempurna</text>
+  <text class="s b" x="10" y="140">N = 28</text>
+  <rect x="150" y="122" width="392" height="30" rx="3" style="fill:none;stroke:#555;stroke-dasharray:4 3"/>
+  <rect class="ok" x="150" y="126" width="14" height="22" rx="2"/>
+  <text class="xs mid" x="157.0" y="141">1</text>
+  <rect class="io" x="164" y="126" width="28" height="22" rx="2"/>
+  <text class="xs mid" x="178.0" y="141">2</text>
+  <rect class="ok" x="192" y="126" width="56" height="22" rx="2"/>
+  <text class="xs mid" x="220.0" y="141">4</text>
+  <rect class="io" x="248" y="126" width="98" height="22" rx="2"/>
+  <text class="xs mid" x="297.0" y="141">7</text>
+  <rect class="ok" x="346" y="126" width="196" height="22" rx="2"/>
+  <text class="xs mid" x="444.0" y="141">14</text>
+  <text class="s b" x="550" y="141" style="fill:#11743f">jumlah 28: sempurna</text>
+  <text class="s b" x="10" y="194">N = 12</text>
+  <rect x="150" y="176" width="168" height="30" rx="3" style="fill:none;stroke:#555;stroke-dasharray:4 3"/>
+  <rect class="ok" x="150" y="180" width="14" height="22" rx="2"/>
+  <text class="xs mid" x="157.0" y="195">1</text>
+  <rect class="io" x="164" y="180" width="28" height="22" rx="2"/>
+  <text class="xs mid" x="178.0" y="195">2</text>
+  <rect class="ok" x="192" y="180" width="42" height="22" rx="2"/>
+  <text class="xs mid" x="213.0" y="195">3</text>
+  <rect class="io" x="234" y="180" width="56" height="22" rx="2"/>
+  <text class="xs mid" x="262.0" y="195">4</text>
+  <rect class="ok" x="290" y="180" width="84" height="22" rx="2"/>
+  <text class="xs mid" x="332.0" y="195">6</text>
+  <text class="s b" x="382" y="195" style="fill:#b42318">jumlah 16: berlimpah</text>
+  <text class="xs muted" x="10" y="226">Garis putus-putus = panjang N. Potongan = pembagi selain N sendiri.</text>
+</svg>
+<figcaption>Tiap pembagi (kecuali bilangan itu sendiri) digambar sebagai potongan berskala. Bila potongan tepat memenuhi garis putus-putus, bilangan itu sempurna.</figcaption>
+</figure>
+
+<p>Algoritmanya memakai dua perulangan bersarang: perulangan luar mencoba setiap <code>N</code>, perulangan dalam
+menjumlahkan semua pembaginya. Pembagi sebuah bilangan tidak mungkin lebih dari setengahnya (kecuali bilangan itu sendiri,
+yang memang tidak dihitung), sehingga perulangan dalam cukup berjalan sampai <code>N div 2</code>. Untuk bilangan
+yang lolos, perulangan dalam kedua mencetak rinciannya.</p>
+
+<x-listing src="bab08_05_bilangan_sempurna.pas"></x-listing>
+
+<x-run src="bab08_05_bilangan_sempurna.pas" caption="Program 8.5: bilangan sempurna dari 2 sampai 10000"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>8–9</td><td>Konstanta <code>Batas</code> menetapkan jangkauan pencarian.</td></tr>
+    <tr><td>12–13</td><td><code>N</code> dan <code>Pembagi</code> cukup <code>Integer</code> (maksimum 10000), tetapi <code>Jumlah</code> dibuat <code>LongInt</code> karena penjumlahan semua pembagi bisa melebihi 32767 untuk bilangan yang besar.</td></tr>
+    <tr><td>17–32</td><td>Perulangan luar: satu putaran per bilangan <code>N</code>.</td></tr>
+    <tr><td>19</td><td><code>Jumlah</code> harus dinolkan di setiap putaran luar. Bila terlupa, jumlah putaran sebelumnya ikut terbawa.</td></tr>
+    <tr><td>20–22</td><td>Perulangan dalam menjumlahkan pembagi. <code>if</code> sebagai badan <code>for</code> menyaring angka yang membagi habis <code>N</code>. Tidak ada <code>begin..end</code> karena badannya satu pernyataan <code>if</code> utuh.</td></tr>
+    <tr><td>24</td><td>Bila jumlah pembagi sama dengan <code>N</code>, bilangan itu sempurna.</td></tr>
+    <tr><td>26–30</td><td>Cetak rincian: mulai dari <code>N = 1</code>, lalu tambahkan <code>+ pembagi</code> untuk setiap pembagi berikutnya. Karena 1 pasti pembagi, penulisannya dimulai dengan "= 1".</td></tr>
+  </tbody>
+</table>
+
+<div class="info"><p>Program ini melakukan sekitar 25 juta pembagian, jadi tunggu beberapa saat sebelum hasilnya muncul. Keempat
+bilangan sempurna yang ditemukan sampai 10000 adalah yang pertama dari deretnya; yang kelima sudah melebihi 33 juta.</p></div>
+
+<h2>Permainan Tebak Angka</h2>
+
+<p>Program terakhir bab ini sebuah permainan. Komputer memilih angka rahasia antara 1 dan 100, dan Anda menebaknya.
+Setiap tebakan dijawab "terlalu kecil" atau "terlalu besar", sampai tebakan benar. Program juga menghitung banyak
+percobaan. Dua hal baru muncul: <code>Randomize</code> dan <code>Random</code>.</p>
+
+<div class="sintaks"><pre><b>Randomize</b>;              <i>{ sekali di awal program }</i>
+<i>Peubah</i> := <b>Random</b>(<i>N</i>);    <i>{ bilangan acak 0..N-1 }</i></pre></div>
+
+<p><code>Random(100)</code> menghasilkan bilangan bulat acak dari 0 sampai 99. Agar angkanya 1 sampai 100, hasilnya
+digeser dengan <code>+ 1</code>. <code>Randomize</code> mengacak "benih" pembangkit bilangan acak berdasarkan jam
+komputer; tanpa itu, urutan angkanya cenderung sama setiap kali program dijalankan.</p>
+
+<div class="tp7"><p>Pemanggilan <code>Randomize</code> cukup sekali, di awal program, bukan di dalam perulangan. Fungsi
+<code>Random(N)</code> pada Turbo Pascal 7 memberi hasil <code>0..N-1</code>, bukan <code>1..N</code>. Itu sebabnya perlu
+<code>+ 1</code> pada baris 13.</p></div>
+
+<p>Program 8.6 memakai <code>repeat..until</code> karena pemain harus menebak setidaknya sekali. Setelah salah, program
+memberi petunjuk dengan rantai <code>if..else if</code> yang Anda kenal dari Bab 6. Perhatikan bahwa kasus tebakan
+benar tidak memiliki cabang: ia ditangani oleh syarat <code>until</code>.</p>
+
+<x-listing src="bab08_06_tebak_angka.pas"></x-listing>
+
+<h3>Strategi pencarian biner</h3>
+
+<p>Bagaimana cara menebak paling efisien? Tebakan terbaik selalu <b>tepat di tengah</b> rentang yang masih mungkin.
+Bila jawabannya "terlalu besar", separuh atas rentang gugur; bila "terlalu kecil", separuh bawahnya gugur. Rentang menyusut
+setengah pada setiap tebakan, dan itulah <b>pencarian biner</b> (<i>binary search</i>). Untuk 100 angka, rentang menyusut
+100, 50, 25, 12, 6, 3, 1, sehingga paling banyak 7 tebakan sudah cukup (karena 2<sup>7</sup> = 128, lebih dari 100).
+Itulah alasan komentar di baris 30 menyebut "maks 7 kali".</p>
+
+<figure class="grafik" id="gb-biner">
+<svg viewBox="0 0 680 262">
+  <text class="s b" x="40" y="16">Tebakan 1: rentang 1..100</text>
+  <rect class="box-w" x="40" y="24" width="600" height="22" rx="3"/>
+  <rect class="ok" x="40" y="24" width="600" height="22" rx="3"/>
+  <path class="arrow" d="M337.0 68 V48"/>
+  <text class="s b mid" x="337.0" y="80">50 terlalu besar: atas := 49</text>
+  <text class="s b" x="40" y="92">Tebakan 2: rentang 1..49</text>
+  <rect class="box-w" x="40" y="100" width="600" height="22" rx="3"/>
+  <rect class="ok" x="40" y="100" width="294" height="22" rx="3"/>
+  <path class="arrow" d="M187.0 144 V124"/>
+  <text class="s b mid" x="187.0" y="156">25 terlalu kecil: bawah := 26</text>
+  <text class="s b" x="40" y="168">Tebakan 3: rentang 26..49</text>
+  <rect class="box-w" x="40" y="176" width="600" height="22" rx="3"/>
+  <rect class="ok" x="190" y="176" width="144" height="22" rx="3"/>
+  <path class="arrow" d="M259.0 220 V200"/>
+  <text class="s b mid" x="259.0" y="232">37 benar!</text>
+  <text class="xs muted mid" x="43" y="246">1</text>
+  <text class="xs muted mid" x="187" y="246">25</text>
+  <text class="xs muted mid" x="337" y="246">50</text>
+  <text class="xs muted mid" x="487" y="246">75</text>
+  <text class="xs muted mid" x="637" y="246">100</text>
+  <text class="xs muted" x="40" y="258">Skala 1 sampai 100. Daerah hijau = angka yang masih mungkin.</text>
+</svg>
+<figcaption>Ilustrasi pencarian biner dengan angka rahasia pengandaian 37. Setiap jawaban membuang separuh rentang yang masih mungkin.</figcaption>
+</figure>
+
+<p>Untuk membuktikannya, buku ini <b>memainkan Program 8.6 secara otomatis</b>. Pemain otomatis membaca petunjuk yang tertulis
+di User screen dan mengetik tebakan di tengah rentang yang tersisa. Angka rahasia berbeda setiap kali program
+dijalankan (itulah gunanya <code>Randomize</code>), tetapi pemain otomatis selalu menemukannya dalam batas 7 kali
+percobaan, dan pesan "Hebat, strategi yang jitu!" di akhir ikut tampil. Perhatikan setiap tebakan di bawah: rentangnya
+selalu bergerak menuju angka rahasia.</p>
+
+<x-run src="bab08_06_tebak_angka.pas" caption="Program 8.6 dimainkan otomatis dengan pencarian biner (angka rahasia berbeda tiap kali dibangun)"></x-run>
+
+<table class="data compact" id="tb-biner-langkah">
+  <caption>Cara pemain otomatis menentukan tebakan</caption>
+  <thead><tr><th>Petunjuk program</th><th>Rentang baru</th><th>Tebakan berikutnya</th></tr></thead>
+  <tbody>
+    <tr><td>(awal permainan)</td><td>1..100</td><td><code>(1 + 100) div 2 = 50</code></td></tr>
+    <tr><td>Terlalu kecil</td><td>bawah := tebakan + 1</td><td>tengah rentang <code>(bawah + atas) div 2</code></td></tr>
+    <tr><td>Terlalu besar</td><td>atas := tebakan - 1</td><td>tengah rentang <code>(bawah + atas) div 2</code></td></tr>
+    <tr><td>(tidak ada petunjuk: benar)</td><td>permainan selesai</td><td>-</td></tr>
+  </tbody>
+</table>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9</td><td>Tiga <code>Integer</code>: angka rahasia, tebakan terakhir, dan banyak percobaan.</td></tr>
+    <tr><td>12–14</td><td><code>Randomize</code> dipanggil sekali; <code>Random(100) + 1</code> memilih angka 1..100; hitungan percobaan dimulai dari nol.</td></tr>
+    <tr><td>17–25</td><td><code>repeat..until Tebakan = Rahasia</code>. Badan: baca tebakan, tambah <code>Percobaan</code>, beri petunjuk.</td></tr>
+    <tr><td>21–24</td><td>Rantai <code>if..else if</code>: dua cabang petunjuk dan tidak ada <code>else</code>, karena kasus "sama" ditangani <code>until</code>. Titik koma hanya di akhir seluruh rantai.</td></tr>
+    <tr><td>27–28</td><td>Setelah keluar dari perulangan: tampilkan angka dan jumlah percobaan.</td></tr>
+    <tr><td>29–30</td><td>Bonus pujian bila percobaan 7 kali atau kurang, batas teoretis pencarian biner untuk 100 angka.</td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p>Mainkan sendiri beberapa kali, dan usahakan memakai strategi tengah rentang. Lalu ubah baris 13 menjadi
+<code>Random(1000) + 1</code> dan sesuaikan teksnya. Berapa tebakan maksimum yang dibutuhkan sekarang? (Petunjuk:
+berapa kali 1000 harus dibagi dua sampai tersisa 1?)</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Syarat gabungan tanpa kurung</h3>
+
+<p>Pada Program 8.1, syarat <code>Prima and (Pembagi * Pembagi &lt;= N)</code> memakai kurung. Tanpa kurung, <code>and</code>
+dikerjakan lebih dulu daripada <code>&lt;=</code>, sehingga Pascal mencoba menghitung <code>Prima and Pembagi</code>,
+yaitu operasi antara Boolean dan bilangan.</p>
+
+<x-error name="tanpa_kurung.pas" caption="Tanpa kurung, and mengikat Prima dengan Pembagi * Pembagi lebih dulu">program TanpaKurung;
+var
+  N, Pembagi: Integer;
+  Prima: Boolean;
+begin
+  N := 97;
+  Prima := True;
+  Pembagi := 2;
+  while Prima and Pembagi * Pembagi <= N do
+  begin
+    if N mod Pembagi = 0 then
+      Prima := False;
+    Pembagi := Pembagi + 1;
+  end;
+  WriteLn(Prima);
+end.</x-error>
+
+<p>Perbaikannya: bungkus setiap perbandingan dengan kurung, seperti pada baris 18 Program 8.1.</p>
+
+<h3>FPB dari dua nol</h3>
+
+<p>Algoritma Euclid tidak memberikan jawaban untuk FPB(0, 0), sebab tidak ada bilangan terbesar yang membagi
+habis nol. Pada Program 8.2, <code>FPB</code> akan bernilai 0 dan baris 28 membaginya. Akibatnya program berhenti dengan
+runtime error. Program berikut meniru bagian itu.</p>
+
+<x-error name="fpb_nol.pas" run input="0\n0\n" caption="Masukan 0 dan 0: FPB bernilai 0, lalu dipakai sebagai pembagi">program FpbNol;
+var
+  A, B, X, Y, Sisa, FPB, KPK: LongInt;
+begin
+  Write('A: '); ReadLn(A);
+  Write('B: '); ReadLn(B);
+  X := A;
+  Y := B;
+  while Y <> 0 do
+  begin
+    Sisa := X mod Y;
+    X := Y;
+    Y := Sisa;
+  end;
+  FPB := X;
+  KPK := A div FPB * B;
+  WriteLn('KPK = ', KPK);
+end.</x-error>
+
+<p>Penyelesaiannya: periksa dulu bahwa <code>FPB &lt;&gt; 0</code> (atau tolak masukan 0) sebelum membagi.</p>
+
+<h3>Tipe terlalu kecil: Fibonacci meluap</h3>
+
+<p>Program ini menghitung deret Fibonacci dengan <code>Integer</code> dan hanya menampilkan suku ke-20 sampai ke-25. Pada
+Turbo Pascal 7, <code>Integer</code> berukuran 16 bit (-32768..32767).</p>
+
+<x-error name="fib_integer.pas" run caption="Dengan Integer, suku yang melewati 32767 berubah menjadi bilangan negatif yang keliru">program FibInteger;
+var
+  I: Integer;
+  Sebelum, Sekarang, Berikut: Integer;
+begin
+  Sebelum := 0;
+  Sekarang := 1;
+  for I := 1 to 25 do
+  begin
+    if I >= 20 then
+      WriteLn('Suku ', I:2, ': ', Sekarang:7);
+    Berikut := Sebelum + Sekarang;
+    Sebelum := Sekarang;
+    Sekarang := Berikut;
+  end;
+end.</x-error>
+
+<p>Pascal tidak memberi peringatan. Penjumlahan "melingkar" ke ujung rentang yang lain, sehingga angkanya tiba-tiba
+negatif. Pilihlah tipe yang cukup besar (<code>LongInt</code>) dan batasi jumlah suku, seperti di Program 8.3.</p>
+
+<h3>Lupa mengatur ulang penampung</h3>
+
+<p>Pada Program 8.5, bila baris <code>Jumlah := 0</code> (baris 19) dipindahkan ke luar perulangan, <code>Jumlah</code> terus
+bertambah dari satu <code>N</code> ke <code>N</code> berikutnya. Hasilnya, hampir tidak ada bilangan yang cocok dengan
+<code>Jumlah = N</code>. Aturan umum: variabel penampung (akumulator, penghitung, penanda) harus diberi nilai awal
+<b>tepat sebelum</b> perulangan yang memakainya, dan di dalam perulangan luar bila ia dipakai ulang di setiap putaran.
+Kesalahan serupa terjadi pada penanda <code>Prima</code> di baris 35 Program 8.1.</p>
+
+<h3>Pola bintang yang meleset satu</h3>
+
+<p>Pada piramida, rumus yang benar adalah <code>2 * Baris - 1</code>. Bila Anda menulis <code>2 * Baris</code>, setiap baris
+mendapat satu bintang ekstra dan baris pertama berisi dua bintang, sehingga puncak tidak lagi simetris. Selalu uji pola
+dengan baris pertama dan terakhir, dan gambarkan di kertas lebih dulu.</p>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>Algoritma adalah urutan langkah yang berhingga, jelas, dan benar untuk semua masukan sah. Rancang dengan contoh tangan
+  lebih dulu, lalu tulis kode, lalu uji nilai batas.</li>
+  <li>Bilangan prima diuji dengan pembagi 2, 3, ... selama <code>Pembagi * Pembagi &lt;= N</code>; penanda Boolean
+  <code>Prima</code> menghentikan perulangan begitu ketemu pembagi.</li>
+  <li>Algoritma Euclid: ganti (A, B) dengan (B, A <code>mod</code> B) sampai B = 0; A adalah FPB. KPK = A <code>div</code>
+  FPB * B (bagi dulu agar tidak meluap).</li>
+  <li>Deret Fibonacci cukup menyimpan dua suku terakhir; urutan pergeseran harus benar. Pilih tipe data yang muat: suku
+  ke-47 sudah melebihi <code>LongInt</code>.</li>
+  <li>Pola dua dimensi dibuat dengan perulangan bersarang: cari rumus hubungan nomor baris dengan spasi dan bintang
+  (piramida: <code>T - B</code> spasi, <code>2B - 1</code> bintang).</li>
+  <li>Bilangan sempurna: jumlah pembagi sejati sama dengan bilangan itu (6, 28, 496, 8128 sampai 10000). Penampung jumlah
+  harus dinolkan di setiap putaran luar.</li>
+  <li><code>Randomize</code> sekali di awal, <code>Random(N)</code> memberi 0..N-1. Strategi tebak tengah rentang
+  (pencarian biner) menyelesaikan 1..100 dalam paling banyak 7 tebakan.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Ubah Program 8.1 agar mencetak bilangan prima kembar sampai 100, yaitu pasangan
+  prima dengan selisih 2 seperti (3, 5) dan (11, 13). Tuliskan lebih dulu daftarnya dengan tangan sebagai pembanding.</li>
+  <li><span class="lv dasar">Dasar</span>Tulis program yang membaca <code>N</code> lalu mencetak semua faktor (pembagi) <code>N</code>
+  dan banyaknya. Gunakan perulangan <code>for</code> dari 1 sampai <code>N</code>.</li>
+  <li><span class="lv dasar">Dasar</span>Gunakan algoritma Euclid dengan tangan untuk FPB(252, 105). Buat tabel jejak seperti <x-ref to="tb-jejak-euclid"></x-ref>, lalu periksa dengan Program 8.2.</li>
+  <li><span class="lv menengah">Menengah</span>Tulis program faktorisasi prima: baca <code>N</code>, lalu tulis faktornya, misalnya
+  <code>360 = 2 x 2 x 2 x 3 x 3 x 5</code>. Petunjuk: bagi dengan 2 selama habis, lalu 3, dan seterusnya.</li>
+  <li><span class="lv menengah">Menengah</span>Ubah Program 8.3 agar juga menampilkan perbandingan <code>Sekarang / Sebelum</code> tiap suku
+  dengan lima desimal. Ke angka berapa nilai itu mendekat? (Ini disebut rasio emas.)</li>
+  <li><span class="lv menengah">Menengah</span>Gambar belah ketupat setinggi <code>2T - 1</code> baris (piramida disusul piramida terbalik),
+  dan gambar juga papan catur 8 x 8 dari karakter <code>#</code> dan titik yang berselang-seling.</li>
+  <li><span class="lv tantangan">Tantangan</span>Balik permainan: Anda memikirkan angka 1..100, dan komputer yang menebak. Setelah
+  setiap tebakan, pemain menjawab <code>b</code> (terlalu besar), <code>k</code> (terlalu kecil), atau <code>s</code>
+  (sama). Gunakan pencarian biner, dan tampilkan banyak tebakan yang dibutuhkan.</li>
+</ol>
+</div>

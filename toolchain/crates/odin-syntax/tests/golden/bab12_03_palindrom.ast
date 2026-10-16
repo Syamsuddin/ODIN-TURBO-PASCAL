@@ -1,0 +1,47 @@
+(program bab12_03_palindrom
+  (function Bersihkan (S: string) : string
+    (var (I) Integer)
+    (var (C) Char)
+    (var (Hasil) string)
+    (begin
+      (:= Hasil '')
+      (for I 1 to (call Length S)
+        (begin
+          (:= C (call UpCase (index S I)))
+          (if (or (and (>= C 'A') (<= C 'Z')) (and (>= C '0') (<= C '9')))
+            (:= Hasil (+ Hasil C)))
+          (empty)))
+      (:= Bersihkan Hasil)
+      (empty)))
+  (function Palindrom (S: string) : Boolean
+    (var (Kiri Kanan) Integer)
+    (begin
+      (:= Palindrom True)
+      (:= Kiri 1)
+      (:= Kanan (call Length S))
+      (while (< Kiri Kanan)
+        (begin
+          (if (<> (index S Kiri) (index S Kanan))
+            (begin
+              (:= Palindrom False)
+              (do Exit)
+              (empty)))
+          (:= Kiri (+ Kiri 1))
+          (:= Kanan (- Kanan 1))
+          (empty)))
+      (empty)))
+  (var (Teks Bersih) string)
+  (begin
+    (repeat-until (= Teks '')
+      (do (call Write 'Ketik kata/kalimat (kosong = selesai): '))
+      (do (call ReadLn Teks))
+      (if (<> Teks '')
+        (begin
+          (:= Bersih (call Bersihkan Teks))
+          (if (call Palindrom Bersih)
+            (do (call WriteLn '  "' Teks '" adalah palindrom.'))
+            (else
+              (do (call WriteLn '  "' Teks '" bukan palindrom.'))))
+          (empty)))
+      (empty))
+    (empty)))

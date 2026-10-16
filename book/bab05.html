@@ -1,0 +1,197 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Memakai operator aritmetika <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code> dan fungsi bantu <code>Sqr</code>, <code>Sqrt</code>, <code>Abs</code>.</li>
+  <li>Membedakan <code>div</code> (pembagian bulat) dan <code>mod</code> (sisa bagi), serta memanfaatkannya.</li>
+  <li>Membentuk ekspresi perbandingan (<code>=</code>, <code>&lt;&gt;</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>) yang menghasilkan <code>Boolean</code>.</li>
+  <li>Menggabungkan syarat dengan operator logika <code>and</code>, <code>or</code>, <code>not</code>, <code>xor</code>.</li>
+  <li>Memahami prioritas operator dan memakai kurung agar ekspresi dihitung sesuai maksud.</li>
+</ul>
+
+<p class="lead">Program mengolah data dengan <b>ekspresi</b>: gabungan nilai, variabel, dan operator yang menghasilkan
+sebuah nilai baru. Bab ini mengupas operator Pascal, dari hitungan biasa sampai logika benar/salah, lalu aturan prioritas
+yang menentukan urutan pengerjaannya. Menguasai ini adalah bekal untuk percabangan dan perulangan di bab berikutnya.</p>
+
+<h2>Operator Aritmetika</h2>
+
+<p>Empat operator dasar: <code>+</code> (tambah), <code>-</code> (kurang), <code>*</code> (kali), dan <code>/</code>
+(bagi). Perlu diingat dari Bab 3: <code>/</code> <b>selalu menghasilkan <code>Real</code></b>, sedangkan <code>+</code>,
+<code>-</code>, <code>*</code> antara dua bilangan bulat tetap menghasilkan bilangan bulat. Pascal juga menyediakan fungsi
+bantu: <code>Sqr(x)</code> (kuadrat), <code>Sqrt(x)</code> (akar), dan <code>Abs(x)</code> (nilai mutlak).</p>
+
+<x-listing src="bab05_01_operator_aritmetika.pas"></x-listing>
+
+<x-run src="bab05_01_operator_aritmetika.pas"></x-run>
+
+<p>Perhatikan bahwa <code>A / B</code> perlu format <code>:0:2</code> karena hasilnya <code>Real</code>, sedangkan
+<code>A + B</code> tidak. Mencampur <code>Integer</code> dan <code>Real</code> dalam satu hitungan, seperti
+<code>A + X</code>, menghasilkan <code>Real</code>: tipe yang "lebih luas" menang.</p>
+
+<h2>Pembagian Bulat: div dan mod</h2>
+
+<p>Untuk bilangan bulat, Pascal punya dua operator khusus. <code>div</code> memberi <b>hasil bagi bulat</b> (pecahan
+dibuang), dan <code>mod</code> memberi <b>sisa pembagian</b>. Keduanya hanya untuk bilangan bulat.</p>
+
+<figure class="grafik" id="gb-divmod">
+<svg viewBox="0 0 680 130">
+  <text class="h c mid" x="340" y="28">17 dibagi 5</text>
+  <rect class="box" x="90" y="45" width="220" height="60" rx="10"/>
+  <text class="mono mid" x="200" y="72">17 div 5</text>
+  <text class="h c2 mid" x="200" y="96">= 3</text>
+  <text class="xs muted mid" x="200" y="42">berapa kali 5 masuk: 3</text>
+  <rect class="dec" x="370" y="45" width="220" height="60" rx="10"/>
+  <text class="mono mid" x="480" y="72">17 mod 5</text>
+  <text class="h c2 mid" x="480" y="96">= 2</text>
+  <text class="xs muted mid" x="480" y="42">sisanya: 17 − 15 = 2</text>
+</svg>
+<figcaption><code>17 = 3 × 5 + 2</code>: <code>div</code> memberi hasil bagi 3, <code>mod</code> memberi sisa 2.</figcaption>
+</figure>
+
+<x-listing src="bab05_02_div_mod.pas"></x-listing>
+
+<x-run src="bab05_02_div_mod.pas" input="3725&#10;47&#10;"></x-run>
+
+<p><code>div</code> dan <code>mod</code> sangat berguna. Contoh di program: mengubah total detik menjadi jam, menit, dan
+detik hanya dengan <code>div</code> dan <code>mod</code>. Trik lain yang sering dipakai: <code>Angka mod 10</code> memberi
+digit satuan (paling kanan), dan <code>Angka div 10</code> membuang digit itu. <code>Angka mod 2</code> bernilai 0 untuk
+bilangan genap, yang akan sering Anda pakai di bab-bab berikutnya.</p>
+
+<h2>Operator Perbandingan</h2>
+
+<p>Operator <b>relasional</b> membandingkan dua nilai dan menghasilkan <code>Boolean</code>. Inilah yang menjadi dasar
+semua keputusan.</p>
+
+<table class="data compact">
+  <caption>Enam operator perbandingan</caption>
+  <thead><tr><th>Operator</th><th>Arti</th><th>Contoh</th><th>Hasil (A=10, B=7)</th></tr></thead>
+  <tbody>
+    <tr><td><code>=</code></td><td>sama dengan</td><td><code>A = B</code></td><td><code>FALSE</code></td></tr>
+    <tr><td><code>&lt;&gt;</code></td><td>tidak sama dengan</td><td><code>A &lt;&gt; B</code></td><td><code>TRUE</code></td></tr>
+    <tr><td><code>&lt;</code></td><td>kurang dari</td><td><code>A &lt; B</code></td><td><code>FALSE</code></td></tr>
+    <tr><td><code>&gt;</code></td><td>lebih dari</td><td><code>A &gt; B</code></td><td><code>TRUE</code></td></tr>
+    <tr><td><code>&lt;=</code></td><td>kurang dari atau sama</td><td><code>A &lt;= 10</code></td><td><code>TRUE</code></td></tr>
+    <tr><td><code>&gt;=</code></td><td>lebih dari atau sama</td><td><code>A &gt;= 10</code></td><td><code>TRUE</code></td></tr>
+  </tbody>
+</table>
+
+<x-listing src="bab05_03_operator_relasional.pas"></x-listing>
+
+<x-run src="bab05_03_operator_relasional.pas"></x-run>
+
+<div class="awas"><p>Di Pascal, <code>=</code> berarti <b>membandingkan</b>, bukan menugaskan. Penugasan memakai <code>:=</code>.
+Jangan sampai tertukar: <code>if A = 5</code> membandingkan, <code>A := 5</code> mengisi. Perbandingan juga berlaku untuk
+string: <code>'Ani' &lt; 'Budi'</code> bernilai <code>TRUE</code> karena urutan abjad.</p></div>
+
+<h2>Operator Logika</h2>
+
+<p>Untuk menggabungkan beberapa syarat, Pascal punya operator logika. <code>and</code> benar bila <b>keduanya</b> benar;
+<code>or</code> benar bila <b>salah satu</b> benar; <code>not</code> membalik nilai; <code>xor</code> benar bila kedua
+nilai <b>berbeda</b>.</p>
+
+<x-listing src="bab05_04_operator_logika.pas"></x-listing>
+
+<x-run src="bab05_04_operator_logika.pas"></x-run>
+
+<p>Keluaran baris pertama membentuk <b>tabel kebenaran</b>: ekspresi yang sama dihitung untuk setiap kemungkinan nilai
+<code>P</code> dan <code>Q</code>.</p>
+
+<table class="data compact">
+  <caption>Tabel kebenaran operator logika</caption>
+  <thead><tr><th>P</th><th>Q</th><th>P and Q</th><th>P or Q</th><th>P xor Q</th></tr></thead>
+  <tbody>
+    <tr><td>True</td><td>True</td><td>True</td><td>True</td><td>False</td></tr>
+    <tr><td>True</td><td>False</td><td>False</td><td>True</td><td>True</td></tr>
+    <tr><td>False</td><td>True</td><td>False</td><td>True</td><td>True</td></tr>
+    <tr><td>False</td><td>False</td><td>False</td><td>False</td><td>False</td></tr>
+  </tbody>
+</table>
+
+<div class="awas"><p>Saat menggabungkan perbandingan dengan <code>and</code>/<code>or</code>, <b>setiap perbandingan wajib
+diberi kurung</b>: tulis <code>(Umur &gt;= 13) and PunyaTiket</code>. Tanpa kurung, <code>Umur &gt;= 13 and PunyaTiket</code>
+dibaca keliru karena <code>and</code> dikerjakan lebih dulu daripada <code>&gt;=</code>, dan kompiler menolaknya. Aturan
+prioritas inilah yang kita bahas berikutnya.</p></div>
+
+<h2>Prioritas Operator</h2>
+
+<p>Bila sebuah ekspresi memuat banyak operator, Pascal mengerjakannya dalam urutan tertentu, sama seperti "kali dan bagi
+sebelum tambah dan kurang" di matematika. Operator setingkat dikerjakan dari kiri ke kanan, dan <b>kurung selalu
+didahulukan</b>.</p>
+
+<figure class="grafik" id="gb-prioritas">
+<svg viewBox="0 0 680 210">
+  <rect class="term" x="140" y="10" width="400" height="34" rx="8"/>
+  <text class="white b mid" x="340" y="28">1. not  dan  − (minus di depan bilangan)</text>
+  <text class="white xs mid" x="340" y="40" style="opacity:0">.</text>
+  <rect class="box" x="140" y="52" width="400" height="34" rx="8"/>
+  <text class="c b mid" x="340" y="74">2. *  /  div  mod  and</text>
+  <rect class="box" x="140" y="94" width="400" height="34" rx="8"/>
+  <text class="c b mid" x="340" y="116">3. +  −  or  xor</text>
+  <rect class="box" x="140" y="136" width="400" height="34" rx="8"/>
+  <text class="c b mid" x="340" y="158">4. =  &lt;&gt;  &lt;  &gt;  &lt;=  &gt;=  in</text>
+  <text class="xs muted mid" x="340" y="194">Dikerjakan dari atas ke bawah; yang setingkat, dari kiri ke kanan; kurung didahulukan</text>
+  <path class="arrow" d="M70 27 V165 H136"/>
+  <text class="xs c2" x="24" y="100">lebih</text>
+  <text class="xs c2" x="24" y="114">dulu</text>
+</svg>
+<figcaption>Empat tingkat prioritas operator, dari yang dikerjakan paling awal.</figcaption>
+</figure>
+
+<x-listing src="bab05_05_prioritas_operator.pas"></x-listing>
+
+<x-run src="bab05_05_prioritas_operator.pas"></x-run>
+
+<p>Pelajari tiap baris: <code>2 + 3 * 4</code> memberi 14 karena perkalian dulu, sedangkan <code>(2 + 3) * 4</code> memberi
+20 karena kurung didahulukan. <code>20 div 4 * 2</code> dibaca kiri ke kanan menjadi <code>(20 div 4) * 2 = 10</code>.
+Inti pelajaran: <b>bila ragu, beri kurung</b>. Kurung membuat maksud Anda jelas, baik bagi kompiler maupun bagi pembaca.</p>
+
+<h2>Menggabungkan Semua: Luas dan Keliling</h2>
+
+<p>Program penutup bab ini menghitung luas dan keliling persegi panjang serta lingkaran. Ia memakai operator aritmetika,
+kurung untuk mengatur urutan, fungsi bawaan <code>Sqr</code> dan <code>Pi</code>, serta masukan dan keluaran berformat.</p>
+
+<x-listing src="bab05_06_luas_keliling.pas"></x-listing>
+
+<x-run src="bab05_06_luas_keliling.pas" input="8&#10;5&#10;7&#10;"></x-run>
+
+<p>Perhatikan pemakaian kurung pada <code>2 * (Panjang + Lebar)</code>: tanpa kurung, perkalian akan dikerjakan lebih dulu
+dan hasilnya salah. <code>Pi</code> adalah fungsi bawaan yang memberi nilai π, dan <code>Sqr(JariJari)</code> menghitung
+kuadrat jari-jari.</p>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<p><b>Lupa kurung pada perbandingan yang digabung.</b> Karena <code>and</code> berprioritas lebih tinggi dari
+<code>&gt;</code>, menggabungkan tanpa kurung membuat kompiler salah membaca ekspresi.</p>
+
+<x-error name="logika.pas" caption="Perbandingan yang digabung and tanpa kurung ditolak kompiler">program Logika;
+var
+  X: Integer;
+begin
+  X := 5;
+  if X > 0 and X < 10 then
+    WriteLn('Antara 0 dan 10');
+end.</x-error>
+
+<p>Perbaikannya: beri kurung pada setiap perbandingan, <code>if (X &gt; 0) and (X &lt; 10) then</code>.</p>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>Operator aritmetika: <code>+ - * /</code>; <code>/</code> selalu menghasilkan <code>Real</code>. Fungsi bantu: <code>Sqr</code>, <code>Sqrt</code>, <code>Abs</code>, <code>Pi</code>.</li>
+  <li><code>div</code> memberi hasil bagi bulat, <code>mod</code> memberi sisa. <code>mod 2</code> menguji genap/ganjil; <code>mod 10</code> dan <code>div 10</code> mengambil/membuang digit satuan.</li>
+  <li>Operator perbandingan menghasilkan <code>Boolean</code>. <code>=</code> membandingkan, <code>:=</code> menugaskan; jangan tertukar.</li>
+  <li>Operator logika: <code>and</code> (keduanya benar), <code>or</code> (salah satu benar), <code>not</code> (membalik), <code>xor</code> (berbeda).</li>
+  <li>Prioritas: <code>not</code>/minus, lalu <code>* / div mod and</code>, lalu <code>+ - or xor</code>, lalu perbandingan. Kurung didahulukan.</li>
+  <li>Perbandingan yang digabung <code>and</code>/<code>or</code> wajib diberi kurung masing-masing.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Baca sebuah bilangan bulat, lalu tampilkan apakah genap atau ganjil memakai <code>mod 2</code> dan sebuah perbandingan (hasil <code>Boolean</code>).</li>
+  <li><span class="lv dasar">Dasar</span>Baca jumlah menit, lalu ubah menjadi jam dan menit memakai <code>div 60</code> dan <code>mod 60</code>.</li>
+  <li><span class="lv menengah">Menengah</span>Hitung dan tampilkan nilai dari <code>10 + 20 * 3</code>, <code>(10 + 20) * 3</code>, dan <code>100 div 7 mod 5</code>. Jelaskan urutan pengerjaan masing-masing.</li>
+  <li><span class="lv menengah">Menengah</span>Baca umur dan status (punya KTP, <code>Boolean</code>), lalu tampilkan apakah "boleh memilih" (umur ≥ 17 <code>and</code> punya KTP). Beri kurung dengan benar.</li>
+  <li><span class="lv tantangan">Tantangan</span>Baca sebuah bilangan tiga digit, lalu tampilkan ketiga digitnya satu per satu memakai <code>div</code> dan <code>mod</code>.</li>
+</ol>
+</div>

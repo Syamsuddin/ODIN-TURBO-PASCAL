@@ -1,0 +1,601 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menjelaskan mengapa data perlu disimpan di file, dan apa bedanya dengan variabel yang hilang saat program berhenti.</li>
+  <li>Mengikuti alur kerja file: <code>Assign</code>, buka (<code>Rewrite</code>, <code>Reset</code>, atau <code>Append</code>), baca atau tulis, lalu <code>Close</code>.</li>
+  <li>Menulis, membaca, dan menambah isi file teks memakai <code>WriteLn(F, ...)</code>, <code>ReadLn(F, ...)</code>, dan <code>Eof</code>.</li>
+  <li>Memeriksa keberhasilan membuka file dengan <code>{$I-}</code> dan <code>IOResult</code>, serta mengenali galat <i>runtime</i> 2 dan 103.</li>
+  <li>Membuat file bertipe (<code>file of</code>) dan memakai <code>Seek</code>, <code>FilePos</code>, <code>FileSize</code> untuk mengakses elemen mana pun.</li>
+  <li>Menyimpan dan membaca <code>record</code> utuh sehingga data tetap ada setelah program ditutup.</li>
+</ul>
+
+<p class="lead">Semua variabel yang Anda pakai sampai bab ini hidup di memori, dan memori itu dikosongkan begitu program
+berhenti. Nilai yang diketik pengguna, hasil hitungan, daftar nama: semuanya lenyap. Bab ini mengajarkan cara
+menyimpan data ke <b>file</b> di disk, sehingga program hari ini bisa membaca data yang ditulis program kemarin. Dengan
+file, program Anda mulai terasa seperti aplikasi sungguhan: punya ingatan.</p>
+
+<h2>Mengapa Perlu File?</h2>
+
+<p>Bayangkan Anda mencatat nilai siswa di papan tulis. Selama papan itu belum dihapus, catatannya ada; begitu dihapus,
+semuanya hilang. Variabel adalah papan tulis itu: ia berguna selama program berjalan, tetapi tidak ada yang tersisa
+sesudahnya. <b>File</b> adalah buku catatan. Tulisan di buku tetap ada setelah lampu dimatikan, dan bisa dibuka kembali
+besok, oleh program yang sama atau program lain.</p>
+
+<div class="duo">
+  <div class="card bad"><h4><span class="ikon">V</span>Variabel</h4><p>Disimpan di memori kerja (RAM). Cepat, tetapi
+  <b>hilang</b> saat program selesai atau komputer dimatikan.</p></div>
+  <div class="card good"><h4><span class="ikon">F</span>File</h4><p>Disimpan di disk. Lebih lambat, tetapi
+  <b>awet</b>: tetap ada setelah program ditutup dan bisa dibaca lagi kapan saja.</p></div>
+</div>
+
+<p>Pascal mengenal dua jenis file yang akan Anda pakai di bab ini. <b>File teks</b> (<code>Text</code>) berisi tulisan
+yang tersusun dalam baris-baris, persis seperti yang tampil di layar; Anda bisa membukanya dengan editor teks mana
+pun. <b>File bertipe</b> (<code>file of</code> sebuah tipe) berisi deretan data biner berukuran sama, misalnya
+bilangan atau <code>record</code>; isinya tidak enak dibaca manusia, tetapi cepat diakses dan rapi.</p>
+
+<table class="data" id="tb-jenis">
+  <caption>Perbandingan file teks dan file bertipe</caption>
+  <thead><tr><th></th><th>File teks</th><th>File bertipe</th></tr></thead>
+  <tbody>
+    <tr><td>Deklarasi</td><td><code>F: Text;</code></td><td><code>F: file of LongInt;</code></td></tr>
+    <tr><td>Isi</td><td>Baris-baris tulisan</td><td>Deretan elemen bertipe sama (biner)</td></tr>
+    <tr><td>Dibaca manusia?</td><td>Ya, dengan editor teks</td><td>Tidak, tampak seperti karakter acak</td></tr>
+    <tr><td>Menulis</td><td><code>Write</code>, <code>WriteLn</code></td><td><code>Write(F, X)</code> (satu elemen)</td></tr>
+    <tr><td>Membaca</td><td><code>Read</code>, <code>ReadLn</code></td><td><code>Read(F, X)</code> (satu elemen)</td></tr>
+    <tr><td>Akses</td><td>Berurutan dari awal ke akhir</td><td>Berurutan atau langsung ke elemen mana pun (<code>Seek</code>)</td></tr>
+    <tr><td>Cocok untuk</td><td>Catatan, laporan, data yang ingin dibuka di editor</td><td>Daftar bilangan, data siswa, basis data kecil</td></tr>
+  </tbody>
+</table>
+
+<h2>Alur Kerja File</h2>
+
+<p>Berbeda dengan variabel biasa, file tidak bisa langsung dipakai. Ada urutan baku yang harus diikuti, dan urutan ini
+sama untuk file teks maupun file bertipe. Hafalkan empat langkah berikut.</p>
+
+<figure class="grafik" id="gb-alur-file">
+<svg viewBox="0 0 680 230">
+  <rect class="box" x="10" y="20" width="118" height="70" rx="8"/>
+  <text class="h c mid" x="69" y="42">1. Assign</text>
+  <text class="s mid" x="69" y="60">hubungkan variabel</text>
+  <text class="s mid" x="69" y="74">dengan nama file</text>
+  <path class="arrow" d="M128 55 H156"/>
+  <rect class="box" x="158" y="20" width="118" height="70" rx="8"/>
+  <text class="h c mid" x="217" y="42">2. Buka</text>
+  <text class="s mid" x="217" y="60">Rewrite, Reset,</text>
+  <text class="s mid" x="217" y="74">atau Append</text>
+  <path class="arrow" d="M276 55 H304"/>
+  <rect class="box" x="306" y="20" width="118" height="70" rx="8"/>
+  <text class="h c mid" x="365" y="42">3. Pakai</text>
+  <text class="s mid" x="365" y="60">Write / Read</text>
+  <text class="s mid" x="365" y="74">sampai selesai</text>
+  <path class="arrow" d="M424 55 H452"/>
+  <rect class="term" x="454" y="20" width="118" height="70" rx="8"/>
+  <text class="h white mid" x="513" y="42">4. Close</text>
+  <text class="s white mid" x="513" y="60">tutup file agar</text>
+  <text class="s white mid" x="513" y="74">isi tersimpan</text>
+  <rect class="box-w" x="10" y="124" width="662" height="86" rx="8"/>
+  <text class="h c" x="24" y="146">Mana yang dipilih pada langkah 2?</text>
+  <rect class="ok" x="24" y="156" width="196" height="42" rx="6"/>
+  <text class="b" x="34" y="173">Rewrite</text>
+  <text class="s" x="34" y="188">buat baru / kosongkan (isi lama hilang)</text>
+  <rect class="io" x="232" y="156" width="196" height="42" rx="6"/>
+  <text class="b" x="242" y="173">Reset</text>
+  <text class="s" x="242" y="188">buka file yang sudah ada untuk dibaca</text>
+  <rect class="dec" x="440" y="156" width="218" height="42" rx="6"/>
+  <text class="b" x="450" y="173">Append</text>
+  <text class="s" x="450" y="188">tambah di akhir (khusus file teks)</text>
+</svg>
+<figcaption>Empat langkah wajib setiap kali memakai file, dan tiga pilihan cara membukanya.</figcaption>
+</figure>
+
+<ol class="langkah">
+  <li><b>Assign.</b> <code>Assign(F, 'catatan.txt')</code> menghubungkan variabel file <code>F</code> dengan sebuah nama
+  file di disk. Sesudah ini, semua perintah file memakai <code>F</code>, bukan nama file lagi. <code>Assign</code> belum
+  membuka apa-apa.</li>
+  <li><b>Buka.</b> Pilih salah satu: <code>Rewrite(F)</code> untuk membuat file baru, <code>Reset(F)</code> untuk
+  membuka file yang sudah ada, atau <code>Append(F)</code> untuk menambah di akhir file teks.</li>
+  <li><b>Pakai.</b> Tulis dengan <code>Write</code>/<code>WriteLn</code>, baca dengan <code>Read</code>/<code>ReadLn</code>.
+  Perintahnya sama dengan yang sudah Anda kenal, hanya diberi <code>F</code> sebagai argumen pertama.</li>
+  <li><b>Close.</b> <code>Close(F)</code> menutup file. Langkah ini wajib: isi yang ditulis baru dijamin sampai ke disk
+  setelah <code>Close</code>.</li>
+</ol>
+
+<div class="sintaks"><pre><b>var</b>
+  F: <b>Text</b>;                    { variabel file teks }
+
+<b>Assign</b>(F, <i>'nama.txt'</i>);       { 1. hubungkan }
+<b>Rewrite</b>(F);                  { 2. buka (atau Reset / Append) }
+<b>WriteLn</b>(F, <i>data</i>);            { 3. tulis (atau ReadLn) }
+<b>Close</b>(F);                    { 4. tutup }</pre></div>
+
+<p>Bagaimana hubungan antara variabel <code>F</code>, nama file, dan isi disk? Variabel <code>F</code> bukan file itu
+sendiri; ia hanya <b>pegangan</b> (<i>handle</i>) yang dibuat Pascal untuk mengendalikan file. Mirip nomor antrean di
+loket: nomor itu bukan orangnya, tetapi lewat nomor itulah petugas tahu siapa yang dilayani.</p>
+
+<figure class="grafik" id="gb-assign">
+<svg viewBox="0 0 680 190">
+  <rect class="box" x="10" y="20" width="190" height="64" rx="8"/>
+  <text class="h c" x="24" y="42">Program</text>
+  <text class="mono" x="24" y="62">F: Text;</text>
+  <text class="s" x="24" y="76">pegangan (handle) di memori</text>
+  <path class="arrow" d="M200 52 H278"/>
+  <text class="s b mid" x="239" y="44">Assign</text>
+  <rect class="io" x="280" y="20" width="170" height="64" rx="8"/>
+  <text class="h" x="294" y="42">Nama file</text>
+  <text class="mono" x="294" y="62">'catatan.txt'</text>
+  <text class="s" x="294" y="76">teks biasa di program</text>
+  <path class="arrow" d="M450 52 H498"/>
+  <text class="s b mid" x="474" y="44">cari</text>
+  <rect class="box-w" x="500" y="10" width="170" height="170" rx="8"/>
+  <text class="h c" x="514" y="32">Disk, folder kerja</text>
+  <rect class="ok" x="514" y="44" width="142" height="30" rx="5"/>
+  <text class="mono" x="522" y="63">catatan.txt</text>
+  <rect class="box" x="514" y="82" width="142" height="30" rx="5"/>
+  <text class="mono" x="522" y="101">angka.dat</text>
+  <rect class="box" x="514" y="120" width="142" height="30" rx="5"/>
+  <text class="mono" x="522" y="139">siswa.dat</text>
+  <text class="xs muted" x="514" y="170">folder = folder file .pas</text>
+  <rect class="dec" x="10" y="112" width="440" height="64" rx="8"/>
+  <text class="h" x="24" y="134">Mengapa dua nama?</text>
+  <text class="s" x="24" y="152">Nama file bisa berubah (dari konstanta, masukan pengguna), sedangkan</text>
+  <text class="s" x="24" y="166">perintah file di program tetap memakai satu variabel F.</text>
+</svg>
+<figcaption>Variabel file <code>F</code> hanyalah pegangan; <code>Assign</code> menautkannya ke nama file di folder kerja.</figcaption>
+</figure>
+
+<div class="info"><p>Program Anda dijalankan dengan <b>folder file <code>.pas</code></b> sebagai folder kerja. Nama file tanpa
+alamat, seperti <code>'catatan.txt'</code>, dibuat dan dicari di folder itu. Karena itu semua contoh bab ini
+meninggalkan file di folder tempat program sumbernya berada.</p></div>
+
+<div class="awas"><p>Contoh bawaan Odin dianggap <i>template</i>: bila Anda membukanya lewat <span class="menu">File ▸ Examples...</span>
+lalu menekan <span class="menu">File ▸ Save</span>, IDE akan menawarkan <span class="menu">File ▸ Save as...</span>.
+Sebaiknya simpan dulu ke <b>folder Anda sendiri</b> (misalnya <code>Dokumen/Pascal</code>) sebelum menjalankan program
+file, supaya berkas data yang dibuat tidak bercampur dengan berkas bawaan aplikasi. Bila perlu, ganti folder kerja
+lewat <span class="menu">File ▸ Change directory...</span>.</p></div>
+
+<div class="duo">
+<x-ide file="bab17_01_tulis_file_teks.pas" rows="9" menu="File" pick="Save as..." caption="Simpan salinan contoh ke folder sendiri lewat File ▸ Save as..."></x-ide>
+<x-ide file="bab17_01_tulis_file_teks.pas" rows="9" menu="File" pick="Change directory..." caption="Atau pindahkan folder kerja lewat File ▸ Change directory..."></x-ide>
+</div>
+
+<h2>Menulis File Teks</h2>
+
+<p>Program pertama membuat file baru bernama <code>catatan.txt</code> dan mengisinya dengan judul serta tiga catatan
+yang diketik pengguna. Buka <code>bab17_01_tulis_file_teks.pas</code> lewat <span class="menu">File ▸ Examples...</span>
+(simpan dulu ke folder Anda, lihat kotak di atas), lalu jalankan dengan <kbd>Ctrl</kbd>+<kbd>F9</kbd>. Ketikkan tiga
+catatan, masing-masing diakhiri <kbd>Enter</kbd>.</p>
+
+<x-listing src="bab17_01_tulis_file_teks.pas"></x-listing>
+
+<x-run src="bab17_01_tulis_file_teks.pas" caption="Tiga catatan diketik di User screen; file <code>catatan.txt</code> dibuat di folder kerja"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10–11</td><td>Nama file ditaruh di konstanta <code>NamaFile</code>. Bila suatu hari nama berubah, cukup satu tempat yang diganti.</td></tr>
+    <tr><td>14</td><td><code>F: Text</code> mengumumkan variabel file teks. Nama <code>Folder</code> dan <code>Catatan</code> (baris 15) bertipe string biasa.</td></tr>
+    <tr><td>19</td><td><code>Assign</code> menghubungkan <code>F</code> dengan <code>'catatan.txt'</code>. File belum disentuh.</td></tr>
+    <tr><td>20</td><td><code>Rewrite</code> membuat file baru. Bila <code>catatan.txt</code> sudah ada, isinya <b>dikosongkan</b> lebih dulu.</td></tr>
+    <tr><td>21–22</td><td>Dua baris judul ditulis ke file. Perhatikan <code>F</code> sebagai argumen pertama: tanpa <code>F</code>, tulisan akan muncul di layar.</td></tr>
+    <tr><td>24–29</td><td>Perulangan tiga kali. Baris 26 menulis prompt ke <b>layar</b>, baris 27 membaca ketikan dari <b>papan ketik</b>, dan baris 28 menulis nomor serta catatan ke <b>file</b>. Tiga arah data dalam satu perulangan.</td></tr>
+    <tr><td>30</td><td><code>Close(F)</code> menutup file sehingga semua tulisan pasti tersimpan.</td></tr>
+    <tr><td>32–36</td><td><code>GetDir(0, Folder)</code> mengisi <code>Folder</code> dengan folder kerja saat ini, lalu program menampilkannya. Dari sini Anda tahu persis di mana <code>catatan.txt</code> berada.</td></tr>
+  </tbody>
+</table>
+
+<p>Sesudah program selesai, buka folder yang ditampilkan dan periksa <code>catatan.txt</code> dengan editor teks.
+Isinya lima baris: dua baris judul, lalu tiga catatan bernomor yang Anda ketik.</p>
+
+<div class="awas"><p><code>Rewrite</code> <b>menimpa</b> file lama yang bernama sama tanpa bertanya. Menjalankan Program 17.1
+untuk kedua kalinya akan menghapus catatan dari kali pertama. Bila Anda ingin menambah isi, gunakan <code>Append</code>
+(subbab 17.4).</p></div>
+
+<div class="coba"><p><b>Coba sendiri.</b> Jalankan Program 17.1 dua kali dengan catatan yang berbeda, lalu buka
+<code>catatan.txt</code>. Hanya catatan dari kali kedua yang tersisa. Lalu ubah baris 11 menjadi
+<code>NamaFile = 'harian.txt';</code> dan jalankan lagi: sekarang terbentuk dua file berbeda.</p></div>
+
+<h2>Membaca File Teks</h2>
+
+<p>Menulis tanpa membaca tidak ada gunanya. Program kedua membuka <code>catatan.txt</code> yang baru dibuat dan
+menampilkan isinya baris demi baris, lengkap dengan nomor baris. Dua hal baru muncul: <code>Reset</code> untuk
+membuka file yang sudah ada, dan fungsi <code>Eof(F)</code> (<i>end of file</i>) yang bernilai <code>True</code> bila
+pembacaan sudah sampai ujung file.</p>
+
+<div class="sintaks"><pre><b>Reset</b>(F);                       { buka untuk dibaca }
+<b>while not Eof</b>(F) <b>do</b>
+<b>begin</b>
+  <b>ReadLn</b>(F, <i>variabelString</i>);    { baca satu baris }
+  <i>...olah baris itu...</i>
+<b>end</b>;
+<b>Close</b>(F);</pre></div>
+
+<p>Pola <code>while not Eof(F) do ReadLn(F, ...)</code> adalah cara baku membaca file teks sampai habis tanpa perlu
+tahu berapa banyak barisnya. Eksekusinya digambarkan di bawah ini: kursor baca bergerak satu baris setiap
+<code>ReadLn</code>, dan <code>Eof</code> menjadi <code>True</code> setelah baris terakhir.</p>
+
+<figure class="grafik" id="gb-baca">
+<svg viewBox="0 0 680 210">
+  <rect class="navy" x="10" y="10" width="300" height="190" rx="8"/>
+  <text class="s white" x="24" y="30">catatan.txt (isi setelah Program 17.1)</text>
+  <text class="mono code-fg" x="24" y="56">CATATAN HARIAN</text>
+  <text class="mono code-fg" x="24" y="80">==============</text>
+  <text class="mono code-fg" x="24" y="104">1. Belajar</text>
+  <text class="mono code-fg" x="24" y="128">2. Pascal</text>
+  <text class="mono code-fg" x="24" y="152">3. Odin</text>
+  <text class="mono code-fg" x="24" y="180">[akhir file]</text>
+  <rect class="ok" x="196" y="86" width="104" height="22" rx="4"/>
+  <text class="s b" x="204" y="101">kursor baca</text>
+  <path class="arrow" d="M196 97 H168"/>
+  <rect class="box" x="340" y="10" width="330" height="190" rx="8"/>
+  <text class="h c" x="356" y="32">Satu putaran while</text>
+  <rect class="dec" x="356" y="44" width="298" height="34" rx="6"/>
+  <text class="mono" x="368" y="65">not Eof(F)  : masih ada baris?</text>
+  <rect class="io" x="356" y="86" width="298" height="34" rx="6"/>
+  <text class="mono" x="368" y="107">ReadLn(F, Baris) : ambil, maju</text>
+  <rect class="ok" x="356" y="128" width="298" height="34" rx="6"/>
+  <text class="mono" x="368" y="149">NomorBaris := NomorBaris + 1</text>
+  <text class="s muted" x="356" y="186">Setelah baris ke-5: Eof(F) = True, perulangan berhenti.</text>
+</svg>
+<figcaption>Kursor baca maju satu baris setiap <code>ReadLn</code>; perulangan berhenti ketika <code>Eof(F)</code> bernilai <code>True</code>.</figcaption>
+</figure>
+
+<p>Buka <code>bab17_02_baca_file_teks.pas</code> dan jalankan. Karena kedua program dijalankan dari folder yang sama,
+program ini menemukan <code>catatan.txt</code> milik Program 17.1.</p>
+
+<x-listing src="bab17_02_baca_file_teks.pas"></x-listing>
+
+<x-run src="bab17_02_baca_file_teks.pas" caption="Isi <code>catatan.txt</code> dibaca baris demi baris dan diberi nomor"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>19</td><td><code>Assign</code> menautkan <code>F</code> ke <code>catatan.txt</code>, nama yang sama dengan yang dipakai Program 17.1.</td></tr>
+    <tr><td>20–22</td><td>Direktif <code>{$I-}</code> mematikan pemeriksaan galat I/O otomatis sementara <code>Reset</code> dikerjakan, lalu <code>{$I+}</code> menyalakannya lagi. Dengan begitu, file yang tidak ada tidak menghentikan program.</td></tr>
+    <tr><td>23</td><td><code>IOResult</code> mengembalikan 0 bila operasi file terakhir berhasil, dan kode galat bila gagal. Nilai <code>&lt;&gt; 0</code> berarti file tidak bisa dibuka.</td></tr>
+    <tr><td>25–26</td><td>Cabang gagal: pesan ramah yang menyuruh pengguna menjalankan Program 17.1 lebih dulu.</td></tr>
+    <tr><td>30</td><td>Penghitung baris dimulai dari nol.</td></tr>
+    <tr><td>31–36</td><td>Inti pembacaan: ulangi selama belum <code>Eof</code>, baca satu baris ke <code>Baris</code>, naikkan penghitung, tulis dengan nomor berlebar 3 (<code>NomorBaris:3</code>).</td></tr>
+    <tr><td>37–38</td><td>File ditutup, lalu jumlah baris dilaporkan. Jumlahnya 5: dua baris judul ditambah tiga catatan.</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p>Dalam Turbo Pascal, membuka file yang tidak ada dengan <code>Reset</code> menghentikan program
+dengan galat <i>runtime</i> 2 ("File not found"). Cara menghindarinya adalah pola tiga langkah di baris 20–23:
+matikan pemeriksaan dengan <code>{$I-}</code>, buka file, hidupkan kembali dengan <code>{$I+}</code>, lalu periksa
+<code>IOResult</code>. Perhatikan bahwa <code>IOResult</code> harus dibaca <b>sekali</b> setelah operasi; nilainya
+dikosongkan begitu dibaca.</p></div>
+
+<p>Apa yang terjadi bila pengaman itu tidak ada? Program kecil berikut membuka file yang tidak pernah dibuat, tanpa
+<code>{$I-}</code>. Ia dikompilasi tanpa masalah, tetapi berhenti di tengah jalan.</p>
+
+<x-error name="tidakada.pas" run caption="Reset pada file yang tidak ada menghentikan program dengan <i>runtime error</i> 2">program TidakAda;
+var
+  F: Text;
+  Baris: string;
+begin
+  Assign(F, 'tidak_ada.txt');
+  Reset(F);
+  ReadLn(F, Baris);
+  WriteLn(Baris);
+  Close(F);
+end.</x-error>
+
+<p>Galat 2 berarti <i>file not found</i>: file yang diminta tidak ada di folder kerja. Kompiler tidak bisa mencegahnya,
+karena ada tidaknya file baru diketahui saat program berjalan. Karena itu pembukaan file yang berisiko selalu dijaga
+dengan <code>{$I-}</code> dan <code>IOResult</code>, seperti di Program 17.2.</p>
+
+<h2>Menambah Isi File Teks</h2>
+
+<p>Bagaimana bila Anda ingin menambah satu catatan ke <code>catatan.txt</code> tanpa menghapus yang lama? Gunakan
+<code>Append</code>. Perintah ini membuka file teks dan meletakkan kursor tulis di <b>akhir</b>, sehingga
+<code>WriteLn</code> berikutnya menyambung isi lama.</p>
+
+<figure class="grafik" id="gb-rewrite-append">
+<svg viewBox="0 0 680 200">
+  <text class="h c" x="10" y="20">Rewrite: file dikosongkan, lalu ditulis ulang</text>
+  <rect class="box-w" x="10" y="30" width="310" height="60" rx="6"/>
+  <rect class="no" x="20" y="40" width="130" height="18" rx="3"/>
+  <text class="s" x="26" y="53">isi lama (hilang)</text>
+  <rect class="ok" x="20" y="64" width="130" height="18" rx="3"/>
+  <text class="s" x="26" y="77">isi baru</text>
+  <text class="s muted" x="160" y="53">sebelum: 5 baris</text>
+  <text class="s muted" x="160" y="77">sesudah: hanya isi baru</text>
+  <text class="h c" x="360" y="20">Append: isi lama dipertahankan</text>
+  <rect class="box-w" x="360" y="30" width="310" height="60" rx="6"/>
+  <rect class="box" x="370" y="40" width="130" height="18" rx="3"/>
+  <text class="s" x="376" y="53">isi lama (tetap)</text>
+  <rect class="ok" x="370" y="64" width="130" height="18" rx="3"/>
+  <text class="s" x="376" y="77">+ baris baru</text>
+  <text class="s muted" x="510" y="53">sebelum: 5 baris</text>
+  <text class="s muted" x="510" y="77">sesudah: 6 baris</text>
+  <rect class="dec" x="10" y="110" width="660" height="80" rx="8"/>
+  <text class="h" x="24" y="132">Pola aman untuk "tambah, atau buat bila belum ada"</text>
+  <text class="mono s" x="24" y="152">Append(F)  -&gt;  berhasil? lanjut menulis.</text>
+  <text class="mono s" x="24" y="168">             gagal (IOResult &lt;&gt; 0, file belum ada)?  Rewrite(F), lalu menulis.</text>
+</svg>
+<figcaption>Perbedaan <code>Rewrite</code> dan <code>Append</code> pada file yang sudah berisi lima baris.</figcaption>
+</figure>
+
+<p>Masalahnya: <code>Append</code> gagal bila file belum ada. Program berikut menanganinya dengan pola
+"coba <code>Append</code>; bila gagal, buat dengan <code>Rewrite</code>". Setelah menulis, program membuka file lagi
+dengan <code>Reset</code> dan menampilkan seluruh isinya agar Anda melihat hasilnya.</p>
+
+<x-listing src="bab17_03_tambah_file_teks.pas"></x-listing>
+
+<x-run src="bab17_03_tambah_file_teks.pas" caption="Catatan baru disambung di akhir; <code>catatan.txt</code> kini berisi enam baris"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>18–19</td><td>Catatan baru dibaca dari papan ketik lebih dulu, sebelum file disentuh.</td></tr>
+    <tr><td>21–24</td><td><code>Assign</code>, lalu <code>Append</code> dalam kurung <code>{$I-}</code> dan <code>{$I+}</code> agar kegagalan tidak menghentikan program.</td></tr>
+    <tr><td>25–29</td><td>Bila <code>IOResult</code> bukan 0, file belum ada: program memberi tahu pengguna dan membuatnya dengan <code>Rewrite</code>.</td></tr>
+    <tr><td>30–31</td><td>Baris baru dengan awalan <code>+ </code> ditulis di akhir file, lalu file ditutup. Dua jalur di atas bertemu di sini.</td></tr>
+    <tr><td>34</td><td><code>Reset</code> membuka file yang sama untuk dibaca dari awal. Sebuah file harus ditutup dulu sebelum dibuka dengan mode lain.</td></tr>
+    <tr><td>35–41</td><td>Pola baca sampai <code>Eof</code> seperti Program 17.2, dengan penghitung <code>Jumlah</code>.</td></tr>
+    <tr><td>42–43</td><td>File ditutup dan jumlah barisnya dilaporkan: lima baris lama ditambah satu baris baru.</td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p><b>Coba sendiri.</b> Jalankan Program 17.3 beberapa kali dan perhatikan daftarnya memanjang. Lalu
+hapus <code>catatan.txt</code> dari folder (atau ganti <code>NamaFile</code> dengan nama baru) dan jalankan lagi: pesan
+"belum ada, dibuat baru" muncul dan jumlah barisnya menjadi 1.</p></div>
+
+<h2>File Bertipe</h2>
+
+<p>File teks menyimpan semuanya sebagai tulisan. Untuk menyimpan bilangan atau data terstruktur dalam jumlah besar,
+cara itu boros dan lambat: angka 1000 harus diubah menjadi karakter <code>'1'</code>, <code>'0'</code>,
+<code>'0'</code>, <code>'0'</code> dan dibaca balik. <b>File bertipe</b> menyimpan data sebagaimana adanya di memori.
+Setiap elemen memiliki ukuran yang sama, misalnya 4 byte untuk <code>LongInt</code>.</p>
+
+<div class="sintaks"><pre><b>var</b>
+  F: <b>file of</b> <i>Tipe</i>;          { setiap elemen bertipe Tipe }
+
+<b>Write</b>(F, <i>X</i>);                 { simpan satu elemen }
+<b>Read</b>(F, <i>X</i>);                  { baca satu elemen }
+<b>Seek</b>(F, <i>N</i>);                  { pindah ke elemen nomor N (mulai 0) }
+<b>FilePos</b>(F)                   { nomor elemen saat ini }
+<b>FileSize</b>(F)                  { banyak elemen dalam file }</pre></div>
+
+<p>Karena semua elemen berukuran sama, Pascal dapat menghitung letak elemen mana pun: elemen nomor
+<i>N</i> berada <i>N</i> × ukuran elemen byte dari awal file. Itulah sebabnya <code>Seek</code> bisa langsung
+melompat, tidak perlu membaca dari awal. Gambar berikut memperlihatkan file <code>angka.dat</code> yang berisi kuadrat
+1 sampai 10.</p>
+
+<figure class="grafik" id="gb-seek">
+<svg viewBox="0 0 680 250">
+  <text class="h c" x="10" y="20">angka.dat: 10 elemen LongInt, masing-masing 4 byte (total 40 byte)</text>
+  <g>
+    <rect class="box" x="40" y="60" width="58" height="46"/>
+    <rect class="box" x="98" y="60" width="58" height="46"/>
+    <rect class="box" x="156" y="60" width="58" height="46"/>
+    <rect class="box" x="214" y="60" width="58" height="46"/>
+    <rect class="ok" x="272" y="60" width="58" height="46"/>
+    <rect class="box" x="330" y="60" width="58" height="46"/>
+    <rect class="box" x="388" y="60" width="58" height="46"/>
+    <rect class="box" x="446" y="60" width="58" height="46"/>
+    <rect class="box" x="504" y="60" width="58" height="46"/>
+    <rect class="box" x="562" y="60" width="58" height="46"/>
+  </g>
+  <g class="b mid">
+    <text class="b mid" x="69" y="88">1</text>
+    <text class="b mid" x="127" y="88">4</text>
+    <text class="b mid" x="185" y="88">9</text>
+    <text class="b mid" x="243" y="88">16</text>
+    <text class="b mid" x="301" y="88">25</text>
+    <text class="b mid" x="359" y="88">36</text>
+    <text class="b mid" x="417" y="88">49</text>
+    <text class="b mid" x="475" y="88">64</text>
+    <text class="b mid" x="533" y="88">81</text>
+    <text class="b mid" x="591" y="88">100</text>
+  </g>
+  <g class="s mid muted">
+    <text class="s mid" x="69" y="124">0</text>
+    <text class="s mid" x="127" y="124">1</text>
+    <text class="s mid" x="185" y="124">2</text>
+    <text class="s mid" x="243" y="124">3</text>
+    <text class="s mid" x="301" y="124">4</text>
+    <text class="s mid" x="359" y="124">5</text>
+    <text class="s mid" x="417" y="124">6</text>
+    <text class="s mid" x="475" y="124">7</text>
+    <text class="s mid" x="533" y="124">8</text>
+    <text class="s mid" x="591" y="124">9</text>
+  </g>
+  <text class="xs muted" x="10" y="124">nomor</text>
+  <path class="arrow" d="M301 160 V132"/>
+  <rect class="term" x="196" y="160" width="210" height="24" rx="12"/>
+  <text class="s white mid" x="301" y="176">Seek(F, 4) lalu Read(F, X)  : X = 25</text>
+  <path class="arrow" d="M69 208 V132"/>
+  <rect class="io" x="10" y="208" width="320" height="24" rx="12"/>
+  <text class="s mid" x="170" y="224">Seek(F, 0) lalu Write(F, 1000) : elemen 0 diganti</text>
+  <text class="s muted" x="350" y="224">nomor elemen mulai dari 0, bukan 1</text>
+</svg>
+<figcaption>Elemen file bertipe diberi nomor mulai 0. <code>Seek(F, 4)</code> mendatangi elemen kelima, yang berisi 25.</figcaption>
+</figure>
+
+<p>Program berikut menulis sepuluh kuadrat ke <code>angka.dat</code>, melompat ke elemen nomor 4 untuk membacanya,
+mengubah elemen pertama menjadi 1000, lalu membaca seluruh file. Perhatikan bahwa file tidak ditutup di antara
+menulis dan membaca: file bertipe yang dibuka dengan <code>Rewrite</code> bisa ditulis dan dibaca, dan
+<code>Seek</code> mengatur posisinya.</p>
+
+<x-listing src="bab17_04_file_bertipe.pas"></x-listing>
+
+<x-run src="bab17_04_file_bertipe.pas" caption="Isi <code>angka.dat</code> setelah elemen pertama diubah menjadi 1000"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>15</td><td><code>F: file of LongInt</code>: setiap elemen file adalah satu <code>LongInt</code> (4 byte).</td></tr>
+    <tr><td>21–22</td><td><code>Assign</code> dan <code>Rewrite</code> membuat <code>angka.dat</code> baru. Berbeda dengan file teks, <code>Rewrite</code> pada file bertipe tetap memungkinkan membaca.</td></tr>
+    <tr><td>23–27</td><td>Sepuluh kuadrat (1, 4, 9, ... 100) ditulis dengan <code>Write(F, X)</code>. Setiap <code>Write</code> menyimpan satu elemen dan memajukan posisi.</td></tr>
+    <tr><td>28</td><td><code>FileSize(F)</code> mengembalikan banyak elemen: 10.</td></tr>
+    <tr><td>30–33</td><td><code>Seek(F, 4)</code> melompat ke elemen nomor 4 (yang kelima). Setelah <code>Read</code>, posisi maju satu elemen sehingga <code>FilePos(F)</code> bernilai 5.</td></tr>
+    <tr><td>35–37</td><td>Kembali ke elemen 0 dan menimpanya dengan 1000. Hanya satu elemen yang berubah; sembilan lainnya tidak disentuh.</td></tr>
+    <tr><td>39–46</td><td><code>Seek(F, 0)</code> memulai pembacaan dari awal, lalu pola <code>while not Eof</code> membaca semua elemen dan mencetaknya dalam satu baris.</td></tr>
+    <tr><td>47–52</td><td>File ditutup dan lokasinya ditampilkan. Coba buka <code>angka.dat</code> dengan editor teks: yang tampak hanya karakter aneh, bukan angka.</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p>Di Turbo Pascal 7 mode, <code>Integer</code> hanya 2 byte, sedangkan <code>LongInt</code> 4 byte.
+Ukuran elemen file bertipe mengikuti tipenya, sehingga <code>file of Integer</code> dan <code>file of LongInt</code>
+tidak saling kompatibel. File biner buatan DOS dengan tipe lain atau perataan <code>record</code> yang berbeda juga
+tidak otomatis terbaca di macOS 64-bit; lihat <code>docs/COMPATIBILITY.txt</code>.</p></div>
+
+<h2>Menyimpan Record ke File</h2>
+
+<p>Kekuatan sebenarnya file bertipe tampak saat elemennya adalah <code>record</code>. Satu elemen dapat memuat nama,
+kelas, dan nilai seorang siswa sekaligus. Dengan <code>file of TSiswa</code>, Anda menyimpan dan membaca seluruh
+catatan siswa dengan satu perintah <code>Write</code> atau <code>Read</code>. Inilah dasar program basis data
+sederhana, yang akan Anda kembangkan di bab proyek akhir.</p>
+
+<figure class="grafik" id="gb-record-file">
+<svg viewBox="0 0 680 230">
+  <text class="h c" x="10" y="20">siswa.dat: file of TSiswa, setiap elemen satu record</text>
+  <rect class="box-w" x="10" y="32" width="660" height="92" rx="8"/>
+  <text class="s muted" x="24" y="52">elemen 0</text>
+  <rect class="box" x="24" y="58" width="230" height="52" rx="6"/>
+  <rect class="ok" x="30" y="64" width="110" height="40" rx="4"/>
+  <text class="s b" x="36" y="80">Nama</text>
+  <text class="xs" x="36" y="96">string[20]</text>
+  <rect class="io" x="146" y="64" width="56" height="40" rx="4"/>
+  <text class="s b" x="152" y="80">Kelas</text>
+  <text class="xs" x="152" y="96">string[5]</text>
+  <rect class="dec" x="208" y="64" width="40" height="40" rx="4"/>
+  <text class="s b" x="212" y="80">Nilai</text>
+  <text class="xs" x="212" y="96">Integer</text>
+  <text class="s muted" x="282" y="52">elemen 1</text>
+  <rect class="box" x="282" y="58" width="168" height="52" rx="6"/>
+  <text class="s mid" x="366" y="88">Nama | Kelas | Nilai</text>
+  <text class="s muted" x="478" y="52">elemen 2</text>
+  <rect class="box" x="478" y="58" width="168" height="52" rx="6"/>
+  <text class="s mid" x="562" y="88">Nama | Kelas | Nilai</text>
+  <rect class="dec" x="10" y="140" width="660" height="80" rx="8"/>
+  <text class="h" x="24" y="162">Mengapa string[20], bukan string?</text>
+  <text class="s" x="24" y="180">Elemen file bertipe harus berukuran sama agar Seek dapat menghitung letaknya.</text>
+  <text class="s" x="24" y="194">Tipe string biasa menyisihkan tempat untuk 255 karakter dan boros; string[20] hanya</text>
+  <text class="s" x="24" y="208">menyisihkan tempat untuk 20 karakter. Nama yang lebih panjang dipotong tanpa pesan galat.</text>
+</svg>
+<figcaption>Setiap elemen <code>siswa.dat</code> adalah satu <code>TSiswa</code> utuh; semuanya berukuran sama.</figcaption>
+</figure>
+
+<p>Program 17.5 membaca data yang sudah ada (bila ada), meminta siswa baru sampai nama dikosongkan, menyimpan
+setiap siswa dengan <code>Write(F, S)</code>, lalu menampilkan seluruh isi file sebagai tabel. Karena datanya
+disimpan di file, <b>jalankan program ini beberapa kali</b> dan Anda akan melihat daftarnya terus bertambah. Pada
+jalankan pertama di bawah ini file belum ada, jadi jumlah data tersimpan 0.</p>
+
+<x-listing src="bab17_05_simpan_baca_record.pas"></x-listing>
+
+<x-run src="bab17_05_simpan_baca_record.pas" caption="Jalankan pertama: file belum ada, satu siswa ditambah, lalu nama kosong mengakhiri masukan"></x-run>
+
+<p>Sekarang jalankan sekali lagi dan tambahkan siswa kedua. Daftar lama tidak hilang: program melaporkan satu siswa
+tersimpan, lalu menampilkan dua siswa sesudah penambahan.</p>
+
+<x-run src="bab17_05_simpan_baca_record.pas" input="Budi\nX-B\n75\n\n" caption="Jalankan kedua: data Ani dari jalankan pertama masih ada, Budi ditambahkan"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>12–17</td><td>Tipe <code>TSiswa</code> adalah <code>record</code> berisi dua string pendek dan satu bilangan. Bentuknya menentukan ukuran setiap elemen file.</td></tr>
+    <tr><td>20</td><td><code>F: file of TSiswa</code> mengumumkan file yang elemennya <code>TSiswa</code>.</td></tr>
+    <tr><td>26–31</td><td>Mencoba <code>Reset</code> (file sudah ada) dengan pengaman <code>{$I-}</code>. Bila gagal, <code>Rewrite</code> membuat file kosong. Dengan begitu program bekerja pada jalankan pertama maupun berikutnya.</td></tr>
+    <tr><td>32</td><td><code>FileSize(F)</code> melaporkan banyak siswa yang sudah tersimpan.</td></tr>
+    <tr><td>34</td><td><code>Seek(F, FileSize(F))</code> memindah posisi ke tepat sesudah elemen terakhir, sehingga <code>Write</code> berikutnya <b>menambah</b>, bukan menimpa.</td></tr>
+    <tr><td>36–46</td><td>Perulangan <code>repeat..until</code> meminta nama. Bila nama tidak kosong, kelas dan nilai dibaca ke field <code>S.Kelas</code> dan <code>S.Nilai</code> (baris 42–43), lalu seluruh record disimpan dengan <code>Write(F, S)</code> (baris 44). Nama kosong mengakhiri perulangan.</td></tr>
+    <tr><td>50</td><td><code>Seek(F, 0)</code> kembali ke awal agar seluruh data dapat dibaca.</td></tr>
+    <tr><td>52–58</td><td>Membaca satu record per putaran dan mencetak barisnya. Kolom diratakan dengan <code>'':22 - Length(S.Nama)</code>, yaitu menulis string kosong selebar sisa kolom sebagai spasi pengisi. Nilai ditulis selebar 5.</td></tr>
+    <tr><td>59</td><td>File ditutup.</td></tr>
+  </tbody>
+</table>
+
+<div class="ingat"><p>Satu program, satu <i>file variable</i>, satu urutan: <code>Assign</code>, buka, pakai, <code>Close</code>.
+Tidak peduli apakah isinya teks, bilangan, atau record, rangka program file selalu sama. Yang berubah hanyalah
+<code>Text</code> atau <code>file of ...</code> pada deklarasi dan pilihan perintah baca-tulisnya.</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Membuka file yang tidak ada (galat 2)</h3>
+
+<p>Sudah dibahas pada Program 17.2: <code>Reset</code> atau <code>Append</code> pada file yang tidak ada di folder kerja
+menghentikan program dengan galat <i>runtime</i> 2. Penyebab tersering adalah salah nama, salah folder (program
+dijalankan dari folder lain), atau file memang belum dibuat. Periksalah dengan <code>{$I-}</code> dan
+<code>IOResult</code>, dan pastikan Anda tahu folder kerja dengan <code>GetDir</code>.</p>
+
+<h3>Menulis ke file yang belum dibuka (galat 103)</h3>
+
+<p>Lupa memanggil <code>Rewrite</code> atau <code>Reset</code> setelah <code>Assign</code> adalah kekeliruan klasik.
+Kompiler menerimanya, tetapi saat dijalankan file belum "terbuka".</p>
+
+<x-error name="lupabuka.pas" run caption="Menulis tanpa Rewrite: file belum dibuka (<i>runtime error</i> 103)">program LupaBuka;
+var
+  F: Text;
+begin
+  Assign(F, 'x.txt');
+  WriteLn(F, 'halo');
+  Close(F);
+end.</x-error>
+
+<p>Galat 103 berarti <i>file not open</i>. Perbaikannya: sisipkan <code>Rewrite(F);</code> (untuk menulis) atau
+<code>Reset(F);</code> (untuk membaca) di antara <code>Assign</code> dan perintah baca-tulis.</p>
+
+<h3>Mencampur tipe pada file bertipe</h3>
+
+<p>File bertipe hanya menerima nilai bertipe elemennya. Menulis string ke <code>file of LongInt</code> ditolak saat
+kompilasi.</p>
+
+<x-error name="tipesalah.pas" caption="File of LongInt tidak menerima string">program TipeSalah;
+var
+  F: file of LongInt;
+begin
+  Assign(F, 'a.dat');
+  Rewrite(F);
+  Write(F, 'abc');
+  Close(F);
+end.</x-error>
+
+<h3>Lupa Close, menimpa data dengan Rewrite</h3>
+
+<p>Dua kesalahan ini tidak menghasilkan pesan apa pun, sehingga lebih berbahaya. <b>Lupa <code>Close</code></b> dapat
+membuat sebagian isi tidak sempat tersimpan. Biasakan menulis <code>Close(F)</code> segera setelah menulis
+<code>Rewrite</code> atau <code>Reset</code>, lalu isi bagian tengahnya. <b>Memakai <code>Rewrite</code> untuk
+menambah data</b> menghapus semua data lama; untuk menambah, pakai <code>Append</code> (file teks) atau
+<code>Seek(F, FileSize(F))</code> (file bertipe) seperti pada Program 17.5.</p>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>Variabel hilang saat program berhenti; <b>file</b> menyimpan data di disk sehingga tetap ada.</li>
+  <li>Alur baku: <code>Assign</code> (hubungkan variabel file dengan nama file), buka dengan <code>Rewrite</code>,
+  <code>Reset</code>, atau <code>Append</code>, baca atau tulis, lalu <code>Close</code>.</li>
+  <li>Berkas dibuat di <b>folder kerja</b> program, yaitu folder file <code>.pas</code>. Simpan contoh ke folder sendiri
+  dengan <span class="menu">File ▸ Save as...</span> sebelum menjalankan program file.</li>
+  <li><code>Rewrite</code> membuat file baru dan <b>menghapus</b> isi lama; <code>Append</code> menambah di akhir file teks
+  dan gagal bila file belum ada.</li>
+  <li>Membaca file teks sampai habis: <code>while not Eof(F) do ReadLn(F, ...)</code>.</li>
+  <li>File yang tidak ada ditangani dengan <code>{$I-}</code>, <code>Reset</code>, <code>{$I+}</code>, lalu memeriksa
+  <code>IOResult &lt;&gt; 0</code>; tanpa itu program berhenti dengan galat 2.</li>
+  <li>File bertipe (<code>file of</code>) menyimpan elemen biner berukuran sama. <code>Seek</code> (nomor elemen mulai 0),
+  <code>FilePos</code>, dan <code>FileSize</code> memungkinkan akses langsung.</li>
+  <li><code>file of record</code> menyimpan data terstruktur; pakai <code>string[n]</code> agar ukuran elemen tetap, dan
+  <code>Seek(F, FileSize(F))</code> untuk menambah di akhir.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Buat program yang menulis lima nama teman ke file <code>teman.txt</code>, satu
+  nama per baris. Periksa hasilnya dengan editor teks.</li>
+  <li><span class="lv dasar">Dasar</span>Buat program yang membaca <code>teman.txt</code> dan menampilkannya, dengan
+  pesan ramah bila file belum ada (pakai <code>{$I-}</code> dan <code>IOResult</code>).</li>
+  <li><span class="lv menengah">Menengah</span>Ubah Program 17.2 agar menanyakan nama file kepada pengguna, bukan
+  memakai konstanta. Uji dengan nama yang ada dan yang tidak ada.</li>
+  <li><span class="lv menengah">Menengah</span>Buat program yang membaca file teks berisi bilangan bulat, satu per baris,
+  lalu menampilkan jumlah dan rata-ratanya. Siapkan filenya dengan program penulis lebih dulu.</li>
+  <li><span class="lv menengah">Menengah</span>Tambahkan ke Program 17.4 sebuah perintah yang membaca nomor elemen dari
+  pengguna dan menampilkan isinya dengan <code>Seek</code>. Tolak nomor yang di luar <code>0..FileSize(F)-1</code>.</li>
+  <li><span class="lv tantangan">Tantangan</span>Kembangkan Program 17.5: setelah menampilkan daftar, hitung nilai
+  rata-rata kelas dan tampilkan siswa dengan nilai tertinggi.</li>
+  <li><span class="lv tantangan">Tantangan</span>Buat program yang menyalin sebuah file teks ke file lain baris demi
+  baris. Setelah itu tambahkan nomor baris di setiap baris hasil salinan.</li>
+</ol>
+</div>

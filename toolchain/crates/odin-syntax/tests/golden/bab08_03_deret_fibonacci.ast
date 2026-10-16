@@ -1,0 +1,19 @@
+(program bab08_03_deret_fibonacci
+  (const BatasSuku = 40)
+  (var (N I) Integer)
+  (var (Sebelum Sekarang Berikut) LongInt)
+  (begin
+    (repeat-until (and (>= N 1) (<= N BatasSuku))
+      (do (call Write 'Berapa suku (1-' BatasSuku ')? '))
+      (do (call ReadLn N))
+      (empty))
+    (:= Sebelum 0)
+    (:= Sekarang 1)
+    (for I 1 to N
+      (begin
+        (do (call WriteLn 'Suku ' I:2 ': ' Sekarang:10))
+        (:= Berikut (+ Sebelum Sekarang))
+        (:= Sebelum Sekarang)
+        (:= Sekarang Berikut)
+        (empty)))
+    (empty)))

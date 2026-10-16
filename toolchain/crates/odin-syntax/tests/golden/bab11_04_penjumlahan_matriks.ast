@@ -1,0 +1,26 @@
+(program bab11_04_penjumlahan_matriks
+  (const Ukuran = 3)
+  (type TMatriks = (array [(.. 1 Ukuran) (.. 1 Ukuran)] Integer))
+  (const A : TMatriks = ((1, 2, 3), (4, 5, 6), (7, 8, 9)))
+  (const B : TMatriks = ((9, 8, 7), (6, 5, 4), (3, 2, 1)))
+  (procedure Tampilkan (Judul: string; M: TMatriks)
+    (var (I J) Integer)
+    (begin
+      (do (call WriteLn Judul))
+      (for I 1 to Ukuran
+        (begin
+          (for J 1 to Ukuran
+            (do (call Write (index M I J):5)))
+          (do WriteLn)
+          (empty)))
+      (empty)))
+  (var (C) TMatriks)
+  (var (I J) Integer)
+  (begin
+    (for I 1 to Ukuran
+      (for J 1 to Ukuran
+        (:= (index C I J) (+ (index A I J) (index B I J)))))
+    (do (call Tampilkan 'Matriks A:' A))
+    (do (call Tampilkan 'Matriks B:' B))
+    (do (call Tampilkan 'A + B:' C))
+    (empty)))

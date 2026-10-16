@@ -668,6 +668,8 @@ end;
 {$ENDIF}
 {$IFDEF WINDOWS}
 function AddVectoredExceptionHandler(First: LongInt; Handler: Pointer): Pointer; external 'kernel32' name 'AddVectoredExceptionHandler';
+function SetUnhandledExceptionFilter(Filter: Pointer): Pointer; external 'kernel32' name 'SetUnhandledExceptionFilter';
+function GetModuleHandleA(Name: PChar): Pointer; external 'kernel32' name 'GetModuleHandleA';
 function SetThreadStackGuarantee(var Size: LongInt): LongInt; external 'kernel32' name 'SetThreadStackGuarantee';
 
 const
@@ -682,6 +684,8 @@ const
 
 var
   FaultStack: array[0..65535] of Byte;
+  { The program's own image: its code faults become runtime errors at once. }
+  ImageStart, ImageEnd: Int64;
 
 { Runs, outside the exception dispatch and on FaultStack, in place of the
   instruction that faulted. }
@@ -691,14 +695,12 @@ begin
   RunErrorAt(Code, Addr);
 end;
 
-{ Vectored exception handler: like the Unix signal handler, it rewrites the
-  thread context so that execution resumes in FaultEntry(Code, address of
-  the faulting instruction). Exceptions that are not processor faults
-  (breakpoints, C++ exceptions, ...) go on to the next handler. }
-function FaultHandler(Info: Pointer): LongInt;
+{ The runtime error for a processor fault, or 0 for other exceptions
+  (breakpoints, C++ exceptions, ...). }
+function FaultCode(Info: Pointer): LongInt;
 var
   Rec, Ctx: PByteArray;
-  E, Code, Top, Mx: Int64;
+  E, Code, Mx: Int64;
 begin
   Rec := PByteArray(PPointer(Info)^);
   Ctx := PByteArray(PPointer(Int64(Info) + 8)^);
@@ -720,18 +722,60 @@ begin
       else
         Code := 207;
   else
-    begin
-      FaultHandler := 0;
-      Exit;
-    end;
+    Code := 0;
   end;
+  FaultCode := Code;
+end;
+
+{ Like the Unix signal handler: rewrites the thread context so that
+  execution resumes in FaultEntry(Code, address of the faulting
+  instruction). }
+procedure RedirectFault(Info: Pointer; Code: LongInt);
+var
+  Ctx: PByteArray;
+  Top: Int64;
+begin
+  Ctx := PByteArray(PPointer(Int64(Info) + 8)^);
   { Win64 entry state: a return-address slot below 32 bytes of shadow space. }
   Top := (Int64(@FaultStack) + SizeOf(FaultStack)) and not Int64(15);
   PInt64(@Ctx^[CtxRcx])^ := Code;
   PInt64(@Ctx^[CtxRdx])^ := PInt64(@Ctx^[CtxRip])^;
   PInt64(@Ctx^[CtxRsp])^ := Top - 40;
   PInt64(@Ctx^[CtxRip])^ := Int64(@FaultEntry);
+end;
+
+{ Vectored exception handler: it runs before any frame handler, so it takes
+  only what the program caused. An access violation inside a system DLL may
+  be one that the DLL handles itself (process creation probes memory under
+  __try); it goes on to the frame handlers, and to UnhandledFilter when none
+  takes it. }
+function FaultHandler(Info: Pointer): LongInt;
+var
+  Code: LongInt;
+  Rip: Int64;
+begin
+  FaultHandler := 0;
+  Code := FaultCode(Info);
+  if Code = 0 then
+    Exit;
+  Rip := PInt64(@PByteArray(PPointer(Int64(Info) + 8)^)^[CtxRip])^;
+  if (Code = 216) and ((Rip < ImageStart) or (Rip >= ImageEnd)) then
+    Exit;
+  RedirectFault(Info, Code);
   FaultHandler := -1;
+end;
+
+{ The last resort: a fault that no handler took becomes a runtime error too. }
+function UnhandledFilter(Info: Pointer): LongInt;
+var
+  Code: LongInt;
+begin
+  UnhandledFilter := 0;
+  Code := FaultCode(Info);
+  if Code = 0 then
+    Exit;
+  RedirectFault(Info, Code);
+  UnhandledFilter := -1;
 end;
 
 procedure InstallFaultHandlers;
@@ -741,7 +785,11 @@ begin
   { Room for the handler itself once a stack overflow has used the guard page. }
   Guarantee := 65536;
   SetThreadStackGuarantee(Guarantee);
+  { SizeOfImage, in the optional header of the PE image. }
+  ImageStart := Int64(GetModuleHandleA(nil));
+  ImageEnd := ImageStart + PLongInt(ImageStart + PLongInt(ImageStart + $3C)^ + $50)^;
   AddVectoredExceptionHandler(1, @FaultHandler);
+  SetUnhandledExceptionFilter(@UnhandledFilter);
   ODIN_SETMXCSR(MxcsrTraps);
 end;
 {$ENDIF}

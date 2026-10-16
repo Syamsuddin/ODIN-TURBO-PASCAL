@@ -1,0 +1,52 @@
+(program bab09_06_kalkulator_modular
+  (procedure TampilkanMenu
+    (begin
+      (do WriteLn)
+      (do (call WriteLn '=== KALKULATOR ==='))
+      (do (call WriteLn '1. Tambah   2. Kurang   3. Kali   4. Bagi   0. Keluar'))
+      (do (call Write 'Pilihan: '))
+      (empty)))
+  (function BacaBilangan (Pesan: string) : Real
+    (var (X) Real)
+    (begin
+      (do (call Write Pesan))
+      (do (call ReadLn X))
+      (:= BacaBilangan X)
+      (empty)))
+  (function Hitung (A B: Real; Operasi: Integer; var Hasil: Real) : Boolean
+    (begin
+      (:= Hitung True)
+      (case Operasi
+        (arm 1
+          (:= Hasil (+ A B)))
+        (arm 2
+          (:= Hasil (- A B)))
+        (arm 3
+          (:= Hasil (* A B)))
+        (arm 4
+          (if (= B 0)
+            (:= Hitung False)
+            (else
+              (:= Hasil (/ A B))))))
+      (empty)))
+  (var (Pilihan) Integer)
+  (var (A B Hasil) Real)
+  (begin
+    (repeat-until (= Pilihan 0)
+      (do TampilkanMenu)
+      (do (call ReadLn Pilihan))
+      (if (and (>= Pilihan 1) (<= Pilihan 4))
+        (begin
+          (:= A (call BacaBilangan 'Bilangan pertama: '))
+          (:= B (call BacaBilangan 'Bilangan kedua  : '))
+          (if (call Hitung A B Pilihan Hasil)
+            (do (call WriteLn 'Hasil: ' Hasil:0:2))
+            (else
+              (do (call WriteLn 'Pembagi tidak boleh nol.'))))
+          (empty))
+        (else
+          (if (<> Pilihan 0)
+            (do (call WriteLn 'Pilihan tidak tersedia.')))))
+      (empty))
+    (do (call WriteLn 'Sampai jumpa!'))
+    (empty)))

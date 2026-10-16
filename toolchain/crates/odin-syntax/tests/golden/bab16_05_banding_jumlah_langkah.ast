@@ -1,0 +1,119 @@
+(program bab16_05_banding_jumlah_langkah
+  (const N = 20)
+  (const Acak : (array [(.. 1 N)] Integer) = (57, 12, 89, 3, 44, 71, 25, 96, 38, 60, 18, 83, 7, 52, 66, 30, 91, 14, 77, 41))
+  (type TData = (array [(.. 1 N)] Integer))
+  (var (Banding Pindah) LongInt)
+  (procedure Tukar (var A B: Integer)
+    (var (T) Integer)
+    (begin
+      (:= T A)
+      (:= A B)
+      (:= B T)
+      (:= Pindah (+ Pindah 1))
+      (empty)))
+  (procedure BubbleSort (var D: TData)
+    (var (I Putaran) Integer)
+    (var (AdaTukar) Boolean)
+    (begin
+      (:= Putaran 0)
+      (repeat-until (not AdaTukar)
+        (:= AdaTukar False)
+        (:= Putaran (+ Putaran 1))
+        (for I 1 to (- N Putaran)
+          (begin
+            (:= Banding (+ Banding 1))
+            (if (> (index D I) (index D (+ I 1)))
+              (begin
+                (do (call Tukar (index D I) (index D (+ I 1))))
+                (:= AdaTukar True)
+                (empty)))
+            (empty)))
+        (empty))
+      (empty)))
+  (procedure SelectionSort (var D: TData)
+    (var (I J PosisiMin) Integer)
+    (begin
+      (for I 1 to (- N 1)
+        (begin
+          (:= PosisiMin I)
+          (for J (+ I 1) to N
+            (begin
+              (:= Banding (+ Banding 1))
+              (if (< (index D J) (index D PosisiMin))
+                (:= PosisiMin J))
+              (empty)))
+          (if (<> PosisiMin I)
+            (do (call Tukar (index D I) (index D PosisiMin))))
+          (empty)))
+      (empty)))
+  (procedure InsertionSort (var D: TData)
+    (var (I J Kunci) Integer)
+    (var (Lanjut) Boolean)
+    (begin
+      (for I 2 to N
+        (begin
+          (:= Kunci (index D I))
+          (:= J (- I 1))
+          (:= Lanjut True)
+          (while (and (>= J 1) Lanjut)
+            (begin
+              (:= Banding (+ Banding 1))
+              (if (> (index D J) Kunci)
+                (begin
+                  (:= (index D (+ J 1)) (index D J))
+                  (:= Pindah (+ Pindah 1))
+                  (:= J (- J 1))
+                  (empty))
+                (else
+                  (:= Lanjut False)))
+              (empty)))
+          (:= (index D (+ J 1)) Kunci)
+          (empty)))
+      (empty)))
+  (procedure SiapkanData (Jenis: Integer; var D: TData)
+    (var (I) Integer)
+    (begin
+      (for I 1 to N
+        (case Jenis
+          (arm 1
+            (:= (index D I) (index Acak I)))
+          (arm 2
+            (:= (index D I) (* I 5)))
+          (arm 3
+            (:= (index D I) (* (+ (- N I) 1) 5)))))
+      (empty)))
+  (var (D) TData)
+  (var (Algoritma Jenis) Integer)
+  (begin
+    (do (call WriteLn 'Jumlah data: ' N))
+    (do (call WriteLn 'Isi kolom: jumlah perbandingan / jumlah pemindahan'))
+    (do (call WriteLn 'Algoritma        Acak    Terurut   Terbalik'))
+    (for Algoritma 1 to 3
+      (begin
+        (case Algoritma
+          (arm 1
+            (do (call Write 'Bubble sort   ')))
+          (arm 2
+            (do (call Write 'Selection sort')))
+          (arm 3
+            (do (call Write 'Insertion sort'))))
+        (for Jenis 1 to 3
+          (begin
+            (do (call SiapkanData Jenis D))
+            (:= Banding 0)
+            (:= Pindah 0)
+            (case Algoritma
+              (arm 1
+                (do (call BubbleSort D)))
+              (arm 2
+                (do (call SelectionSort D)))
+              (arm 3
+                (do (call InsertionSort D))))
+            (do (call Write Banding:5 '/' Pindah:4))
+            (empty)))
+        (do WriteLn)
+        (empty)))
+    (do WriteLn)
+    (do (call WriteLn 'Perhatikan: pada data terurut, bubble dan insertion sort'))
+    (do (call WriteLn 'selesai sangat cepat, selection sort tetap membandingkan semua.'))
+    (empty)))

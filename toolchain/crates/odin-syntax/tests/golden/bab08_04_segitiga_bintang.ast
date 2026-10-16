@@ -1,0 +1,31 @@
+(program bab08_04_segitiga_bintang
+  (var (Tinggi Baris I) Integer)
+  (begin
+    (do (call Write 'Tinggi segitiga (1-20): '))
+    (do (call ReadLn Tinggi))
+    (if (or (< Tinggi 1) (> Tinggi 20))
+      (:= Tinggi 5))
+    (do (call WriteLn 'Segitiga siku-siku:'))
+    (for Baris 1 to Tinggi
+      (begin
+        (for I 1 to Baris
+          (do (call Write '*')))
+        (do WriteLn)
+        (empty)))
+    (do (call WriteLn 'Segitiga terbalik:'))
+    (for Baris Tinggi downto 1
+      (begin
+        (for I 1 to Baris
+          (do (call Write '*')))
+        (do WriteLn)
+        (empty)))
+    (do (call WriteLn 'Piramida:'))
+    (for Baris 1 to Tinggi
+      (begin
+        (for I 1 to (- Tinggi Baris)
+          (do (call Write ' ')))
+        (for I 1 to (- (* 2 Baris) 1)
+          (do (call Write '*')))
+        (do WriteLn)
+        (empty)))
+    (empty)))

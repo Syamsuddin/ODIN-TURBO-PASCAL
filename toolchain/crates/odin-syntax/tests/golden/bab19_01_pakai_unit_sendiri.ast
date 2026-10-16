@@ -1,0 +1,17 @@
+(program bab19_01_pakai_unit_sendiri
+  (uses matematika)
+  (var (I) Integer)
+  (begin
+    (do (call WriteLn 'Unit matematika versi ' VersiUnit))
+    (do (call WriteLn 'Kuadrat(25)     = ' (call Kuadrat 25)))
+    (do (call WriteLn 'Pangkat(2, 10)  = ' (call Pangkat 2 10)))
+    (do (call WriteLn 'Faktorial(10)   = ' (call Faktorial 10)))
+    (do (call WriteLn 'FPB(48, 18)     = ' (call FPB 48 18)))
+    (do (call WriteLn 'KPK(4, 6)       = ' (call KPK 4 6)))
+    (do (call Write 'Bilangan prima di bawah 50: '))
+    (for I 1 to 50
+      (if (call Prima I)
+        (do (call Write I ' '))))
+    (do WriteLn)
+    (do (call WriteLn 'matematika.Kuadrat(12) = ' (call (. matematika Kuadrat) 12)))
+    (empty)))

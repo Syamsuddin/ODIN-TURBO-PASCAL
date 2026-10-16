@@ -1,0 +1,30 @@
+(program bab10_02_fibonacci_rekursif
+  (var (Panggilan) LongInt)
+  (function Fib (N: Integer) : LongInt
+    (begin
+      (:= Panggilan (+ Panggilan 1))
+      (if (<= N 2)
+        (:= Fib 1)
+        (else
+          (:= Fib (+ (call Fib (- N 1)) (call Fib (- N 2))))))
+      (empty)))
+  (var (N) Integer)
+  (var (Hasil) LongInt)
+  (begin
+    (do (call Write 'Deret: '))
+    (for N 1 to 15
+      (do (call Write (call Fib N) ' ')))
+    (do WriteLn)
+    (do WriteLn)
+    (do (call WriteLn ' N        Fib(N)   Jumlah panggilan'))
+    (:= N 5)
+    (while (<= N 25)
+      (begin
+        (:= Panggilan 0)
+        (:= Hasil (call Fib N))
+        (do (call WriteLn N:2 Hasil:14 Panggilan:19))
+        (:= N (+ N 5))
+        (empty)))
+    (do (call WriteLn 'Panggilan naik sangat cepat. Versi perulangan di Bab 8.3'))
+    (do (call WriteLn 'cukup mengulang N kali.'))
+    (empty)))

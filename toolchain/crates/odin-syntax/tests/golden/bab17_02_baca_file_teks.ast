@@ -1,0 +1,26 @@
+(program bab17_02_baca_file_teks
+  (const NamaFile = 'catatan.txt')
+  (var (F) Text)
+  (var (Baris) string)
+  (var (NomorBaris) Integer)
+  (begin
+    (do (call Assign F NamaFile))
+    (do (call Reset F))
+    (if (<> IOResult 0)
+      (begin
+        (do (call WriteLn 'File ' NamaFile ' belum ada.'))
+        (do (call WriteLn 'Jalankan bab17_01_tulis_file_teks lebih dulu.'))
+        (empty))
+      (else
+        (begin
+          (:= NomorBaris 0)
+          (while (not (call Eof F))
+            (begin
+              (do (call ReadLn F Baris))
+              (:= NomorBaris (+ NomorBaris 1))
+              (do (call WriteLn NomorBaris:3 ' | ' Baris))
+              (empty)))
+          (do (call Close F))
+          (do (call WriteLn 'Jumlah baris: ' NomorBaris))
+          (empty))))
+    (empty)))

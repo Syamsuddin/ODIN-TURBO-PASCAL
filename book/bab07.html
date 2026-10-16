@@ -1,0 +1,782 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menjelaskan mengapa perulangan (<i>loop</i>) diperlukan dan membedakan perulangan terhitung dari perulangan bersyarat.</li>
+  <li>Memakai <code>for..to</code> dan <code>for..downto</code>, termasuk pencacah bertipe <code>Char</code>, serta mengetahui aturan pencacah.</li>
+  <li>Memakai <code>while..do</code> dan <code>repeat..until</code>, dan membedakan kapan syarat diperiksa dan kapan perulangan berhenti.</li>
+  <li>Menyusun perulangan bersarang untuk tabel, baris, dan kolom.</li>
+  <li>Menggabungkan <code>repeat..until</code> dengan <code>case</code> menjadi menu yang berulang.</li>
+  <li>Melacak perulangan dengan tabel jejak nilai dan dengan debugger Odin (breakpoint, baris eksekusi, dan Watches).</li>
+</ul>
+
+<p class="lead">Komputer unggul dalam satu hal yang membosankan bagi manusia: mengerjakan hal yang sama berulang-ulang tanpa
+lelah dan tanpa salah. Bayangkan menulis bilangan 1 sampai 1000, atau menjumlahkan seribu nilai ujian. Menulis seribu
+perintah <code>WriteLn</code> tentu tidak masuk akal. Di bab ini Anda akan mempelajari <b>perulangan</b>: cara menyuruh
+program mengulang sekelompok perintah sebanyak yang diperlukan, dengan hanya menulisnya sekali.</p>
+
+<h2>Mengapa Perlu Perulangan</h2>
+
+<p>Misalkan Anda ingin program menulis lima baris "Halo" di layar. Dengan pengetahuan dari bab-bab sebelumnya, jalan
+satu-satunya adalah menulis <code>WriteLn('Halo')</code> lima kali. Untuk lima baris ini masih tertahankan, tetapi bagaimana
+kalau seratus baris? Atau jumlah barisnya baru diketahui saat program berjalan, misalnya diketik pengguna? Perulangan
+menyelesaikan kedua masalah itu: perintahnya ditulis satu kali, dan Pascal yang mengulanginya.</p>
+
+<p>Setiap perulangan memiliki tiga bagian yang selalu ada, walaupun bentuk penulisannya berbeda-beda.</p>
+
+<div class="alur">
+  <div><span class="ikon">1</span><b>Awal</b>nilai yang disiapkan sebelum putaran pertama</div>
+  <div><span class="ikon">2</span><b>Syarat</b>pertanyaan: ulangi lagi atau berhenti?</div>
+  <div><span class="ikon">3</span><b>Badan</b>perintah yang diulang pada tiap putaran</div>
+  <div><span class="ikon">4</span><b>Perubahan</b>langkah yang membawa syarat mendekati berhenti</div>
+</div>
+
+<p>Satu kali menjalankan badan perulangan disebut satu <b>putaran</b> atau <b>iterasi</b> (<i>iteration</i>). Bagian
+"perubahan" paling sering dilupakan pemula, padahal tanpa itu perulangan tidak akan pernah berhenti. Pascal menyediakan
+empat bentuk perulangan, yang dibagi menjadi dua keluarga.</p>
+
+<div class="duo">
+  <div class="card"><h4><span class="ikon">A</span>Perulangan terhitung</h4><p>Jumlah putaran sudah diketahui sebelum
+  perulangan mulai. Bentuknya <code>for..to</code> dan <code>for..downto</code>. Pencacah diurus otomatis oleh Pascal.</p></div>
+  <div class="card"><h4><span class="ikon">B</span>Perulangan bersyarat</h4><p>Jumlah putaran tergantung keadaan yang
+  berubah selama program berjalan. Bentuknya <code>while..do</code> dan <code>repeat..until</code>. Perubahan syarat
+  Anda urus sendiri.</p></div>
+</div>
+
+<table class="data" id="tb-empat">
+  <caption>Empat perulangan Pascal dan kapan memakainya</caption>
+  <thead><tr><th>Bentuk</th><th>Kapan dipakai</th><th>Syarat diperiksa</th><th>Badan minimal</th></tr></thead>
+  <tbody>
+    <tr><td><code>for..to</code></td><td>menghitung naik, jumlah putaran diketahui</td><td>sebelum tiap putaran</td><td>0 kali</td></tr>
+    <tr><td><code>for..downto</code></td><td>menghitung turun, jumlah putaran diketahui</td><td>sebelum tiap putaran</td><td>0 kali</td></tr>
+    <tr><td><code>while..do</code></td><td>mengulang selama syarat terpenuhi</td><td>sebelum tiap putaran</td><td>0 kali</td></tr>
+    <tr><td><code>repeat..until</code></td><td>mengulang sampai syarat terpenuhi</td><td>sesudah tiap putaran</td><td>1 kali</td></tr>
+  </tbody>
+</table>
+
+<h2>Perulangan Terhitung: for..to</h2>
+
+<p>Bentuk <code>for</code> cocok bila Anda tahu persis berapa kali sesuatu harus diulang: "tulis sepuluh baris", "jumlahkan
+seratus bilangan". Anda menyediakan sebuah variabel <b>pencacah</b> (<i>counter</i>), nilai awal, dan nilai akhir. Pascal
+mengisi pencacah dengan nilai awal, menjalankan badan, menaikkan pencacah satu angka, dan seterusnya sampai pencacah
+melewati nilai akhir.</p>
+
+<div class="sintaks"><pre><b>for</b> <i>pencacah</i> := <i>nilai_awal</i> <b>to</b> <i>nilai_akhir</i> <b>do</b>
+  <i>pernyataan</i>;
+
+<b>for</b> <i>pencacah</i> := <i>nilai_awal</i> <b>to</b> <i>nilai_akhir</i> <b>do</b>
+<b>begin</b>
+  <i>pernyataan1</i>;
+  <i>pernyataan2</i>;
+<b>end</b>;</pre></div>
+
+<p>Seperti pada <code>if</code>, badan <code>for</code> hanya satu pernyataan; gunakan <code>begin..end</code> untuk
+beberapa pernyataan. Diagram berikut menunjukkan perjalanan program pada perulangan yang menjumlahkan 1 sampai
+<code>N</code>. Perhatikan panah yang kembali ke belah ketupat: itulah "ulang" dalam perulangan.</p>
+
+<figure class="grafik" id="gb-flow-for">
+<svg viewBox="0 0 680 300">
+  <rect class="box" x="55" y="10" width="180" height="32" rx="6"/>
+  <text class="mid" x="145" y="31">I := 1  (nilai awal)</text>
+  <path class="arrow" d="M145 42 V66"/>
+  <polygon class="dec" points="145,68 235,103 145,138 55,103"/>
+  <text class="mono mid" x="145" y="107">I &lt;= N ?</text>
+  <path class="arrow" d="M145 138 V168"/>
+  <text class="s b" x="153" y="158" style="fill:#11743f">True</text>
+  <rect class="ok" x="45" y="170" width="200" height="34" rx="6"/>
+  <text class="mid" x="145" y="191">Jumlah := Jumlah + I</text>
+  <path class="arrow" d="M145 204 V230"/>
+  <rect class="box" x="55" y="232" width="180" height="32" rx="6"/>
+  <text class="mid" x="145" y="253">I := I + 1  (otomatis)</text>
+  <path class="arrow" d="M55 248 H22 V103 H53"/>
+  <path class="arrow" d="M235 103 H300"/>
+  <text class="s b" x="244" y="95" style="fill:#b42318">False</text>
+  <rect class="term" x="300" y="86" width="130" height="34" rx="17"/>
+  <text class="white mid" x="365" y="107">Keluar dari for</text>
+  <rect class="navy" x="460" y="10" width="210" height="106" rx="8"/>
+  <rect x="466" y="24" width="5" height="16" style="fill:#3b7be0"/>
+  <rect x="466" y="50" width="5" height="16" style="fill:#d99a00"/>
+  <rect x="466" y="76" width="5" height="16" style="fill:#1a9e58"/>
+  <text class="mono code-fg" x="478" y="36">for I := 1 to N do</text>
+  <text class="mono code-fg" x="478" y="62">  Jumlah := Jumlah</text>
+  <text class="mono code-fg" x="478" y="88">           + I;</text>
+  <text class="s" x="300" y="160">Pencacah I diurus Pascal: diberi nilai awal,</text>
+  <text class="s" x="300" y="176">dibandingkan dengan nilai akhir, lalu dinaikkan</text>
+  <text class="s" x="300" y="192">satu setiap kali badan selesai.</text>
+  <text class="s b" x="300" y="222">Bila nilai awal sudah lebih besar dari nilai akhir,</text>
+  <text class="s b" x="300" y="238">badan tidak dijalankan sama sekali.</text>
+  <text class="xs muted" x="300" y="284">Setelah perulangan selesai, nilai I tidak boleh diandalkan.</text>
+</svg>
+<figcaption>Diagram alir <code>for..to</code>: syarat <code>I &lt;= N</code> diperiksa sebelum setiap putaran, dan pencacah dinaikkan otomatis.</figcaption>
+</figure>
+
+<p>Program 7.1 memakai <code>for..to</code> tiga kali. Buka <code>bab07_01_for_to.pas</code> lewat
+<span class="menu">File ▸ Examples...</span>, lalu jalankan dengan <kbd>Ctrl</kbd>+<kbd>F9</kbd>. Masukan bawaan untuk run di
+bawah adalah 7.</p>
+
+<x-listing src="bab07_01_for_to.pas"></x-listing>
+
+<x-run src="bab07_01_for_to.pas" caption="Program 7.1 dengan masukan 7: jumlah 1 sampai 7 dan tabel perkalian 7"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–10</td><td><code>I</code> dan <code>N</code> bertipe <code>Integer</code>. <code>Jumlah</code> bertipe <code>LongInt</code> agar muat bila jumlahnya melewati 32767.</td></tr>
+    <tr><td>14–15</td><td>Perulangan pertama: <code>I</code> bernilai 1, 2, ..., 10. Badannya satu pernyataan <code>Write(I, ' ')</code>, jadi tidak perlu <code>begin..end</code>. Semua angka tampil dalam satu baris karena memakai <code>Write</code>, bukan <code>WriteLn</code>.</td></tr>
+    <tr><td>16</td><td><code>WriteLn</code> tanpa isi memindahkan kursor ke baris baru, setelah sepuluh angka tadi.</td></tr>
+    <tr><td>19–20</td><td>Menanyakan <code>N</code> kepada pengguna.</td></tr>
+    <tr><td>21</td><td><code>Jumlah</code> diisi nol sebelum perulangan. Ini bagian "awal" dari penjumlahan: nilai awal harus netral terhadap penjumlahan.</td></tr>
+    <tr><td>22–23</td><td>Pada setiap putaran, <code>Jumlah</code> ditambah nilai <code>I</code> saat itu. Pola <code>Jumlah := Jumlah + I</code> disebut <b>akumulator</b>: nilai lama dibaca, ditambah, lalu ditulis kembali.</td></tr>
+    <tr><td>24</td><td>Menulis hasil penjumlahan sesudah perulangan selesai. Karena berada di luar badan <code>for</code>, baris ini hanya dijalankan sekali.</td></tr>
+    <tr><td>28–32</td><td>Perulangan dengan <code>begin..end</code> karena badannya dua pernyataan. <code>N:3</code>, <code>I:2</code>, dan <code>N * I:4</code> meratakan angka ke kanan pada lebar tertentu (Bab 4), sehingga kolom tabel lurus.</td></tr>
+  </tbody>
+</table>
+
+<p>Untuk memahami apa yang terjadi di dalam perulangan, cara terbaik adalah membuat <b>tabel jejak</b> (<i>trace table</i>):
+satu baris tabel untuk setiap putaran, berisi nilai variabel pada saat itu. Tabel berikut melacak baris 22–23 untuk
+<code>N = 5</code>.</p>
+
+<table class="data compact" id="tb-jejak-for">
+  <caption>Jejak penjumlahan 1 sampai 5 pada Program 7.1 (<code>N = 5</code>)</caption>
+  <thead><tr><th>Putaran</th><th><code>I</code></th><th><code>Jumlah</code> sebelum</th><th>Perhitungan</th><th><code>Jumlah</code> sesudah</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>1</td><td>0</td><td>0 + 1</td><td>1</td></tr>
+    <tr><td>2</td><td>2</td><td>1</td><td>1 + 2</td><td>3</td></tr>
+    <tr><td>3</td><td>3</td><td>3</td><td>3 + 3</td><td>6</td></tr>
+    <tr><td>4</td><td>4</td><td>6</td><td>6 + 4</td><td>10</td></tr>
+    <tr><td>5</td><td>5</td><td>10</td><td>10 + 5</td><td>15</td></tr>
+  </tbody>
+</table>
+
+<p>Sesudah putaran kelima, pencacah menjadi 6, syarat <code>I &lt;= N</code> bernilai <code>False</code>, dan perulangan
+selesai dengan <code>Jumlah = 15</code>. Dua puluh kali lipat dari pekerjaan ini pun tinggal mengganti nilai <code>N</code>;
+programnya tetap sama.</p>
+
+<div class="awas"><p><b>Jangan mengubah pencacah di dalam badan <code>for</code>.</b> Pascal mengatur sendiri nilai
+<code>I</code>; bila badan ikut mengubahnya, hasil perulangan tidak lagi dapat diramalkan. Aturan Pascal melarangnya,
+dan sebagian kompiler menolak program semacam itu, jadi anggap ini larangan mutlak walaupun kompiler tertentu tidak memberi
+peringatan. Pencacah juga harus bertipe ordinal (<code>Integer</code>,
+<code>Char</code>, atau tipe urutan lain), tidak boleh <code>Real</code>.</p></div>
+
+<div class="coba"><p>Ubah baris 14 menjadi <code>for I := 1 to 10 do</code> yang mencetak <code>I * I</code> (kuadrat), atau ubah
+baris 28 agar tabel perkalian berhenti di 12. Jalankan dan cocokkan hasilnya dengan perkiraan Anda sebelum menekan
+<kbd>Enter</kbd>.</p></div>
+
+<h2>Menghitung Mundur: for..downto</h2>
+
+<p>Bila pencacah harus <i>turun</i>, ganti <code>to</code> dengan <code>downto</code>. Mekanismenya persis sama, hanya arah
+pencacahnya terbalik: pencacah dikurangi satu setiap putaran, dan perulangan berjalan selama pencacah masih lebih besar
+atau sama dengan nilai akhir.</p>
+
+<div class="sintaks"><pre><b>for</b> <i>pencacah</i> := <i>nilai_awal</i> <b>downto</b> <i>nilai_akhir</i> <b>do</b>
+  <i>pernyataan</i>;</pre></div>
+
+<p>Bandingkan keduanya pada contoh berikut. Pada <code>for..to</code>, nilai awal harus <b>lebih kecil atau sama</b>
+dengan nilai akhir agar badan berjalan; pada <code>for..downto</code>, nilai awal harus <b>lebih besar atau sama</b>.</p>
+
+<table class="data compact" id="tb-to-downto">
+  <caption>Perbandingan <code>to</code> dan <code>downto</code></caption>
+  <thead><tr><th>Perintah</th><th>Nilai pencacah</th><th>Jumlah putaran</th></tr></thead>
+  <tbody>
+    <tr><td><code>for I := 1 to 5 do</code></td><td>1, 2, 3, 4, 5</td><td>5</td></tr>
+    <tr><td><code>for I := 5 downto 1 do</code></td><td>5, 4, 3, 2, 1</td><td>5</td></tr>
+    <tr><td><code>for I := 5 to 1 do</code></td><td>(tidak ada)</td><td>0</td></tr>
+    <tr><td><code>for I := 1 downto 5 do</code></td><td>(tidak ada)</td><td>0</td></tr>
+    <tr><td><code>for I := 3 to 3 do</code></td><td>3</td><td>1</td></tr>
+  </tbody>
+</table>
+
+<p>Program 7.2 juga memperkenalkan pencacah bertipe <code>Char</code>. Karakter punya urutan tetap (A sebelum B, B sebelum C,
+dan seterusnya), sehingga bisa dihitung maju atau mundur seperti bilangan.</p>
+
+<x-listing src="bab07_02_for_downto.pas"></x-listing>
+
+<x-run src="bab07_02_for_downto.pas" caption="Program 7.2: hitung mundur, abjad terbalik, dan kelipatan 5"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>13–16</td><td>Menghitung mundur dari 10 ke 1. Kata "Mulai!" ditulis dengan <code>WriteLn</code> sesudah perulangan, sehingga muncul di akhir baris yang sama.</td></tr>
+    <tr><td>19–22</td><td><code>Huruf</code> bertipe <code>Char</code>. Perulangan berjalan dari <code>'Z'</code> mundur ke <code>'A'</code>, dan <code>Write(Huruf)</code> mencetak satu karakter tiap putaran: 26 huruf tanpa spasi.</td></tr>
+    <tr><td>26–27</td><td>Nilai awal 1 lebih kecil dari nilai akhir 5, padahal arahnya <code>downto</code>. Syarat gagal sejak awal, sehingga <code>WriteLn</code> di baris 27 tidak pernah dijalankan. Tidak tampak apa pun di layar, dan itu yang dimaksud.</td></tr>
+    <tr><td>30–33</td><td>Pencacah turun 10 sampai 1, tetapi yang dicetak adalah <code>I * 5</code>. Dengan begitu keluaran menjadi 50, 45, ..., 5 tanpa memerlukan "langkah" sebesar 5.</td></tr>
+  </tbody>
+</table>
+
+<div class="info"><p>Pascal tidak mengenal <code>step</code> seperti beberapa bahasa lain: pencacah selalu berubah satu angka.
+Bila Anda memerlukan kelipatan atau loncatan, hitung dari pencacah, seperti <code>I * 5</code> pada baris 32.</p></div>
+
+<div class="tp7"><p>Pada Turbo Pascal 7, pencacah <code>for</code> boleh bertipe apa pun yang ordinal: <code>Integer</code>,
+<code>Byte</code>, <code>Char</code>, <code>Boolean</code>, atau tipe enumerasi dan subrentang. Tipe <code>Real</code> tidak
+termasuk. Pencacah juga harus variabel lokal dari blok tempat <code>for</code> itu ditulis.</p></div>
+
+<h2>Perulangan Bersyarat: while..do</h2>
+
+<p>Tidak semua pengulangan bisa dihitung di muka. Berapa kali sebuah bilangan harus dibagi 10 sampai habis? Berapa bilangan
+yang akan diketik pengguna sebelum ia mengetik 0? Untuk keadaan semacam ini, Pascal menyediakan <code>while..do</code>
+("selama ... lakukan"). Perulangan ini memeriksa sebuah syarat <b>sebelum</b> setiap putaran: bila syarat
+<code>True</code>, badan dijalankan lalu syarat diperiksa lagi; bila <code>False</code>, perulangan selesai.</p>
+
+<div class="sintaks"><pre><b>while</b> <i>syarat</i> <b>do</b>
+  <i>pernyataan</i>;
+
+<b>while</b> <i>syarat</i> <b>do</b>
+<b>begin</b>
+  <i>pernyataan1</i>;
+  <i>pernyataan2</i>;
+<b>end</b>;</pre></div>
+
+<p>Ada dua konsekuensi dari sifat "periksa dulu". Pertama, bila syarat sudah <code>False</code> sejak awal, badan tidak
+dijalankan sama sekali. Kedua, dan ini yang berbahaya, <b>Anda sendiri</b> yang harus memastikan ada perintah di dalam badan
+yang pada akhirnya membuat syarat menjadi <code>False</code>. Bila tidak, perulangan berjalan selamanya
+(<i>infinite loop</i>). Pada <code>for</code>, Pascal mengurus perubahan itu; pada <code>while</code>, tugas itu milik
+programmer.</p>
+
+<p>Program 7.3 berisi dua contoh klasik. Contoh pertama menjumlahkan digit suatu bilangan dengan terus mengambil digit
+paling kanan (<code>mod 10</code>) lalu membuangnya (<code>div 10</code>). Contoh kedua membaca bilangan sampai pengguna
+mengetik 0 sebagai tanda berhenti; tanda semacam ini disebut <b>sentinel</b>.</p>
+
+<x-listing src="bab07_03_while_do.pas"></x-listing>
+
+<x-run src="bab07_03_while_do.pas" caption="Program 7.3: jumlah digit 9875, lalu tiga bilangan (4, 6, dan -2) diakhiri 0"></x-run>
+
+<p>Mari lacak contoh pertama untuk <code>Angka = 9875</code>. Gambar berikut memperlihatkan bagaimana bilangan itu
+"dikupas" satu digit tiap putaran, dan <x-ref to="tb-jejak-digit"></x-ref> mencatat nilai variabelnya.</p>
+
+<figure class="grafik" id="gb-digit">
+<svg viewBox="0 0 680 262">
+  <text class="s b" x="10" y="16">Putaran</text>
+  <text class="s b" x="90" y="16">Sisa (digit kanan disorot)</text>
+  <text class="s b" x="290" y="16">Sisa mod 10</text>
+  <text class="s b" x="390" y="16">JumlahDigit</text>
+  <text class="s b" x="500" y="16">Sisa baru = Sisa div 10</text>
+  <text class="b" x="30" y="55">1</text>
+  <rect class="box-w" x="138" y="34" width="26" height="30" rx="4"/>
+  <text class="mono mid" x="151" y="54">9</text>
+  <rect class="box-w" x="166" y="34" width="26" height="30" rx="4"/>
+  <text class="mono mid" x="179" y="54">8</text>
+  <rect class="box-w" x="194" y="34" width="26" height="30" rx="4"/>
+  <text class="mono mid" x="207" y="54">7</text>
+  <rect class="ok" x="222" y="34" width="26" height="30" rx="4"/>
+  <text class="mono mid" x="235" y="54">5</text>
+  <text class="mono" x="290" y="54">= 5</text>
+  <text class="mono" x="390" y="54">= 5</text>
+  <text class="mono" x="500" y="54">= 987</text>
+  <text class="b" x="30" y="101">2</text>
+  <rect class="box-w" x="166" y="80" width="26" height="30" rx="4"/>
+  <text class="mono mid" x="179" y="100">9</text>
+  <rect class="box-w" x="194" y="80" width="26" height="30" rx="4"/>
+  <text class="mono mid" x="207" y="100">8</text>
+  <rect class="ok" x="222" y="80" width="26" height="30" rx="4"/>
+  <text class="mono mid" x="235" y="100">7</text>
+  <text class="mono" x="290" y="100">= 7</text>
+  <text class="mono" x="390" y="100">= 12</text>
+  <text class="mono" x="500" y="100">= 98</text>
+  <text class="b" x="30" y="147">3</text>
+  <rect class="box-w" x="194" y="126" width="26" height="30" rx="4"/>
+  <text class="mono mid" x="207" y="146">9</text>
+  <rect class="ok" x="222" y="126" width="26" height="30" rx="4"/>
+  <text class="mono mid" x="235" y="146">8</text>
+  <text class="mono" x="290" y="146">= 8</text>
+  <text class="mono" x="390" y="146">= 20</text>
+  <text class="mono" x="500" y="146">= 9</text>
+  <text class="b" x="30" y="193">4</text>
+  <rect class="ok" x="222" y="172" width="26" height="30" rx="4"/>
+  <text class="mono mid" x="235" y="192">9</text>
+  <text class="mono" x="290" y="192">= 9</text>
+  <text class="mono" x="390" y="192">= 29</text>
+  <text class="mono" x="500" y="192">= 0</text>
+  <text class="b" x="30" y="239">5</text>
+  <rect class="no" x="222" y="218" width="28" height="30" rx="4"/><text class="mono mid" x="236" y="238">0</text>
+  <text class="s b" x="290" y="238" style="fill:#b42318">Sisa &gt; 0 bernilai False: perulangan berhenti. Hasil: 29.</text>
+</svg>
+<figcaption>Program 7.3 mengupas bilangan 9875: digit kanan diambil dengan <code>mod 10</code>, lalu dibuang dengan <code>div 10</code>.</figcaption>
+</figure>
+
+<table class="data compact" id="tb-jejak-digit">
+  <caption>Jejak contoh pertama Program 7.3 untuk <code>Angka = 9875</code></caption>
+  <thead><tr><th>Putaran</th><th><code>Sisa</code> awal</th><th><code>Sisa &gt; 0</code></th><th><code>Sisa mod 10</code></th><th><code>JumlahDigit</code></th><th><code>Sisa</code> akhir</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>9875</td><td><code>True</code></td><td>5</td><td>5</td><td>987</td></tr>
+    <tr><td>2</td><td>987</td><td><code>True</code></td><td>7</td><td>12</td><td>98</td></tr>
+    <tr><td>3</td><td>98</td><td><code>True</code></td><td>8</td><td>20</td><td>9</td></tr>
+    <tr><td>4</td><td>9</td><td><code>True</code></td><td>9</td><td>29</td><td>0</td></tr>
+    <tr><td>(cek)</td><td>0</td><td><code>False</code></td><td colspan="3">perulangan berhenti</td></tr>
+  </tbody>
+</table>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10–11</td><td><code>LongInt</code> dipakai untuk bilangan yang dikupas, <code>Integer</code> untuk contoh kedua.</td></tr>
+    <tr><td>15–18</td><td>Bilangan dibaca, lalu disalin ke <code>Sisa</code> supaya <code>Angka</code> asli tetap utuh untuk ditampilkan di baris 24. <code>JumlahDigit</code> diisi nol.</td></tr>
+    <tr><td>19–23</td><td><code>while Sisa &gt; 0</code>. Baris 21 menambahkan digit paling kanan, baris 22 membuangnya. Baris 22 adalah bagian "perubahan" yang menjamin perulangan berakhir: <code>Sisa</code> menyusut sampai 0.</td></tr>
+    <tr><td>28–32</td><td>Persiapan contoh kedua: <code>Total</code> dan <code>Banyak</code> dinolkan, lalu bilangan <b>pertama</b> dibaca <i>sebelum</i> perulangan.</td></tr>
+    <tr><td>33–39</td><td><code>while Bilangan &lt;&gt; 0</code>. Di dalam badan, bilangan dijumlahkan (baris 35), dihitung (baris 36), lalu bilangan berikutnya dibaca (baris 37–38). Pembacaan berikutnya ditaruh di <b>akhir</b> badan agar syarat segera menilai bilangan yang baru.</td></tr>
+    <tr><td>40</td><td>Nilai 0 tidak ikut dijumlahkan karena perulangan berhenti sebelum badan menyentuhnya. Bilangan negatif (-2) tetap ikut, sehingga 4 + 6 + (-2) = 8.</td></tr>
+  </tbody>
+</table>
+
+<div class="tip"><p>Pola "baca sekali sebelum perulangan, baca lagi di akhir badan" (<i>priming read</i>) sangat umum pada
+<code>while</code>. Dengan pola ini nilai sentinel tidak pernah diproses sebagai data.</p></div>
+
+<h2>Mengulang Sampai: repeat..until</h2>
+
+<p>Bentuk keempat membalik urutannya: badan dijalankan <b>lebih dulu</b>, barulah syarat diperiksa. Selain itu, maknanya juga
+terbalik. <code>repeat..until</code> berarti "ulangi sampai ...", sehingga perulangan berhenti ketika syarat bernilai
+<code>True</code>. Akibatnya badan <b>selalu dijalankan paling sedikit satu kali</b>.</p>
+
+<div class="sintaks"><pre><b>repeat</b>
+  <i>pernyataan1</i>;
+  <i>pernyataan2</i>;
+<b>until</b> <i>syarat_berhenti</i>;</pre></div>
+
+<p>Kata <code>repeat</code> dan <code>until</code> sudah berfungsi sebagai tanda awal dan akhir, jadi badan beberapa pernyataan
+<b>tidak</b> memerlukan <code>begin..end</code>. Perbedaan dengan <code>while..do</code> paling mudah dipahami dari
+diagram alirnya.</p>
+
+<figure class="grafik" id="gb-while-repeat">
+<svg viewBox="0 0 680 296">
+  <path class="dash" d="M340 8 V250"/>
+  <rect class="term" x="95" y="8" width="140" height="28" rx="14"/>
+  <text class="white mid" x="165" y="26">Mulai</text>
+  <path class="arrow" d="M165 36 V58"/>
+  <polygon class="dec" points="165,60 255,92 165,124 75,92"/>
+  <text class="mono mid" x="165" y="96">Syarat ?</text>
+  <path class="arrow" d="M165 124 V152"/>
+  <text class="s b" x="173" y="144" style="fill:#11743f">True</text>
+  <rect class="ok" x="85" y="154" width="160" height="34" rx="6"/>
+  <text class="mid" x="165" y="175">Badan perulangan</text>
+  <path class="arrow" d="M85 171 H30 V92 H73"/>
+  <path class="arrow" d="M255 92 H300 V226 H237"/>
+  <text class="s b" x="262" y="84" style="fill:#b42318">False</text>
+  <rect class="term" x="95" y="212" width="140" height="28" rx="14"/>
+  <text class="white mid" x="165" y="230">Selesai</text>
+
+  <rect class="term" x="445" y="8" width="140" height="28" rx="14"/>
+  <text class="white mid" x="515" y="26">Mulai</text>
+  <path class="arrow" d="M515 36 V60"/>
+  <rect class="ok" x="435" y="62" width="160" height="34" rx="6"/>
+  <text class="mid" x="515" y="83">Badan perulangan</text>
+  <path class="arrow" d="M515 96 V120"/>
+  <polygon class="dec" points="515,122 605,154 515,186 425,154"/>
+  <text class="mono mid" x="515" y="158">Syarat ?</text>
+  <path class="arrow" d="M425 154 H385 V79 H433"/>
+  <text class="s b" x="392" y="146" style="fill:#b42318">False</text>
+  <path class="arrow" d="M515 186 V212"/>
+  <text class="s b" x="523" y="204" style="fill:#11743f">True</text>
+  <rect class="term" x="445" y="212" width="140" height="28" rx="14"/>
+  <text class="white mid" x="515" y="230">Selesai</text>
+
+  <text class="h c" x="10" y="266">while..do</text>
+  <text class="s" x="10" y="282">Periksa dulu. Ulangi selama syarat True. Badan bisa 0 kali.</text>
+  <text class="h c" x="360" y="266">repeat..until</text>
+  <text class="s" x="360" y="282">Jalankan dulu. Ulangi sampai syarat True. Badan minimal 1 kali.</text>
+</svg>
+<figcaption>Perbandingan diagram alir <code>while..do</code> (kiri) dan <code>repeat..until</code> (kanan). Perhatikan arti cabang <code>True</code> yang berlawanan.</figcaption>
+</figure>
+
+<p>Jantung perbedaannya ada pada cabang <code>True</code>. Pada <code>while</code>, <code>True</code> berarti "masuk lagi ke
+badan". Pada <code>repeat</code>, <code>True</code> berarti "cukup, keluar". Karena itu syarat pada keduanya biasanya
+merupakan kebalikan satu sama lain, seperti terlihat pada tabel berikut.</p>
+
+<table class="data" id="tb-while-repeat">
+  <caption>Perbandingan <code>while..do</code> dan <code>repeat..until</code></caption>
+  <thead><tr><th>Aspek</th><th><code>while..do</code></th><th><code>repeat..until</code></th></tr></thead>
+  <tbody>
+    <tr><td>Posisi syarat</td><td>di awal, sebelum badan</td><td>di akhir, sesudah badan</td></tr>
+    <tr><td>Perulangan berlanjut bila</td><td>syarat <code>True</code></td><td>syarat <code>False</code></td></tr>
+    <tr><td>Perulangan berhenti bila</td><td>syarat <code>False</code></td><td>syarat <code>True</code></td></tr>
+    <tr><td>Jumlah putaran minimal</td><td>0</td><td>1</td></tr>
+    <tr><td>Beberapa pernyataan</td><td>perlu <code>begin..end</code></td><td>tidak perlu</td></tr>
+    <tr><td>Contoh yang sama maknanya</td><td><code>while Nilai &lt;&gt; 0 do</code></td><td><code>until Nilai = 0</code></td></tr>
+    <tr><td>Cocok untuk</td><td>data yang mungkin kosong, sentinel</td><td>menu, validasi masukan, "coba lagi"</td></tr>
+  </tbody>
+</table>
+
+<p>Program 7.4 memperlihatkan dua kegunaan khas <code>repeat..until</code>. Yang pertama <b>memvalidasi masukan</b>:
+program terus bertanya sampai nilai berada di antara 0 dan 100. Karena pertanyaan harus diajukan setidaknya sekali,
+<code>repeat</code> lebih tepat daripada <code>while</code>. Yang kedua menanyakan "lanjut?" setelah setiap putaran.</p>
+
+<x-listing src="bab07_04_repeat_until.pas"></x-listing>
+
+<x-run src="bab07_04_repeat_until.pas" caption="Program 7.4: 150 ditolak, 80 diterima; jawab y sekali, lalu t"></x-run>
+
+<p>Masukan pertama, 150, di luar rentang sehingga program menulis pesan galat dan bertanya lagi; 80 lolos. Pada bagian
+kedua, jawaban <code>y</code> membuat putaran berulang, dan jawaban <code>t</code> menghentikannya setelah putaran
+kedua. Bila pengguna langsung menjawab <code>T</code>, badan tetap dijalankan sekali, seperti pada run berikut.</p>
+
+<x-run src="bab07_04_repeat_until.pas" input="100\nT\n" caption="Nilai 100 (batas atas, sah) dan langsung menjawab T: badan hanya satu putaran"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>16–21</td><td>Badan: tampilkan permintaan, baca <code>Nilai</code>, dan bila di luar rentang tulis peringatan. Syarat berhenti di baris 21 adalah rentang yang <b>sah</b>: <code>(Nilai &gt;= 0) and (Nilai &lt;= 100)</code>. Perhatikan bahwa ini kebalikan dari syarat peringatan di baris 19.</td></tr>
+    <tr><td>22</td><td>Dijalankan hanya setelah nilai sah diperoleh.</td></tr>
+    <tr><td>26</td><td><code>Ulang</code> dinolkan sebelum perulangan, lalu dinaikkan di dalam badan sebagai penghitung putaran.</td></tr>
+    <tr><td>27–32</td><td>Tiga pernyataan di dalam <code>repeat..until</code> tanpa <code>begin..end</code>. Pada baris 31, <code>ReadLn(Jawab)</code> membaca satu karakter.</td></tr>
+    <tr><td>32</td><td>Berhenti bila jawabannya <code>T</code> atau <code>t</code>. Jawaban lain apa pun, termasuk <code>Y</code>, membuat perulangan berlanjut.</td></tr>
+  </tbody>
+</table>
+
+<div class="ingat"><p>Menulis syarat <code>until</code> adalah menjawab pertanyaan "kapan perulangan ini boleh berhenti?",
+bukan "kapan ia berlanjut?". Bila Anda mengubah <code>while</code> menjadi <code>repeat</code>, syaratnya harus dibalik
+(<code>not</code>, atau lawan dari setiap perbandingan menurut hukum De Morgan).</p></div>
+
+<h2>Perulangan Bersarang</h2>
+
+<p>Badan sebuah perulangan boleh berisi perulangan lain. Susunan ini disebut <b>perulangan bersarang</b>
+(<i>nested loop</i>). Aturannya sederhana: untuk <b>setiap satu putaran luar</b>, perulangan dalam dijalankan
+<b>sampai habis</b>. Jadi bila putaran luar berulang 3 kali dan putaran dalam 4 kali, badan terdalam dijalankan
+3 x 4 = 12 kali.</p>
+
+<p>Bayangkan jarum jam: jarum menit berputar penuh 60 kali untuk setiap satu langkah jarum jam. Atau lembar kerja
+tabel: baris diisi satu per satu (luar), dan di dalam setiap baris, kolom diisi dari kiri ke kanan (dalam). Karena itu
+perulangan bersarang menjadi alat utama untuk tabel dan pola dua dimensi.</p>
+
+<figure class="grafik" id="gb-nested">
+<svg viewBox="0 0 680 250">
+  <text class="s b mid" x="102" y="26">Kolom 1</text>
+  <text class="s b mid" x="197" y="26">Kolom 2</text>
+  <text class="s b mid" x="292" y="26">Kolom 3</text>
+  <text class="s b mid" x="387" y="26">Kolom 4</text>
+  <text class="s b" x="4" y="65">Baris 1</text>
+  <rect class="ok" x="60" y="40" width="85" height="40" rx="6"/>
+  <text class="mono mid" x="102" y="65">(1,1)</text>
+  <text class="xs muted" x="65" y="51">1</text>
+  <path class="arrow" d="M145 60 H155"/>
+  <rect class="box" x="155" y="40" width="85" height="40" rx="6"/>
+  <text class="mono mid" x="197" y="65">(1,2)</text>
+  <text class="xs muted" x="160" y="51">2</text>
+  <path class="arrow" d="M240 60 H250"/>
+  <rect class="box" x="250" y="40" width="85" height="40" rx="6"/>
+  <text class="mono mid" x="292" y="65">(1,3)</text>
+  <text class="xs muted" x="255" y="51">3</text>
+  <path class="arrow" d="M335 60 H345"/>
+  <rect class="box" x="345" y="40" width="85" height="40" rx="6"/>
+  <text class="mono mid" x="387" y="65">(1,4)</text>
+  <text class="xs muted" x="350" y="51">4</text>
+  <path class="dash" d="M430 60 H440"/>
+  <text class="xs muted" x="443" y="63">WriteLn</text>
+  <text class="s b" x="4" y="127">Baris 2</text>
+  <rect class="ok" x="60" y="102" width="85" height="40" rx="6"/>
+  <text class="mono mid" x="102" y="127">(2,1)</text>
+  <text class="xs muted" x="65" y="113">5</text>
+  <path class="arrow" d="M145 122 H155"/>
+  <rect class="box" x="155" y="102" width="85" height="40" rx="6"/>
+  <text class="mono mid" x="197" y="127">(2,2)</text>
+  <text class="xs muted" x="160" y="113">6</text>
+  <path class="arrow" d="M240 122 H250"/>
+  <rect class="box" x="250" y="102" width="85" height="40" rx="6"/>
+  <text class="mono mid" x="292" y="127">(2,3)</text>
+  <text class="xs muted" x="255" y="113">7</text>
+  <path class="arrow" d="M335 122 H345"/>
+  <rect class="box" x="345" y="102" width="85" height="40" rx="6"/>
+  <text class="mono mid" x="387" y="127">(2,4)</text>
+  <text class="xs muted" x="350" y="113">8</text>
+  <path class="dash" d="M430 122 H440"/>
+  <text class="xs muted" x="443" y="125">WriteLn</text>
+  <text class="s b" x="4" y="189">Baris 3</text>
+  <rect class="ok" x="60" y="164" width="85" height="40" rx="6"/>
+  <text class="mono mid" x="102" y="189">(3,1)</text>
+  <text class="xs muted" x="65" y="175">9</text>
+  <path class="arrow" d="M145 184 H155"/>
+  <rect class="box" x="155" y="164" width="85" height="40" rx="6"/>
+  <text class="mono mid" x="197" y="189">(3,2)</text>
+  <text class="xs muted" x="160" y="175">10</text>
+  <path class="arrow" d="M240 184 H250"/>
+  <rect class="box" x="250" y="164" width="85" height="40" rx="6"/>
+  <text class="mono mid" x="292" y="189">(3,3)</text>
+  <text class="xs muted" x="255" y="175">11</text>
+  <path class="arrow" d="M335 184 H345"/>
+  <rect class="box" x="345" y="164" width="85" height="40" rx="6"/>
+  <text class="mono mid" x="387" y="189">(3,4)</text>
+  <text class="xs muted" x="350" y="175">12</text>
+  <path class="dash" d="M430 184 H440"/>
+  <text class="xs muted" x="443" y="187">WriteLn</text>
+  <rect class="navy" x="490" y="10" width="180" height="104" rx="8"/>
+  <rect x="496" y="24" width="5" height="16" style="fill:#3b7be0"/>
+  <rect x="496" y="48" width="5" height="16" style="fill:#d99a00"/>
+  <rect x="496" y="72" width="5" height="16" style="fill:#1a9e58"/>
+  <rect x="496" y="92" width="5" height="14" style="fill:var(--c)"/>
+  <text class="mono code-fg" x="508" y="36">for Baris := 1 to 3 do</text>
+  <text class="mono code-fg" x="508" y="60">  for Kolom := 1 to 4 do</text>
+  <text class="mono code-fg" x="508" y="84">    Write(Baris, Kolom);</text>
+  <text class="mono code-fg" x="508" y="104">  WriteLn;</text>
+  <text class="s b" x="490" y="140">Angka kecil di sudut = urutan dijalankan.</text>
+  <text class="s" x="490" y="158">Baris berganti hanya setelah keempat</text>
+  <text class="s" x="490" y="174">kolomnya selesai. Kolom berputar paling</text>
+  <text class="s" x="490" y="190">cepat, Baris paling lambat.</text>
+  <text class="s b" x="490" y="214">Badan terdalam: 3 x 4 = 12 kali.</text>
+</svg>
+<figcaption>Perulangan bersarang 3 baris x 4 kolom: perulangan dalam (<code>Kolom</code>) selesai penuh untuk setiap putaran <code>Baris</code>.</figcaption>
+</figure>
+
+<p>Program 7.5 mencetak tabel perkalian 1 sampai 9 dan menampilkan koordinat pada perulangan 3 x 4 persis seperti gambar di
+atas.</p>
+
+<x-listing src="bab07_05_perulangan_bersarang.pas"></x-listing>
+
+<x-run src="bab07_05_perulangan_bersarang.pas" caption="Program 7.5: tabel perkalian 1 sampai 9 dan koordinat 3 x 4"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>14–17</td><td>Judul kolom. <code>Kolom:4</code> memberi lebar 4 karakter untuk setiap angka, dan <code>WriteLn</code> di baris 17 menutup baris judul.</td></tr>
+    <tr><td>20–26</td><td>Perulangan luar memilih <code>Baris</code> dari 1 sampai 9. Badannya memakai <code>begin..end</code> karena terdiri dari tiga bagian: judul baris, perulangan dalam, dan <code>WriteLn</code>.</td></tr>
+    <tr><td>22</td><td>Menulis nomor baris di awal setiap baris tabel, diikuti garis <code>|</code>.</td></tr>
+    <tr><td>23–24</td><td>Perulangan dalam: untuk tiap <code>Kolom</code>, tulis hasil kali <code>Baris * Kolom</code> selebar 4 karakter. Pada tahap ini belum ada pindah baris.</td></tr>
+    <tr><td>25</td><td><code>WriteLn</code> berada di <b>perulangan luar</b>, setelah perulangan dalam selesai: kursor pindah baris sekali per 9 kolom. Bila baris ini keliru diletakkan di dalam perulangan dalam, setiap angka akan berada di barisnya sendiri.</td></tr>
+    <tr><td>30–35</td><td>Pasangan koordinat (Baris, Kolom): 3 baris, masing-masing 4 koordinat. Perhatikan, <code>Kolom</code> berubah paling cepat, sedangkan <code>Baris</code> baru berubah setelah satu baris penuh.</td></tr>
+  </tbody>
+</table>
+
+<p>Tabel jejak berikut menunjukkan urutan pekerjaan Program 7.5 pada perulangan koordinat (baris 30–35), yaitu urutan yang
+sama dengan nomor kecil di <x-ref to="gb-nested"></x-ref>.</p>
+
+<table class="data compact" id="tb-jejak-nested">
+  <caption>Urutan nilai <code>Baris</code> dan <code>Kolom</code> pada perulangan bersarang 3 x 4</caption>
+  <thead><tr><th>Putaran luar</th><th><code>Baris</code></th><th><code>Kolom</code> yang dilalui</th><th>Keluaran baris itu</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>1</td><td>1, 2, 3, 4</td><td><code>(1,1) (1,2) (1,3) (1,4)</code></td></tr>
+    <tr><td>2</td><td>2</td><td>1, 2, 3, 4</td><td><code>(2,1) (2,2) (2,3) (2,4)</code></td></tr>
+    <tr><td>3</td><td>3</td><td>1, 2, 3, 4</td><td><code>(3,1) (3,2) (3,3) (3,4)</code></td></tr>
+  </tbody>
+</table>
+
+<div class="tip"><p>Gunakan nama pencacah yang bermakna (<code>Baris</code>, <code>Kolom</code>) pada perulangan bersarang,
+bukan <code>I</code> dan <code>J</code> semata. Dua pencacah <b>harus</b> berbeda variabel; bila keduanya memakai
+variabel yang sama, perulangan dalam akan merusak hitungan perulangan luar.</p></div>
+
+<h2>Menu yang Berulang</h2>
+
+<p>Program interaktif yang Anda pakai sehari-hari tidak langsung selesai setelah satu pekerjaan: ia kembali menawarkan
+pilihan sampai Anda memilih keluar. Pola ini mudah dibuat dengan menggabungkan dua hal yang sudah Anda kuasai:
+<code>repeat..until</code> untuk mengulang dan <code>case..of</code> (Bab 6) untuk memilih pekerjaan. Menu harus tampil
+setidaknya sekali, jadi <code>repeat</code> adalah pilihan yang pas, dan syarat berhenti adalah "pengguna memilih 0".</p>
+
+<figure class="grafik" id="gb-menu">
+<svg viewBox="0 0 680 262">
+  <rect class="term" x="20" y="10" width="110" height="30" rx="15"/>
+  <text class="white mid" x="75" y="29">repeat</text>
+  <path class="arrow" d="M130 25 H160"/>
+  <rect class="io" x="160" y="8" width="140" height="34" rx="6"/>
+  <text class="mid" x="230" y="29">Tampilkan menu</text>
+  <path class="arrow" d="M300 25 H330"/>
+  <rect class="io" x="330" y="8" width="130" height="34" rx="6"/>
+  <text class="mid" x="395" y="29">Baca Pilihan</text>
+  <path class="arrow" d="M395 42 V66"/>
+  <rect class="box" x="300" y="68" width="190" height="34" rx="6"/>
+  <text class="mid" x="395" y="89">case Pilihan of</text>
+  <path class="arrow" d="M300 85 H255"/>
+  <rect class="ok" x="60" y="68" width="195" height="34" rx="6"/>
+  <text class="mid" x="157" y="89">1, 2, 3: kerjakan konversi</text>
+  <path class="arrow" d="M395 102 V132"/>
+  <rect class="no" x="305" y="134" width="180" height="34" rx="6"/>
+  <text class="mid" x="395" y="155">0 / lainnya: pesan</text>
+  <path class="line" d="M157 102 V118 H395"/>
+  <polygon class="dec" points="395,196 475,222 395,248 315,222"/>
+  <text class="mono mid" x="395" y="226">Pilihan = 0 ?</text>
+  <path class="arrow" d="M395 168 V196"/>
+  <path class="arrow" d="M315 222 H20 V25 H18"/>
+  <text class="s b" x="255" y="214" style="fill:#b42318">False: ulangi menu</text>
+  <path class="arrow" d="M475 222 H530"/>
+  <text class="s b" x="482" y="214" style="fill:#11743f">True</text>
+  <rect class="term" x="530" y="208" width="110" height="30" rx="15"/>
+  <text class="white mid" x="585" y="227">Selesai</text>
+  <text class="s" x="520" y="60">Satu putaran = satu kali</text>
+  <text class="s" x="520" y="76">tampil menu, pilih, dan</text>
+  <text class="s" x="520" y="92">kerjakan pilihan itu.</text>
+</svg>
+<figcaption>Struktur menu berulang: <code>repeat</code> membungkus tampilan menu dan <code>case</code>; <code>until Pilihan = 0</code> menjadi pintu keluar.</figcaption>
+</figure>
+
+<p>Program 7.6 membuat menu konversi satuan: Celsius ke Fahrenheit, Fahrenheit ke Celsius, dan kilometer ke mil. Dengan
+masukan bawaan, Anda akan melihat menu muncul berkali-kali sebelum akhirnya program pamit.</p>
+
+<x-listing src="bab07_06_menu_berulang.pas"></x-listing>
+
+<x-run src="bab07_06_menu_berulang.pas" caption="Program 7.6: tiga konversi, satu pilihan yang tidak ada, lalu keluar dengan 0"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>13–21</td><td>Awal <code>repeat</code>: baris kosong, judul, daftar pilihan, dan permintaan. <code>ReadLn(Pilihan)</code> memilih jalur untuk putaran ini.</td></tr>
+    <tr><td>23–24</td><td><code>case Pilihan of</code>; cabang 1 berupa <code>begin..end</code> yang membaca suhu Celsius dan menghitung <code>Celsius * 9 / 5 + 32</code>.</td></tr>
+    <tr><td>26</td><td><code>:0:1</code> memformat bilangan <code>Real</code> tanpa lebar tambahan dan dengan satu desimal.</td></tr>
+    <tr><td>28–35</td><td>Cabang 2 dan 3 memakai pola yang sama: baca nilai, hitung, tulis hasil. Cabang 3 memakai dua desimal.</td></tr>
+    <tr><td>36</td><td>Cabang 0 hanya menulis salam perpisahan. Perulangan tidak berhenti di sini, melainkan di baris 40.</td></tr>
+    <tr><td>37–38</td><td><code>else</code> pada <code>case</code> menampung semua pilihan lain, misalnya 9, dan menulis pesan galat. Menu lalu tampil lagi.</td></tr>
+    <tr><td>40</td><td><code>until Pilihan = 0</code>. Sesudah cabang 0 selesai, syarat ini <code>True</code> dan program keluar dari perulangan.</td></tr>
+  </tbody>
+</table>
+
+<div class="tp7"><p>Karena <code>Write</code> tidak bisa mencetak bilangan <code>Real</code> tanpa format yang jelas, setiap
+<code>Real</code> pada program ini diberi <code>:lebar:desimal</code>. Tanpa format, Turbo Pascal 7 menampilkan notasi
+ilmiah yang sulit dibaca (misalnya <code>2.1200000000E+02</code>).</p></div>
+
+<h2>Melacak Perulangan dengan Debugger</h2>
+
+<p>Tabel jejak yang Anda buat dengan tangan, bisa dikerjakan otomatis oleh debugger Odin. Dengan debugger Anda menghentikan
+program di tengah perulangan, melihat nilai variabel pada saat itu, dan melangkah satu baris demi satu baris. Ini cara
+paling andal untuk memahami perulangan yang hasilnya tidak sesuai dugaan. Debugger bekerja dengan backend Odin (lihat
+<span class="menu">Options ▸ Compiler...</span>).</p>
+
+<ol class="langkah">
+  <li><b>Pasang breakpoint.</b> Pindahkan kursor ke baris 23 pada Program 7.1, yaitu <code>Jumlah := Jumlah + I</code>,
+  lalu pilih <span class="menu">Debug ▸ Toggle breakpoint</span> atau tekan <kbd>Ctrl</kbd>+<kbd>F8</kbd>. Titik merah muncul di
+  gutter (lajur di kiri editor).</li>
+  <li><b>Tambahkan watch.</b> Pilih <span class="menu">Debug ▸ Add watch...</span>, lalu ketik <code>I</code>; ulangi dengan
+  <code>Jumlah</code>. Keduanya tampil di jendela Watches.</li>
+  <li><b>Mulai.</b> Pilih <span class="menu">Debug ▸ Start debugging</span>, lalu ketik masukan di User screen.
+  Program berhenti di breakpoint: baris yang akan dijalankan ditandai hijau.</li>
+  <li><b>Melangkah.</b> Tekan <kbd>F8</kbd> (<span class="menu">Step over</span>) untuk satu baris, atau
+  <kbd>Ctrl</kbd>+<kbd>F9</kbd> (<span class="menu">Continue</span>) untuk lanjut ke breakpoint berikutnya, yaitu putaran
+  berikutnya. Setiap kali program berhenti, nilai di Watches diperbarui.</li>
+</ol>
+
+<x-ide file="bab07_01_for_to.pas" top="16" rows="12" breakpoints="23" exec="23" cursor="23:5" watches="I: 3;Jumlah: 3" marks="gutter,editor,watches" id="gb-dbg" caption="Program 7.1 berhenti di breakpoint baris 23 pada putaran ketiga; Watches menunjukkan I = 3 dan Jumlah = 3"></x-ide>
+
+<table class="baris">
+  <thead><tr><th>Nomor</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td><span class="marknum">1</span></td><td>Gutter: titik merah adalah breakpoint pada baris 23.</td></tr>
+    <tr><td><span class="marknum">2</span></td><td>Jendela editor. Baris hijau di dalamnya menandai baris berikutnya yang akan dijalankan. Karena program berhenti sebelum baris itu dikerjakan, <code>Jumlah</code> belum memuat <code>I</code> yang sekarang.</td></tr>
+    <tr><td><span class="marknum">3</span></td><td>Jendela Watches: nilai <code>I</code> dan <code>Jumlah</code> pada saat berhenti.</td></tr>
+  </tbody>
+</table>
+
+<p>Pada gambar tersebut program berhenti pada putaran ketiga: dua putaran sebelumnya sudah menambahkan 1 dan 2, jadi
+<code>Jumlah</code> adalah 3, sedangkan <code>I</code> bernilai 3 dan belum ditambahkan. Tekan
+<span class="menu">Continue</span>, dan Watches akan berubah mengikuti tabel jejak yang dibuat sebelumnya.</p>
+
+<table class="data compact" id="tb-watch">
+  <caption>Isi jendela Watches setiap kali Program 7.1 berhenti di baris 23 (<code>N = 5</code>)</caption>
+  <thead><tr><th>Berhenti ke-</th><th><code>I</code></th><th><code>Jumlah</code></th><th>Sesudah <span class="menu">Continue</span></th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>1</td><td>0</td><td>menjadi 1</td></tr>
+    <tr><td>2</td><td>2</td><td>1</td><td>menjadi 3</td></tr>
+    <tr><td>3</td><td>3</td><td>3</td><td>menjadi 6</td></tr>
+    <tr><td>4</td><td>4</td><td>6</td><td>menjadi 10</td></tr>
+    <tr><td>5</td><td>5</td><td>10</td><td>menjadi 15, lalu perulangan selesai</td></tr>
+  </tbody>
+</table>
+
+<x-ide file="bab07_01_for_to.pas" top="14" rows="8" menu="Debug" pick="Add watch..." caption="Menu Debug: Add watch... menambahkan variabel yang ingin diamati"></x-ide>
+
+<div class="info"><p>Gunakan debugger saat perulangan Anda "tidak berhenti" atau berhenti di putaran yang salah. Pasang
+breakpoint di dalam badan, amati satu atau dua putaran, dan nilai yang tidak sesuai dugaan biasanya langsung terlihat.
+Untuk berhenti paksa, tekan <kbd>Ctrl</kbd>+<kbd>F2</kbd>.</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Lupa kata do</h3>
+
+<p>Setiap <code>for</code> dan <code>while</code> harus diakhiri <code>do</code> sebelum badannya. Kata ini mudah terlewat
+karena pada bahasa lain tidak ada padanannya.</p>
+
+<x-error name="lupa_do.pas" caption="Kata do tertinggal pada perulangan for">program LupaDo;
+var
+  I: Integer;
+begin
+  for I := 1 to 3
+    WriteLn(I);
+end.</x-error>
+
+<p>Kompiler melaporkan pada baris badan perulangan, karena di sanalah ia menemukan kata yang tidak diharapkan. Tambahkan
+<code>do</code> di akhir baris <code>for</code>.</p>
+
+<h3>Pencacah bertipe Real</h3>
+
+<x-error name="real.pas" caption="Pencacah for harus bertipe ordinal">program Pecahan;
+var
+  X: Real;
+begin
+  for X := 1 to 3 do
+    WriteLn(X:0:1);
+end.</x-error>
+
+<p>Bilangan <code>Real</code> tidak punya "bilangan berikutnya" yang pasti, jadi tidak bisa menjadi pencacah. Pakai pencacah
+<code>Integer</code> dan hitung nilai <code>Real</code> dari pencacah itu, misalnya <code>X := I / 2</code>.</p>
+
+<h3>Titik koma tepat sesudah do</h3>
+
+<p>Seperti titik koma sesudah <code>then</code> (Bab 6), titik koma sesudah <code>do</code> membuat badan perulangan menjadi
+<b>pernyataan kosong</b>. Kompiler tidak mengeluh, tetapi perintah di bawahnya menjadi di luar perulangan.</p>
+
+<x-error name="titik_koma.pas" run caption="Baris Halo hanya tampil sekali, bukan tiga kali, karena ada titik koma sesudah do">program TitikKoma;
+var
+  I: Integer;
+begin
+  for I := 1 to 3 do;
+    WriteLn('Halo');
+end.</x-error>
+
+<p>Perulangan tetap berjalan tiga kali, tetapi yang diulang adalah pernyataan kosong. Setelah itu, <code>WriteLn</code>
+dijalankan sekali sebagai pernyataan biasa. Hapus titik koma setelah <code>do</code>.</p>
+
+<h3>Perulangan yang tidak pernah berhenti</h3>
+
+<p>Kesalahan paling klasik pada <code>while</code> adalah lupa menulis "perubahan". Perhatikan potongan ini:</p>
+
+<x-code>Sisa := Angka;
+while Sisa > 0 do
+  JumlahDigit := JumlahDigit + Sisa mod 10;   { Sisa tidak pernah berubah! }
+  Sisa := Sisa div 10;                         { di luar while, baris ini terlambat }</x-code>
+
+<p>Tanpa <code>begin..end</code>, badan <code>while</code> hanya baris pertama. <code>Sisa</code> tidak pernah berubah di dalam
+perulangan, sehingga syarat <code>Sisa &gt; 0</code> selalu <code>True</code> dan program terus menjumlahkan tanpa henti.
+Tanda-tandanya: User screen tidak bereaksi dan kursor tidak kembali. Tekan <kbd>Ctrl</kbd>+<kbd>F2</kbd> untuk
+menghentikan program, lalu periksa dua hal: apakah badannya dibungkus <code>begin..end</code>, dan apakah ada perintah yang
+benar-benar membawa syarat menuju <code>False</code>.</p>
+
+<h3>Satu putaran terlalu banyak atau terlalu sedikit</h3>
+
+<p>Kesalahan <i>off-by-one</i> terjadi ketika batas perulangan meleset satu angka, misalnya memakai <code>&lt;</code>
+padahal seharusnya <code>&lt;=</code>, atau <code>for I := 0 to N</code> padahal seharusnya <code>1 to N</code>. Cara
+memeriksanya: ujilah dengan nilai terkecil (misalnya <code>N = 1</code> atau <code>N = 0</code>) dan hitung dengan tangan
+berapa kali badan seharusnya berjalan.</p>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>Perulangan mengulang sekelompok perintah. Setiap perulangan punya nilai awal, syarat, badan, dan perubahan yang
+  menuju berhentinya perulangan.</li>
+  <li><code>for..to</code> menghitung naik dan <code>for..downto</code> menghitung turun, satu angka tiap putaran. Pencacah
+  harus bertipe ordinal (<code>Integer</code>, <code>Char</code>, dan sejenisnya), tidak boleh diubah di dalam badan, dan
+  badan tidak berjalan bila nilai awal sudah melewati nilai akhir.</li>
+  <li><code>while..do</code> memeriksa syarat sebelum badan dan berlanjut selama syarat <code>True</code>; badannya bisa nol
+  kali. Programmer wajib memastikan ada perintah yang membuat syarat akhirnya <code>False</code>.</li>
+  <li><code>repeat..until</code> menjalankan badan dulu, memeriksa syarat sesudahnya, dan berhenti saat syarat
+  <code>True</code>. Badannya minimal sekali dan tidak memerlukan <code>begin..end</code>.</li>
+  <li>Perulangan bersarang menjalankan perulangan dalam sampai habis untuk setiap putaran luar; jumlah putaran terdalam
+  adalah hasil kali jumlah putaran masing-masing tingkat.</li>
+  <li>Pola baku: akumulator (<code>Jumlah := Jumlah + I</code>), nilai sentinel dengan <i>priming read</i>, validasi dengan
+  <code>repeat</code>, dan menu berulang dengan <code>repeat</code> + <code>case</code>.</li>
+  <li>Tabel jejak dan debugger (breakpoint, baris eksekusi, Watches) memperlihatkan nilai variabel pada tiap putaran dan
+  menjadi cara terbaik untuk menemukan kesalahan perulangan.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span>Tulis program yang membaca <code>N</code>, lalu mencetak <code>N</code> baris
+  berisi tulisan "Belajar Pascal itu menyenangkan". Gunakan <code>for..to</code>.</li>
+  <li><span class="lv dasar">Dasar</span>Ubah Program 7.1 agar menjumlahkan hanya bilangan genap dari 1 sampai
+  <code>N</code>. Cobalah dengan dua cara: memakai <code>if I mod 2 = 0</code> dan memakai <code>I * 2</code> pada perulangan
+  yang berjalan setengah <code>N</code> kali.</li>
+  <li><span class="lv dasar">Dasar</span>Buat tabel jejak, dengan tangan, untuk potongan
+  <code>S := 1; for I := 1 to 4 do S := S * I;</code>. Berapa nilai akhir <code>S</code>? Bandingkan hasilnya dengan
+  jalannya program di debugger.</li>
+  <li><span class="lv menengah">Menengah</span>Tulis program yang membaca bilangan terus-menerus sampai 0, lalu menampilkan
+  banyak bilangan, jumlah, rata-rata (dua desimal), serta nilai terbesar. Tangani kasus ketika pengguna langsung mengetik 0.</li>
+  <li><span class="lv menengah">Menengah</span>Tulis ulang bagian validasi Program 7.4 dengan <code>while..do</code>. Syarat apa
+  yang harus Anda pakai, dan apa yang perlu Anda tambahkan sebelum perulangan?</li>
+  <li><span class="lv menengah">Menengah</span>Buat program yang mencetak papan "dadu" dua dadu: semua pasangan (D1, D2)
+  untuk D1 dan D2 dari 1 sampai 6, enam pasangan per baris, beserta jumlah mata di sebelah tiap pasangan. Berapa kali
+  badan terdalam dijalankan?</li>
+  <li><span class="lv tantangan">Tantangan</span>Tambahkan satu pilihan ke Program 7.6: "4. Kilogram ke pon" (1 kg = 2,20462
+  pon). Setelah itu ubah program agar menghitung berapa kali konversi berhasil dilakukan dan menampilkannya saat pengguna
+  keluar.</li>
+</ol>
+</div>

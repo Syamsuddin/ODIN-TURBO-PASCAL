@@ -1,0 +1,15 @@
+(program bab05_05_prioritas_operator
+  (var (X) Integer)
+  (begin
+    (do (call WriteLn '2 + 3 * 4       = ' (+ 2 (* 3 4))))
+    (do (call WriteLn '(2 + 3) * 4     = ' (* (+ 2 3) 4)))
+    (do (call WriteLn '20 - 6 - 4      = ' (- (- 20 6) 4)))
+    (do (call WriteLn '20 div 4 * 2    = ' (* (div 20 4) 2)))
+    (do (call WriteLn '20 div (4 * 2)  = ' (div 20 (* 4 2))))
+    (do (call WriteLn '-2 * 3 + 10     = ' (+ (* (neg 2) 3) 10)))
+    (do (call WriteLn '10 / 4 * 2      = ' (* (/ 10 4) 2):0:2))
+    (do WriteLn)
+    (:= X 5)
+    (do (call WriteLn '(X > 0) and (X < 10)  = ' (and (> X 0) (< X 10))))
+    (do (call WriteLn 'not (X = 5)           = ' (not (= X 5))))
+    (empty)))

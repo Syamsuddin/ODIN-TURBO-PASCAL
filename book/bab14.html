@@ -1,0 +1,415 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Mendefinisikan tipe enumerasi dan memakainya pada <code>for</code>, <code>case</code>, dan perbandingan.</li>
+  <li>Memakai <code>Ord</code>, <code>Succ</code>, <code>Pred</code>, <code>Low</code>, dan <code>High</code> pada tipe ordinal.</li>
+  <li>Mendefinisikan tipe subrange, dan memeriksa masukan agar tidak melampaui rentangnya.</li>
+  <li>Membentuk himpunan (<code>set</code>) dan memakai operator <code>+</code>, <code>*</code>, <code>-</code>, <code>in</code>, <code>=</code>, <code>&lt;=</code>.</li>
+  <li>Memakai <code>Include</code> dan <code>Exclude</code>, serta <code>set of Char</code> untuk memeriksa jenis karakter.</li>
+  <li>Menerapkan aturan Turbo Pascal 7: <code>Write</code> tidak dapat mencetak nilai enumerasi.</li>
+</ul>
+
+<p class="lead">Hari dalam seminggu, bulan, jenis huruf, nilai ujian: semua ini sebenarnya dapat ditulis sebagai bilangan bulat,
+tetapi program menjadi sulit dibaca dan mudah salah. Pascal menyediakan tiga alat untuk membuat tipe data yang
+sesuai dengan masalahnya: <b>enumerasi</b> (daftar nama buatan sendiri), <b>subrange</b> (potongan rentang), dan
+<b>set</b> (himpunan). Ketiganya berbagi satu kesamaan: semuanya berdasar pada <b>tipe ordinal</b>.</p>
+
+<h2>Tipe Ordinal: Nilai yang Berurutan</h2>
+
+<p>Tipe <b>ordinal</b> adalah tipe yang nilainya dapat diurutkan dan dihitung satu per satu, seperti anak tangga: setiap
+nilai (kecuali yang pertama) punya nilai sebelumnya, dan setiap nilai (kecuali yang terakhir) punya nilai sesudahnya.
+<code>Integer</code>, <code>Char</code>, <code>Boolean</code>, enumerasi, dan subrange semuanya ordinal. <code>Real</code>
+bukan ordinal, sebab di antara dua bilangan real selalu ada bilangan real lain.</p>
+
+<table class="data">
+<caption>Fungsi bawaan untuk tipe ordinal</caption>
+<thead><tr><th>Fungsi</th><th>Arti</th><th>Contoh</th></tr></thead>
+<tbody>
+<tr><td><code>Ord(x)</code></td><td>nomor urut nilai <code>x</code> (mulai dari 0 untuk enumerasi)</td><td><code>Ord(Rabu)</code> bernilai 2</td></tr>
+<tr><td><code>Succ(x)</code></td><td>nilai sesudah <code>x</code></td><td><code>Succ(Rabu)</code> bernilai <code>Kamis</code></td></tr>
+<tr><td><code>Pred(x)</code></td><td>nilai sebelum <code>x</code></td><td><code>Pred(Rabu)</code> bernilai <code>Selasa</code></td></tr>
+<tr><td><code>Low(T)</code></td><td>nilai terkecil tipe <code>T</code></td><td><code>Low(THari)</code> bernilai <code>Senin</code></td></tr>
+<tr><td><code>High(T)</code></td><td>nilai terbesar tipe <code>T</code></td><td><code>High(THari)</code> bernilai <code>Minggu</code></td></tr>
+</tbody>
+</table>
+
+<h2>Tipe Enumerasi</h2>
+
+<p>Dengan enumerasi, Anda <b>mendaftar sendiri</b> semua nilai yang mungkin, lengkap dengan nama. Daripada menulis
+&ldquo;hari ke-3&rdquo; sebagai angka 3, Anda menulis <code>Rabu</code>. Program menjadi dokumentasi dirinya sendiri, dan
+kompiler menolak nilai di luar daftar.</p>
+
+<div class="sintaks"><pre><b>type</b>
+  <i>NamaTipe</i> = (<i>Nilai1</i>, <i>Nilai2</i>, <i>Nilai3</i>);
+
+<b>var</b>
+  <i>V</i>: <i>NamaTipe</i>;
+
+<i>V</i> := <i>Nilai2</i>;</pre></div>
+
+<p>Kompiler memberi nomor urut 0, 1, 2, ... sesuai urutan penulisan. Nama-nama itu adalah <b>konstanta</b> yang
+tidak berubah, bukan string, sehingga ditulis tanpa tanda kutip.</p>
+
+<figure class="grafik" id="gb-enum"><svg viewBox="0 0 680 232">
+<text class="h" x="14" y="20">THari = (Senin, Selasa, Rabu, Kamis, Jumat, Sabtu, Minggu)</text>
+<rect class="box" x="14" y="60" width="90" height="46" rx="6"/>
+<text class="b mid" x="59" y="80">Senin</text>
+<text class="mono muted mid" x="59" y="98">Ord = 0</text>
+<path class="arrow" d="M104 83 H108"/>
+<rect class="box" x="108" y="60" width="90" height="46" rx="6"/>
+<text class="b mid" x="153" y="80">Selasa</text>
+<text class="mono muted mid" x="153" y="98">Ord = 1</text>
+<path class="arrow" d="M198 83 H202"/>
+<rect class="ok" x="202" y="60" width="90" height="46" rx="6"/>
+<text class="b mid" x="247" y="80">Rabu</text>
+<text class="mono muted mid" x="247" y="98">Ord = 2</text>
+<path class="arrow" d="M292 83 H296"/>
+<rect class="box" x="296" y="60" width="90" height="46" rx="6"/>
+<text class="b mid" x="341" y="80">Kamis</text>
+<text class="mono muted mid" x="341" y="98">Ord = 3</text>
+<path class="arrow" d="M386 83 H390"/>
+<rect class="box" x="390" y="60" width="90" height="46" rx="6"/>
+<text class="b mid" x="435" y="80">Jumat</text>
+<text class="mono muted mid" x="435" y="98">Ord = 4</text>
+<path class="arrow" d="M480 83 H484"/>
+<rect class="box" x="484" y="60" width="90" height="46" rx="6"/>
+<text class="b mid" x="529" y="80">Sabtu</text>
+<text class="mono muted mid" x="529" y="98">Ord = 5</text>
+<path class="arrow" d="M574 83 H578"/>
+<rect class="box" x="578" y="60" width="90" height="46" rx="6"/>
+<text class="b mid" x="623" y="80">Minggu</text>
+<text class="mono muted mid" x="623" y="98">Ord = 6</text>
+<path class="arrow" d="M255 140 V110"/>
+<text class="mono b c" x="262" y="136">Pred(Rabu) = Selasa</text>
+<path class="arrow" d="M395 140 V110"/>
+<text class="mono b c" x="402" y="136">Succ(Rabu) = Kamis</text>
+<text class="b" x="14" y="170">Low(THari) = Senin</text>
+<text class="b end" x="668" y="170">High(THari) = Minggu</text>
+<text class="s muted" x="14" y="200">Nama hanya ada di kode program. Di memori, nilai enumerasi disimpan sebagai nomor urut 0, 1, 2, ...</text>
+<text class="s muted" x="14" y="218">Pred(Senin) dan Succ(Minggu) tidak ada: keduanya di luar jangkauan tipe.</text>
+</svg><figcaption>Enumerasi sebagai deretan bernomor: <code>Ord</code> memberi nomor urut, <code>Succ</code> dan <code>Pred</code> bergeser satu langkah.</figcaption></figure>
+
+<div class="tp7">
+<p><b>Aturan Turbo Pascal 7.</b> <code>Write</code> dan <code>WriteLn</code> <b>tidak dapat mencetak nilai enumerasi</b>.
+<code>WriteLn(Hari)</code> ditolak kompiler. Dua cara umum: cetak nomor urut dengan <code>Ord(Hari)</code>, atau simpan
+nama dalam <b>array berindeks enumerasi</b> lalu cetak <code>NamaHari[Hari]</code>. Cara kedua dipakai di program
+berikut. Demikian pula <code>ReadLn</code> tidak dapat membaca enumerasi.</p>
+</div>
+
+<h3>Program pertama: nama hari</h3>
+
+<p>Buka <code>bab14_01_tipe_enumerasi.pas</code>. Program ini mendefinisikan <code>THari</code>, memakainya sebagai
+pencacah <code>for</code> dan pemilih <code>case</code>, lalu mencoba <code>Succ</code>, <code>Pred</code>, dan
+<code>Ord</code>.</p>
+
+<x-listing src="bab14_01_tipe_enumerasi.pas"></x-listing>
+
+<x-run src="bab14_01_tipe_enumerasi.pas"></x-run>
+
+<table class="baris">
+<thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+<tbody>
+<tr><td>9–10</td><td>Mendefinisikan <code>THari</code> dengan tujuh nilai. <code>Senin</code> bernomor 0 dan <code>Minggu</code> bernomor 6.</td></tr>
+<tr><td>12–16</td><td>Konstanta bertipe array dengan indeks <code>THari</code>: elemen pertama untuk <code>Senin</code>, dan seterusnya. Inilah cara mencetak nama karena <code>Write</code> tidak bisa mencetak enumerasi. Ada tujuh nilai di daftar, sesuai tujuh elemen indeks.</td></tr>
+<tr><td>19</td><td><code>Hari</code> adalah variabel bertipe <code>THari</code>; hanya tujuh nilai itu yang boleh ia simpan.</td></tr>
+<tr><td>22</td><td><code>for Hari := Senin to Minggu</code>: tipe ordinal boleh menjadi pencacah. Hari bergerak dari <code>Senin</code> sampai <code>Minggu</code>.</td></tr>
+<tr><td>24</td><td>Mencetak nomor urut dengan <code>Ord(Hari)</code> dan namanya dengan <code>NamaHari[Hari]:6</code> (lebar 6 agar sejajar).</td></tr>
+<tr><td>25–29</td><td><code>case Hari of</code> memilih keterangan. <code>Senin..Kamis</code> adalah rentang nilai enumerasi, <code>Sabtu, Minggu</code> adalah daftar nilai.</td></tr>
+<tr><td>33</td><td><code>Hari := Rabu</code> menetapkan satu nilai.</td></tr>
+<tr><td>35–36</td><td><code>Succ(Hari)</code> menghasilkan <code>Kamis</code>, <code>Pred(Hari)</code> menghasilkan <code>Selasa</code>. Hasilnya dipakai sebagai indeks array nama.</td></tr>
+<tr><td>37</td><td><code>Ord(Rabu)</code> bernilai 2 karena penomoran mulai dari 0.</td></tr>
+<tr><td>38</td><td>Nilai enumerasi dapat dibandingkan menurut urutan daftar: <code>Jumat &gt; Rabu</code> bernilai benar. Hasil Boolean ini dicetak langsung, sebab Boolean boleh ditulis.</td></tr>
+<tr><td>39</td><td>Komentar peringatan: <code>Succ(Minggu)</code> tidak mempunyai nilai. Dengan pemeriksaan jangkauan aktif, program berhenti dengan galat.</td></tr>
+</tbody>
+</table>
+
+<div class="coba">
+<p>Tambahkan nilai baru di tengah daftar, misalnya <code>Rabu, Libur, Kamis</code> tanpa mengubah
+array <code>NamaHari</code>. Apa yang dikatakan kompiler? Apa hubungannya dengan jumlah elemen array dan nomor urut?</p>
+</div>
+
+<h2>Tipe Subrange</h2>
+
+<p>Nilai ujian tidak mungkin negatif atau lebih dari 100, dan nomor bulan hanya 1 sampai 12. <b>Subrange</b> menyatakan batas
+itu di dalam tipenya: sebuah potongan rentang dari tipe ordinal lain yang disebut <b>tipe dasar</b> (<i>host type</i>).
+Variabelnya diperlakukan seperti tipe dasarnya, hanya saja hanya boleh berisi nilai di dalam rentang.</p>
+
+<div class="sintaks"><pre><b>type</b>
+  <i>NamaTipe</i> = <i>Batas bawah</i> .. <i>Batas atas</i>;
+  TNilai = 0..100;
+  TAwal  = 'A'..'Z';
+  THariKerja = Senin..Jumat;      { dari enumerasi }</pre></div>
+
+<figure class="grafik" id="gb-garis"><svg viewBox="0 0 680 290">
+<text class="h" x="14" y="20">TNilai = 0..100  (potongan dari Integer)</text>
+<path class="line" d="M30 70 H650"/>
+<text class="s" x="30" y="92">-32768</text><text class="s end" x="650" y="92">32767</text>
+<rect class="ok" x="320" y="58" width="30" height="24" rx="3"/>
+<path class="line" d="M320 52 V88 M350 52 V88"/>
+<text class="mono b mid" x="320" y="44">0</text><text class="mono b mid" x="350" y="44">100</text>
+<text class="s c" x="360" y="76">TNilai</text>
+<circle cx="335" cy="70" r="0"/>
+<path class="arrow" d="M120 140 V76"/>
+<text class="mono b mid" x="120" y="158" style="fill:#b42318">-5</text>
+<text class="xs muted mid" x="120" y="172">di luar</text>
+<path class="arrow" d="M335 140 V82"/>
+<text class="mono b mid" x="335" y="158" style="fill:#11743f">85</text>
+<text class="xs muted mid" x="335" y="172">di dalam</text>
+<path class="arrow" d="M560 140 V76"/>
+<text class="mono b mid" x="560" y="158" style="fill:#b42318">150</text>
+<text class="xs muted mid" x="560" y="172">di luar</text>
+<text class="h" x="14" y="206">TBulan = 1..12</text><rect class="ok" x="14" y="216" width="46" height="26" rx="3"/><text class="mono mid" x="37" y="234">1</text><rect class="ok" x="64" y="216" width="46" height="26" rx="3"/><text class="mono mid" x="87" y="234">2</text><rect class="ok" x="114" y="216" width="46" height="26" rx="3"/><text class="mono mid" x="137" y="234">3</text><rect class="ok" x="164" y="216" width="46" height="26" rx="3"/><text class="mono mid" x="187" y="234">4</text><rect class="ok" x="214" y="216" width="46" height="26" rx="3"/><text class="mono mid" x="237" y="234">5</text><rect class="ok" x="264" y="216" width="46" height="26" rx="3"/><text class="mono mid" x="287" y="234">6</text><rect class="ok" x="314" y="216" width="46" height="26" rx="3"/><text class="mono mid" x="337" y="234">7</text><rect class="ok" x="364" y="216" width="46" height="26" rx="3"/><text class="mono mid" x="387" y="234">8</text><rect class="ok" x="414" y="216" width="46" height="26" rx="3"/><text class="mono mid" x="437" y="234">9</text><rect class="ok" x="464" y="216" width="46" height="26" rx="3"/><text class="mono mid" x="487" y="234">10</text><rect class="ok" x="514" y="216" width="46" height="26" rx="3"/><text class="mono mid" x="537" y="234">11</text><rect class="ok" x="564" y="216" width="46" height="26" rx="3"/><text class="mono mid" x="587" y="234">12</text><text class="s muted" x="14" y="264">Variabel subrange hanya boleh berisi nilai di dalam kotak hijau; tipe dasarnya (Integer) tetap menentukan operasi yang berlaku.</text>
+<text class="s muted" x="14" y="280">Skala garis atas tidak sebenarnya: rentang 0..100 hanyalah secuil dari seluruh Integer.</text>
+</svg><figcaption>Garis bilangan subrange: nilai 85 sah untuk <code>TNilai</code>, sedangkan -5 dan 150 tidak.</figcaption></figure>
+
+<p>Subrange punya dua manfaat. Pertama, <b>dokumentasi</b>: pembaca langsung tahu bahwa <code>TBulan</code> berarti 1
+sampai 12. Kedua, <b>pengaman</b>: dengan pemeriksaan jangkauan (<i>range checking</i>) aktif, memberi nilai di luar
+rentang menghentikan program dengan <i>runtime error</i> 201, daripada diam-diam menyimpan data yang salah. Subrange
+juga dapat menjadi indeks array, seperti <code>array[TBulan] of Integer</code>.</p>
+
+<div class="info">
+<p><b>Periksa dulu, baru simpan.</b> Pemeriksaan jangkauan adalah jaring pengaman, bukan cara menerima masukan pengguna.
+Masukan dari papan ketik harus diperiksa dengan <code>if</code> sebelum disimpan ke variabel subrange, agar pengguna
+mendapat pesan yang ramah, bukan program yang berhenti mendadak.</p>
+</div>
+
+<h3>Program kedua: bulan, nilai, dan inisial</h3>
+
+<p>Program <code>bab14_02_tipe_subrange.pas</code> membaca tiga masukan lalu menyimpannya ke variabel subrange
+hanya setelah lolos pemeriksaan. Masukan bawaan di bawah sengaja memuat nilai yang salah: 150 dan karakter &lsquo;5&rsquo;.</p>
+
+<x-listing src="bab14_02_tipe_subrange.pas"></x-listing>
+
+<x-run src="bab14_02_tipe_subrange.pas" caption="Bulan 2 sah; nilai 150 dan inisial &lsquo;5&rsquo; ditolak oleh pemeriksaan <code>if</code>"></x-run>
+
+<p>Sekarang masukan yang sah semuanya: bulan 12, nilai 85, dan huruf kecil &lsquo;b&rsquo; yang diubah oleh <code>UpCase</code>.</p>
+
+<x-run src="bab14_02_tipe_subrange.pas" input="12\n85\nb\n" caption="Semua masukan sah"></x-run>
+
+<table class="baris">
+<thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+<tbody>
+<tr><td>10–15</td><td>Lima tipe: <code>TNilai</code> (0..100) dan <code>TBulan</code> (1..12) dari <code>Integer</code>, <code>THurufBesar</code> ('A'..'Z') dari <code>Char</code>, enumerasi <code>THari</code>, dan <code>THariKerja</code> (<code>Senin..Jumat</code>) sebagai subrange dari enumerasi.</td></tr>
+<tr><td>17–19</td><td>Konstanta array dengan indeks <code>TBulan</code>: tepat 12 elemen, satu per bulan. Februari (elemen ke-2) berisi 28.</td></tr>
+<tr><td>21–26</td><td>Variabel subrange <code>Nilai</code>, <code>Bulan</code>, <code>Inisial</code>, serta <code>Masukan</code> (<code>Integer</code> biasa) dan <code>Huruf</code> (<code>Char</code> biasa) sebagai penampung sementara masukan mentah.</td></tr>
+<tr><td>29–38</td><td>Masukan dibaca ke <code>Integer</code> biasa dulu. Bila di antara 1 dan 12 (baris 31), barulah disalin ke <code>Bulan</code> (baris 33) dan dipakai sebagai indeks <code>JumlahHari[Bulan]</code>. Bila tidak, pesan galat ramah (baris 38).</td></tr>
+<tr><td>40–48</td><td>Batas diperiksa dengan <code>Low(TNilai)</code> dan <code>High(TNilai)</code>, bukan angka 0 dan 100 yang ditulis ulang. Bila batas tipe diubah, pemeriksaan ikut menyesuaikan.</td></tr>
+<tr><td>50–59</td><td><code>UpCase</code> mengubah huruf kecil menjadi besar (baris 52); setelah itu <code>Huruf</code> dibandingkan dengan 'A' dan 'Z'. Huruf yang lolos disalin ke <code>Inisial</code>.</td></tr>
+<tr><td>61–63</td><td><code>Low</code> dan <code>High</code> juga bekerja pada <code>THariKerja</code>. Selisih nomor urutnya ditambah 1 memberi banyaknya nilai dalam rentang, yaitu jumlah hari kerja.</td></tr>
+</tbody>
+</table>
+
+<h2>Tipe Set (Himpunan)</h2>
+
+<p>Himpunan adalah kumpulan nilai <b>tanpa urutan</b> dan <b>tanpa kembar</b>. Pikirkan daftar hari latihan seorang atlet:
+yang penting adalah hari mana saja yang termasuk, bukan urutan menuliskannya. Pascal mengungkapkan ini dengan
+<code>set of</code> disertai tipe dasar ordinal yang kecil.</p>
+
+<div class="sintaks"><pre><b>type</b>
+  <i>THimpunan</i> = <b>set of</b> <i>TipeDasar</i>;
+
+<b>var</b>
+  <i>H</i>: <i>THimpunan</i>;
+
+<i>H</i> := [<i>nilai1</i>, <i>nilai2</i>];      { himpunan berisi dua anggota }
+<i>H</i> := [];                     { himpunan kosong }
+<i>H</i> := [<i>awal</i>..<i>akhir</i>];       { rentang anggota }</pre></div>
+
+<p>Tipe dasar set harus ordinal dan berjumlah paling banyak 256 nilai (nomor urut 0 sampai 255). Karena itu
+<code>set of THari</code>, <code>set of Char</code>, dan <code>set of 0..100</code> sah, tetapi <code>set of Integer</code>
+tidak. Di memori, himpunan disimpan sebagai deretan bit, satu bit per kemungkinan anggota.</p>
+
+<figure class="grafik" id="gb-bit"><svg viewBox="0 0 680 262"><text class="s muted" x="14" y="16">Satu bit per anggota yang mungkin; 1 berarti hari itu termasuk dalam himpunan.</text><text class="s mid" x="276" y="40">Sen</text><text class="s mid" x="334" y="40">Sel</text><text class="s mid" x="392" y="40">Rab</text><text class="s mid" x="450" y="40">Kam</text><text class="s mid" x="508" y="40">Jum</text><text class="s mid" x="566" y="40">Sab</text><text class="s mid" x="624" y="40">Min</text><text class="b" x="14" y="72">Andi</text><rect class="ok" x="250" y="50" width="52" height="30" rx="4"/><text class="mono b mid" x="276" y="70">1</text><rect class="box-w" x="308" y="50" width="52" height="30" rx="4"/><text class="mono b mid" x="334" y="70">0</text><rect class="ok" x="366" y="50" width="52" height="30" rx="4"/><text class="mono b mid" x="392" y="70">1</text><rect class="box-w" x="424" y="50" width="52" height="30" rx="4"/><text class="mono b mid" x="450" y="70">0</text><rect class="ok" x="482" y="50" width="52" height="30" rx="4"/><text class="mono b mid" x="508" y="70">1</text><rect class="box-w" x="540" y="50" width="52" height="30" rx="4"/><text class="mono b mid" x="566" y="70">0</text><rect class="box-w" x="598" y="50" width="52" height="30" rx="4"/><text class="mono b mid" x="624" y="70">0</text><text class="b" x="14" y="112">Budi</text><rect class="box-w" x="250" y="90" width="52" height="30" rx="4"/><text class="mono b mid" x="276" y="110">0</text><rect class="box-w" x="308" y="90" width="52" height="30" rx="4"/><text class="mono b mid" x="334" y="110">0</text><rect class="ok" x="366" y="90" width="52" height="30" rx="4"/><text class="mono b mid" x="392" y="110">1</text><rect class="ok" x="424" y="90" width="52" height="30" rx="4"/><text class="mono b mid" x="450" y="110">1</text><rect class="ok" x="482" y="90" width="52" height="30" rx="4"/><text class="mono b mid" x="508" y="110">1</text><rect class="ok" x="540" y="90" width="52" height="30" rx="4"/><text class="mono b mid" x="566" y="110">1</text><rect class="box-w" x="598" y="90" width="52" height="30" rx="4"/><text class="mono b mid" x="624" y="110">0</text><text class="b" x="14" y="152">Andi + Budi (or)</text><rect class="ok" x="250" y="130" width="52" height="30" rx="4"/><text class="mono b mid" x="276" y="150">1</text><rect class="box-w" x="308" y="130" width="52" height="30" rx="4"/><text class="mono b mid" x="334" y="150">0</text><rect class="ok" x="366" y="130" width="52" height="30" rx="4"/><text class="mono b mid" x="392" y="150">1</text><rect class="ok" x="424" y="130" width="52" height="30" rx="4"/><text class="mono b mid" x="450" y="150">1</text><rect class="ok" x="482" y="130" width="52" height="30" rx="4"/><text class="mono b mid" x="508" y="150">1</text><rect class="ok" x="540" y="130" width="52" height="30" rx="4"/><text class="mono b mid" x="566" y="150">1</text><rect class="box-w" x="598" y="130" width="52" height="30" rx="4"/><text class="mono b mid" x="624" y="150">0</text><text class="b" x="14" y="192">Andi * Budi (and)</text><rect class="box-w" x="250" y="170" width="52" height="30" rx="4"/><text class="mono b mid" x="276" y="190">0</text><rect class="box-w" x="308" y="170" width="52" height="30" rx="4"/><text class="mono b mid" x="334" y="190">0</text><rect class="ok" x="366" y="170" width="52" height="30" rx="4"/><text class="mono b mid" x="392" y="190">1</text><rect class="box-w" x="424" y="170" width="52" height="30" rx="4"/><text class="mono b mid" x="450" y="190">0</text><rect class="ok" x="482" y="170" width="52" height="30" rx="4"/><text class="mono b mid" x="508" y="190">1</text><rect class="box-w" x="540" y="170" width="52" height="30" rx="4"/><text class="mono b mid" x="566" y="190">0</text><rect class="box-w" x="598" y="170" width="52" height="30" rx="4"/><text class="mono b mid" x="624" y="190">0</text><text class="b" x="14" y="232">Andi - Budi (and not)</text><rect class="ok" x="250" y="210" width="52" height="30" rx="4"/><text class="mono b mid" x="276" y="230">1</text><rect class="box-w" x="308" y="210" width="52" height="30" rx="4"/><text class="mono b mid" x="334" y="230">0</text><rect class="box-w" x="366" y="210" width="52" height="30" rx="4"/><text class="mono b mid" x="392" y="230">0</text><rect class="box-w" x="424" y="210" width="52" height="30" rx="4"/><text class="mono b mid" x="450" y="230">0</text><rect class="box-w" x="482" y="210" width="52" height="30" rx="4"/><text class="mono b mid" x="508" y="230">0</text><rect class="box-w" x="540" y="210" width="52" height="30" rx="4"/><text class="mono b mid" x="566" y="230">0</text><rect class="box-w" x="598" y="210" width="52" height="30" rx="4"/><text class="mono b mid" x="624" y="230">0</text></svg><figcaption>Himpunan sebagai deretan bit: gabungan sama dengan OR, irisan sama dengan AND, selisih sama dengan AND NOT per kolom.</figcaption></figure>
+
+<h3>Operator himpunan</h3>
+
+<table class="data">
+<caption>Operator pada himpunan</caption>
+<thead><tr><th>Operator</th><th>Nama</th><th>Hasil</th></tr></thead>
+<tbody>
+<tr><td><code>A + B</code></td><td>gabungan (<i>union</i>)</td><td>himpunan anggota A atau B</td></tr>
+<tr><td><code>A * B</code></td><td>irisan (<i>intersection</i>)</td><td>himpunan anggota A dan sekaligus B</td></tr>
+<tr><td><code>A - B</code></td><td>selisih (<i>difference</i>)</td><td>anggota A yang bukan anggota B</td></tr>
+<tr><td><code>x in A</code></td><td>keanggotaan</td><td><code>Boolean</code>: apakah x anggota A</td></tr>
+<tr><td><code>A = B</code>, <code>A &lt;&gt; B</code></td><td>sama, tidak sama</td><td><code>Boolean</code></td></tr>
+<tr><td><code>A &lt;= B</code>, <code>A &gt;= B</code></td><td>himpunan bagian, himpunan induk</td><td><code>Boolean</code></td></tr>
+</tbody>
+</table>
+
+<figure class="grafik" id="gb-venn"><svg viewBox="0 0 680 262"><defs><clipPath id="cpa0"><circle cx="80" cy="120" r="62"/></clipPath><clipPath id="cpa1"><circle cx="310" cy="120" r="62"/></clipPath><clipPath id="cpa2"><circle cx="540" cy="120" r="62"/></clipPath></defs><text class="h" x="4" y="20">Andi + Budi  (gabungan)</text><circle cx="80" cy="120" r="62" style="fill:var(--c);fill-opacity:.35"/><circle cx="150" cy="120" r="62" style="fill:var(--c);fill-opacity:.35"/><circle cx="80" cy="120" r="62" class="line" style="fill:none"/><circle cx="150" cy="120" r="62" class="line" style="fill:none"/><text class="b mid" x="50" y="62">Andi</text><text class="b mid" x="180" y="62">Budi</text><text class="s mid" x="52" y="124">Senin</text><text class="s mid" x="115" y="114">Rabu</text><text class="s mid" x="115" y="130">Jumat</text><text class="s mid" x="182" y="114">Kamis</text><text class="s mid" x="182" y="130">Sabtu</text><text class="mono b c" x="4" y="214">Senin Rabu Kamis Jumat Sabtu</text><text class="h" x="234" y="20">Andi * Budi  (irisan)</text><circle cx="380" cy="120" r="62" style="fill:var(--c);fill-opacity:.35" clip-path="url(#cpa1)"/><circle cx="310" cy="120" r="62" class="line" style="fill:none"/><circle cx="380" cy="120" r="62" class="line" style="fill:none"/><text class="b mid" x="280" y="62">Andi</text><text class="b mid" x="410" y="62">Budi</text><text class="s mid" x="282" y="124">Senin</text><text class="s mid" x="345" y="114">Rabu</text><text class="s mid" x="345" y="130">Jumat</text><text class="s mid" x="412" y="114">Kamis</text><text class="s mid" x="412" y="130">Sabtu</text><text class="mono b c" x="234" y="214">Rabu Jumat</text><text class="h" x="464" y="20">Andi - Budi  (selisih)</text><circle cx="540" cy="120" r="62" style="fill:var(--c);fill-opacity:.35"/><circle cx="610" cy="120" r="62" style="fill:#fff"/><circle cx="540" cy="120" r="62" class="line" style="fill:none"/><circle cx="610" cy="120" r="62" class="line" style="fill:none"/><text class="b mid" x="510" y="62">Andi</text><text class="b mid" x="640" y="62">Budi</text><text class="s mid" x="512" y="124">Senin</text><text class="s mid" x="575" y="114">Rabu</text><text class="s mid" x="575" y="130">Jumat</text><text class="s mid" x="642" y="114">Kamis</text><text class="s mid" x="642" y="130">Sabtu</text><text class="mono b c" x="464" y="214">Senin</text><text class="s muted" x="4" y="246">Bagian berwarna adalah hasil operasi. Teks di bawah diagram adalah isi himpunan hasil, seperti yang dicetak Program 14.3.</text></svg><figcaption>Diagram Venn untuk <code>Andi = [Senin, Rabu, Jumat]</code> dan <code>Budi = [Rabu, Kamis, Jumat, Sabtu]</code>.</figcaption></figure>
+
+<p>Selain operator, ada dua prosedur untuk mengubah satu anggota: <code>Include(H, x)</code> menambahkan <code>x</code>
+ke <code>H</code>, dan <code>Exclude(H, x)</code> membuangnya. Keduanya aman dipanggil berulang: menambah anggota yang
+sudah ada, atau membuang yang tidak ada, tidak menimbulkan galat.</p>
+
+<div class="awas">
+<p>Himpunan <b>tidak dapat dicetak</b> dengan <code>Write</code>, dan anggotanya tidak dapat diambil dengan indeks.
+Untuk menampilkannya, jalankan perulangan atas semua nilai tipe dasar dan periksa dengan <code>in</code>, persis
+seperti prosedur <code>Tampilkan</code> pada program berikut.</p>
+</div>
+
+<h3>Program ketiga: jadwal latihan</h3>
+
+<p>Buka <code>bab14_03_tipe_set.pas</code>. Andi berlatih pada Senin, Rabu, dan Jumat; Budi pada Rabu, Kamis, Jumat, dan
+Sabtu. Program menampilkan gabungan, irisan, dan selisih jadwal keduanya, lalu mengubah jadwal Andi.</p>
+
+<x-listing src="bab14_03_tipe_set.pas"></x-listing>
+
+<x-run src="bab14_03_tipe_set.pas"></x-run>
+
+<table class="baris">
+<thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+<tbody>
+<tr><td>10–12</td><td><code>TJadwal</code> adalah himpunan dengan anggota yang mungkin berupa nilai <code>THari</code>, tujuh bit.</td></tr>
+<tr><td>14–16</td><td>Array nama hari, seperti Program 14.1, untuk mencetak nama.</td></tr>
+<tr><td>18–29</td><td>Prosedur <code>Tampilkan</code> menerima judul dan satu <code>TJadwal</code> (set boleh menjadi parameter). Baris 23 membandingkan dengan <code>[]</code>, himpunan kosong, lalu perulangan baris 25–27 mencetak tiap hari yang <code>H in Jadwal</code> (baris 26).</td></tr>
+<tr><td>35–36</td><td>Mengisi dua himpunan dengan kurung siku. Urutan penulisan anggota tidak berpengaruh.</td></tr>
+<tr><td>38–39</td><td>Mencetak himpunan awal Andi dan Budi.</td></tr>
+<tr><td>40</td><td><code>Andi + Budi</code>: hari yang dipakai salah satunya.</td></tr>
+<tr><td>41</td><td><code>Andi * Budi</code>: hari latihan bersama, yaitu Rabu dan Jumat.</td></tr>
+<tr><td>42</td><td><code>Andi - Budi</code>: hari yang hanya dipakai Andi, yaitu Senin.</td></tr>
+<tr><td>44–46</td><td><code>Include</code> menambah Minggu ke jadwal Andi, <code>Exclude</code> membuang Senin; hasilnya dicetak ulang.</td></tr>
+<tr><td>48</td><td><code>Sabtu in Andi</code> menghasilkan <code>Boolean</code>. Setelah perubahan di baris 44–45, Sabtu memang tidak ada di jadwal Andi.</td></tr>
+<tr><td>49</td><td>Himpunan literal <code>[Rabu, Jumat]</code> dibandingkan dengan <code>&lt;=</code>: apakah ia himpunan bagian jadwal Budi.</td></tr>
+</tbody>
+</table>
+
+<h3>Set of Char: memeriksa jenis karakter</h3>
+
+<p>Himpunan paling sering dipakai pada <code>Char</code>. Tanpa set, memeriksa huruf besar berarti menulis
+<code>(C &gt;= 'A') and (C &lt;= 'Z')</code>. Dengan set, cukup
+<code>C in ['A'..'Z']</code>. Set dapat disimpan sebagai konstanta bernama sehingga kondisi terbaca seperti kalimat:
+<code>Sandi[I] in HurufBesar</code>.</p>
+
+<x-code>const
+  HurufBesar = ['A'..'Z'];
+  Angka      = ['0'..'9'];
+  Simbol     = ['!', '@', '#', '$'];
+
+if Sandi[I] in HurufBesar then ...</x-code>
+
+<p>Program <code>bab14_04_validasi_huruf_set.pas</code> menerapkannya untuk menilai kekuatan kata sandi (satu poin untuk
+tiap syarat dari lima) dan memeriksa nomor HP. Masukan pertama adalah kata sandi yang memenuhi semua syarat.</p>
+
+<x-listing src="bab14_04_validasi_huruf_set.pas"></x-listing>
+
+<x-run src="bab14_04_validasi_huruf_set.pas" caption="Kata sandi kuat dan nomor HP sah"></x-run>
+
+<p>Pada contoh berikutnya kata sandi lemah dan nomor HP mengandung huruf.</p>
+
+<x-run src="bab14_04_validasi_huruf_set.pas" input="abc\n08123abc99\n" caption="Kata sandi lemah dan nomor HP tidak sah"></x-run>
+
+<table class="baris">
+<thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+<tbody>
+<tr><td>9–13</td><td>Empat konstanta himpunan karakter. Konstanta <code>Simbol</code> mendaftar sepuluh karakter satu per satu, sedangkan tiga lainnya memakai rentang <code>'A'..'Z'</code>.</td></tr>
+<tr><td>15–18</td><td>Penampung kata sandi, nomor HP, skor, dan lima bendera <code>Boolean</code>.</td></tr>
+<tr><td>23–24</td><td>Semua bendera dimulai dari <code>False</code>.</td></tr>
+<tr><td>25–31</td><td>Perulangan membaca kata sandi karakter demi karakter. Tiap <code>if</code> memakai <code>in</code> untuk menyalakan bendera yang sesuai. Satu karakter bisa menyalakan paling banyak satu bendera karena himpunan-himpunannya tidak saling beririsan.</td></tr>
+<tr><td>33–38</td><td>Menghitung skor: satu poin bila panjang minimal 8, satu poin untuk tiap bendera yang menyala. Skor maksimum 5.</td></tr>
+<tr><td>39–43</td><td><code>case Skor of</code> menerjemahkan skor menjadi LEMAH (0..2), SEDANG (3..4), atau KUAT (5).</td></tr>
+<tr><td>44–45</td><td>Memberi saran bila angka atau simbol belum ada.</td></tr>
+<tr><td>49–52</td><td>Nomor HP dianggap sah bila panjangnya 10 sampai 13 dan diawali <code>08</code> (<code>Copy(NomorHP, 1, 2)</code>).</td></tr>
+<tr><td>53–55</td><td>Setiap karakter harus anggota <code>Angka</code>. Perhatikan kurung pada <code>not (NomorHP[I] in Angka)</code>: tanpa kurung, <code>not</code> dikerjakan lebih dulu dan kompiler menolaknya.</td></tr>
+<tr><td>56–59</td><td>Hasil akhir dicetak sesuai bendera <code>Sah</code>.</td></tr>
+</tbody>
+</table>
+
+<div class="tp7">
+<p><b>Aturan Turbo Pascal 7.</b> Set hanya boleh berisi paling banyak <b>256</b> anggota dengan nomor urut 0..255.
+<code>set of Integer</code> ditolak karena <code>Integer</code> berisi 65536 nilai. Gunakan subrange kecil seperti
+<code>set of 0..100</code> atau <code>set of Byte</code>.</p>
+</div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<h3>Mencetak nilai enumerasi</h3>
+
+<p>Kesalahan paling sering pada bab ini adalah mencetak enumerasi langsung.</p>
+
+<x-ide name="HARI.PAS" rows="10" error="9" cursor="9:3" dialog="messages" caption="<code>WriteLn(Hari)</code> pada enumerasi ditolak kompiler">program Hari;
+type
+  THari = (Senin, Selasa, Rabu);
+var
+  H: THari;
+begin
+  H := Selasa;
+  WriteLn('Hari ini: ',
+    H);
+end.</x-ide>
+
+<p>Perbaikannya sudah Anda lihat di Program 14.1: tampilkan <code>Ord(H)</code> atau gunakan array nama
+<code>NamaHari[H]</code>.</p>
+
+<h3>Nilai di luar rentang</h3>
+
+<x-error name="luar.pas" caption="Konstanta 150 berada di luar rentang <code>TNilai</code> (0..100)">program Luar;
+type
+  TNilai = 0..100;
+var
+  N: TNilai;
+begin
+  N := 150;
+  WriteLn(N);
+end.</x-error>
+
+<p>Bila nilai berasal dari masukan, kompiler tidak dapat mengetahuinya, sehingga yang terjadi adalah galat saat program
+berjalan:</p>
+
+<x-error name="luar2.pas" run input="150\n" caption="Masukan 150 disalin ke variabel subrange tanpa diperiksa">program Luar2;
+{$R+}
+type
+  TNilai = 0..100;
+var
+  N: TNilai;
+  M: Integer;
+begin
+  ReadLn(M);
+  N := M;
+  WriteLn(N);
+end.</x-error>
+
+<p>Cegah dengan memeriksa <code>(M &gt;= Low(TNilai)) and (M &lt;= High(TNilai))</code> sebelum menyalin.</p>
+
+<h3>Set dengan tipe dasar terlalu besar</h3>
+
+<x-error name="besar.pas" caption="<code>Integer</code> terlalu besar untuk tipe dasar set">program Besar;
+var
+  S: set of Integer;
+begin
+  S := [1, 2, 3];
+end.</x-error>
+
+<p>Pakai tipe dasar yang kecil, misalnya <code>set of Byte</code> atau subrange <code>set of 1..100</code>.</p>
+
+<h3>Memakai ReadLn untuk enumerasi</h3>
+
+<p>Sama seperti <code>Write</code>, <code>ReadLn</code> tidak dapat membaca enumerasi. Bacalah nomor atau teks, lalu
+terjemahkan sendiri dengan <code>case</code> atau perulangan yang mencocokkan nama pada array.</p>
+
+<div class="rangkuman">
+<h2>Rangkuman</h2>
+<ul>
+  <li>Tipe ordinal (<code>Integer</code>, <code>Char</code>, <code>Boolean</code>, enumerasi, subrange) berurutan dan mendukung <code>Ord</code>, <code>Succ</code>, <code>Pred</code>, <code>Low</code>, <code>High</code>.</li>
+  <li>Enumerasi <code>(A, B, C)</code> membuat daftar nama buatan sendiri bernomor 0, 1, 2, ...; dapat dipakai pada <code>for</code>, <code>case</code>, dan perbandingan.</li>
+  <li>Turbo Pascal tidak dapat <code>Write</code> atau <code>ReadLn</code> enumerasi; gunakan <code>Ord</code> atau array nama berindeks enumerasi.</li>
+  <li>Subrange <code>Awal..Akhir</code> membatasi nilai suatu tipe ordinal; periksa masukan dengan <code>if</code> sebelum menyimpannya, sebab nilai di luar rentang menimbulkan runtime error 201.</li>
+  <li>Set <code>set of T</code> menyimpan himpunan nilai tanpa urutan dan tanpa kembar, paling banyak 256 anggota.</li>
+  <li>Operator set: <code>+</code> gabungan, <code>*</code> irisan, <code>-</code> selisih, <code>in</code> keanggotaan, <code>=</code> sama, <code>&lt;=</code> himpunan bagian.</li>
+  <li><code>Include</code> dan <code>Exclude</code> menambah dan membuang satu anggota; set tidak dapat dicetak langsung.</li>
+  <li><code>set of Char</code> menyederhanakan pemeriksaan jenis karakter: <code>C in ['0'..'9']</code>.</li>
+</ul>
+</div>
+
+<div class="latihan">
+<h2>Latihan</h2>
+<ol>
+  <li><span class="lv dasar">Dasar</span> Definisikan <code>TBulan = (Jan, Feb, Mar, Apr, Mei, Jun)</code> dan cetak nomor urut tiap bulan dengan <code>for</code> serta <code>Ord</code>.</li>
+  <li><span class="lv dasar">Dasar</span> Ubah Program 14.1 agar hari Sabtu dan Minggu dicetak sebagai &ldquo;akhir pekan&rdquo; dan hari lain sebagai &ldquo;hari kerja&rdquo;, memakai <code>case</code> dengan rentang.</li>
+  <li><span class="lv menengah">Menengah</span> Buat tipe <code>TUmur = 0..120</code>. Baca umur, periksa dengan <code>Low</code> dan <code>High</code>, lalu tampilkan golongannya (anak, remaja, dewasa, lansia).</li>
+  <li><span class="lv menengah">Menengah</span> Program 14.3 hanya mencetak hari. Tambahkan jadwal Citra, lalu tampilkan hari ketika <b>ketiga</b> orang sama-sama berlatih (irisan tiga himpunan).</li>
+  <li><span class="lv menengah">Menengah</span> Dengan <code>set of Char</code>, hitung berapa huruf vokal pada sebuah kalimat yang diketik pengguna. Petunjuk: <code>Vokal = ['a','e','i','o','u','A','E','I','O','U']</code>.</li>
+  <li><span class="lv tantangan">Tantangan</span> Buat program menghitung <code>Succ</code> secara melingkar: setelah <code>Minggu</code> kembali ke <code>Senin</code>. Tulis fungsi <code>HariBerikut(H: THari): THari</code> yang tidak menimbulkan galat.</li>
+  <li><span class="lv tantangan">Tantangan</span> Perluas Program 14.4: tambahkan pemeriksaan bahwa kata sandi tidak mengandung spasi (<code>' '</code>) dan tampilkan semua jenis karakter yang belum ada dalam kata sandi sebagai saran.</li>
+</ol>
+</div>

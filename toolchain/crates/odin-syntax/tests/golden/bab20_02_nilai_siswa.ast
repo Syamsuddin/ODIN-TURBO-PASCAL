@@ -1,0 +1,118 @@
+(program bab20_02_nilai_siswa
+  (const NamaFileRekap = 'rekap_nilai.txt')
+  (const MaksSiswa = 40)
+  (const KKM = 75)
+  (const BobotTugas = 0.3)
+  (const BobotUTS = 0.3)
+  (const BobotUAS = 0.4)
+  (type TSiswa = (record (Nama: string[20]) (Tugas UTS UAS: Integer) (Akhir: Real)))
+  (var (Siswa) (array [(.. 1 MaksSiswa)] TSiswa))
+  (var (N) Integer)
+  (function BacaNilai (Pesan: string; Min Max: Integer) : Integer
+    (var (Teks) string)
+    (var (Nilai Kode) Integer)
+    (begin
+      (repeat-until (= Kode 0)
+        (do (call Write Pesan))
+        (do (call ReadLn Teks))
+        (do (call Val Teks Nilai Kode))
+        (if (or (or (<> Kode 0) (< Nilai Min)) (> Nilai Max))
+          (begin
+            (do (call WriteLn '  Harus angka ' Min ' sampai ' Max '.'))
+            (:= Kode 1)
+            (empty)))
+        (empty))
+      (:= BacaNilai Nilai)
+      (empty)))
+  (function Huruf (Nilai: Real) : Char
+    (begin
+      (if (>= Nilai 85)
+        (:= Huruf 'A')
+        (else
+          (if (>= Nilai 70)
+            (:= Huruf 'B')
+            (else
+              (if (>= Nilai 55)
+                (:= Huruf 'C')
+                (else
+                  (if (>= Nilai 40)
+                    (:= Huruf 'D')
+                    (else
+                      (:= Huruf 'E')))))))))
+      (empty)))
+  (procedure IsiData
+    (var (I) Integer)
+    (begin
+      (:= N (call BacaNilai 'Jumlah siswa (1-40): ' 1 MaksSiswa))
+      (for I 1 to N
+        (with (index Siswa I)
+          (begin
+            (do (call WriteLn 'Siswa ke-' I))
+            (do (call Write '  Nama  : '))
+            (do (call ReadLn Nama))
+            (:= Tugas (call BacaNilai '  Tugas : ' 0 100))
+            (:= UTS (call BacaNilai '  UTS   : ' 0 100))
+            (:= UAS (call BacaNilai '  UAS   : ' 0 100))
+            (:= Akhir (+ (+ (* BobotTugas Tugas) (* BobotUTS UTS)) (* BobotUAS UAS)))
+            (empty))))
+      (empty)))
+  (procedure UrutkanPeringkat
+    (var (I J) Integer)
+    (var (Kunci) TSiswa)
+    (begin
+      (for I 2 to N
+        (begin
+          (:= Kunci (index Siswa I))
+          (:= J (- I 1))
+          (while (and (>= J 1) (< (. (index Siswa J) Akhir) (. Kunci Akhir)))
+            (begin
+              (:= (index Siswa (+ J 1)) (index Siswa J))
+              (:= J (- J 1))
+              (empty)))
+          (:= (index Siswa (+ J 1)) Kunci)
+          (empty)))
+      (empty)))
+  (procedure CetakRekap (var F: Text)
+    (var (I Lulus) Integer)
+    (var (Jumlah) Real)
+    (begin
+      (do (call WriteLn F 'REKAP NILAI KELAS'))
+      (do (call WriteLn F 'Bobot: tugas 30%, UTS 30%, UAS 40%.  KKM ' KKM))
+      (do (call WriteLn F 'No  Nama                 Tugas  UTS  UAS  Akhir  Huruf  Ket'))
+      (do (call WriteLn F '-------------------------------------------------------------'))
+      (:= Jumlah 0)
+      (:= Lulus 0)
+      (for I 1 to N
+        (with (index Siswa I)
+          (begin
+            (do (call Write F I:2 '  ' Nama '':(- 20 (call Length Nama)) Tugas:6 UTS:5 UAS:5 Akhir:7:1 '    ' (call Huruf Akhir) '    '))
+            (if (>= Akhir KKM)
+              (begin
+                (do (call WriteLn F 'Tuntas'))
+                (:= Lulus (+ Lulus 1))
+                (empty))
+              (else
+                (do (call WriteLn F 'Remedial'))))
+            (:= Jumlah (+ Jumlah Akhir))
+            (empty))))
+      (do (call WriteLn F '-------------------------------------------------------------'))
+      (do (call WriteLn F 'Rata-rata kelas : ' (/ Jumlah N):0:1))
+      (do (call WriteLn F 'Tertinggi       : ' (. (index Siswa 1) Akhir):0:1 ' (' (. (index Siswa 1) Nama) ')'))
+      (do (call WriteLn F 'Terendah        : ' (. (index Siswa N) Akhir):0:1 ' (' (. (index Siswa N) Nama) ')'))
+      (do (call WriteLn F 'Tuntas          : ' Lulus ' dari ' N ' siswa'))
+      (empty)))
+  (var (FileRekap) Text)
+  (var (Folder) string)
+  (begin
+    (do IsiData)
+    (do UrutkanPeringkat)
+    (do WriteLn)
+    (do (call CetakRekap Output))
+    (do (call Assign FileRekap NamaFileRekap))
+    (do (call Rewrite FileRekap))
+    (do (call CetakRekap FileRekap))
+    (do (call Close FileRekap))
+    (do (call GetDir 0 Folder))
+    (do WriteLn)
+    (do (call WriteLn 'Rekap disimpan ke ' NamaFileRekap ' di folder ' Folder))
+    (empty)))

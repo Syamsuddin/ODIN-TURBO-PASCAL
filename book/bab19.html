@@ -1,0 +1,542 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menjelaskan fungsi <i>unit</i> dan perbedaan bagian <code>interface</code> dengan <code>implementation</code>.</li>
+  <li>Menulis unit sendiri, menyimpannya sebagai berkas yang namanya sama dengan nama unit, lalu memakainya dengan <code>uses</code>.</li>
+  <li>Mengatur Primary file di Odin Turbo Pascal agar program dan unit dikompilasi bersama.</li>
+  <li>Memakai unit <code>Crt</code>: <code>ClrScr</code>, <code>GotoXY</code>, <code>WhereX</code>/<code>WhereY</code>, <code>TextColor</code>, <code>TextBackground</code>, <code>Delay</code>, dan <code>ReadKey</code>.</li>
+  <li>Membaca koordinat layar teks 80 kolom x 25 baris dan 16 warna Crt.</li>
+  <li>Membangun menu berwarna yang dioperasikan dengan tombol panah, <kbd>Enter</kbd>, dan <kbd>Esc</kbd>.</li>
+</ul>
+
+<p class="lead">Selama ini seluruh program Anda berada dalam satu berkas, dari baris pertama sampai <code>end.</code>.
+Untuk program kecil itu cukup. Namun begitu Anda punya fungsi yang berguna di banyak program, menyalin dan menempelkannya
+berulang kali jelas bukan cara yang sehat. Pascal menyediakan <b>unit</b>: berkas terpisah berisi kumpulan konstanta,
+prosedur, dan fungsi yang dapat dipakai program mana saja. Bab ini juga memperkenalkan unit bawaan yang paling populer
+pada masa Turbo Pascal, yaitu <code>Crt</code>, untuk mengatur layar teks dan keyboard.</p>
+
+<h2>Mengapa Memakai Unit</h2>
+
+<p>Bayangkan sebuah dapur restoran. Koki tidak membuat tepung dari gandum setiap kali memasak; ia mengambilnya dari
+gudang. Unit adalah gudang itu: tempat menyimpan "bahan jadi" (fungsi dan prosedur yang sudah teruji) yang bisa
+diambil oleh banyak program. Dengan unit, Anda mendapat tiga keuntungan.</p>
+
+<div class="trio">
+  <div class="card"><h4><span class="ikon">1</span>Dipakai ulang</h4><p>Fungsi ditulis dan diuji sekali, lalu dipanggil dari program mana pun dengan satu baris <code>uses</code>.</p></div>
+  <div class="card"><h4><span class="ikon">2</span>Program lebih pendek</h4><p>Program utama hanya berisi alur kerja. Rincian hitungan tersembunyi di dalam unit.</p></div>
+  <div class="card"><h4><span class="ikon">3</span>Terbagi rapi</h4><p>Setiap unit mengurus satu tema, misalnya matematika atau tampilan layar. Mencari dan memperbaiki kode menjadi mudah.</p></div>
+</div>
+
+<p>Anda sebenarnya sudah memakai unit sejak Bab 1. Fungsi <code>WriteLn</code>, <code>Length</code>, dan
+<code>Sqrt</code> berasal dari unit <code>System</code> yang otomatis disertakan dalam setiap program. Yang baru di bab
+ini: membuat unit sendiri, dan memakai unit lain yang harus disebut dengan <code>uses</code>.</p>
+
+<h2>Anatomi Sebuah Unit</h2>
+
+<p>Sebuah unit selalu terbagi menjadi dua bagian besar. Bagian <b><code>interface</code></b> adalah "etalase": daftar
+nama yang boleh dilihat dan dipakai program lain. Bagian <b><code>implementation</code></b> adalah "dapur": isi lengkap
+setiap prosedur dan fungsi. Program yang memakai unit hanya bisa melihat etalase; dapurnya tertutup.</p>
+
+<div class="sintaks"><pre><b>unit</b> <i>NamaUnit</i>;
+
+<b>interface</b>
+  <i>{ const, type, var, dan HEADER prosedur/fungsi yang boleh dipakai pihak luar }</i>
+
+<b>implementation</b>
+  <i>{ badan lengkap setiap prosedur/fungsi yang diumumkan di interface }</i>
+  <i>{ boleh juga ada prosedur pribadi yang tidak diumumkan }</i>
+
+<b>end</b>.</pre></div>
+
+<figure class="grafik" id="gb-unit">
+<svg viewBox="0 0 680 300">
+  <rect class="box-w" x="10" y="10" width="300" height="280" rx="10"/>
+  <text class="h c" x="24" y="34">matematika.pas</text>
+  <rect class="ok" x="24" y="46" width="272" height="92" rx="6"/>
+  <text class="b" x="36" y="66">interface  (etalase)</text>
+  <text class="mono s" x="36" y="86">const VersiUnit = '1.0';</text>
+  <text class="mono s" x="36" y="102">function Kuadrat(X: LongInt): LongInt;</text>
+  <text class="mono s" x="36" y="118">function FPB(A, B: LongInt): LongInt;</text>
+  <text class="xs muted" x="36" y="132">hanya header, tanpa badan</text>
+  <rect class="dec" x="24" y="150" width="272" height="128" rx="6"/>
+  <text class="b" x="36" y="170">implementation  (dapur)</text>
+  <text class="mono s" x="36" y="190">function Kuadrat(X: LongInt): LongInt;</text>
+  <text class="mono s" x="36" y="206">begin</text>
+  <text class="mono s" x="36" y="222">  Kuadrat := X * X;</text>
+  <text class="mono s" x="36" y="238">end;</text>
+  <text class="xs muted" x="36" y="258">badan lengkap setiap fungsi</text>
+  <text class="xs muted" x="36" y="270">end.</text>
+  <rect class="navy" x="370" y="10" width="300" height="130" rx="10"/>
+  <text class="h code-fg" x="384" y="34">bab19_01_pakai_unit_sendiri.pas</text>
+  <text class="mono code-fg" x="384" y="58">program bab19_01_pakai_unit_sendiri;</text>
+  <text class="mono code-fg" x="384" y="76">uses matematika;</text>
+  <text class="mono code-fg" x="384" y="100">WriteLn(Kuadrat(25));</text>
+  <text class="mono code-fg" x="384" y="118">WriteLn(FPB(48, 18));</text>
+  <path class="arrow" d="M370 78 H316 V92 H300"/>
+  <path class="dash" d="M410 140 V180 H300" style="stroke:#b42318"/>
+  <text class="s b" x="340" y="172" style="fill:#b42318">tertutup</text>
+  <text class="s b" x="316" y="198" style="fill:#b42318">badan fungsi tak terlihat</text>
+  <rect class="box" x="370" y="206" width="300" height="84" rx="8"/>
+  <text class="b" x="384" y="228">Aturan nama</text>
+  <text class="s" x="384" y="246">unit matematika;  disimpan sebagai</text>
+  <text class="s" x="384" y="262">matematika.pas  di folder program.</text>
+  <text class="s" x="384" y="278">Nama berkas harus sama dengan nama unit.</text>
+</svg>
+<figcaption>Unit <code>matematika</code>: program hanya memakai apa yang diumumkan di <code>interface</code>.</figcaption>
+</figure>
+
+<p>Alasan pemisahan ini mirip merek dagang: pembeli cukup tahu <i>apa</i> yang bisa dilakukan sebuah mesin kopi (menekan
+tombol, keluar kopi), tanpa perlu tahu <i>bagaimana</i> bagian dalamnya bekerja. Pembuat unit bebas mengubah isi
+<code>implementation</code> selama header di <code>interface</code> tidak berubah, dan program yang memakainya tetap
+berjalan.</p>
+
+<div class="ingat"><p>Setiap prosedur atau fungsi yang diumumkan di <code>interface</code> <b>wajib</b> punya badan di
+<code>implementation</code>, dengan nama dan daftar parameter yang sama. Hal ini serupa dengan <code>forward</code> yang
+Anda kenal pada Bab 9, hanya saja untuk seluruh berkas.</p></div>
+
+<h2>Membuat dan Memakai Unit matematika</h2>
+
+<p>Unit pertama kita menyimpan fungsi matematika yang sudah Anda tulis di bab-bab sebelumnya: kuadrat, pangkat,
+faktorial, bilangan prima, FPB, dan KPK. Buka <code>matematika.pas</code> lewat <span class="menu">File ▸
+Examples...</span> untuk melihat isinya.</p>
+
+<x-listing src="matematika.pas"></x-listing>
+
+<p>Perhatikan hal-hal berikut dalam listing di atas.</p>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>8</td><td><code>unit matematika;</code> menggantikan <code>program ...;</code>. Nama unit harus sama persis (tanpa memedulikan huruf besar/kecil) dengan nama berkas tanpa <code>.pas</code>: berkasnya <code>matematika.pas</code>.</td></tr>
+    <tr><td>10</td><td>Awal bagian <code>interface</code>. Semua yang ditulis sampai kata <code>implementation</code> terlihat oleh program pemakai.</td></tr>
+    <tr><td>12–13</td><td>Konstanta <code>VersiUnit</code> ikut diumumkan, jadi program pemakai bisa membacanya.</td></tr>
+    <tr><td>15–20</td><td>Enam header fungsi. Hanya baris pertama deklarasi, diakhiri titik koma, tanpa <code>begin..end</code>.</td></tr>
+    <tr><td>22</td><td>Awal bagian <code>implementation</code>: dari sini sampai <code>end.</code> adalah isi lengkap.</td></tr>
+    <tr><td>24–27</td><td>Badan <code>Kuadrat</code>. Header diulang lengkap, lalu hasil diberikan dengan <code>Kuadrat := X * X</code>.</td></tr>
+    <tr><td>29–38</td><td><code>Pangkat</code> mengalikan <code>Hasil</code> dengan <code>A</code> sebanyak <code>N</code> kali. Variabel <code>I</code> dan <code>Hasil</code> bersifat lokal.</td></tr>
+    <tr><td>40–46</td><td><code>Faktorial</code> memakai rekursi seperti di Bab 10.</td></tr>
+    <tr><td>48–63</td><td><code>Prima</code> mencoba pembagi dari 2 selama <code>Pembagi * Pembagi &lt;= N</code>. Begitu ada yang habis membagi, hasil diisi <code>False</code> dan <code>Exit</code> menghentikan fungsi.</td></tr>
+    <tr><td>65–76</td><td><code>FPB</code> dengan algoritma Euclid (Bab 8.2).</td></tr>
+    <tr><td>78–81</td><td><code>KPK</code> memanggil <code>FPB</code>, yaitu fungsi lain di unit yang sama. Dalam <code>implementation</code>, fungsi yang sudah ditulis lebih dulu boleh dipanggil fungsi sesudahnya.</td></tr>
+    <tr><td>83</td><td><code>end.</code> dengan titik menutup unit. Tidak ada blok <code>begin</code> untuk program utama.</td></tr>
+  </tbody>
+</table>
+
+<div class="awas"><p>Unit tidak punya program utama, sehingga <b>tidak dapat dijalankan sendiri</b>. Menekan
+<kbd>Ctrl</kbd>+<kbd>F9</kbd> ketika <code>matematika.pas</code> aktif hanya mengompilasinya menjadi berkas objek, tanpa
+executable. Yang dijalankan adalah program yang memakainya.</p></div>
+
+<h3>Memanggil unit dengan uses</h3>
+
+<p>Program yang ingin memakai unit menulis <code>uses</code> sesudah judul program dan sebelum deklarasi lain. Setelah
+itu semua nama di bagian <code>interface</code> unit dapat dipakai seolah-olah ditulis di program itu sendiri.</p>
+
+<div class="sintaks"><pre><b>program</b> <i>NamaProgram</i>;
+
+<b>uses</b>
+  <i>Unit1</i>, <i>Unit2</i>;       <i>{ boleh lebih dari satu, dipisah koma }</i>
+
+<b>begin</b>
+  ...
+<b>end</b>.</pre></div>
+
+<p>Buka <code>bab19_01_pakai_unit_sendiri.pas</code>. Program ini memanggil semua fungsi unit, lalu mencetak bilangan
+prima di bawah 50.</p>
+
+<x-listing src="bab19_01_pakai_unit_sendiri.pas"></x-listing>
+
+<x-run src="bab19_01_pakai_unit_sendiri.pas" caption="Program memakai unit <code>matematika</code>: semua hasil dihitung oleh fungsi di <code>matematika.pas</code>"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9–10</td><td><code>uses matematika;</code> memberi tahu kompiler untuk mencari berkas <code>matematika.pas</code>, yaitu di folder yang sama dengan program ini, lalu mengompilasinya lebih dulu.</td></tr>
+    <tr><td>16</td><td><code>VersiUnit</code> adalah konstanta dari unit. Program ini tidak mendeklarasikannya, tetapi tetap bisa memakainya.</td></tr>
+    <tr><td>17–21</td><td>Pemanggilan fungsi unit. <code>Kuadrat(25)</code> = 625, <code>Pangkat(2, 10)</code> = 1024, <code>Faktorial(10)</code> = 3628800, <code>FPB(48, 18)</code> = 6, <code>KPK(4, 6)</code> = 12, sesuai keluaran di atas.</td></tr>
+    <tr><td>23–27</td><td>Perulangan memeriksa 1 sampai 50 dengan <code>Prima(I)</code>. Bilangan 1 tidak dicetak karena <code>Prima</code> mulai dari syarat <code>N &gt;= 2</code>.</td></tr>
+    <tr><td>30</td><td>Nama unit boleh ditulis di depan sebagai awalan, <code>matematika.Kuadrat(12)</code>. Berguna bila program dan unit memiliki nama yang sama: awalan memastikan fungsi milik unit yang dipakai.</td></tr>
+  </tbody>
+</table>
+
+<h3>Bagaimana kompiler menemukan unit</h3>
+
+<p>Saat membaca baris <code>uses</code>, kompiler mencari berkas unit di folder yang sama dengan program, lalu di
+folder tambahan yang Anda atur lewat <span class="menu">Options ▸ Directories...</span>. Setiap unit dikompilasi lebih dulu,
+baru program utama. Jika berkas unit tidak ditemukan, kompilasi berhenti dengan galat.</p>
+
+<figure class="grafik" id="gb-uses">
+<svg viewBox="0 0 680 190">
+  <rect class="io" x="10" y="60" width="170" height="64" rx="8"/>
+  <text class="b mid" x="95" y="86">Program utama</text>
+  <text class="mono s mid" x="95" y="104">uses matematika;</text>
+  <path class="arrow" d="M180 92 H230"/>
+  <text class="s muted mid" x="205" y="84">cari</text>
+  <polygon class="dec" points="320,62 400,92 320,122 240,92"/>
+  <text class="s mid" x="320" y="90">matematika.pas</text>
+  <text class="s mid" x="320" y="102">ada?</text>
+  <path class="arrow" d="M400 92 H450"/>
+  <text class="s b" x="412" y="84" style="fill:#11743f">Ya</text>
+  <rect class="ok" x="450" y="30" width="220" height="48" rx="8"/>
+  <text class="b" x="462" y="50">Kompilasi unit lebih dulu</text>
+  <text class="s" x="462" y="66">lalu kompilasi program utama</text>
+  <path class="arrow" d="M320 122 V152 H450"/>
+  <text class="s b" x="330" y="144" style="fill:#b42318">Tidak</text>
+  <rect class="no" x="450" y="132" width="220" height="48" rx="8"/>
+  <text class="b" x="462" y="152">Galat: unit tidak ditemukan</text>
+  <text class="s" x="462" y="168">kompilasi program berhenti</text>
+</svg>
+<figcaption>Kompiler memproses <code>uses</code>: unit dicari, dikompilasi lebih dulu, baru program utama.</figcaption>
+</figure>
+
+<h3>Primary file</h3>
+
+<p>Odin Turbo Pascal mengompilasi berkas yang sedang aktif di editor. Bila Anda sedang mengedit
+<code>matematika.pas</code> lalu menekan <kbd>Ctrl</kbd>+<kbd>F9</kbd>, yang dikompilasi adalah unit itu saja, dan
+tidak ada program yang berjalan. Untuk proyek yang terdiri atas program dan beberapa unit, tetapkan berkas program
+sebagai <b>Primary file</b>: pilih <span class="menu">Compile ▸ Primary file...</span> lalu tunjuk berkas program.
+Sesudah itu <kbd>Ctrl</kbd>+<kbd>F9</kbd> selalu mengompilasi dan menjalankan program tersebut, apa pun jendela yang
+aktif. <span class="menu">Compile ▸ Clear primary file</span> mengembalikan mode "berkas aktif".</p>
+
+<div class="duo">
+<x-ide file="matematika.pas" rows="12" top="1" menu="Compile" pick="Primary file..." marks="dropdown" caption="Langkah 1: menu Compile ▸ Primary file... saat unit terbuka"></x-ide>
+<x-ide file="bab19_01_pakai_unit_sendiri.pas" rows="12" top="8" cursor="10:3" caption="Langkah 2: tunjuk berkas program sebagai Primary file; unit tetap dicari otomatis"></x-ide>
+</div>
+
+<ol class="langkah">
+  <li><b>Salin folder.</b> Contoh bawaan tidak bisa disimpan di tempatnya. Salin <code>matematika.pas</code> dan
+  <code>bab19_01_pakai_unit_sendiri.pas</code> ke satu folder kerja Anda.</li>
+  <li><b>Buka kedua berkas</b> dengan <span class="menu">File ▸ Open...</span>.</li>
+  <li><b>Tetapkan Primary file</b> ke <code>bab19_01_pakai_unit_sendiri.pas</code>.</li>
+  <li><b>Jalankan</b> dengan <kbd>Ctrl</kbd>+<kbd>F9</kbd>. Ubah isi <code>matematika.pas</code> (misalnya <code>VersiUnit</code> menjadi <code>'1.1'</code>), jalankan lagi, dan perhatikan keluaran berubah.</li>
+</ol>
+
+<div class="coba"><p>Tambahkan fungsi <code>Kubik(X: LongInt): LongInt</code> ke unit. Ingat dua langkah: tulis header di
+<code>interface</code>, tulis badan di <code>implementation</code>. Lalu panggil <code>Kubik(5)</code> dari program. Apa
+yang terjadi bila Anda hanya menulis salah satunya?</p></div>
+
+<h2>Galat Seputar Unit</h2>
+
+<p>Dua galat paling sering: unit tidak ditemukan (nama berkas tidak cocok atau berkas tidak berada di folder program),
+dan memakai nama yang tidak diumumkan di <code>interface</code>. Berikut contoh keduanya, dikompilasi sungguhan.</p>
+
+<x-error name="tanpa_unit.pas" caption="Berkas unit tidak ada di folder program: kompiler tidak menemukan unit <code>alatku</code>">program TanpaUnit;
+
+uses
+  alatku;
+
+begin
+  WriteLn(Kuadrat(5));
+end.</x-error>
+
+<p>Contoh kedua adalah program yang lupa menyebutkan unit <code>Crt</code> yang akan dibahas di bagian berikut.
+Pesannya berbeda: kompiler menemukan semua unit, tetapi tidak mengenal nama <code>ClrScr</code>.</p>
+
+<x-error name="lupa_crt.pas" caption="Lupa menulis <code>uses Crt</code>: <code>ClrScr</code> dan <code>GotoXY</code> tidak dikenal">program LupaCrt;
+
+begin
+  ClrScr;
+  GotoXY(10, 5);
+  Write('Halo');
+end.</x-error>
+
+<h2>Unit Crt: Mengatur Layar Teks</h2>
+
+<p>Unit <code>Crt</code> (<i>cathode ray tube</i>, tabung sinar katoda: layar lama) adalah unit bawaan Turbo Pascal yang
+paling terkenal. Dengannya program dapat membersihkan layar, memindahkan kursor ke posisi mana pun, mewarnai tulisan dan
+latar, menunggu sebentar, dan membaca tombol tanpa menunggu <kbd>Enter</kbd>. Hampir semua program antarmuka teks di era
+DOS, dari editor sampai permainan, dibangun dari lima-enam prosedur ini. Karena tidak menjadi bagian <code>System</code>,
+unit ini harus disebutkan: <code>uses Crt;</code>.</p>
+
+<table class="data">
+  <caption>Rutin unit Crt yang dipakai di bab ini</caption>
+  <thead><tr><th>Rutin</th><th>Jenis</th><th>Fungsi</th></tr></thead>
+  <tbody>
+    <tr><td><code>ClrScr</code></td><td>prosedur</td><td>menghapus layar dengan warna latar saat ini, kursor ke (1, 1)</td></tr>
+    <tr><td><code>GotoXY(X, Y)</code></td><td>prosedur</td><td>memindahkan kursor ke kolom <code>X</code>, baris <code>Y</code></td></tr>
+    <tr><td><code>WhereX</code>, <code>WhereY</code></td><td>fungsi</td><td>kolom dan baris kursor saat ini</td></tr>
+    <tr><td><code>TextColor(W)</code></td><td>prosedur</td><td>warna tulisan berikutnya, 0 sampai 15</td></tr>
+    <tr><td><code>TextBackground(W)</code></td><td>prosedur</td><td>warna latar berikutnya, 0 sampai 7</td></tr>
+    <tr><td><code>Delay(ms)</code></td><td>prosedur</td><td>menunda program sekian milidetik</td></tr>
+    <tr><td><code>ReadKey</code></td><td>fungsi <code>Char</code></td><td>menunggu satu tombol dan mengembalikannya, tanpa <kbd>Enter</kbd>, tanpa tampil di layar</td></tr>
+  </tbody>
+</table>
+
+<h3>Koordinat layar: 80 kolom x 25 baris</h3>
+
+<p>Layar teks adalah kisi 80 kolom dan 25 baris. Setiap petak memuat tepat satu karakter. Posisi dinyatakan dengan
+<b>(X, Y)</b>: X adalah kolom dihitung dari kiri, Y adalah baris dihitung dari atas. Titik pojok kiri atas adalah
+<code>(1, 1)</code> dan pojok kanan bawah <code>(80, 25)</code>. Kebiasaan dari pelajaran matematika perlu dibalik di
+sini: Y bertambah ke <b>bawah</b>, bukan ke atas.</p>
+
+<figure class="grafik" id="gb-koordinat">
+<svg viewBox="0 0 680 300">
+  <rect class="navy" x="40" y="14" width="400" height="250" rx="4"/>
+  <g style="stroke:#3b4a7a;stroke-width:0.5">
+    <path d="M90 14V264M140 14V264M190 14V264M240 14V264M290 14V264M340 14V264M390 14V264"/>
+    <path d="M14 14M40 64H440M40 114H440M40 164H440M40 214H440"/>
+  </g>
+  <rect x="40" y="14" width="50" height="50" style="fill:#d99a00;opacity:0.85"/>
+  <text class="mono mid" x="65" y="44" style="fill:#000">(1,1)</text>
+  <text class="mono code-fg" x="190" y="84">GotoXY(32, 2)</text>
+  <rect x="190" y="14" width="150" height="14" style="fill:#3b7be0;opacity:0.9"/>
+  <text class="mono xs white" x="194" y="25">BELAJAR UNIT CRT</text>
+  <rect x="390" y="214" width="50" height="50" style="fill:#d64545;opacity:0.9"/>
+  <text class="mono mid white s" x="415" y="244">(80,25)</text>
+  <text class="s c mid" x="240" y="282">kolom X: 1 ... 80  (ke kanan)</text>
+  <text class="s c" transform="translate(24 200) rotate(-90)">baris Y: 1 ... 25 (ke bawah)</text>
+  <rect class="box" x="470" y="14" width="200" height="250" rx="8"/>
+  <text class="b" x="484" y="38">Aturan koordinat</text>
+  <text class="s" x="484" y="62">Kiri atas  = (1, 1)</text>
+  <text class="s" x="484" y="80">Kanan bawah = (80, 25)</text>
+  <text class="s" x="484" y="104">X naik ke kanan.</text>
+  <text class="s" x="484" y="120">Y naik ke bawah.</text>
+  <text class="s" x="484" y="144">Write mencetak mulai</text>
+  <text class="s" x="484" y="160">dari posisi kursor, lalu</text>
+  <text class="s" x="484" y="176">kursor bergeser ke kanan</text>
+  <text class="s" x="484" y="192">sepanjang teks itu.</text>
+  <text class="s b" x="484" y="220" style="fill:#b42318">GotoXY di luar 80x25</text>
+  <text class="s" x="484" y="236">tidak menghasilkan</text>
+  <text class="s" x="484" y="252">posisi yang sah.</text>
+</svg>
+<figcaption>Kisi layar teks. Kisi digambar berskala (satu petak gambar mewakili 8 kolom dan 5 baris), pojok-pojoknya diberi koordinat.</figcaption>
+</figure>
+
+<h3>Enam belas warna Crt</h3>
+
+<p>Crt mengenal 16 warna bernomor 0 sampai 15, masing-masing juga punya konstanta bernama (<code>Black</code>,
+<code>Blue</code>, <code>Yellow</code>, dan seterusnya). Warna tulisan (<code>TextColor</code>) boleh memakai semuanya,
+sedangkan warna latar (<code>TextBackground</code>) hanya 0 sampai 7 pada layar DOS asli. Warna 8 sampai 15 adalah
+versi "terang" dari 0 sampai 7.</p>
+
+<figure class="grafik" id="gb-warna">
+<svg viewBox="0 0 680 170">
+  <g class="mono s">
+    <rect x="10" y="20" width="76" height="46" style="fill:#000;stroke:#999"/><text class="white" x="14" y="38">0 Black</text>
+    <rect x="94" y="20" width="76" height="46" style="fill:#0000aa"/><text class="white" x="98" y="38">1 Blue</text>
+    <rect x="178" y="20" width="76" height="46" style="fill:#00aa00"/><text class="white" x="182" y="38">2 Green</text>
+    <rect x="262" y="20" width="76" height="46" style="fill:#00aaaa"/><text class="white" x="266" y="38">3 Cyan</text>
+    <rect x="346" y="20" width="76" height="46" style="fill:#aa0000"/><text class="white" x="350" y="38">4 Red</text>
+    <rect x="430" y="20" width="76" height="46" style="fill:#aa00aa"/><text class="white" x="434" y="38">5 Magenta</text>
+    <rect x="514" y="20" width="76" height="46" style="fill:#aa5500"/><text class="white" x="518" y="38">6 Brown</text>
+    <rect x="598" y="20" width="72" height="46" style="fill:#aaaaaa"/><text x="602" y="38" style="fill:#000">7 LtGray</text>
+    <rect x="10" y="92" width="76" height="46" style="fill:#555555"/><text class="white" x="14" y="110">8 DkGray</text>
+    <rect x="94" y="92" width="76" height="46" style="fill:#5555ff"/><text class="white" x="98" y="110">9 LtBlue</text>
+    <rect x="178" y="92" width="76" height="46" style="fill:#55ff55"/><text x="182" y="110" style="fill:#000">10 LtGreen</text>
+    <rect x="262" y="92" width="76" height="46" style="fill:#55ffff"/><text x="266" y="110" style="fill:#000">11 LtCyan</text>
+    <rect x="346" y="92" width="76" height="46" style="fill:#ff5555"/><text x="350" y="110" style="fill:#000">12 LtRed</text>
+    <rect x="430" y="92" width="76" height="46" style="fill:#ff55ff"/><text x="434" y="110" style="fill:#000">13 LtMag.</text>
+    <rect x="514" y="92" width="76" height="46" style="fill:#ffff55"/><text x="518" y="110" style="fill:#000">14 Yellow</text>
+    <rect x="598" y="92" width="72" height="46" style="fill:#fff;stroke:#999"/><text x="602" y="110" style="fill:#000">15 White</text>
+  </g>
+  <text class="xs muted" x="10" y="14">Warna 0-7: tulisan dan latar</text>
+  <text class="xs muted" x="10" y="86">Warna 8-15: hanya tulisan (versi terang dari 0-7)</text>
+  <text class="xs muted" x="10" y="160">Nama lengkap: LightGray, DarkGray, LightBlue, LightGreen, LightCyan, LightRed, LightMagenta.</text>
+</svg>
+<figcaption>Enam belas warna Crt dengan nomor dan nama konstantanya.</figcaption>
+</figure>
+
+<div class="tp7"><p>Konstanta warna adalah <code>Black</code> (0) sampai <code>White</code> (15), sehingga
+<code>TextColor(Yellow)</code> sama dengan <code>TextColor(14)</code>. Menambahkan <code>Blink</code> (128) pada
+<code>TextColor</code> membuat tulisan berkedip di DOS asli. Latar baru berlaku mulai dari karakter yang dicetak
+sesudahnya, dan <code>ClrScr</code> mengecat seluruh layar dengan warna latar saat itu: itu sebabnya program
+mengatur latar dahulu, baru memanggil <code>ClrScr</code>.</p></div>
+
+<h3>Program contoh: tur Crt</h3>
+
+<p>Program 19.2 memperagakan hampir semua rutin Crt dalam satu layar: judul berwarna, 16 warna, posisi kursor, animasi
+dengan <code>Delay</code>, dan <code>ReadKey</code>. Program berjalan di User screen yang berukuran 80x25, jadi hasilnya
+sama dengan layar DOS. Buka <code>bab19_02_unit_crt.pas</code> dan jalankan; tekan sembarang tombol saat diminta.</p>
+
+<x-listing src="bab19_02_unit_crt.pas"></x-listing>
+
+<x-run src="bab19_02_unit_crt.pas" shot="1" caption="Layar tepat sebelum tombol ditekan: judul, 16 warna, posisi kursor, dan baris kemajuan"></x-run>
+
+<x-run src="bab19_02_unit_crt.pas" shot="2" caption="Setelah menekan <kbd>x</kbd>: layar dibersihkan dan program melaporkan tombolnya"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>12–13</td><td><code>uses Crt;</code> membuka seluruh rutin layar dan keyboard.</td></tr>
+    <tr><td>20–21</td><td>Latar diatur biru <b>lebih dulu</b>, baru <code>ClrScr</code>, sehingga seluruh layar menjadi biru. Kalau urutannya terbalik, layar tetap hitam.</td></tr>
+    <tr><td>22–24</td><td>Judul kuning dicetak mulai kolom 32 baris 2. Teks sepanjang 16 karakter, jadi kira-kira berada di tengah layar 80 kolom: (80 &minus; 16) / 2 = 32.</td></tr>
+    <tr><td>26–28</td><td>Teks putih di (5, 4).</td></tr>
+    <tr><td>29–34</td><td>Perulangan 16 warna. <code>TextColor(I)</code> memakai nomor warna langsung. Posisinya <code>GotoXY(5 + (I div 8) * 30, 6 + I mod 8)</code>: <code>I div 8</code> bernilai 0 untuk warna 0 sampai 7 (kolom 5) dan 1 untuk 8 sampai 15 (kolom 35), sedangkan <code>I mod 8</code> menurunkan baris dari 6 sampai 13. Jadi dua kolom berisi delapan warna.</td></tr>
+    <tr><td>31, 33</td><td>Warna 1 (<code>Blue</code>) sama dengan warna latar, sehingga tulisan "Warna nomor  1" tidak terlihat. Itu contoh mengapa kombinasi warna perlu dipilih hati-hati.</td></tr>
+    <tr><td>36–40</td><td><code>WhereX</code> dan <code>WhereY</code> dibaca setelah <code>GotoXY(5, 16)</code>, jadi nilainya 5 dan 16, lalu dicetak.</td></tr>
+    <tr><td>42–49</td><td>Animasi sederhana: 40 kali mencetak <code>#</code> dengan jeda <code>Delay(25)</code> (25 milidetik), total sekitar satu detik.</td></tr>
+    <tr><td>51–54</td><td><code>ReadKey</code> menghentikan program sampai ada tombol; karakter tombol disimpan di <code>Tombol</code> tanpa tampil di layar.</td></tr>
+    <tr><td>56–58</td><td>Warna dikembalikan ke abu-abu terang di atas hitam, layar dihapus.</td></tr>
+    <tr><td>59–62</td><td>Tombol biasa dilaporkan karakternya. Tombol khusus (panah, F1) menghasilkan <code>#0</code> disusul satu <code>ReadKey</code> kedua yang berisi kodenya; bagian ini diuraikan lebih lanjut berikut.</td></tr>
+  </tbody>
+</table>
+
+<h3>Membaca tombol dengan ReadKey</h3>
+
+<p><code>ReadLn</code> menunggu Anda menekan <kbd>Enter</kbd> dan menampilkan huruf yang diketik. <code>ReadKey</code>
+berbeda: ia langsung mengembalikan satu karakter begitu sebuah tombol ditekan, dan tidak menampilkannya. Karena itulah
+<code>ReadKey</code> dipakai untuk menu, permainan, dan perintah "tekan sembarang tombol".</p>
+
+<p>Tombol yang punya karakter ASCII dikembalikan apa adanya: <kbd>Enter</kbd> menjadi <code>#13</code>,
+<kbd>Esc</kbd> menjadi <code>#27</code>. Tombol <b>khusus</b> (panah, F1 sampai F12, <kbd>Home</kbd>, dan sebagainya) tidak
+punya karakter. Untuk itu <code>ReadKey</code> memberikan <b>dua kali</b>: pertama <code>#0</code> sebagai tanda
+"tombol khusus", lalu panggilan kedua mengembalikan kode tombolnya.</p>
+
+<table class="data compact">
+  <caption>Hasil ReadKey untuk tombol yang sering dipakai</caption>
+  <thead><tr><th>Tombol</th><th>Panggilan pertama</th><th>Panggilan kedua</th></tr></thead>
+  <tbody>
+    <tr><td>huruf <kbd>x</kbd></td><td><code>'x'</code></td><td>(tidak ada)</td></tr>
+    <tr><td><kbd>Enter</kbd></td><td><code>#13</code></td><td>(tidak ada)</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td><code>#27</code></td><td>(tidak ada)</td></tr>
+    <tr><td>panah atas</td><td><code>#0</code></td><td><code>#72</code></td></tr>
+    <tr><td>panah bawah</td><td><code>#0</code></td><td><code>#80</code></td></tr>
+    <tr><td>panah kiri</td><td><code>#0</code></td><td><code>#75</code></td></tr>
+    <tr><td>panah kanan</td><td><code>#0</code></td><td><code>#77</code></td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p>Ubah baris 54 pada program 19.2 sehingga <code>ReadKey</code> dipanggil sekali, lalu jalankan dan
+tekan panah kanan. Program akan melaporkan tombol khusus dengan kode 77. Untuk apa baris 60 memanggil
+<code>ReadKey</code> sekali lagi?</p></div>
+
+<h2>Proyek Kecil: Menu Berwarna</h2>
+
+<p>Dengan bekal <code>GotoXY</code>, warna, dan <code>ReadKey</code>, kita bisa membuat menu yang dioperasikan dengan
+panah seperti di aplikasi sungguhan. Rancangannya: sebuah bingkai karakter, daftar empat pilihan, pilihan aktif
+ditandai warna latar berbeda, panah atas/bawah memindahkan sorotan, <kbd>Enter</kbd> membuka, dan <kbd>Esc</kbd> keluar.
+Alur utamanya sebuah perulangan <code>repeat..until</code> yang menggambar menu, membaca satu tombol, lalu memutuskan.</p>
+
+<figure class="grafik" id="gb-menu-alur">
+<svg viewBox="0 0 680 270">
+  <rect class="term" x="10" y="14" width="130" height="34" rx="17"/>
+  <text class="white mid b" x="75" y="35">Aktif := 1</text>
+  <path class="arrow" d="M75 48 V66"/>
+  <rect class="box" x="10" y="68" width="130" height="34" rx="6"/>
+  <text class="mid" x="75" y="89">GambarMenu(Aktif)</text>
+  <path class="arrow" d="M140 85 H178"/>
+  <rect class="io" x="180" y="68" width="130" height="34" rx="6"/>
+  <text class="mid" x="245" y="89">Tombol := ReadKey</text>
+  <path class="arrow" d="M245 102 V122"/>
+  <polygon class="dec" points="245,124 330,152 245,180 160,152"/>
+  <text class="s mid" x="245" y="150">Tombol =</text>
+  <text class="s mid" x="245" y="162">?</text>
+  <path class="arrow" d="M330 152 H372"/>
+  <rect class="dec" x="374" y="130" width="140" height="44" rx="6"/>
+  <text class="b s" x="384" y="148">#0 (panah)</text>
+  <text class="s" x="384" y="164">baca ReadKey lagi</text>
+  <path class="arrow" d="M514 152 H540"/>
+  <rect class="box" x="542" y="124" width="128" height="56" rx="6"/>
+  <text class="s b" x="550" y="142">#72 atas: Aktif - 1</text>
+  <text class="s b" x="550" y="158">#80 bawah: Aktif + 1</text>
+  <text class="xs muted" x="550" y="172">ujung: berputar</text>
+  <path class="arrow" d="M245 180 V204"/>
+  <rect class="ok" x="160" y="206" width="170" height="34" rx="6"/>
+  <text class="s mid" x="245" y="222">#13 Enter: buka pilihan</text>
+  <text class="xs mid muted" x="245" y="234">(pilihan Keluar = selesai)</text>
+  <path class="arrow" d="M330 223 H372"/>
+  <rect class="no" x="374" y="206" width="140" height="34" rx="6"/>
+  <text class="s mid" x="444" y="228">#27 Esc: selesai</text>
+  <path class="arrow" d="M244 240 V254 H4 V85 H10"/>
+  <text class="xs muted" x="14" y="250">kembali ke atas bila belum selesai</text>
+</svg>
+<figcaption>Alur <code>repeat..until</code> pada menu berwarna: gambar, baca tombol, lalu ubah keadaan.</figcaption>
+</figure>
+
+<p>Buka <code>bab19_03_menu_berwarna.pas</code>. Program ini lebih panjang, jadi kita bahas per blok setelah melihat
+tampilannya.</p>
+
+<x-listing src="bab19_03_menu_berwarna.pas"></x-listing>
+
+<p>Layar pertama muncul begitu program mulai. Bingkai dan judul digambar sekali; pilihan pertama, "Profil sekolah",
+berlatar cyan karena <code>Aktif = 1</code>.</p>
+
+<x-run src="bab19_03_menu_berwarna.pas" keys="Down Down Enter Esc" shot="1" caption="Layar awal: pilihan <i>Profil sekolah</i> aktif (latar cyan)"></x-run>
+
+<p>Tekan panah bawah dua kali dan sorotan pindah ke "Pengumuman" (pilihan ketiga). <kbd>Enter</kbd> kemudian memanggil
+<code>TampilkanIsi(3)</code> yang menulis kalimat kuning di baris 20.</p>
+
+<x-run src="bab19_03_menu_berwarna.pas" keys="Down Down Enter Esc" shot="3" caption="Setelah <kbd>↓</kbd> <kbd>↓</kbd>: sorotan berpindah ke <i>Pengumuman</i>"></x-run>
+
+<x-run src="bab19_03_menu_berwarna.pas" keys="Down Down Enter Esc" shot="4" caption="Setelah <kbd>Enter</kbd>: isi pengumuman tampil di baris 20"></x-run>
+
+<x-run src="bab19_03_menu_berwarna.pas" keys="Down Down Enter Esc" shot="5" caption="Setelah <kbd>Esc</kbd>: layar dibersihkan, program menutup dengan pesan terima kasih"></x-run>
+
+<p>Sekarang uji perilaku berputar: dari pilihan pertama, panah <b>atas</b> melompat ke pilihan terakhir ("Keluar").
+Tekan <kbd>Enter</kbd> di situ untuk menutup program.</p>
+
+<x-run src="bab19_03_menu_berwarna.pas" keys="Up Enter" shot="2" caption="Panah atas dari pilihan pertama: sorotan berputar ke <i>Keluar</i>"></x-run>
+
+<h3>Penjelasan per blok</h3>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>12–15</td><td>Konstanta <code>JumlahMenu</code> dan konstanta bertipe larik <code>Menu</code> berisi empat teks. Larik bertipe <code>string[20]</code> sehingga setiap teks muat di maksimal 20 karakter. Jika menu bertambah, cukup ubah dua baris ini.</td></tr>
+    <tr><td>17–32</td><td><code>Kotak(X1, Y1, X2, Y2)</code> menggambar bingkai dari karakter <code>+</code>, <code>-</code>, <code>|</code>. Baris atas dari (X1, Y1) ke (X2, Y1); sisi kiri dan kanan dengan <code>GotoXY</code> per baris (baris 24–28); baris bawah di Y2 (29–31). Pemanggilan <code>Kotak(25, 4, 56, 18)</code> pada baris 76 menghasilkan bingkai selebar 32 kolom dan setinggi 15 baris.</td></tr>
+    <tr><td>34–54</td><td><code>GambarMenu(Aktif)</code> menggambar keempat pilihan di kolom 30, baris 9, 11, 13, dan 15 (<code>7 + I * 2</code>). Pilihan aktif memakai latar <code>Cyan</code> dengan tulisan hitam, yang lain latar <code>Blue</code> dengan tulisan putih (baris 41–50).</td></tr>
+    <tr><td>51</td><td>Teks dicetak dengan satu spasi di kiri dan kanan serta <code>'':20 - Length(Menu[I])</code> sebagai bantalan spasi. Tiap pilihan jadi selebar 22 kolom, sehingga bilah sorotan sama panjang.</td></tr>
+    <tr><td>53</td><td>Latar dikembalikan ke biru supaya tulisan sesudahnya tidak ikut berlatar cyan.</td></tr>
+    <tr><td>56–65</td><td><code>TampilkanIsi(Nomor)</code> memakai <code>case</code> untuk mencetak kalimat di (10, 20). Kalimat dipadatkan hingga sama panjang agar sisa kalimat sebelumnya tertimpa. Pilihan 4 (Keluar) tidak memiliki cabang karena ditangani di program utama.</td></tr>
+    <tr><td>73–82</td><td>Persiapan layar: latar biru, <code>ClrScr</code>, bingkai, judul di (32, 6), dan petunjuk di baris 23.</td></tr>
+    <tr><td>84–85</td><td><code>Aktif</code> bermula di 1 dan <code>Selesai</code> bernilai <code>False</code>.</td></tr>
+    <tr><td>86–88</td><td>Awal perulangan: gambar menu dengan sorotan terbaru, lalu tunggu satu tombol.</td></tr>
+    <tr><td>89–98</td><td>Bila tombol <code>#0</code>, panggilan <code>ReadKey</code> kedua mengambil kodenya. <code>#72</code> (atas) mengurangi <code>Aktif</code>, atau melompat ke <code>JumlahMenu</code> bila sudah di atas; <code>#80</code> (bawah) menambah atau kembali ke 1.</td></tr>
+    <tr><td>99–105</td><td><code>Enter</code> (<code>#13</code>): bila yang aktif pilihan terakhir, <code>Selesai := True</code>, selain itu isinya ditampilkan.</td></tr>
+    <tr><td>106–108</td><td><code>Esc</code> (<code>#27</code>) juga mengakhiri perulangan lewat <code>until Selesai</code>.</td></tr>
+    <tr><td>110–113</td><td>Warna dan layar dikembalikan, lalu pesan penutup dicetak.</td></tr>
+  </tbody>
+</table>
+
+<div class="tip"><p>Perhatikan dua gaya <code>if</code> bertingkat di baris 89 sampai 107: <code>if ... then begin ... end
+else if ... then begin ... end else if ...</code>. Tidak ada titik koma sebelum setiap <code>else</code>. Ini rantai
+<code>else if</code> yang Anda kenal pada Bab 6, hanya saja kali ini menyaring jenis tombol.</p></div>
+
+<div class="coba"><p>Tambahkan pilihan kelima "Kontak" ke menu. Anda perlu mengubah <code>JumlahMenu</code>, isi
+larik <code>Menu</code>, dan satu cabang <code>case</code> di <code>TampilkanIsi</code>. Apakah bingkai <code>Kotak</code>
+masih cukup tinggi? Hitung baris terakhir pilihan: <code>7 + 5 * 2</code>.</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<ul>
+  <li><b>Nama berkas tidak sama dengan nama unit.</b> <code>unit matematika;</code> yang disimpan sebagai
+  <code>mat.pas</code> tidak akan ditemukan oleh <code>uses matematika;</code>.</li>
+  <li><b>Header ada di <code>interface</code> tetapi badan tidak ada</b> (atau sebaliknya). Setiap rutin yang diumumkan
+  harus dilengkapi di <code>implementation</code>.</li>
+  <li><b>Lupa <code>uses Crt;</code></b> ketika memakai <code>ClrScr</code>, <code>GotoXY</code>, atau <code>ReadKey</code>.</li>
+  <li><b>Mengira unit bisa dijalankan.</b> Jalankan program yang memakainya, atau gunakan Primary file.</li>
+  <li><b>Mengatur latar setelah <code>ClrScr</code>.</b> Latar baru memengaruhi teks sesudahnya, bukan layar yang sudah
+  dihapus.</li>
+  <li><b>Menekan panah tetapi program tidak membedakannya dari huruf.</b> Tombol khusus selalu dua kali <code>ReadKey</code>:
+  <code>#0</code> lalu kodenya.</li>
+</ul>
+
+<x-error name="badan_hilang.pas" caption="Contoh unit yang mengumumkan fungsi di <code>interface</code> tetapi lupa menulis badannya">unit badan_hilang;
+
+interface
+
+function Dua(X: Integer): Integer;
+
+implementation
+
+end.</x-error>
+
+<div class="rangkuman"><h2>Rangkuman</h2><ul>
+  <li><b>Unit</b> adalah berkas berisi konstanta, tipe, prosedur, dan fungsi yang dipakai ulang oleh banyak program.</li>
+  <li>Unit terbagi dua: <code>interface</code> (daftar yang boleh dipakai pihak luar, hanya header) dan <code>implementation</code> (badan lengkap), diakhiri <code>end.</code> tanpa blok utama.</li>
+  <li>Nama berkas harus sama dengan nama unit; program memakainya dengan <code>uses NamaUnit;</code>, dan nama unit boleh dipakai sebagai awalan (<code>matematika.Kuadrat</code>).</li>
+  <li>Unit tidak bisa dijalankan sendiri. Gunakan <span class="menu">Compile ▸ Primary file...</span> untuk menetapkan program yang dijalankan bersama unitnya.</li>
+  <li>Unit <code>Crt</code> menyediakan <code>ClrScr</code>, <code>GotoXY</code>, <code>WhereX</code>/<code>WhereY</code>, <code>TextColor</code>, <code>TextBackground</code>, <code>Delay</code>, dan <code>ReadKey</code>.</li>
+  <li>Layar teks berukuran 80 kolom x 25 baris; (1, 1) di kiri atas, X ke kanan, Y ke bawah. Ada 16 warna bernomor 0 sampai 15.</li>
+  <li><code>ReadKey</code> membaca satu tombol tanpa <kbd>Enter</kbd>; tombol khusus menghasilkan <code>#0</code> diikuti kode tombol (atas 72, bawah 80, kiri 75, kanan 77).</li>
+  <li>Menu interaktif = perulangan <i>gambar, baca tombol, ubah keadaan</i> sampai <code>Selesai</code>.</li>
+</ul></div>
+
+<div class="latihan"><h2>Latihan</h2><ol>
+  <li><span class="lv dasar">Dasar</span> Tulis unit <code>suhu</code> dengan fungsi <code>CelsiusKeFahrenheit(C: Real): Real</code>. Kemudian buat program yang memanggilnya untuk 0, 37, dan 100 derajat Celsius. Simpan unit dan program di satu folder, lalu tetapkan Primary file.</li>
+  <li><span class="lv dasar">Dasar</span> Dengan <code>GotoXY</code> dan <code>TextColor</code>, tampilkan nama Anda di tengah baris ke-12 layar 80 kolom dengan warna kuning di atas latar merah. Hitung kolom awalnya dari panjang nama.</li>
+  <li><span class="lv dasar">Dasar</span> Cetak tabel warna 0 sampai 15 seperti program 19.2, tetapi tulis nama konstanta tiap warna (<code>'Black'</code>, <code>'Blue'</code>, dan seterusnya) memakai <code>case</code>.</li>
+  <li><span class="lv menengah">Menengah</span> Tambahkan ke unit <code>matematika</code> fungsi <code>JumlahDigit(N: LongInt): Integer</code> (memakai <code>mod</code> dan <code>div</code>), lengkap dengan header di <code>interface</code>. Uji untuk 2026.</li>
+  <li><span class="lv menengah">Menengah</span> Buat program kotak yang bergerak: sebuah karakter <code>#</code> dapat digeser ke kiri, kanan, atas, dan bawah dengan tombol panah (kode 75, 77, 72, 80), dan berhenti saat <kbd>Esc</kbd>. Hapus posisi lama dengan spasi sebelum menggambar posisi baru, dan jangan biarkan karakter keluar dari 80x25.</li>
+  <li><span class="lv tantangan">Tantangan</span> Ubah menu 19.3 supaya pilihan bisa juga dipilih dengan angka <kbd>1</kbd> sampai <kbd>4</kbd> dan menu ditampilkan dari data yang dibaca dari berkas teks.</li>
+  <li><span class="lv tantangan">Tantangan</span> Pecah program menu menjadi dua unit: <code>tampilan</code> (fungsi <code>Kotak</code>) dan <code>menu</code> (fungsi <code>GambarMenu</code>). Program utama hanya berisi alur menunya. Pikirkan: apa yang harus diumumkan di <code>interface</code> masing-masing?</li>
+</ol></div>

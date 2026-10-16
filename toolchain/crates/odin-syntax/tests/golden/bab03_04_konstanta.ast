@@ -1,0 +1,16 @@
+(program bab03_04_konstanta
+  (const NamaToko = 'Toko Buku Pelita')
+  (const HargaBuku = 45000)
+  (const Diskon = 0.1)
+  (const JumlahBeli = 3)
+  (var (Total Potongan) Real)
+  (begin
+    (:= Total (* HargaBuku JumlahBeli))
+    (:= Potongan (* Total Diskon))
+    (do (call WriteLn NamaToko))
+    (do (call WriteLn 'Harga buku : Rp ' HargaBuku))
+    (do (call WriteLn 'Jumlah     : ' JumlahBeli ' buku'))
+    (do (call WriteLn 'Total      : Rp ' Total:0:0))
+    (do (call WriteLn 'Diskon 10% : Rp ' Potongan:0:0))
+    (do (call WriteLn 'Bayar      : Rp ' (- Total Potongan):0:0))
+    (empty)))

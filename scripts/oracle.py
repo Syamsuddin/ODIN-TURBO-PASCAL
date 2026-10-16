@@ -4,7 +4,7 @@
 """Generate expected outputs for the Pascal test corpus with Free Pascal.
 
 FPC (fpc -Mtp) is the oracle: for every tests/pascal/<dir>/NAME.PAS (except
-syntax/ and errors/) this compiles the program, runs it with NAME.in as
+the folders in SKIP_DIRS) this compiles the program, runs it with NAME.in as
 standard input and NAME.args as arguments, and writes NAME.out (standard
 output) and NAME.code (exit status). Runtime-error messages go to standard
 error and are not compared, because they contain addresses.
@@ -32,7 +32,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CORPUS = ROOT / "tests" / "pascal"
-SKIP_DIRS = {"syntax", "errors", "semantic", "crt", "vision"}
+SKIP_DIRS = {"syntax", "errors", "semantic", "crt", "vision", "debug"}
 
 
 def deviations():

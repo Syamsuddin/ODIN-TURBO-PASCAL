@@ -1,0 +1,16 @@
+(program bab03_05_batas_tipe_data
+  (begin
+    (do (call WriteLn 'Tipe     Byte      Terkecil      Terbesar'))
+    (do (call WriteLn '-----------------------------------------'))
+    (do (call WriteLn 'Byte    ' (call SizeOf Byte):5 (call Low Byte):14 (call High Byte):14))
+    (do (call WriteLn 'ShortInt' (call SizeOf ShortInt):5 (call Low ShortInt):14 (call High ShortInt):14))
+    (do (call WriteLn 'Word    ' (call SizeOf Word):5 (call Low Word):14 (call High Word):14))
+    (do (call WriteLn 'Integer ' (call SizeOf Integer):5 (call Low Integer):14 (call High Integer):14))
+    (do (call WriteLn 'LongInt ' (call SizeOf LongInt):5 (call Low LongInt):14 (call High LongInt):14))
+    (do (call WriteLn 'Char    ' (call SizeOf Char):5 (call Ord (call Low Char)):14 (call Ord (call High Char)):14))
+    (do (call WriteLn 'Boolean ' (call SizeOf Boolean):5 (call Ord False):14 (call Ord True):14))
+    (do (call WriteLn 'Real    ' (call SizeOf Real):5 '  sekitar 15 angka penting'))
+    (do WriteLn)
+    (do (call WriteLn 'MaxInt     = ' MaxInt))
+    (do (call WriteLn 'MaxLongInt = ' MaxLongInt))
+    (empty)))

@@ -1,4 +1,4 @@
-ODIN TURBO PASCAL 2.2.0
+ODIN TURBO PASCAL 2.3.0
 Paket aplikasi desktop untuk Mac Intel dan Apple Silicon; berjalan dari source di Linux
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
@@ -30,8 +30,8 @@ Install.command       Deteksi CPU, pemasangan dependensi, compile/run check,
 Uninstall.command     Memindahkan aplikasi ke Trash, mempertahankan data.
 CHANGELOG.md          Riwayat perubahan per versi.
 main.py, odin/        Source code aplikasi yang dapat dipelajari dan diubah.
-examples/             Sebelas berkas contoh Pascal, termasuk satu unit dan
-                      demo Turbo Vision (VISION.PAS).
+examples/             Tutorial Pascal untuk pemula: 90 berkas dalam 20 bab,
+                      yaitu 89 program dan unit matematika.pas (Bab 19).
 rtl/                  Runtime library Odin dan Odin Vision (Pascal).
 toolchain/            Source toolchain Odin: compiler, assembler, linker,
                       dan debugger (Rust).
@@ -108,7 +108,8 @@ FITUR YANG TERIMPLEMENTASI
 Antarmuka biru, teks kuning, menu abu-abu, jendela editor, status bar, dan
 pintasan fungsi klasik. File/Edit/Search/Run/Compile/Debug/Options/Window/Help.
 Editor beberapa berkas dengan tile, cascade, zoom, undo/redo, clipboard,
-find/replace, go-to-line, indentasi, mode insert/overwrite, warna sintaks opsional.
+find/replace, go-to-line, indentasi, mode insert/overwrite, dan warna sintaks
+Turbo Biru Lembut yang bisa dimatikan.
 Toolchain Odin (macOS, Linux, Windows): compiler TP7 dengan tipe object, runtime library
 dengan Crt, Dos, Strings, Printer, Objects, dan Odin Vision (Turbo Vision).
 Free Pascal asli sebagai backend alternatif, mode TP/ObjFPC/Delphi, primary
@@ -138,9 +139,10 @@ Lihat docs/COMPATIBILITY.txt untuk rincian.
 
 PENGUJIAN
 
-Rilis 2.2.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
-Free Pascal 3.2.2): 92 tes Python (termasuk tes GUI dengan jendela Tk
-sungguhan), 185 tes Rust, dan 77 program uji yang keluarannya sama dengan
+Rilis 2.3.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
+Free Pascal 3.2.2): 97 tes Python (termasuk tes GUI dengan jendela Tk
+sungguhan) dan 177 tes Rust. Rilis 2.2.0 diuji di Mac Intel dengan 92 tes
+Python, 185 tes Rust, dan 77 program uji yang keluarannya sama dengan
 Free Pascal. Korpus yang sama juga lulus di VM Ubuntu 24.04 (x86_64, dan
 aarch64 lewat qemu) dan, bersama tes Python dengan backend Odin, di runner
 GitHub Actions untuk macOS Apple Silicon, Linux x86_64, dan Linux arm64.

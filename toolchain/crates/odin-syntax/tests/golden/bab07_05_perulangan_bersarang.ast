@@ -1,0 +1,24 @@
+(program bab07_05_perulangan_bersarang
+  (var (Baris Kolom) Integer)
+  (begin
+    (do (call WriteLn 'TABEL PERKALIAN 1 - 9'))
+    (do (call Write '   |'))
+    (for Kolom 1 to 9
+      (do (call Write Kolom:4)))
+    (do WriteLn)
+    (do (call WriteLn '---+------------------------------------'))
+    (for Baris 1 to 9
+      (begin
+        (do (call Write Baris:2 ' |'))
+        (for Kolom 1 to 9
+          (do (call Write (* Baris Kolom):4)))
+        (do WriteLn)
+        (empty)))
+    (do WriteLn)
+    (for Baris 1 to 3
+      (begin
+        (for Kolom 1 to 4
+          (do (call Write '(' Baris ',' Kolom ') ')))
+        (do WriteLn)
+        (empty)))
+    (empty)))

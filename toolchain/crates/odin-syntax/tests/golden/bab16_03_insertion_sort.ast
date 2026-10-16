@@ -1,0 +1,33 @@
+(program bab16_03_insertion_sort
+  (const N = 8)
+  (const Awal : (array [(.. 1 N)] Integer) = (29, 10, 14, 37, 13, 5, 42, 21))
+  (type TData = (array [(.. 1 N)] Integer))
+  (procedure Tampilkan (Judul: string; D: TData)
+    (var (I) Integer)
+    (begin
+      (do (call Write Judul))
+      (for I 1 to N
+        (do (call Write (index D I):4)))
+      (do WriteLn)
+      (empty)))
+  (var (Data) TData)
+  (var (I J Kunci) Integer)
+  (begin
+    (for I 1 to N
+      (:= (index Data I) (index Awal I)))
+    (do (call Tampilkan 'Awal      :' Data))
+    (for I 2 to N
+      (begin
+        (:= Kunci (index Data I))
+        (:= J (- I 1))
+        (while (and (>= J 1) (> (index Data J) Kunci))
+          (begin
+            (:= (index Data (+ J 1)) (index Data J))
+            (:= J (- J 1))
+            (empty)))
+        (:= (index Data (+ J 1)) Kunci)
+        (do (call Write 'Sisip ' Kunci:2 '  :'))
+        (do (call Tampilkan '' Data))
+        (empty)))
+    (do (call Tampilkan 'Hasil     :' Data))
+    (empty)))
