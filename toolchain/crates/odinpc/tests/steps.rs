@@ -61,8 +61,9 @@ fn step_reports_match_golden_files() {
     let root = repo();
     let odinpc = env!("CARGO_BIN_EXE_odinpc");
     let target = std::env::var("ODIN_CORPUS_TARGET").unwrap_or_else(|_| host_target());
-    let runner: Vec<String> =
-        std::env::var("ODIN_CORPUS_RUNNER").map(|r| r.split_whitespace().map(String::from).collect()).unwrap_or_default();
+    let runner: Vec<String> = std::env::var("ODIN_CORPUS_RUNNER")
+        .map(|r| r.split_whitespace().map(String::from).collect())
+        .unwrap_or_default();
     if runner.is_empty() && target != host_target() {
         eprintln!("steps: no ODIN_CORPUS_RUNNER to run {target} programs on {}; skipped", host_target());
         return;
@@ -116,8 +117,7 @@ fn step_reports_match_golden_files() {
         vars.push(("ODIN_STATS_FILE".into(), report.to_string_lossy().into_owned()));
         let mut command = match runner.split_first() {
             Some((program, prefix)) => {
-                let prefix: Vec<String> =
-                    prefix.iter().map(|a| a.replace("{cwd}", &work.to_string_lossy())).collect();
+                let prefix: Vec<String> = prefix.iter().map(|a| a.replace("{cwd}", &work.to_string_lossy())).collect();
                 let mut c = Command::new(program);
                 c.args(with_env(&prefix, &vars));
                 c.arg(&exe);

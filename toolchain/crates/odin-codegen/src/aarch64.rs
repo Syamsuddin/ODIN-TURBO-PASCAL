@@ -30,7 +30,9 @@ use odin_asm::{Atom, Import, Object, RelocKind, SectionKind};
 use odin_base::Span;
 use odin_ir::*;
 
-use crate::{CResult, CodegenError, LineEntry, LocalSlot, Options, Os, Output, RTL_ASM_LIBRARY, STEP_COUNTS, import_library};
+use crate::{
+    CResult, CodegenError, LineEntry, LocalSlot, Options, Os, Output, RTL_ASM_LIBRARY, STEP_COUNTS, import_library,
+};
 
 const INT_ARGS: [Reg; 8] = [X0, X1, X2, X3, X4, X5, X6, X7];
 const FLOAT_ARGS: [VReg; 8] = [D0, D1, D2, D3, D4, D5, D6, D7];

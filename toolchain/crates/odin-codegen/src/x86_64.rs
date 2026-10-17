@@ -23,7 +23,9 @@ use odin_asm::{Atom, Import, Object, RelocKind, SectionKind};
 use odin_base::Span;
 use odin_ir::*;
 
-use crate::{CResult, CodegenError, LineEntry, LocalSlot, Options, Os, Output, RTL_ASM_LIBRARY, STEP_COUNTS, import_library};
+use crate::{
+    CResult, CodegenError, LineEntry, LocalSlot, Options, Os, Output, RTL_ASM_LIBRARY, STEP_COUNTS, import_library,
+};
 
 use Reg::*;
 use Width::*;

@@ -8,6 +8,7 @@
 
 mod debuginfo;
 mod driver;
+mod metrics;
 mod options;
 
 use std::process::ExitCode;
@@ -42,6 +43,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Command::Check => check(&options),
+        Command::Metrics => metrics(&options),
         Command::Build => build(&options),
     }
 }
@@ -133,6 +135,43 @@ fn check(options: &Options) -> ExitCode {
             ExitCode::from(1)
         }
     }
+}
+
+/// `odinpc metrics`: checks the program like `check`, then prints what
+/// `metrics::describe` finds in the user's files.
+fn metrics(options: &Options) -> ExitCode {
+    let started = Instant::now();
+    let mut map = SourceMap::new();
+    let result = driver::check(&mut map, options);
+    let reporter = Reporter { format: options.diag_format, map: &map };
+    let checked = match result {
+        Ok(c) => c,
+        Err(failed) => {
+            for w in &failed.warnings {
+                reporter.diagnostic(w);
+            }
+            reporter.diagnostic(&failed.error);
+            reporter.result(false, 0, started);
+            return ExitCode::from(1);
+        }
+    };
+    for w in &checked.warnings {
+        reporter.diagnostic(w);
+    }
+    let Some(rtl) = driver::rtl_dir(options) else {
+        reporter.result(false, 0, started);
+        return ExitCode::from(1);
+    };
+    let source = options.source.as_ref().expect("checked by options::parse");
+    let main_file = map.find(&odin_base::canonical(source).unwrap_or_default()).unwrap_or(odin_base::FileId(0));
+    let user = driver::user_files(&map, &rtl);
+    let found = metrics::describe(&map, &checked.program, &user, main_file, &options.lex_options());
+    match options.diag_format {
+        DiagFormat::Json => println!("{}", found.to_json(&map)),
+        DiagFormat::Text => print!("{}", found.to_text(&map)),
+    }
+    reporter.result(true, checked.lines, started);
+    ExitCode::SUCCESS
 }
 
 fn build(options: &Options) -> ExitCode {

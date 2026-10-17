@@ -11,6 +11,7 @@ pub const USAGE: &str = "\
 Pemakaian:
   odinpc build SOURCE --out EXE [opsi]   kompilasi menjadi executable
   odinpc check SOURCE [opsi]     periksa sintaks
+  odinpc metrics SOURCE [opsi]   struktur kode untuk laporan metrik
   odinpc version                 versi toolchain
   odinpc debug --exe EXE --ide-fds R,W [--odbg F] [--cwd DIR] -- ARGS
                                  jalankan build --debug di bawah debugger
@@ -35,6 +36,8 @@ Opsi:
 pub enum Command {
     Build,
     Check,
+    /// `odinpc metrics`: per-routine figures, notes and shape (metrics.rs).
+    Metrics,
     Version,
     Help,
 }
@@ -77,6 +80,7 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
     let command = match it.next().map(String::as_str) {
         Some("build") => Command::Build,
         Some("check") => Command::Check,
+        Some("metrics") => Command::Metrics,
         Some("version" | "--version") => Command::Version,
         Some("help" | "--help" | "-h") | None => Command::Help,
         Some(other) => return Err(format!("perintah tidak dikenal: {other}")),
@@ -133,7 +137,7 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
             }
         }
     }
-    if matches!(o.command, Command::Check | Command::Build) && o.source.is_none() {
+    if matches!(o.command, Command::Check | Command::Metrics | Command::Build) && o.source.is_none() {
         return Err("berkas sumber belum diberikan".into());
     }
     if o.command == Command::Build && o.out.is_none() {
