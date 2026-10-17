@@ -30,7 +30,7 @@ use odin_asm::{Atom, Import, Object, RelocKind, SectionKind};
 use odin_base::Span;
 use odin_ir::*;
 
-use crate::{CResult, CodegenError, LineEntry, LocalSlot, Options, Os, Output, RTL_ASM_LIBRARY, import_library};
+use crate::{CResult, CodegenError, LineEntry, LocalSlot, Options, Os, Output, RTL_ASM_LIBRARY, STEP_COUNTS, import_library};
 
 const INT_ARGS: [Reg; 8] = [X0, X1, X2, X3, X4, X5, X6, X7];
 const FLOAT_ARGS: [VReg; 8] = [D0, D1, D2, D3, D4, D5, D6, D7];
@@ -104,6 +104,7 @@ pub fn generate(p: &Program, options: &Options) -> CResult<Output> {
         lines: Vec::new(),
         counter: 0,
         debug_points: Vec::new(),
+        count_steps: options.count_steps,
     };
     g.layouts = (0..p.routines.len()).map(|i| g.layout(RoutineId(i as u32))).collect();
     for global in &p.globals {
@@ -157,6 +158,8 @@ struct Gen<'p> {
     lines: Vec<LineEntry>,
     counter: u32,
     debug_points: Vec<Span>,
+    /// `--count-steps`: instrumented routines count instead of calling the debugger.
+    count_steps: bool,
 }
 
 impl<'p> Gen<'p> {
@@ -266,7 +269,13 @@ impl<'p> Gen<'p> {
         a.msr(SysReg::Fpsr, XZR);
         // argc and argv are still in x0/x1.
         a.bl(rtl::STARTUP);
-        if debug {
+        if debug && self.count_steps {
+            let points = self.debug_points.len();
+            self.atoms.push(Atom::bss(STEP_COUNTS, (points.max(1) * 8) as u64, 8));
+            a.mov_imm(X0, points as i64);
+            a.load_address(X1, STEP_COUNTS, 0);
+            a.bl(rtl::STEPS_INIT);
+        } else if debug {
             a.mov_imm(X0, self.debug_points.len() as i64);
             a.bl(rtl::DBG_INIT);
         }
@@ -1491,8 +1500,9 @@ impl<'g, 'p> Rg<'g, 'p> {
         let mark = self.a.here();
         self.marks.push((mark, s.span));
         // A while loop checks in at its condition, once per iteration.
+        let mut point = None;
         if self.instrument && !matches!(s.kind, StmtKind::Label(_) | StmtKind::While { .. }) {
-            self.debug_point(s.span);
+            point = Some(self.debug_point(s.span));
         }
         match &s.kind {
             StmtKind::Assign { target, value } => self.assign(target, value)?,
@@ -1542,7 +1552,9 @@ impl<'g, 'p> Rg<'g, 'p> {
                 self.branch(cond, top, false)?;
                 self.a.bind(end);
             }
-            StmtKind::For { var, from, to, limit, down, body } => self.for_loop(var, from, to, *limit, *down, body)?,
+            StmtKind::For { var, from, to, limit, down, body } => {
+                self.for_loop(var, from, to, *limit, *down, body, point)?
+            }
             StmtKind::Case { selector, arms, otherwise } => {
                 self.int(selector)?;
                 let end = self.a.new_label();
@@ -1607,9 +1619,14 @@ impl<'g, 'p> Rg<'g, 'p> {
 
     /// Records the statement as the current line and calls the hook when the
     /// debugger is attached and stepping, pausing or has a breakpoint here.
-    fn debug_point(&mut self, span: Span) {
+    /// Step-counting builds count the statement instead. Returns its id.
+    fn debug_point(&mut self, span: Span) -> i64 {
         let id = self.g.debug_points.len() as i64;
         self.g.debug_points.push(span);
+        if self.g.count_steps {
+            self.count_step(id);
+            return id;
+        }
         let skip = self.a.new_label();
         let hook = self.a.new_label();
         self.a.mov_imm(X9, id);
@@ -1624,6 +1641,115 @@ impl<'g, 'p> Rg<'g, 'p> {
         self.a.mov_imm(X0, id);
         self.call_rtl(rtl::DBG_HOOK);
         self.a.bind(skip);
+        id
+    }
+
+    /// One step of statement `id`: its counter and the step budget, which
+    /// ends the program with runtime error 240 when it runs out. Uses only
+    /// x9-x11 (free between statements and before `for` loop bodies).
+    fn count_step(&mut self, id: i64) {
+        let skip = self.a.new_label();
+        self.a.load_address(X11, STEP_COUNTS, id * 8);
+        self.a.ldr(X9, Mem::base(X11, 0));
+        self.a.add(X9, X9, 1);
+        self.a.str(X9, Mem::base(X11, 0));
+        self.a.ldr(X10, Mem::sym(rtl::STEP_BUDGET, 0));
+        self.a.sub(X10, X10, 1);
+        self.a.str(X10, Mem::sym(rtl::STEP_BUDGET, 0));
+        self.a.tbz(X10, 63, skip);
+        self.call_rtl(rtl::STEP_LIMIT);
+        self.a.bind(skip);
+    }
+
+    /// Step-counting routine entry: one level deeper, its maximum, and the
+    /// depth limit (runtime error 202).
+    fn stat_enter(&mut self) {
+        let below_max = self.a.new_label();
+        let below_limit = self.a.new_label();
+        self.a.ldr(W10, Mem::sym(rtl::STAT_DEPTH, 0));
+        self.a.add(W10, W10, 1);
+        self.a.str(W10, Mem::sym(rtl::STAT_DEPTH, 0));
+        self.a.ldr(W9, Mem::sym(rtl::STAT_MAXDEPTH, 0));
+        self.a.cmp(W10, W9);
+        self.a.b_cond(ACond::Le, below_max);
+        self.a.str(W10, Mem::sym(rtl::STAT_MAXDEPTH, 0));
+        self.a.bind(below_max);
+        self.a.ldr(W9, Mem::sym(rtl::STAT_DEPTHLIMIT, 0));
+        self.a.cmp(W10, W9);
+        self.a.b_cond(ACond::Le, below_limit);
+        self.call_rtl(rtl::DEPTH_LIMIT);
+        self.a.bind(below_limit);
+    }
+
+    fn stat_leave(&mut self) {
+        self.a.ldr(W10, Mem::sym(rtl::STAT_DEPTH, 0));
+        self.a.sub(W10, W10, 1);
+        self.a.str(W10, Mem::sym(rtl::STAT_DEPTH, 0));
+    }
+
+    /// Bytes copied by one statement count one step per 64 in step-counting
+    /// builds, so that copying a large array is not one step. Uses only x9,
+    /// which the copy itself clobbers.
+    fn weigh(&mut self, bytes: u64) {
+        let steps = bytes / 64;
+        if !(self.instrument && self.g.count_steps) || steps == 0 {
+            return;
+        }
+        let skip = self.a.new_label();
+        self.a.ldr(X9, Mem::sym(rtl::STEP_WEIGHT, 0));
+        self.a.add_const(X9, X9, steps as i64);
+        self.a.str(X9, Mem::sym(rtl::STEP_WEIGHT, 0));
+        self.a.ldr(X9, Mem::sym(rtl::STEP_BUDGET, 0));
+        self.a.add_const(X9, X9, -(steps as i64));
+        self.a.str(X9, Mem::sym(rtl::STEP_BUDGET, 0));
+        self.a.tbz(X9, 63, skip);
+        self.call_rtl(rtl::STEP_LIMIT);
+        self.a.bind(skip);
+    }
+
+    /// Step-counting builds start every variable and function result at
+    /// zero: what an uninitialized local holds otherwise depends on the OS
+    /// and on what ran before, and a judge must see the same run everywhere.
+    /// Runs after the parameters are stored, so it may use x9 and x10.
+    fn zero_locals(&mut self) {
+        let r = self.me();
+        let t = self.types();
+        let slots = self.g.layouts[self.id.0 as usize].slots.clone();
+        for (i, local) in r.locals.iter().enumerate() {
+            if !matches!(local.kind, LocalKind::Var | LocalKind::Result) {
+                continue;
+            }
+            let Slot::Value(off) = slots[i] else { continue };
+            let size = t.size(local.ty);
+            let mut done = 0u64;
+            if size > 64 {
+                let lp = self.a.new_label();
+                self.a.add_const(X9, X29, off as i64);
+                self.a.mov_imm(X10, (size / 8) as i64);
+                self.a.bind(lp);
+                self.a.str(XZR, Mem::post(X9, 8));
+                self.a.subs(X10, X10, 1);
+                self.a.b_cond(ACond::Ne, lp);
+                done = size / 8 * 8;
+            }
+            let off = off as i64;
+            while done + 8 <= size {
+                self.a.str(XZR, Mem::base(X29, off + done as i64));
+                done += 8;
+            }
+            while done + 4 <= size {
+                self.a.str(WZR, Mem::base(X29, off + done as i64));
+                done += 4;
+            }
+            while done + 2 <= size {
+                self.a.strh(WZR, Mem::base(X29, off + done as i64));
+                done += 2;
+            }
+            while done < size {
+                self.a.strb(WZR, Mem::base(X29, off + done as i64));
+                done += 1;
+            }
+        }
     }
 
     /// Routine entry: one level deeper; the shadow stack records the
@@ -1718,13 +1844,27 @@ impl<'g, 'p> Rg<'g, 'p> {
                     self.a.mov(X4, X0);
                     self.pop(X3);
                     self.memcpy(t.size(target.ty));
+                    self.weigh(t.size(target.ty));
                 }
             }
         }
         Ok(())
     }
 
-    fn for_loop(&mut self, var: &Expr, from: &Expr, to: &Expr, limit: Var, down: bool, body: &[Stmt]) -> CResult<()> {
+    /// `point`: the loop's statement id in instrumented routines; step-counting
+    /// builds count it once more per iteration, as a while loop counts its
+    /// condition.
+    #[allow(clippy::too_many_arguments)]
+    fn for_loop(
+        &mut self,
+        var: &Expr,
+        from: &Expr,
+        to: &Expr,
+        limit: Var,
+        down: bool,
+        body: &[Stmt],
+        point: Option<i64>,
+    ) -> CResult<()> {
         let ty = var.ty;
         let ExprKind::Var(v) = var.kind else {
             return err("internal: for variable is not a variable", var.span);
@@ -1748,6 +1888,11 @@ impl<'g, 'p> Rg<'g, 'p> {
         self.a.cmp(X0, X1);
         self.a.b_cond(if down { ACond::Lt } else { ACond::Gt }, end);
         self.a.bind(top);
+        if let Some(id) = point
+            && self.g.count_steps
+        {
+            self.count_step(id);
+        }
         self.loops.push((step, end));
         self.stmts(body)?;
         self.loops.pop();
@@ -1864,15 +2009,21 @@ impl<'g, 'p> Rg<'g, 'p> {
                 self.a.ldr(X3, Mem::base(X29, sp as i64));
                 self.a.add_const(X4, X29, off as i64);
                 self.memcpy(t.size(p.ty));
+                self.weigh(t.size(p.ty));
             }
         }
-        if self.instrument {
+        if self.instrument && self.g.count_steps {
+            self.zero_locals();
+            self.stat_enter();
+        } else if self.instrument {
             self.debug_enter();
         }
         self.stmts(body)?;
         let exit = self.exit;
         self.a.bind(exit);
-        if self.instrument {
+        if self.instrument && self.g.count_steps {
+            self.stat_leave();
+        } else if self.instrument {
             self.debug_leave();
         }
         if let Some(rt) = r.sig.result {

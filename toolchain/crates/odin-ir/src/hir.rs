@@ -500,4 +500,26 @@ pub mod rtl {
     pub const DBG_HOOK: &str = "SYSTEM.ODIN_DBG_HOOK";
     /// `(LineCount: LongInt)`: connects to the debugger, called after startup.
     pub const DBG_INIT: &str = "SYSTEM.ODIN_DBG_INIT";
+    /// Step-counting builds (`--count-steps`): steps the program may still
+    /// take. Every counted step subtracts one; below zero the statement calls
+    /// [`STEP_LIMIT`].
+    pub const STEP_BUDGET: &str = "SYSTEM.ODIN_STEP_BUDGET";
+    /// Step-counting builds: steps charged for copying data, one per 64
+    /// bytes (structured assignments and value parameters here, `Move` and
+    /// `FillChar` in the RTL); they come out of [`STEP_BUDGET`] too.
+    pub const STEP_WEIGHT: &str = "SYSTEM.ODIN_STEP_WEIGHT";
+    /// Step-counting builds: number of instrumented routines on the call
+    /// stack, its maximum so far, and the depth that ends the program with
+    /// runtime error 202 when exceeded.
+    pub const STAT_DEPTH: &str = "SYSTEM.ODIN_STAT_DEPTH";
+    pub const STAT_MAXDEPTH: &str = "SYSTEM.ODIN_STAT_MAXDEPTH";
+    pub const STAT_DEPTHLIMIT: &str = "SYSTEM.ODIN_STAT_DEPTHLIMIT";
+    /// `(PointCount: LongInt; Counts: Pointer)`: reads the limits and the
+    /// report path from the environment, called after startup. `Counts` is the
+    /// code generator's array of one Int64 per statement id.
+    pub const STEPS_INIT: &str = "SYSTEM.ODIN_STEPS_INIT";
+    /// Runtime error 240 (step limit) at the caller's statement.
+    pub const STEP_LIMIT: &str = "SYSTEM.ODIN_STEPLIMIT";
+    /// Runtime error 202 (call depth limit) at the caller's routine.
+    pub const DEPTH_LIMIT: &str = "SYSTEM.ODIN_DEPTHLIMIT";
 }

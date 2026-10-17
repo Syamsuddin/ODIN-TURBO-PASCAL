@@ -72,6 +72,12 @@ var
   ODIN_DBG_DEPTH: LongInt;
   ODIN_DBG_SHARED: PByteArray;
   ODIN_DBG_STACK: array[0..4095] of TDbgFrame;
+  { Step counting of --count-steps builds (stats.inc); the compiler refers to these. }
+  ODIN_STEP_BUDGET: Int64;
+  ODIN_STEP_WEIGHT: Int64;
+  ODIN_STAT_DEPTH: LongInt;
+  ODIN_STAT_MAXDEPTH: LongInt;
+  ODIN_STAT_DEPTHLIMIT: LongInt;
 
 function ParamCount: LongInt;
 function ParamStr(Index: LongInt): String;
@@ -101,6 +107,9 @@ function Ln(X: Real): Real;
 procedure ODIN_STARTUP(ArgC: LongInt; ArgV: Pointer);
 procedure ODIN_DBG_INIT(LineCount: LongInt);
 procedure ODIN_DBG_HOOK(Id: LongInt);
+procedure ODIN_STEPS_INIT(PointCount: LongInt; Counts: Pointer);
+procedure ODIN_STEPLIMIT;
+procedure ODIN_DEPTHLIMIT;
 procedure ODIN_HALT(Code: LongInt);
 procedure ODIN_FPERROR(Flags: Int64);
 procedure ODIN_RUNERROR(Code: LongInt);
@@ -416,6 +425,7 @@ begin
 end;
 
 {$I debug.inc}
+{$I stats.inc}
 
 { ---- program start and end ---------------------------------------------- }
 
@@ -462,6 +472,7 @@ begin
     WriteRaw(2, 'Runtime error ' + S + ' at $' + HexStr(Int64(ErrorAddr), 16) + #10);
     WriteRaw(2, '  $' + HexStr(Int64(ErrorAddr), 16) + #10#10);
   end;
+  StatsReport(ExitCode);
   DbgExitCode(ExitCode);
   c_exit(ExitCode);
 end;
@@ -486,6 +497,21 @@ end;
 procedure ODIN_RUNERROR(Code: LongInt);
 begin
   RunErrorAt(Code, ODIN_RETADDR);
+end;
+
+{ Step-counting builds: the step budget ran out (runtime error 240) or the
+  call depth passed $ODIN_DEPTH_LIMIT (202), at the caller's statement. The
+  limit is lifted first so that exit procedures can still run. }
+procedure ODIN_STEPLIMIT;
+begin
+  ODIN_STEP_BUDGET := High(Int64);
+  RunErrorAt(240, ODIN_RETADDR);
+end;
+
+procedure ODIN_DEPTHLIMIT;
+begin
+  ODIN_STAT_DEPTHLIMIT := High(LongInt);
+  RunErrorAt(202, ODIN_RETADDR);
 end;
 
 { ---- runtime errors from processor faults --------------------------------- }
@@ -883,16 +909,26 @@ var
 begin
   if Size <= 0 then
     Size := 1;
+  if (HeapLimit > 0) and (HeapNow + Size > HeapLimit) then
+    RunErrorAt(203, ODIN_RETADDR);
   P := c_malloc(Size);
   if P = nil then
     RunErrorAt(203, ODIN_RETADDR);
+  HeapNow := HeapNow + Size;
+  if HeapNow > HeapPeak then
+    HeapPeak := HeapNow;
   ODIN_GETMEM := P;
 end;
 
 procedure ODIN_FREEMEM(P: Pointer; Size: Int64);
 begin
   if P <> nil then
+  begin
     c_free(P);
+    if Size <= 0 then
+      Size := 1;
+    HeapNow := HeapNow - Size;
+  end;
 end;
 
 procedure ODIN_FILLCHAR(var X; Count: Int64; Value: Byte);
@@ -900,6 +936,7 @@ var
   P: PByteArray;
   I: Int64;
 begin
+  StatWeigh(Count, ODIN_RETADDR);
   P := PByteArray(@X);
   I := 0;
   while I < Count do
@@ -914,6 +951,7 @@ var
   S, D: PByteArray;
   I: LongInt;
 begin
+  StatWeigh(Count, ODIN_RETADDR);
   S := PByteArray(@Source);
   D := PByteArray(@Dest);
   if Int64(D) < Int64(S) then
@@ -965,6 +1003,9 @@ end;
 
 procedure Randomize;
 begin
+  { Step-counting builds keep the seed from ODIN_RANDSEED, so runs repeat. }
+  if StatOn then
+    Exit;
   RandSeed := LongInt(c_time(nil));
 end;
 

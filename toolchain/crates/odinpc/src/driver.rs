@@ -337,9 +337,9 @@ pub fn build(map: &SourceMap, options: &Options, checked: &Checked) -> Result<Bu
         }
     };
     let rtl = rtl_dir(options).ok_or_else(|| Diagnostic::error_with(code::FILE_NOT_FOUND, Span::default(), ": RTL"))?;
-    // --debug instruments the user's sources, never the RTL.
+    // --debug and --count-steps instrument the user's sources, never the RTL.
     let mut debug_files = std::collections::HashSet::new();
-    if options.debug {
+    if options.debug || options.count_steps {
         let rtl_root = odin_base::canonical(&rtl).unwrap_or_else(|_| rtl.clone());
         for i in 0..map.len() {
             let path = &map.file(FileId(i as u32)).path;
@@ -349,7 +349,7 @@ pub fn build(map: &SourceMap, options: &Options, checked: &Checked) -> Result<Bu
             }
         }
     }
-    let codegen_options = odin_codegen::Options { os, debug_files };
+    let codegen_options = odin_codegen::Options { os, debug_files, count_steps: options.count_steps };
     let arm64 = target.is_arm64();
     let generated = if arm64 {
         odin_codegen::aarch64::generate(&checked.program, &codegen_options)

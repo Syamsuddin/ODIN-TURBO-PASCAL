@@ -5,8 +5,9 @@
 //! and its standard output and exit status compared with the expectations
 //! that `scripts/oracle.py` produced with FPC (`NAME.out`, `NAME.code`).
 //!
-//! Every program runs twice: built normally and built with `--debug` (with
-//! debugger hooks, but no debugger attached). Both must match FPC.
+//! Every program runs three times: built normally, built with `--debug` (with
+//! debugger hooks, but no debugger attached) and built with `--count-steps`
+//! (step counters, zeroed locals, no report requested). All must match FPC.
 //!
 //! `ODIN_CORPUS=crt` limits the run to programs whose path relative to
 //! `tests/pascal` contains `crt` (case-insensitive).
@@ -76,23 +77,27 @@ fn pascal_corpus_matches_fpc() {
     }
     assert!(!list.is_empty(), "no corpus programs found");
     let mut failures = Vec::new();
-    for (src, debug) in list.iter().flat_map(|s| [(s, false), (s, true)]) {
+    for (src, mode) in list.iter().flat_map(|s| [(s, ""), (s, "--debug"), (s, "--count-steps")]) {
         let mut name = src.strip_prefix(root.join("tests/pascal")).unwrap().display().to_string();
-        if debug {
-            name.push_str(" (--debug)");
+        if !mode.is_empty() {
+            name.push_str(&format!(" ({mode})"));
         }
         // Each build gets its own file: replacing a file another machine just
         // ran (the VM, through a shared folder) may still run the old one.
         let stem = src.file_stem().unwrap().to_string_lossy();
-        let mut exe = tmp.join(if debug { format!("{stem}-debug") } else { stem.to_string() });
+        let mut exe = tmp.join(match mode {
+            "--debug" => format!("{stem}-debug"),
+            "--count-steps" => format!("{stem}-count"),
+            _ => stem.to_string(),
+        });
         if target.ends_with("windows") {
             exe.set_extension("exe");
         }
         let mut command = Command::new(odinpc);
         command.arg("build").arg(src).arg("--out").arg(&exe).arg("--rtl").arg(root.join("rtl"));
         command.arg("--target").arg(&target);
-        if debug {
-            command.arg("--debug");
+        if !mode.is_empty() {
+            command.arg(mode);
         }
         let build = command.output().unwrap();
         if !build.status.success() {

@@ -6,6 +6,12 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Ditambahkan
+
+- `odinpc build --count-steps`: build hitung langkah untuk laporan metrik dan penilaian. Setiap pernyataan di sumber pengguna menambah penghitungnya (`for` sekali saat masuk dan sekali per iterasi), dan menyalin data (assignment dan parameter nilai bertipe terstruktur, `Move`, `FillChar`) dibebani satu langkah per 64 byte. Saat program berakhir, RTL menulis laporan ke `$ODIN_STATS_FILE`: total langkah, langkah per pernyataan (memetakan ke `lines` di `.odbg`), puncak heap, dan kedalaman panggilan. Batasnya diatur lewat `ODIN_STEP_LIMIT` (runtime error 240 yang baru), `ODIN_HEAP_LIMIT` (203), dan `ODIN_DEPTH_LIMIT` (202). Build ini juga mengisi nol variabel lokal dan memakai `RandSeed` dari `ODIN_RANDSEED`, sehingga angkanya sama di macOS, Linux, dan Windows, di x86-64 maupun arm64. Kontraknya ada di `rtl/COMPILER_INTERFACE.md` §8.
+- `odinpc/tests/steps.rs` membandingkan laporan program di `tests/steps/` dengan berkas yang sama di setiap target, dan korpus `tests/pascal` kini juga dijalankan dengan build hitung langkah.
+- Unit Dos di Windows mengambil handle `FindFirst` dari pustaka C, seperti `opendir` di Unix, sehingga handle itu tidak tercatat sebagai heap program.
+
 ### Diubah
 
 - CI: `actions/checkout` dan `actions/upload-artifact` naik dari v4 ke v7, yang berjalan di Node.js 24. GitHub Actions tidak lagi memperingatkan bahwa Node.js 20 sudah usang.

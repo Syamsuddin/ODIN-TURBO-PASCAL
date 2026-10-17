@@ -203,3 +203,60 @@ Metode yang meng-override memakai slot milik leluhurnya.
 | `ODIN_CALLLOCAL5(Code, Frame, A1..A5)` | Seperti `ODIN_CALLLOCAL` dengan lima argumen (argumen kelima lewat slot stack pertama). `TOutlineViewer.FirstThat`/`ForEach` di Odin Vision memakainya. |
 
 `TStream.Get` dan `TStream.Put` memanggil `Load` dan `Store` lewat tipe prosedural yang mengikuti ABI di atas: `function(Self, Vmt: Pointer; var S: TStream): Pointer` dan `procedure(Self: Pointer; var S: TStream)`.
+
+## 8. Build hitung langkah (`odinpc build --count-steps`)
+
+Build untuk laporan metrik dan penilaian (latihan, lomba). Compiler menginstrumentasi rutin dari sumber pengguna seperti `--debug`, tetapi menghitung langkah alih-alih memanggil debugger; RTL tidak diinstrumentasi. `--debug` dan `--count-steps` tidak bisa dipakai bersama. Variabel dan rutinnya ada di bagian interface unit System, dan kodenya di `rtl/system/stats.inc`.
+
+Tujuannya angka yang sama untuk sumber, masukan, dan versi `odinpc` yang sama di setiap OS dan CPU. `odinpc/tests/steps.rs` membandingkan laporan program di `tests/steps/` dengan berkas yang sama di semua target CI.
+
+| Simbol | Arti |
+| --- | --- |
+| `$STEPS` | Larik milik code generator, satu Int64 per id statement (indeks yang sama dengan `lines` di `.odbg`). |
+| `ODIN_STEP_BUDGET: Int64` | Sisa langkah. Setiap langkah mengurangi satu; di bawah nol statement itu memanggil `ODIN_STEPLIMIT`. |
+| `ODIN_STEP_WEIGHT: Int64` | Langkah yang dibebankan untuk menyalin data (lihat di bawah). |
+| `ODIN_STAT_DEPTH`, `ODIN_STAT_MAXDEPTH`, `ODIN_STAT_DEPTHLIMIT: LongInt` | Kedalaman rutin terinstrumentasi di call stack (program utama = 1), maksimumnya, dan batasnya. |
+| `ODIN_STEPS_INIT(PointCount; Counts)` | Dipanggil `_main` sesudah `ODIN_STARTUP` dengan jumlah id dan alamat `$STEPS`. Membaca variabel lingkungan di bawah. |
+| `ODIN_STEPLIMIT` | Runtime error 240 (batas langkah) di statement pemanggil. |
+| `ODIN_DEPTHLIMIT` | Runtime error 202 (stack overflow) di rutin pemanggil. |
+
+Yang dihitung, satu langkah per kejadian:
+
+- setiap statement sumber, dengan titik yang sama seperti build debug: potongan hasil penurunan satu statement (`Write`, `Inc`, ...) berbagi satu titik; `while` dihitung setiap kali kondisinya diperiksa; `repeat` sekali saat masuk dan setiap kali `until` diperiksa;
+- `for` sekali saat masuk dan sekali lagi setiap iterasi, sehingga `for i := 1 to N do ;` bernilai N + 1 langkah;
+- menyalin data: assignment bertipe terstruktur dan parameter nilai bertipe terstruktur di rutin terinstrumentasi, juga `Move` dan `FillChar`, dibebani satu langkah per 64 byte (dibulatkan ke bawah), dicatat di `ODIN_STEP_WEIGHT` dan dikurangkan dari anggaran.
+
+Statement di dalam RTL (isi `WriteLn`, `Pos`, ...) tidak dihitung; rutin RTL yang biayanya bergantung pada ukuran data tak terbatas hanya `Move` dan `FillChar`, dan keduanya dibebani seperti di atas. Ekspresi tidak dihitung terpisah: pemanggilan fungsi pengguna di dalam ekspresi dihitung lewat statement di fungsi itu.
+
+Agar hasilnya sama di semua mesin, build ini juga:
+
+- mengisi nol setiap variabel lokal dan hasil fungsi saat rutin dimulai (isi lokal yang belum diisi bergantung pada OS);
+- membuat `Randomize` mempertahankan `RandSeed` dari `$ODIN_RANDSEED` (bawaan 0);
+- mencatat heap dalam ukuran yang diminta lewat `New`/`GetMem` dan dibebaskan lewat `Dispose`/`FreeMem`, bukan ukuran yang dibulatkan pustaka C. Handle pencarian berkas unit Dos tidak termasuk heap program.
+
+Variabel lingkungan (bilangan desimal; kosong, 0, atau tidak sah berarti tanpa batas):
+
+| Variabel | Arti |
+| --- | --- |
+| `ODIN_STATS_FILE` | Berkas laporan. Tanpa variabel ini tidak ada laporan. |
+| `ODIN_STEP_LIMIT` | Langkah maksimum; langkah berikutnya menjadi runtime error 240. |
+| `ODIN_HEAP_LIMIT` | Byte heap maksimum yang boleh terpakai bersamaan; permintaan yang melewatinya menjadi runtime error 203. |
+| `ODIN_DEPTH_LIMIT` | Kedalaman rutin maksimum; panggilan yang melewatinya menjadi runtime error 202. |
+| `ODIN_RANDSEED` | Nilai awal `RandSeed`. |
+
+Sebelum runtime error 240 atau 202, batasnya diangkat agar rantai `ExitProc` tetap bisa berjalan. Laporan ditulis sekali di akhir program (normal maupun runtime error) oleh `DoExit`, sesudah `ExitProc`; program yang dihentikan dari luar (sinyal, batas waktu OS) tidak menulis laporan. Bentuknya teks, satu butir per baris, diakhiri LF:
+
+```
+otp-stats 1
+exit KODE
+steps TOTAL
+weight LANGKAH_SALIN
+heap_peak BYTE
+heap_end BYTE
+depth_max N
+points JUMLAH_ID
+p ID JUMLAH
+...
+```
+
+`steps` = jumlah semua penghitung ditambah `weight`. Baris `p` hanya untuk id yang pernah berjalan, urut naik; baris sumbernya diambil dari `lines` di `.odbg`. Pembaca harus mengabaikan kunci yang tidak dikenalnya, dan versi di baris pertama naik bila arti angka yang sudah ada berubah.

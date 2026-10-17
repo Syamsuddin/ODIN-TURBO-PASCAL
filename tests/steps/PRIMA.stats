@@ -1,0 +1,17 @@
+otp-stats 1
+exit 0
+steps 4013823
+weight 0
+heap_peak 0
+heap_end 0
+depth_max 1
+points 9
+p 0 1
+p 1 2000
+p 2 1999
+p 3 1999000
+p 4 1997001
+p 5 11519
+p 6 1999
+p 7 303
+p 8 1

@@ -27,6 +27,7 @@ Opsi:
   --rtl DIR                      direktori sumber RTL (build)
   --build-all                    kompilasi ulang semua unit (build)
   --debug                        sisipkan hook debugger (build)
+  --count-steps                  hitung langkah per pernyataan untuk laporan metrik (build)
   --target TARGET                x86_64-darwin, aarch64-darwin, ... (build)
   --dump-ast                     cetak AST (check)";
 
@@ -60,6 +61,8 @@ pub struct Options {
     pub rtl: Option<PathBuf>,
     pub build_all: bool,
     pub debug: bool,
+    /// `--count-steps`: step counters and the metrics report (rtl/COMPILER_INTERFACE.md).
+    pub count_steps: bool,
     pub target: String,
 }
 
@@ -93,6 +96,7 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
         rtl: None,
         build_all: false,
         debug: false,
+        count_steps: false,
         target: host_target(),
     };
     while let Some(arg) = it.next() {
@@ -111,6 +115,7 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
             "--rtl" => o.rtl = Some(value(arg)?.into()),
             "--build-all" => o.build_all = true,
             "--debug" => o.debug = true,
+            "--count-steps" => o.count_steps = true,
             "--target" => o.target = value(arg)?,
             "--diag-format" => {
                 o.diag_format = match value(arg)?.as_str() {
@@ -133,6 +138,9 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
     }
     if o.command == Command::Build && o.out.is_none() {
         return Err("build memerlukan --out EXE".into());
+    }
+    if o.debug && o.count_steps {
+        return Err("--debug dan --count-steps tidak bisa dipakai bersama".into());
     }
     Ok(o)
 }
