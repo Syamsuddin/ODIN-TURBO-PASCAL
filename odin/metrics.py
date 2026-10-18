@@ -422,6 +422,21 @@ def _json_lines(text: str) -> list[dict]:
     return items
 
 
+def structure_from_output(text: str) -> tuple[dict | None, list[dict]]:
+    """The output of `odinpc metrics --diag-format json` as (figures, diagnostics); figures is
+    None when the program does not compile. File names keep only their last part, so a report
+    never carries the folders of the machine that made it."""
+    items = _json_lines(text)
+    figures = next((i for i in items if i.get("type") == "metrics"), None)
+    diagnostics = [i for i in items if i.get("type") == "diagnostic"]
+    if figures:
+        for key in ("routines", "notes"):
+            for entry in figures.get(key, []):
+                entry["file"] = Path(entry.get("file", "")).name
+        figures = {k: figures[k] for k in ("routines", "notes", "facts", "shape") if k in figures}
+    return figures, diagnostics
+
+
 @dataclass
 class Toolchain:
     """odinpc and the RTL it compiles with."""
@@ -444,15 +459,7 @@ class Toolchain:
         """`odinpc metrics`: (figures, diagnostics); figures is None when the program does not compile."""
         out = subprocess.run([self.odinpc, "metrics", str(source), *self._common()], cwd=source.parent,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True).stdout
-        items = _json_lines(out)
-        figures = next((i for i in items if i.get("type") == "metrics"), None)
-        diagnostics = [i for i in items if i.get("type") == "diagnostic"]
-        if figures:
-            for key in ("routines", "notes"):
-                for entry in figures.get(key, []):
-                    entry["file"] = Path(entry.get("file", "")).name
-            figures = {k: figures[k] for k in ("routines", "notes", "facts", "shape") if k in figures}
-        return figures, diagnostics
+        return structure_from_output(out)
 
     def build(self, source: Path, folder: Path) -> tuple[Path | None, dict | None, list[dict]]:
         """A judge build (--count-steps with range and overflow checks): (executable, .odbg
