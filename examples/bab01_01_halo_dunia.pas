@@ -1,5 +1,5 @@
 { Odin Turbo Pascal - GNU GPL v3 or later, Copyright (c) 2026 Syams Ideris }
-{ Odin Turbo Pascal v2.3.0 - program pertama }
+{ Odin Turbo Pascal v2.4.0 - program pertama }
 
 { Bab 1.1 - Halo, Dunia!
   Program Pascal paling sederhana: menampilkan tulisan ke layar.

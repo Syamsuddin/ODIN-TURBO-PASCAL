@@ -1,5 +1,5 @@
 ODIN TURBO PASCAL
-Panduan penggunaan 2.3.0
+Panduan penggunaan 2.4.0
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 MEMBUAT PROGRAM PERTAMA
@@ -146,6 +146,56 @@ Vision selesai, isi layar sebelumnya kembali.
 Ini bukan emulator terminal lengkap: tidak ada scrollback, true color, atau
 akurasi lebar glyph Unicode CJK. Gunakan teks ASCII untuk program dengan tata
 letak kolom yang ketat.
+
+METRIK: UKUR DAN PERIKSA
+
+Run > Ukur (Shift+F9) membangun program dengan build juri (odinpc build
+--count-steps, dengan pemeriksaan range dan overflow) dan menjalankannya di
+User screen seperti Run. Saat program selesai, jendela Metrik menampilkan:
+
+  Angka resmi   langkah eksekusi, puncak heap, memori global, dan kedalaman
+                panggilan. Angka ini dihitung toolchain, bukan diukur dari
+                jam atau memori komputer, jadi sama di macOS, Linux, dan
+                Windows untuk sumber, masukan, dan versi odinpc yang sama.
+  Info mesin    waktu nyata di komputer ini; tidak dinilai.
+  Peta langkah  baris yang paling banyak dijalankan.
+  Catatan       saran tentang struktur kode: variabel yang tidak dipakai,
+                fungsi yang tidak mengisi hasilnya, goto, nesting lebih dari
+                4 tingkat, kompleksitas lebih dari 10, angka yang berulang
+                atau batas larik yang sebaiknya dijadikan const, dan prosedur
+                yang mengubah variabel global. Catatan tidak mengurangi nilai.
+
+Satu langkah adalah satu pernyataan yang dijalankan; for dihitung sekali saat
+masuk dan sekali per iterasi, while setiap kali kondisinya diperiksa, dan
+menyalin data (assignment larik atau record, Move, FillChar) satu langkah per
+64 byte. Build juri juga mengisi nol variabel lokal dan membuat Randomize
+selalu mulai dari benih yang sama, sehingga hasil setiap run bisa diulang.
+Klik baris berwarna di jendela Metrik untuk membuka baris itu di editor.
+Simpan laporan menyimpan laporan lengkap sebagai JSON (otp-metrics/1).
+
+Run > Periksa memilih folder paket soal lalu menjalankan program dengan
+setiap kasus ujinya tanpa User screen. Isi paket:
+
+  soal.md        pernyataan soal
+  aturan.json    {"judul": "...", "pembanding": "trim", "toleransi": 1e-6,
+                  "batas": {"langkah": 50000000, "heap": 16777216,
+                            "kedalaman": 10000},
+                  "syarat": ["tanpa_goto", "rekursi", "larik", "record",
+                             "pointer", "prosedur"],
+                  "subtask": [{"nama": "S1", "poin": 40, "kasus": ["a*"]}]}
+                 semua kunci boleh tidak ada
+  kasus/NAMA.in  masukan kasus NAMA, dan kasus/NAMA.out keluaran yang
+                 diharapkan. Kasus berawalan "contoh" adalah contoh; yang
+                 lain kasus tersembunyi.
+  rujukan.pas    solusi rujukan (boleh tidak ada)
+
+Pembanding trim mengabaikan spasi di ujung baris dan baris kosong di akhir;
+exact tidak; tokens membandingkan kata demi kata; real seperti tokens tetapi
+angka dianggap sama bila selisihnya dalam toleransi. Tanpa subtask, nilai =
+100 x kasus lulus / jumlah kasus; subtask memberi poinnya hanya bila semua
+kasusnya lulus. Hasil tiap kasus: Lulus, Keluaran salah, Runtime error,
+Batas langkah (runtime error 240), Batas heap (203), Batas kedalaman (202),
+Batas waktu, atau Keluaran terlalu panjang.
 
 DEBUGGER
 

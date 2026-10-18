@@ -13,6 +13,7 @@ F9                  Make
 F10                 File menu
 Ctrl+F9             Compile and run; continue in the debugger
 Alt+F9              Compile
+Shift+F9            Ukur (laporan metrik program)
 Ctrl+F2             Stop program/debugger
 Alt+F3              Close editor
 Alt+F5              User screen
