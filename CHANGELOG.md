@@ -29,7 +29,7 @@ Di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2, Rust 1.99): 11
 
 Laporan langkah program di `tests/steps/` sama persis di x86_64-darwin, di VM Ubuntu 24.04 (Lima) untuk x86_64-linux, dan untuk aarch64-linux lewat qemu-user.
 
-Di GitHub Actions, kelima job CI lulus untuk cabang `toolchain/metrik-langkah`: macOS 15 Apple Silicon, macOS 15 Intel, Ubuntu 24.04 x86_64 dan arm64, dan Windows Server 2025 x86_64. Di semua job itu laporan langkah sama dengan berkas yang sama.
+Di GitHub Actions, kelima job CI lulus untuk rilis ini: macOS 15 Apple Silicon, macOS 15 Intel, Ubuntu 24.04 x86_64 dan arm64, dan Windows Server 2025 x86_64 (119 tes Python, 2 dilewati). Di semua job itu laporan langkah sama dengan berkas yang sama. `odinpc.exe` 2.4.0 berasal dari job Windows itu.
 
 Yang belum diverifikasi langsung: Apple Silicon, PC Linux dan Windows fisik, serta jendela **Metrik** di sistem selain Mac Intel.
 
