@@ -1,0 +1,11 @@
+otp-stats 1
+exit 240
+steps 1001
+weight 0
+heap_peak 0
+heap_end 0
+depth_max 1
+points 3
+p 0 1
+p 1 500
+p 2 500

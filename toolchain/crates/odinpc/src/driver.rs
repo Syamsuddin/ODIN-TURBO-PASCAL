@@ -312,6 +312,20 @@ pub fn check(map: &mut SourceMap, options: &Options) -> Result<Checked, Failed> 
     }
 }
 
+/// The files of the program that are not part of the RTL in `rtl`: the
+/// user's program, units and include files.
+pub fn user_files(map: &SourceMap, rtl: &Path) -> std::collections::HashSet<FileId> {
+    let rtl_root = odin_base::canonical(rtl).unwrap_or_else(|_| rtl.to_path_buf());
+    (0..map.len())
+        .map(|i| FileId(i as u32))
+        .filter(|&id| {
+            let path = &map.file(id).path;
+            let path = odin_base::canonical(path).unwrap_or_else(|_| path.clone());
+            !path.starts_with(&rtl_root)
+        })
+        .collect()
+}
+
 /// A linked program and its debug description.
 pub struct Built {
     pub bytes: Vec<u8>,
@@ -337,19 +351,10 @@ pub fn build(map: &SourceMap, options: &Options, checked: &Checked) -> Result<Bu
         }
     };
     let rtl = rtl_dir(options).ok_or_else(|| Diagnostic::error_with(code::FILE_NOT_FOUND, Span::default(), ": RTL"))?;
-    // --debug instruments the user's sources, never the RTL.
-    let mut debug_files = std::collections::HashSet::new();
-    if options.debug {
-        let rtl_root = odin_base::canonical(&rtl).unwrap_or_else(|_| rtl.clone());
-        for i in 0..map.len() {
-            let path = &map.file(FileId(i as u32)).path;
-            let path = odin_base::canonical(path).unwrap_or_else(|_| path.clone());
-            if !path.starts_with(&rtl_root) {
-                debug_files.insert(FileId(i as u32));
-            }
-        }
-    }
-    let codegen_options = odin_codegen::Options { os, debug_files };
+    // --debug and --count-steps instrument the user's sources, never the RTL.
+    let debug_files =
+        if options.debug || options.count_steps { user_files(map, &rtl) } else { std::collections::HashSet::new() };
+    let codegen_options = odin_codegen::Options { os, debug_files, count_steps: options.count_steps };
     let arm64 = target.is_arm64();
     let generated = if arm64 {
         odin_codegen::aarch64::generate(&checked.program, &codegen_options)

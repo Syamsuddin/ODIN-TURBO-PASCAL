@@ -531,4 +531,44 @@ class GuiTests(unittest.TestCase):
         self.app.find_error()
         self.assertEqual(str(editor.text.tag_ranges("error")[0]),"5.0")
 
+    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
+    def test_ukur_runs_in_the_user_screen_and_shows_metrics(self):
+        self.assertIn("Ukur",[self.app.menus["Run"][1].entrycget(i,"label") for i in range(self.app.menus["Run"][1].index("end")+1)
+                              if self.app.menus["Run"][1].type(i)=="command"])
+        source=self.path/"ukur.pas"
+        source.write_text("program Ukur;\nvar I, S, Tak: LongInt;\nbegin\n  S := 0;\n  for I := 1 to 100 do\n"
+                          "    S := S + I;\n  WriteLn('UKUR_OK ', S);\nend.\n")
+        self.app.open_file(source)
+        self.app.measure()
+        self.wait_for(lambda:self.app.last_metrics is not None)
+        report=self.app.last_metrics
+        case=report["cases"][0]
+        # 1 (S := 0) + 1 + 100 (for) + 100 (body) + 1 (WriteLn)
+        self.assertEqual((case["verdict"],case["steps"],case["depth_max"]),("selesai",203,1))
+        self.assertIn("UKUR_OK 5050",self.app.console.screen.text())
+        self.assertEqual({e["line"]:e["steps"] for e in report["lines"]}[6],100)
+        self.assertEqual([n["code"] for n in report["structure"]["notes"]],["unused-var"])
+        windows=[w for w in self.root.winfo_children() if isinstance(w,tk.Toplevel) and "Metrik" in w.title()]
+        self.assertEqual(len(windows),1)
+
+    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
+    def test_periksa_scores_a_problem_package(self):
+        package=self.path/"paket"
+        (package/"kasus").mkdir(parents=True)
+        (package/"aturan.json").write_text(json.dumps({"judul":"Jumlah","syarat":["tanpa_goto"]}))
+        for name,given,expected in (("contoh1","3\n","6\n"),("r1","10\n","55\n"),("r2","0\n","1\n")):
+            (package/"kasus"/f"{name}.in").write_text(given)
+            (package/"kasus"/f"{name}.out").write_text(expected)
+        source=self.path/"jumlah.pas"
+        source.write_text("program Jumlah;\nvar N, I, S: LongInt;\nbegin\n  ReadLn(N);\n  S := 0;\n"
+                          "  for I := 1 to N do\n    S := S + I;\n  WriteLn(S);\nend.\n")
+        self.app.open_file(source)
+        with patch("odin.app.filedialog.askdirectory",return_value=str(package)):
+            self.app.check_package()
+        self.wait_for(lambda:self.app.last_metrics is not None)
+        report=self.app.last_metrics
+        self.assertEqual({c["name"]:c["verdict"] for c in report["cases"]},{"contoh1":"lulus","r1":"lulus","r2":"salah"})
+        self.assertEqual((report["score"]["passed"],report["score"]["points"]),(2,66))
+        self.assertEqual(report["requirements"],[{"name":"tanpa_goto","label":"tanpa goto","met":True}])
+
 if __name__=="__main__":unittest.main()

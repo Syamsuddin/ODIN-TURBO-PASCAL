@@ -11,6 +11,7 @@ pub const USAGE: &str = "\
 Pemakaian:
   odinpc build SOURCE --out EXE [opsi]   kompilasi menjadi executable
   odinpc check SOURCE [opsi]     periksa sintaks
+  odinpc metrics SOURCE [opsi]   struktur kode untuk laporan metrik
   odinpc version                 versi toolchain
   odinpc debug --exe EXE --ide-fds R,W [--odbg F] [--cwd DIR] -- ARGS
                                  jalankan build --debug di bawah debugger
@@ -27,6 +28,7 @@ Opsi:
   --rtl DIR                      direktori sumber RTL (build)
   --build-all                    kompilasi ulang semua unit (build)
   --debug                        sisipkan hook debugger (build)
+  --count-steps                  hitung langkah per pernyataan untuk laporan metrik (build)
   --target TARGET                x86_64-darwin, aarch64-darwin, ... (build)
   --dump-ast                     cetak AST (check)";
 
@@ -34,6 +36,8 @@ Opsi:
 pub enum Command {
     Build,
     Check,
+    /// `odinpc metrics`: per-routine figures, notes and shape (metrics.rs).
+    Metrics,
     Version,
     Help,
 }
@@ -60,6 +64,8 @@ pub struct Options {
     pub rtl: Option<PathBuf>,
     pub build_all: bool,
     pub debug: bool,
+    /// `--count-steps`: step counters and the metrics report (rtl/COMPILER_INTERFACE.md).
+    pub count_steps: bool,
     pub target: String,
 }
 
@@ -74,6 +80,7 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
     let command = match it.next().map(String::as_str) {
         Some("build") => Command::Build,
         Some("check") => Command::Check,
+        Some("metrics") => Command::Metrics,
         Some("version" | "--version") => Command::Version,
         Some("help" | "--help" | "-h") | None => Command::Help,
         Some(other) => return Err(format!("perintah tidak dikenal: {other}")),
@@ -93,6 +100,7 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
         rtl: None,
         build_all: false,
         debug: false,
+        count_steps: false,
         target: host_target(),
     };
     while let Some(arg) = it.next() {
@@ -111,6 +119,7 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
             "--rtl" => o.rtl = Some(value(arg)?.into()),
             "--build-all" => o.build_all = true,
             "--debug" => o.debug = true,
+            "--count-steps" => o.count_steps = true,
             "--target" => o.target = value(arg)?,
             "--diag-format" => {
                 o.diag_format = match value(arg)?.as_str() {
@@ -128,11 +137,14 @@ pub fn parse(args: &[String]) -> Result<Options, String> {
             }
         }
     }
-    if matches!(o.command, Command::Check | Command::Build) && o.source.is_none() {
+    if matches!(o.command, Command::Check | Command::Metrics | Command::Build) && o.source.is_none() {
         return Err("berkas sumber belum diberikan".into());
     }
     if o.command == Command::Build && o.out.is_none() {
         return Err("build memerlukan --out EXE".into());
+    }
+    if o.debug && o.count_steps {
+        return Err("--debug dan --count-steps tidak bisa dipakai bersama".into());
     }
     Ok(o)
 }

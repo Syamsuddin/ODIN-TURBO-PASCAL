@@ -6,7 +6,7 @@
 
 **Layar biru Turbo Pascal yang Anda kenal, dengan compiler dan debugger yang menghasilkan program native.**
 
-[![Versi](https://img.shields.io/badge/rilis-2.3.0-0000aa?style=flat-square)](CHANGELOG.md)
+[![Versi](https://img.shields.io/badge/rilis-2.4.0-0000aa?style=flat-square)](CHANGELOG.md)
 [![CI](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml/badge.svg)](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml)
 [![Lisensi GPL v3](https://img.shields.io/badge/lisensi-GPL--3.0--or--later-ffff55?style=flat-square)](LICENSE)
 [![Offline](https://img.shields.io/badge/offline-tanpa%20telemetri-55ff55?style=flat-square)](#privasi-dan-lokasi-data)
@@ -22,7 +22,7 @@
 </div>
 
 > [!IMPORTANT]
-> **Rilis 2.3.0** menyertakan buku tutorial berwarna penuh, *Belajar Pemrograman Bahasa Pascal dengan ODIN Turbo Pascal*, yang dibuka dari menu **Help › Buku**, tutorial 20 bab di **File › Examples**, dan warna sintaks Turbo Biru Lembut. IDE, toolchain Odin, debugger terpadu, dan Odin Vision berjalan di macOS (Intel dan Apple Silicon), Linux (x86_64 dan arm64), dan **Windows** (x86_64). Windows, Apple Silicon, dan Linux diuji di runner GitHub Actions, belum di perangkat fisik pengembang. Lihat [Riwayat Rilis](#riwayat-rilis) dan [Status Pengujian](#status-pengujian).
+> **Rilis 2.4.0** menambahkan **Run › Ukur** (Shift+F9) dan **Run › Periksa...**: program diukur dengan build hitung langkah (langkah per pernyataan, puncak heap, memori global, kedalaman panggilan) yang angkanya sama di semua platform, lengkap dengan catatan struktur kode dan penilaian dengan paket soal, sebagai bahan analisis dan lomba pemrograman. IDE, toolchain Odin, debugger terpadu, dan Odin Vision berjalan di macOS (Intel dan Apple Silicon), Linux (x86_64 dan arm64), dan **Windows** (x86_64). Windows, Apple Silicon, dan Linux diuji di runner GitHub Actions, belum di perangkat fisik pengembang. Lihat [Riwayat Rilis](#riwayat-rilis) dan [Status Pengujian](#status-pengujian).
 
 ## Daftar Isi
 
@@ -136,6 +136,15 @@ Debugger terpadu bergaya Turbo Pascal untuk backend Odin (macOS, Linux, dan Wind
 > [!NOTE]
 > Rilis 1.0.0 memakai konsol LLDB di User screen. Sejak 2.0.0-alpha.1 debugger terpadu menggantikannya, sejak 2.1.0-alpha.1 debugger ini juga tersedia di Apple Silicon dan Linux, dan sejak 2.2.0 di Windows.
 
+### Metrik: Ukur dan Periksa
+
+Bahan analisis dan penilaian kode, misalnya untuk lomba pemrograman (backend Odin; lihat **Help › Metrik: Ukur dan Periksa**):
+
+- **Run › Ukur** (`Shift+F9`) membangun program dengan build juri (`odinpc build --count-steps --range-checks --overflow-checks`), menjalankannya di User screen, lalu membuka jendela **Metrik**: jumlah langkah, puncak heap, memori global, dan kedalaman panggilan. Angka-angka ini sama di macOS, Linux, dan Windows, x86-64 maupun arm64, karena yang dihitung adalah langkah, bukan waktu.
+- **Peta langkah** menunjukkan baris mana yang paling banyak dijalankan. **Catatan struktur** dari `odinpc metrics` (variabel tidak dipakai, nesting dalam, kompleksitas tinggi, angka ajaib, `goto`, efek samping global) bisa diklik ke barisnya.
+- **Run › Periksa...** menjalankan program dengan setiap kasus dalam paket soal (`aturan.json`, `kasus/*.in`/`.out`). Hasilnya: vonis per kasus (benar, salah, melewati batas langkah atau memori, runtime error), skor subtask gaya OSN/IOI, dan pemeriksaan syarat soal.
+- Laporan bisa disimpan sebagai JSON `otp-metrics/1` (`odin/metrics.py`, hanya pustaka standar Python). Kontrak build hitung langkah ada di [`rtl/COMPILER_INTERFACE.md`](rtl/COMPILER_INTERFACE.md) §8.
+
 ### Berkas dan sesi
 
 - Contoh bawaan diperlakukan sebagai template: **Save** otomatis menjadi **Save as**, sehingga contoh asli tidak tertimpa.
@@ -170,7 +179,7 @@ Pemasang macOS dapat memasang dependensi yang belum ada melalui Homebrew, dan pe
 
 ### macOS
 
-Pemasang ini memasang **rilis 2.3.0**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Free Pascal tetap dipasang, karena dipakai pemeriksaan pemasang dan bila backend Free Pascal dipilih.
+Pemasang ini memasang **rilis 2.4.0**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Free Pascal tetap dipasang, karena dipakai pemeriksaan pemasang dan bila backend Free Pascal dipilih.
 
 1. **Unduh** repositori ini (**Code › Download ZIP**), lalu ekstrak seluruhnya. Jangan menjalankan pemasang dari pratinjau ZIP.
 2. **Buka `Install.command`.** Pemasang berjalan di Terminal dan akan:
@@ -329,9 +338,10 @@ Program yang memakai unit yang belum tersedia di backend Odin mendapat pesan yan
 
 | Lingkungan | Hasil |
 |---|---|
-| Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, FPC 3.2.2, Rust 1.99 (rilis 2.3.0) | 97 tes Python lulus (6 dilewati), termasuk tes GUI dengan jendela Tk sungguhan, sesi debugger nyata, dan snapshot Odin Vision. 177 tes Rust juga lulus. Korpus diferensial 77 program (termasuk tipe `object` dan unit `Objects`) memberi keluaran dan kode keluar yang sama dengan FPC 3.2.2, baik dengan build biasa maupun build debug |
-| GitHub Actions: macOS 15 Apple Silicon, Ubuntu 24.04 x86_64 dan arm64, macOS 15 Intel (rilis 2.3.0) | Korpus diferensial berjalan native dan lulus; tes Python dengan backend Odin (GUI, debugger, Odin Vision) lulus. Lihat [CI](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml) |
-| GitHub Actions: Windows Server 2025 x86_64, Python 3.12, FPC 3.2.2 i386-win32 (rilis 2.3.0) | Korpus diferensial 77 program (biasa dan debug) identik dengan FPC untuk Windows; 97 tes Python lulus (2 tes khusus Unix dilewati), termasuk GUI, debugger, dan Odin Vision di ConPTY; pemeriksaan kompilasi dan penyalinan pemasang lulus |
+| Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, FPC 3.2.2, Rust 1.99 (rilis 2.4.0) | 119 tes Python lulus (6 dilewati), termasuk tes GUI dengan jendela Tk sungguhan, sesi debugger nyata, snapshot Odin Vision, dan **Run › Ukur**/**Periksa...**. 189 tes Rust juga lulus. Korpus diferensial 77 program (termasuk tipe `object` dan unit `Objects`) memberi keluaran dan kode keluar yang sama dengan FPC 3.2.2, dengan build biasa, build debug, dan build hitung langkah |
+| GitHub Actions: macOS 15 Apple Silicon, Ubuntu 24.04 x86_64 dan arm64, macOS 15 Intel (rilis 2.4.0) | Korpus diferensial berjalan native dan lulus; laporan langkah `tests/steps/` sama di semua target; tes Python dengan backend Odin (GUI, debugger, Odin Vision) lulus. Lihat [CI](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml) |
+| GitHub Actions: Windows Server 2025 x86_64, Python 3.12, FPC 3.2.2 i386-win32 (rilis 2.4.0) | Korpus diferensial 77 program (biasa, debug, dan hitung langkah) identik dengan FPC untuk Windows; laporan langkah sama dengan target lain; 119 tes Python lulus (2 tes khusus Unix dilewati), termasuk GUI, debugger, dan Odin Vision di ConPTY; pemeriksaan kompilasi dan penyalinan pemasang lulus |
+| VM Ubuntu 24.04 (Lima di Mac Intel) (rilis 2.4.0) | Laporan langkah `tests/steps/` sama dengan Mac Intel untuk x86_64 dan untuk aarch64 lewat qemu-user |
 | VM Ubuntu 24.04 (Lima di Mac Intel), Python 3.12, Tk 8.6 (rilis 2.1.0-alpha.1) | Korpus diferensial lulus untuk x86_64 dan untuk aarch64 lewat qemu-user; 92 tes Python dengan backend Odin lulus di x86_64 |
 | Linux x86_64, Python 3.12, Tk 9.0, FPC 3.2.2, Xvfb (rilis 1.0.0) | Seluruh suite saat itu lulus. Lihat [`docs/TEST_REPORT.txt`](docs/TEST_REPORT.txt) |
 
@@ -453,7 +463,8 @@ ODIN-TURBO-PASCAL/
 
 | Versi | Ringkasan |
 |---|---|
-| **2.3.0** (terbaru) | Buku tutorial PDF berwarna penuh (403 halaman, 20 bab) di menu **Help › Buku**, tutorial 90 contoh di **File › Examples**, dan warna sintaks **Turbo Biru Lembut**. Toolchain Odin tidak berubah |
+| **2.4.0** (terbaru) | Metrik untuk analisis dan lomba: `odinpc build --count-steps`, `odinpc metrics`, menu **Run › Ukur** (Shift+F9) dan **Run › Periksa...** dengan paket soal, serta laporan JSON `otp-metrics/1` |
+| 2.3.0 | Buku tutorial PDF berwarna penuh (403 halaman, 20 bab) di menu **Help › Buku**, tutorial 90 contoh di **File › Examples**, dan warna sintaks **Turbo Biru Lembut**. Toolchain Odin tidak berubah |
 | 2.2.0 | IDE, toolchain Odin, debugger terpadu, dan Odin Vision di **Windows** (x86_64, Windows 10 1809 atau lebih baru), dengan pemasang `Install.cmd`. Mencakup dukungan Apple Silicon dan Linux dari 2.1.0-alpha.1; tidak ada rilis 2.1.0 terpisah |
 | 2.1.0-alpha.1 | Toolchain Odin, debugger terpadu, dan Odin Vision di **Apple Silicon** dan **Linux** (x86_64 dan arm64). Bundel macOS berisi `odinpc` universal |
 | 2.0.1 | Tag versi di desktop, About, dan contoh `HELLO.PAS` |

@@ -21,10 +21,18 @@ pub enum Os {
 #[derive(Clone, Debug)]
 pub struct Options {
     pub os: Os,
-    /// Source files whose routines get debugger hooks (`--debug`). Empty
-    /// for a normal build.
+    /// Source files whose routines get debugger hooks (`--debug`) or step
+    /// counters (`--count-steps`). Empty for a normal build.
     pub debug_files: HashSet<FileId>,
+    /// The routines of `debug_files` count their steps instead of calling
+    /// the debugger: one per statement, one per `for` iteration, plus the
+    /// call depth (`--count-steps`, rtl/COMPILER_INTERFACE.md).
+    pub count_steps: bool,
 }
+
+/// Data symbol of the step counters: one Int64 per statement id
+/// (`Output::debug_points`), passed to the RTL at startup.
+pub const STEP_COUNTS: &str = "$STEPS";
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CodegenError {

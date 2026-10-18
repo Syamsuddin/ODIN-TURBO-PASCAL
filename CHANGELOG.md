@@ -6,9 +6,32 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-10-18
+
+Rilis 2.4.0. Odin Turbo Pascal kini bisa **mengukur** program untuk analisis dan penilaian (misalnya lomba pemrograman). `odinpc build --count-steps` menghitung langkah per pernyataan, puncak heap, dan kedalaman panggilan dengan angka yang sama di macOS, Linux, dan Windows, x86-64 maupun arm64. `odinpc metrics` melaporkan struktur kode. Di IDE, menu **Run › Ukur** (Shift+F9) menampilkan laporan itu di jendela **Metrik**, dan **Run › Periksa...** menilai program dengan paket soal.
+
+### Ditambahkan
+
+- `odinpc build --count-steps`: build hitung langkah untuk laporan metrik dan penilaian. Setiap pernyataan di sumber pengguna menambah penghitungnya (`for` sekali saat masuk dan sekali per iterasi), dan menyalin data (assignment dan parameter nilai bertipe terstruktur, `Move`, `FillChar`) dibebani satu langkah per 64 byte. Saat program berakhir, RTL menulis laporan ke `$ODIN_STATS_FILE`: total langkah, langkah per pernyataan (memetakan ke `lines` di `.odbg`), puncak heap, dan kedalaman panggilan. Batasnya diatur lewat `ODIN_STEP_LIMIT` (runtime error 240 yang baru), `ODIN_HEAP_LIMIT` (203), dan `ODIN_DEPTH_LIMIT` (202). Build ini juga mengisi nol variabel lokal dan memakai `RandSeed` dari `ODIN_RANDSEED`, sehingga angkanya sama di macOS, Linux, dan Windows, di x86-64 maupun arm64. Kontraknya ada di `rtl/COMPILER_INTERFACE.md` §8.
+- `odinpc/tests/steps.rs` membandingkan laporan program di `tests/steps/` dengan berkas yang sama di setiap target, dan korpus `tests/pascal` kini juga dijalankan dengan build hitung langkah.
+- Unit Dos di Windows mengambil handle `FindFirst` dari pustaka C, seperti `opendir` di Unix, sehingga handle itu tidak tercatat sebagai heap program.
+- `odinpc metrics SOURCE`: struktur kode untuk laporan metrik. Per rutin: jumlah pernyataan, kedalaman nesting, kompleksitas siklomatik, dan rekursi. Catatan bernomor baris: variabel tidak dipakai, fungsi yang tidak mengisi hasilnya, `goto`, nesting lebih dari 4 tingkat, kompleksitas lebih dari 10, angka yang berulang atau batas larik yang sebaiknya dijadikan `const`, dan prosedur yang mengubah variabel global. Fakta untuk syarat soal (larik, record, pointer, rekursi, memori global), dan bentuk kode tanpa nama, nilai, spasi, dan komentar untuk mengukur kemiripan. Diuji di `odinpc/tests/metrics.rs`.
+- Menu **Run › Ukur** (Shift+F9) menjalankan build juri di User screen lalu membuka jendela **Metrik**: angka resmi (langkah, puncak heap, memori global, kedalaman panggilan), info mesin, peta langkah, dan catatan struktur yang bisa diklik ke barisnya. **Run › Periksa...** menjalankan program dengan setiap kasus sebuah paket soal (`aturan.json`, `kasus/*.in`/`.out`) dan menampilkan hasil per kasus, skor, subtask, dan syarat. Laporan bisa disimpan sebagai JSON `otp-metrics/1`. Paket soal dan aturannya dijelaskan di Help (Metrik: Ukur dan Periksa).
+- `odin/metrics.py`: laporan `otp-metrics/1` tanpa ketergantungan selain pustaka standar, yaitu pembaca laporan langkah, peta langkah per baris, pembanding keluaran (trim, exact, tokens, real), kemiripan dua program, paket soal, skor subtask dan skor terbaik per subtask, serta tampilan laporan tanpa rincian kasus tersembunyi. Diuji di `tests/test_metrics.py`.
+
 ### Diubah
 
 - CI: `actions/checkout` dan `actions/upload-artifact` naik dari v4 ke v7, yang berjalan di Node.js 24. GitHub Actions tidak lagi memperingatkan bahwa Node.js 20 sudah usang.
+
+### Pengujian
+
+Di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2, Rust 1.99): 119 tes Python lulus (6 dilewati), termasuk tes GUI untuk **Run › Ukur** dan **Run › Periksa...**, dan 189 tes Rust lulus, termasuk korpus diferensial 77 program dengan build biasa, build debug, dan build hitung langkah. Universal `odinpc` 2.4.0 (x86_64 dan arm64) berhasil dibangun; hanya bagian x86_64 yang bisa dijalankan di mesin ini.
+
+Laporan langkah program di `tests/steps/` sama persis di x86_64-darwin, di VM Ubuntu 24.04 (Lima) untuk x86_64-linux, dan untuk aarch64-linux lewat qemu-user.
+
+Di GitHub Actions, kelima job CI lulus untuk rilis ini: macOS 15 Apple Silicon, macOS 15 Intel, Ubuntu 24.04 x86_64 dan arm64, dan Windows Server 2025 x86_64 (119 tes Python, 2 dilewati). Di semua job itu laporan langkah sama dengan berkas yang sama. `odinpc.exe` 2.4.0 berasal dari job Windows itu.
+
+Yang belum diverifikasi langsung: Apple Silicon, PC Linux dan Windows fisik, serta jendela **Metrik** di sistem selain Mac Intel.
 
 ## [2.3.0] - 2026-10-16
 
@@ -283,7 +306,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.1.0-alpha.1...v2.2.0
 [2.1.0-alpha.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.0.1...v2.1.0-alpha.1

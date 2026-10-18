@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 import traceback
 import tkinter as tk
 from pathlib import Path
@@ -19,8 +20,10 @@ from tkinter import filedialog, messagebox
 from tkinter import font as tkfont
 
 from . import __author__, __copyright__, __version_tag__
-from .core import (PACKAGE_ROOT, Document, Settings, atomic_write, build, data_dir, join_command, locate_compiler,
-                   locate_toolchain, lock_instance, runtime_error_location, split_arguments, unlock_instance)
+from . import metrics as metrics_report
+from .core import (PACKAGE_ROOT, BuildResult, Diagnostic, Document, Settings, atomic_write, build, data_dir, join_command,
+                   locate_compiler, locate_toolchain, lock_instance, odin_supported, runtime_error_location,
+                   split_arguments, unlock_instance)
 from .debugger import DebugSession
 from .terminal import Process, Screen, TerminalView
 from .windows import BLACK, BLUE, CYAN, GRAY, WHITE, Editor, LocalsWindow, StackWindow, WatchWindow
@@ -61,6 +64,8 @@ class App:
         self.debug_source_changed = False
         self.last_runtime_error = None # (code, path or None, line or None)
         self.error_report = None       # (debug_info, report file) of the last Run
+        self.measuring = None          # Run > Ukur in progress: what the Metrik window needs when it ends
+        self.last_metrics = None       # the report the Metrik window shows last
         self.console_window = None
         self.console = None
         self.last_build = None
@@ -202,7 +207,8 @@ class App:
                             ("Search again",self.find_next,"Ctrl+G"),("Go to line...",self.goto_line,"Ctrl+J"),
                             ("Next error",self.next_error,"Alt+F8"),("Find error",self.find_error,"")])
         self.menu("Run", [("Run",self.run,"Ctrl+F9"),("Program reset",self.stop,"Ctrl+F2"),
-                         ("Parameters...",self.parameters,""),("User screen",self.show_console,"Alt+F5")])
+                         ("Parameters...",self.parameters,""),("User screen",self.show_console,"Alt+F5"),("-",None,""),
+                         ("Ukur",self.measure,"Shift+F9"),("Periksa...",self.check_package,"")])
         self.menu("Compile", [("Compile",self.compile,"Alt+F9"),("Make",self.compile,"F9"),
                              ("Build",lambda:self.compile(rebuild=True),""),("Primary file...",self.primary_file,""),
                              ("Clear primary file",self.clear_primary,""),("Compiler messages",self.show_messages,""),
@@ -229,6 +235,7 @@ class App:
                     "<F4>":lambda:self.debug_step("cursor"),
                     "<F7>":lambda:self.debug_step("into"),"<F8>":lambda:self.debug_step("over"),"<F9>":self.compile,
                     "<F10>":lambda:self.post_menu(*self.menus["File"]),"<Control-F9>":self.run,"<Alt-F9>":self.compile,
+                    "<Shift-F9>":self.measure,
                     "<Alt-F3>":self.close_window,"<Alt-F5>":self.show_console,"<Control-F2>":self.stop,
                     "<Control-F8>":self.breakpoint,"<Control-F7>":self.evaluate,"<Alt-F8>":self.next_error,
                     "<Alt-x>":self.quit,"<Alt-BackSpace>":lambda:self.edit("undo"),
@@ -615,6 +622,14 @@ class App:
                 self.compiling=False
                 self.pending_action=None
                 messagebox.showerror("Compiler",value,parent=self.root)
+            elif kind=="measure_built":
+                self.compiling=False
+                self.start_measure(*value)
+            elif kind=="checked":
+                self.compiling=False
+                source,report=value
+                if not report["compile"]["success"]:self.show_compile_report(source,report)
+                self.show_metrics(source,report)
             elif kind=="output":
                 if self.console:
                     self.console.feed(value)
@@ -675,6 +690,8 @@ class App:
             if self.restart_debug:
                 action,self.restart_debug=self.restart_debug,None
                 self.root.after(10,lambda:self.compile(after=action))
+        elif self.measuring:
+            self.finish_measure(code)
         elif self.error_report:
             debug_info,report=self.error_report
             self.error_report=None
@@ -684,6 +701,169 @@ class App:
             if location:self.runtime_error_at(*location)
         if not self.last_runtime_error:self.update_status(f"Program finished. Exit code {code}")
         return code
+
+    # ---- Ukur and Periksa (metrics reports, odin/metrics.py) ---------------------------------
+
+    def metrics_toolchain(self):
+        """odinpc for judge builds, or None (with a message) when this machine has none."""
+        odinpc=locate_toolchain()
+        if not odinpc or not odin_supported():
+            messagebox.showinfo("Metrik","Ukur dan Periksa memerlukan toolchain Odin (odinpc) untuk komputer ini.",parent=self.root)
+            return None
+        units=[Path(p).expanduser().resolve() for p in self.settings["unit_paths"] if p]
+        return metrics_report.Toolchain(odinpc,PACKAGE_ROOT/"rtl",units)
+
+    def metrics_source(self):
+        """The file Ukur and Periksa work on (the primary file or the active editor), saved; or None."""
+        if self.compiling:
+            self.update_status("Compiler is already running")
+            return None
+        if self.process and self.process.child.poll() is None:
+            messagebox.showinfo("Metrik","Hentikan program/debugger melalui Run > Program reset terlebih dahulu.",parent=self.root)
+            return None
+        if not self.last_editor or not self.save_all():return None
+        path=Path(self.settings["main_file"]) if self.settings["main_file"] else self.last_editor.document.path
+        if not path or not path.is_file():
+            messagebox.showerror("Metrik","Primary file tidak ditemukan. Atur Compile > Primary file.",parent=self.root)
+            return None
+        return path
+
+    def measure(self):
+        """Run > Ukur (Shift+F9): a judge build (odinpc --count-steps) runs in the user screen like
+        Run; when it ends, the Metrik window shows its steps, heap, call depth, steps per line
+        and structure notes."""
+        toolchain=self.metrics_toolchain()
+        path=self.metrics_source() if toolchain else None
+        if not path:return
+        self.compiling=True
+        self.update_status(f"Building {path.name} for Ukur ...")
+        def worker():
+            try:
+                structure,diagnostics=toolchain.structure(path)
+                exe=info=None
+                if structure is not None:
+                    exe,info,diagnostics=toolchain.build(path,data_dir()/"metrics"/"ukur")
+                self.messages.put(("measure_built",(toolchain,path,structure,exe,info,diagnostics)))
+            except Exception as error:self.messages.put(("build_error",str(error)))
+        threading.Thread(target=worker,daemon=True).start()
+
+    def show_compile_report(self,path,report_or_diagnostics):
+        """Compiler messages of a failed judge build, in the usual Compiler messages window."""
+        items=report_or_diagnostics["compile"]["diagnostics"] if isinstance(report_or_diagnostics,dict) else report_or_diagnostics
+        diagnostics=[Diagnostic(d.get("file",""),int(d.get("line",0)),int(d.get("column",0)),
+                                {"warning":"Warning","note":"Note","hint":"Hint"}.get(d.get("severity"),"Error"),d.get("message",""))
+                     for d in items]
+        output="\n".join(f"{d.path}({d.line},{d.column}) {d.kind}: {d.message}" for d in diagnostics)
+        self.last_build=BuildResult(False,[],output or "Kompilasi gagal.",diagnostics,None,path)
+        self.error_index=-1
+        self.show_messages()
+
+    def start_measure(self,toolchain,path,structure,exe,info,diagnostics):
+        if exe is None:
+            self.update_status("Compile failed")
+            self.show_compile_report(path,diagnostics)
+            return
+        try:arguments=split_arguments(self.settings["arguments"])
+        except ValueError as error:
+            messagebox.showerror("Parameters",str(error),parent=self.root)
+            return
+        folder=data_dir()/"metrics"/"ukur"
+        stats,report=folder/"ukur.stats",folder/"ukur.error"
+        for f in (stats,report):f.unlink(missing_ok=True)
+        self.show_console()
+        self.console.screen=Screen()
+        self.console.render()
+        self.last_runtime_error=None
+        self.clear_error_marks()
+        odbg=exe.with_name(exe.name+".odbg")
+        self.error_report=(odbg,report) if odbg.is_file() else None
+        self.measuring={"toolchain":toolchain,"path":path,"structure":structure,"info":info,"stats":stats,"report":report,
+                        "started":time.monotonic()}
+        emit=lambda k,v:self.messages.put((k,v))
+        try:
+            self.process=Process([str(exe),*arguments],path.parent,emit,
+                                 env={"ODIN_STATS_FILE":str(stats),"ODIN_ERROR_FILE":str(report)})
+            self.update_status("Ukur: program berjalan di User screen")
+            self.console.focus_set()
+        except OSError as error:
+            self.measuring=None
+            messagebox.showerror("Ukur",str(error),parent=self.root)
+
+    def finish_measure(self,code):
+        m,self.measuring=self.measuring,None
+        if self.error_report:
+            debug_info,report=self.error_report
+            self.error_report=None
+            try:text=report.read_text()
+            except OSError:text=""
+            location=runtime_error_location(debug_info,text) if text else None
+            if location:self.runtime_error_at(*location)
+        read=lambda p:p.read_text(encoding="utf-8") if p.is_file() else None
+        wall=int((time.monotonic()-m["started"])*1000)
+        run=metrics_report.Run(code if isinstance(code,int) else -1,b"",wall_ms=wall)
+        report=metrics_report.measured(m["path"],m["toolchain"],m["structure"],m["info"],run,read(m["stats"]),read(m["report"]))
+        self.show_metrics(m["path"],report)
+
+    def check_package(self):
+        """Run > Periksa...: every case of a problem package (a folder with aturan.json and kasus/,
+        docs/HELP.txt), run without the user screen; the Metrik window shows verdicts and score."""
+        toolchain=self.metrics_toolchain()
+        path=self.metrics_source() if toolchain else None
+        if not path:return
+        folder=filedialog.askdirectory(parent=self.root,title="Pilih folder paket soal",initialdir=str(path.parent))
+        if not folder:return
+        try:package=metrics_report.load_package(Path(folder))
+        except metrics_report.PackageError as error:
+            messagebox.showerror("Periksa",f"Paket soal tidak bisa dipakai: {error}",parent=self.root)
+            return
+        self.compiling=True
+        self.update_status(f"Periksa {path.name}: {len(package.cases)} kasus ...")
+        def worker():
+            try:self.messages.put(("checked",(path,metrics_report.check(path,package,toolchain,data_dir()/"metrics"/"periksa"))))
+            except Exception as error:self.messages.put(("build_error",str(error)))
+        threading.Thread(target=worker,daemon=True).start()
+
+    def show_metrics(self,path,report):
+        """The Metrik window: the report as text; lines with a source line number jump there."""
+        self.last_metrics=report
+        win=tk.Toplevel(self.root,bg=BLUE)
+        win.title(f"Odin \u2022 Metrik \u2022 {path.name}")
+        win.geometry("820x620")
+        toolbar=tk.Frame(win,bg=GRAY)
+        toolbar.pack(fill="x")
+        tk.Label(toolbar,text=" Metrik ",bg=GRAY,fg=BLUE).pack(side="left")
+        self.button(toolbar,"Tutup",win.destroy).pack(side="right")
+        self.button(toolbar,"Simpan laporan...",lambda:self.save_metrics(report,path)).pack(side="right")
+        text=tk.Text(win,bg=BLUE,fg=WHITE,font=self.font,wrap="word",padx=22,pady=16,relief="flat",cursor="arrow")
+        scroll=tk.Scrollbar(win,command=text.yview)
+        scroll.pack(side="right",fill="y")
+        text.configure(yscrollcommand=scroll.set)
+        text.pack(fill="both",expand=True)
+        text.tag_configure("link",foreground="#FFFF55")
+        for i,(content,line) in enumerate(metrics_report.summary(report)):
+            if line:
+                tag=f"jump{i}"
+                text.insert("end",content,("link",tag))
+                text.tag_bind(tag,"<Button-1>",lambda e,l=line:self.show_location(path,l,"metric"))
+            else:text.insert("end",content)
+            text.insert("end","\n")
+        text.configure(state="disabled")
+        win.bind("<Escape>",lambda e:win.destroy())
+        cases=report.get("cases",[])
+        # After process_finished's own "Program finished" status.
+        if report.get("score"):status=f"Periksa: skor {report['score']['points']}"
+        elif cases:status=f"Ukur: {metrics_report.number(cases[0].get('steps'))} langkah"
+        else:status="Metrik: gagal compile"
+        self.root.after(1,lambda:self.update_status(status))
+        return win
+
+    def save_metrics(self,report,path):
+        target=filedialog.asksaveasfilename(parent=self.root,title="Simpan laporan metrik",defaultextension=".json",
+                                            initialdir=str(path.parent),initialfile=path.stem+".metrik.json",
+                                            filetypes=[("Laporan metrik","*.json")])
+        if target:
+            atomic_write(Path(target),json.dumps(report,ensure_ascii=False,indent=2).encode("utf-8"))
+            self.update_status(f"Laporan disimpan: {Path(target).name}")
 
     def show_console(self):
         if self.console_window and self.console_window.winfo_exists():

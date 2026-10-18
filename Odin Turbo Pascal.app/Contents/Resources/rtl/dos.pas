@@ -280,6 +280,10 @@ function c_errno: PLongInt; cdecl; external 'c' name '_errno';
 function w_findfirst(Spec: PChar; var Data: TFindData): Pointer; external 'kernel32' name 'FindFirstFileA';
 function w_findnext(Handle: Pointer; var Data: TFindData): LongInt; external 'kernel32' name 'FindNextFileA';
 function w_findclose(Handle: Pointer): LongInt; external 'kernel32' name 'FindClose';
+{ The search handle comes from the C library, as opendir's does on Unix, so
+  it is not part of the program's heap in step-counting builds. }
+function c_malloc(Size: Int64): Pointer; cdecl; external 'c' name 'malloc';
+procedure c_free(P: Pointer); cdecl; external 'c' name 'free';
 function w_localtime(var Tm: TCTm; var T: Int64): LongInt; cdecl; external 'c' name '_localtime64_s';
 function w_utime(Path: PChar; Times: Pointer): LongInt; cdecl; external 'c' name '_utime64';
 function w_spawnvpe(Mode: LongInt; Path: PChar; Argv, Envp: Pointer): Int64; cdecl; external 'c' name '_spawnvpe';
@@ -347,11 +351,13 @@ var
   D: PDirHandle;
 begin
   OpenFind := nil;
-  New(D);
+  D := PDirHandle(c_malloc(SizeOf(TDirHandle)));
+  if D = nil then
+    Exit;
   D^.Handle := w_findfirst(Spec, D^.Data);
   if Int64(D^.Handle) = -1 then
   begin
-    Dispose(D);
+    c_free(D);
     Exit;
   end;
   D^.Pending := True;
@@ -382,20 +388,23 @@ end;
 function c_readdir(Dir: Pointer): PCDirent;
 var
   D: PDirHandle;
+  I: Integer;
 begin
   c_readdir := nil;
   D := Dir;
   if not D^.Pending and (w_findnext(D^.Handle, D^.Data) = 0) then
     Exit;
   D^.Pending := False;
-  Move(D^.Data.Name, D^.Ent.Name, SizeOf(D^.Data.Name));
+  { A loop, not Move: Move counts steps, and Unix has no copy here. }
+  for I := 0 to SizeOf(D^.Data.Name) - 1 do
+    D^.Ent.Name[I] := D^.Data.Name[I];
   c_readdir := @D^.Ent;
 end;
 
 function c_closedir(Dir: Pointer): LongInt;
 begin
   w_findclose(PDirHandle(Dir)^.Handle);
-  Dispose(PDirHandle(Dir));
+  c_free(Dir);
   c_closedir := 0;
 end;
 {$ENDIF}

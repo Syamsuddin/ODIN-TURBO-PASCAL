@@ -1,4 +1,4 @@
-ODIN TURBO PASCAL 2.3.0
+ODIN TURBO PASCAL 2.4.0
 Paket aplikasi desktop untuk Mac Intel dan Apple Silicon; berjalan dari source di Linux
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
@@ -121,6 +121,10 @@ Argumen program, penghentian proses, ekspor executable native.
 Debugger terpadu (backend Odin): breakpoint, Trace into, Step over, Go to
 cursor, jendela Watches, Local variables, dan Call stack, Evaluate/Modify,
 serta Search > Find error untuk runtime error.
+Metrik (backend Odin): Run > Ukur (Shift+F9) mengukur langkah, puncak heap,
+memori global, dan kedalaman panggilan dengan angka yang sama di semua
+platform, beserta peta langkah dan catatan struktur kode; Run > Periksa
+menilai program dengan paket soal (kasus uji, subtask, syarat).
 Penyimpanan atomik, deteksi perubahan dari luar, CP437/UTF-8, LF/CRLF,
 daftar berkas terakhir, pengaturan, pemulihan sesi setiap 10 detik.
 
@@ -139,9 +143,11 @@ Lihat docs/COMPATIBILITY.txt untuk rincian.
 
 PENGUJIAN
 
-Rilis 2.3.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
-Free Pascal 3.2.2): 97 tes Python (termasuk tes GUI dengan jendela Tk
-sungguhan) dan 177 tes Rust. Rilis 2.2.0 diuji di Mac Intel dengan 92 tes
+Rilis 2.4.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
+Free Pascal 3.2.2): 119 tes Python (termasuk tes GUI dengan jendela Tk
+sungguhan) dan 189 tes Rust. Laporan langkah build hitung langkah sama di
+Mac Intel, VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu), dan kelima
+runner GitHub Actions. Rilis 2.2.0 diuji di Mac Intel dengan 92 tes
 Python, 185 tes Rust, dan 77 program uji yang keluarannya sama dengan
 Free Pascal. Korpus yang sama juga lulus di VM Ubuntu 24.04 (x86_64, dan
 aarch64 lewat qemu) dan, bersama tes Python dengan backend Odin, di runner

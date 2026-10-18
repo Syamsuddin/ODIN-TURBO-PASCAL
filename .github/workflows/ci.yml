@@ -111,6 +111,9 @@ jobs:
 
       - name: Python tests
         run: |
+          # The repository carries the released toolchain/odinpc.exe, which core.locate_toolchain()
+          # prefers; the tests must use the odinpc just built from these sources.
+          if [ "$RUNNER_OS" = Windows ]; then export ODIN_TOOLCHAIN="$PWD/toolchain/target/release/odinpc.exe"; fi
           if [ "$RUNNER_OS" = Linux ]; then
             xvfb-run -a "$PYTHON" -m unittest discover -s tests -v
           else
