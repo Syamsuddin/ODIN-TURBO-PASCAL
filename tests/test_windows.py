@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 from odin import conpty
-from odin.core import locate_compiler, locate_toolchain
+from odin.core import locate_toolchain
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -140,10 +140,13 @@ class WindowsInstallTests(unittest.TestCase):
                 self.assertTrue(data.startswith(b"# SPDX-License-Identifier: GPL-3.0-or-later\n# Copyright (c) 2026 Syams Ideris\n"))
         install = (ROOT / "Install.ps1").read_text(encoding="ascii")
         for text in ("Dibuat oleh Syams Ideris", "Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris",
-                     "FreePascal.FreePascalCompiler", "scripts\\check_windows.py", "scripts\\stage_windows.py",
+                     "Python.Python.3.13", "scripts\\check_windows.py", "scripts\\stage_windows.py",
                      "python-path", "WScript.Shell", "-X utf8", "OdinTurboPascal.pyw", ".backup-"):
             with self.subTest(text=text):
                 self.assertIn(text, install)
+        # odinpc.exe is the only compiler: the installer never looks for or installs Free Pascal.
+        self.assertNotIn("fpc", install.lower())
+        self.assertNotIn("free pascal", install.lower())
         # cmd.exe wrappers keep CRLF line ends (.gitattributes stops Git from converting them).
         for name in ("Install.cmd", "Uninstall.cmd"):
             with self.subTest(name=name):
@@ -152,14 +155,32 @@ class WindowsInstallTests(unittest.TestCase):
                 self.assertEqual(data.count(b"\n"), data.count(b"\r\n"))
                 self.assertIn(b"-ExecutionPolicy Bypass -File \"%~dp0" + name.replace(".cmd", ".ps1").encode(), data)
 
-    @unittest.skipUnless(sys.platform == "win32" and locate_compiler(), "needs Free Pascal on Windows")
+    def test_inno_setup_script(self):
+        # Pure ASCII (Inno reads it in the ANSI code page) and wired to the staging folder.
+        text = (ROOT / "scripts" / "odin_setup.iss").read_bytes().decode("ascii")
+        for needle in ("PrivilegesRequired=lowest", "{localappdata}\\Programs\\OdinTurboPascal", "MinVersion=10.0.17763",
+                       "{#Staging}", "python\\pythonw.exe", "-E -X utf8", "check_windows.py", "x64os",
+                       "OutputBaseFilename=OdinTurboPascal-{#Version}-Setup-x64"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, text)
+        self.assertNotIn("fpc", text.lower())
+        # AppId is the identity of upgrades: it must stay what the first setup used.
+        self.assertIn("AppId={{8BDFFEC5-4A07-4791-ADB8-2CE29C6E1209}", text)
+
+    def test_setup_builder_pins_python(self):
+        build = load_script("build_setup_windows")
+        self.assertRegex(build.PYTHON_SHA256, r"^[0-9a-f]{64}$")
+        self.assertIn(build.PYTHON_VERSION, build.PYTHON_URL)
+        self.assertTrue(build.PYTHON_URL.startswith("https://www.python.org/"))
+        config = (ROOT / "toolchain" / ".cargo" / "config.toml").read_text()
+        self.assertIn("+crt-static", config)
+
+    @unittest.skipUnless(sys.platform == "win32" and locate_toolchain(), "needs odinpc.exe on Windows")
     def test_installer_compile_gate(self):
-        result = subprocess.run([sys.executable, str(ROOT / "scripts" / "check_windows.py"), locate_compiler()],
+        result = subprocess.run([sys.executable, str(ROOT / "scripts" / "check_windows.py")],
                                 capture_output=True, text=True, timeout=180)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("OK: Free Pascal: compile + run native", result.stdout)
-        if locate_toolchain():
-            self.assertIn("OK: toolchain Odin (odinpc.exe): compile + run native x86_64", result.stdout)
+        self.assertIn("OK: odinpc.exe: compile + run native x86_64", result.stdout)
 
     @unittest.skipUnless(sys.platform == "win32" and shutil.which("powershell"), "needs Windows PowerShell")
     def test_powershell_parses_installer_scripts(self):

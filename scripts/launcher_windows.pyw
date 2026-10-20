@@ -36,7 +36,7 @@ def main():
         run()
     except Exception:
         traceback.print_exc()
-        alert(f"Aplikasi gagal dibuka. Lihat {DATA / 'launch.log'} atau jalankan Install.ps1 kembali.")
+        alert(f"Aplikasi gagal dibuka. Lihat {DATA / 'launch.log'} atau pasang ulang dengan Setup.exe (atau Install.cmd).")
         return 1
     return 0
 

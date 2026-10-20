@@ -2,8 +2,8 @@
 # Copyright (c) 2026 Syams Ideris
 #
 # Local installation on Windows 10 1809 or later (x86-64), the counterpart of Install.command.
-# No administrator access is needed to install Odin itself; winget may ask for permission when
-# it installs Python or Free Pascal. Double-click Install.cmd, or run:
+# No administrator access is needed: the only dependency is Python with Tk (winget installs it
+# per user), and the Pascal compiler (odinpc.exe) comes with the package. Double-click Install.cmd, or run:
 #   powershell -NoProfile -ExecutionPolicy Bypass -File Install.ps1
 # Keep this file ASCII: Windows PowerShell 5.1 reads a script without BOM in the ANSI code page.
 [CmdletBinding()]
@@ -58,7 +58,7 @@ Write-Host 'Pemasang Windows x86_64'
 Write-Host 'Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris'
 Write-Host ''
 Write-Host "Lokasi aplikasi: $InstallDir"
-Write-Host 'Dependensi: Python 3.10+ dengan Tk, Free Pascal.'
+Write-Host 'Dependensi: Python 3.10+ dengan Tk. Compiler Pascal (odinpc.exe) sudah ada di paket.'
 Write-Host 'Berkas Pascal pribadi tidak dihapus atau diganti.'
 Write-Host ''
 
@@ -108,49 +108,11 @@ function Find-Python {
     return $null
 }
 
-function Get-VersionOrZero([string]$Name) {
-    $value = $null
-    if ([version]::TryParse($Name, [ref]$value)) { return $value }
-    return [version]'0.0'
-}
-
-# The same places as windows_fpc_candidates() in odin/core.py.
-function Find-Fpc {
-    $candidates = @()
-    $command = Get-Command fpc.exe -ErrorAction SilentlyContinue
-    if ($command) { $candidates += $command.Source }
-    $drive = $env:SystemDrive
-    if (-not $drive) { $drive = 'C:' }
-    $roots = @()
-    foreach ($parent in @("$drive\FPC", "$drive\lazarus\fpc")) {
-        if (Test-Path -LiteralPath $parent) {
-            $roots += @(Get-ChildItem -LiteralPath $parent -Directory |
-                Sort-Object -Property @{ Expression = { Get-VersionOrZero $_.Name } } -Descending |
-                ForEach-Object { $_.FullName })
-        }
-    }
-    $tools = $env:ChocolateyToolsLocation
-    if (-not $tools) { $tools = "$drive\tools" }
-    $roots += (Join-Path $tools 'freepascal')
-    foreach ($root in $roots) {
-        foreach ($target in @('x86_64-win64', 'i386-win32')) {
-            $candidates += (Join-Path $root "bin\$target\fpc.exe")
-        }
-    }
-    foreach ($candidate in $candidates) {
-        if ($candidate -and (Test-Path -LiteralPath $candidate -PathType Leaf)) { return $candidate }
-    }
-    return $null
-}
-
 $Python = Find-Python
-$Fpc = Find-Fpc
 
-if (-not $Python -or -not $Fpc) {
+if (-not $Python) {
     $Winget = Get-Command winget.exe -ErrorAction SilentlyContinue
-    Write-Host 'Dependensi belum lengkap:'
-    if (-not $Python) { Write-Host '  - Python 3.10+ dengan Tk' }
-    if (-not $Fpc) { Write-Host '  - Free Pascal' }
+    Write-Host 'Dependensi belum lengkap: Python 3.10+ dengan Tk.'
     Write-Host ''
     Write-Host 'Pilih metode pemasangan:'
     if ($Winget) {
@@ -158,35 +120,25 @@ if (-not $Python -or -not $Fpc) {
     } else {
         Write-Host '1. winget: belum tersedia di Windows ini (pasang App Installer dari Microsoft Store).'
     }
-    Write-Host '2. Manual: unduh dari situs resmi Python dan Free Pascal.'
+    Write-Host '2. Manual: unduh dari situs resmi Python.'
     $Method = Read-Host 'Pilihan [1/2]'
     if ($Method -eq '1' -and $Winget) {
-        if (-not $Python) {
-            & winget.exe install --id Python.Python.3.13 --exact --scope user --accept-package-agreements --accept-source-agreements
-        }
-        if (-not $Fpc) {
-            Write-Host 'Windows mungkin meminta izin administrator untuk memasang Free Pascal.'
-            & winget.exe install --id FreePascal.FreePascalCompiler --exact --accept-package-agreements --accept-source-agreements
-        }
+        & winget.exe install --id Python.Python.3.13 --exact --scope user --accept-package-agreements --accept-source-agreements
         $Python = Find-Python
-        $Fpc = Find-Fpc
         if (-not $Python) { Exit-Install 'Python dengan Tk belum ditemukan. Tutup jendela ini, lalu jalankan Install.cmd kembali.' }
-        if (-not $Fpc) { Exit-Install 'Free Pascal belum ditemukan. Tutup jendela ini, lalu jalankan Install.cmd kembali.' }
     } else {
-        if (-not $Python) { Start-Process 'https://www.python.org/downloads/windows/' }
-        if (-not $Fpc) { Start-Process 'https://www.freepascal.org/download.html' }
+        Start-Process 'https://www.python.org/downloads/windows/'
         Write-Host ''
-        Write-Host 'Pasang Python 3.10 atau yang lebih baru (dengan pilihan tcl/tk) dan Free Pascal untuk Windows x86_64.'
+        Write-Host 'Pasang Python 3.10 atau yang lebih baru (dengan pilihan tcl/tk) untuk Windows x86_64.'
         Write-Host 'Setelah selesai, jalankan kembali Install.cmd.'
         Exit-Install ''
     }
 }
 Write-Host "Python: $Python"
-Write-Host "Free Pascal: $Fpc"
 
 Write-Host ''
-Write-Host 'Memeriksa kompilasi native...'
-& $Python (Join-Path $PackageDir 'scripts\check_windows.py') $Fpc
+Write-Host 'Memeriksa kompilasi native dengan odinpc.exe...'
+& $Python (Join-Path $PackageDir 'scripts\check_windows.py')
 if ($LASTEXITCODE -ne 0) { Exit-Install 'Pemeriksaan kompilasi native gagal.' }
 
 $Pythonw = Join-Path (Split-Path -Parent $Python) 'pythonw.exe'
