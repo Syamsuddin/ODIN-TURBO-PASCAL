@@ -121,6 +121,11 @@ EXAMPLE_RUNS={
 
 
 class VersionTests(unittest.TestCase):
+    def test_help_html_is_current(self):
+        # docs/help.html is generated from docs/*.txt and the version; a stale copy fails here.
+        result=subprocess.run([sys.executable,str(ROOT/"scripts"/"build_help.py"),"--check"],capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stdout+"\nJalankan python3 scripts/build_help.py")
+
     def test_first_example_carries_release_tag(self):
         # scripts/package_app.py restamps this comment on every build; a stale tag fails here.
         self.assertEqual(__version_tag__,f"v{__version__}")

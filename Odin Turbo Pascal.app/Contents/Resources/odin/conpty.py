@@ -3,7 +3,7 @@
 """User screen on Windows: a child process on a ConPTY pseudoconsole (Windows 10 1809 or later),
 reached through ctypes so the IDE stays stdlib only.
 
-ConPtyProcess keeps the contract of the POSIX PtyProcess in terminal.py: a reader thread calls
+ConPtyProcess keeps the contract of the POSIX PtyProcess in console.py: a reader thread calls
 emit("output", text) for everything the program shows and finally emit("exit", code); write(),
 resize(), interrupt() and stop() work the same way.
 
@@ -276,7 +276,7 @@ class Child:
 
 
 class ConPtyProcess:
-    """A program on a pseudoconsole; same constructor and methods as terminal.PtyProcess."""
+    """A program on a pseudoconsole; same constructor and methods as console.PtyProcess."""
 
     def __init__(self, argv, cwd, emit, cols=80, rows=25, pass_fds=(), env=None):
         if pass_fds:

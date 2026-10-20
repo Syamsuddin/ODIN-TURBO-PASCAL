@@ -1,6 +1,633 @@
 PASCAL - REFERENSI RINGKAS
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
+Referensi ini mencakup bahasa Pascal (kata cadangan, operator, tipe, rutin),
+unit standar yang ada di Odin, direktif compiler, kode galat, dan perintah IDE.
+Rincian kompatibilitas dan batasan ada di COMPATIBILITY.txt.
+
+Tekan F1 di editor pada sebuah kata untuk langsung membuka topiknya di sini.
+
+DAFTAR ISI
+  KATA CADANGAN
+  DIREKTIF STANDAR
+  OPERATOR
+  TIPE DATA
+  KONSTANTA BAWAAN
+  RUTIN MATEMATIKA
+  RUTIN ORDINAL
+  RUTIN STRING
+  RUTIN MEMORI DAN POINTER
+  RUTIN BERKAS DAN DIREKTORI
+  KONTROL PROGRAM
+  DIREKTIF COMPILER
+  KODE RUNTIME ERROR
+  UNIT CRT
+  UNIT DOS
+  UNIT STRINGS
+  UNIT OBJECTS
+  ODIN VISION
+  PERINTAH IDE
+  CONTOH RINGKAS
+
+KATA CADANGAN
+Kata cadangan tidak boleh dipakai sebagai nama variabel, konstanta, tipe, atau
+rutin. Huruf besar-kecil tidak dibedakan.
+
+and                           Operator logika AND untuk Boolean, dan AND bit
+                              demi bit untuk bilangan bulat. Prioritasnya lebih
+                              tinggi daripada perbandingan, jadi beri tanda
+                              kurung: (A > 0) and (B > 0).
+array                         Tipe larik: array[1..10] of Integer,
+                              array[Boolean] of Byte, array[1..3, 1..3] of Real
+                              (dua dimensi). Indeks bisa tipe ordinal apa pun.
+asm                           Membuka blok bahasa rakitan, ditutup end. Perlu
+                              {$ASMMODE INTEL}; kode 16-bit dan interrupt DOS
+                              tidak jalan.
+begin                         Membuka blok pernyataan majemuk, ditutup end.
+                              Badan program, prosedur, dan fungsi selalu
+                              diawali begin.
+case                          Percabangan banyak arah pada nilai ordinal: case
+                              N of 1: ...; 2, 3: ...; 4..9: ...; else ... end.
+                              Selector tidak boleh String atau Real. Juga
+                              dipakai di bagian varian record.
+const                         Bagian deklarasi konstanta (const Maks = 10;)
+                              atau konstanta bertipe yang bisa diubah (const
+                              Hitung: Integer = 0;).
+constructor                   Metode khusus object yang menyiapkan instance dan
+                              tabel metode virtualnya. Biasanya bernama Init:
+                              constructor TKotak.Init(...).
+destructor                    Metode khusus object yang membersihkan instance,
+                              biasanya bernama Done: destructor TKotak.Done;
+                              virtual;
+div                           Pembagian bulat tanpa pecahan: 17 div 5 = 3.
+                              Pembagian dengan nol menimbulkan runtime error
+                              200.
+do                            Bagian dari for ... do, while ... do, dan with
+                              ... do; memisahkan kepala dari pernyataan yang
+                              diulang.
+downto                        Pada for, menghitung mundur: for I := 10 downto 1
+                              do ...
+else                          Cabang lain pada if atau case. Jangan beri titik
+                              koma tepat sebelum else yang berpasangan dengan
+                              if.
+end                           Menutup begin, case, record, object, asm, atau
+                              unit/program (end. dengan titik).
+exports                       Daftar rutin yang diekspor dari library. Tidak
+                              berguna pada program biasa.
+file                          Tipe berkas. file of Integer = berkas bertipe,
+                              file saja = berkas tanpa tipe untuk
+                              BlockRead/BlockWrite.
+for                           Pengulangan dengan jumlah tetap: for I := 1 to N
+                              do ... Variabel kontrol harus ordinal lokal;
+                              nilainya tidak boleh diubah di dalam badan dan
+                              tidak terdefinisi setelah selesai.
+function                      Mendeklarasikan fungsi yang mengembalikan nilai.
+                              Nilai diberikan dengan menugaskan ke nama fungsi
+                              (Kuadrat := X * X). Variabel Result tidak ada di
+                              Turbo Pascal.
+goto                          Melompat ke label yang dideklarasikan dengan
+                              label. Hindari, tetapi sah dalam satu blok.
+if                            Percabangan: if Kondisi then A else B. Kondisi
+                              bertipe Boolean.
+implementation                Bagian unit berisi badan rutin dan deklarasi
+                              privat; di bawah interface.
+in                            Operator keanggotaan himpunan: if Huruf in
+                              ['a'..'z'] then ...
+inherited                     Memanggil metode induk dari dalam metode turunan:
+                              inherited Init(...).
+inline                        Menyisipkan byte kode mesin langsung. Tidak dapat
+                              dikompilasi di macOS 64-bit (lihat
+                              COMPATIBILITY.txt).
+interface                     Bagian unit yang terlihat oleh pemakai unit:
+                              konstanta, tipe, variabel, dan kepala rutin.
+label                         Mendeklarasikan label tujuan goto: label Selesai;
+library                       Menandai sumber sebagai pustaka dinamis, bukan
+                              program.
+mod                           Sisa pembagian bulat: 17 mod 5 = 2. Hasil
+                              mengikuti tanda pembilang.
+nil                           Pointer kosong yang tidak menunjuk apa pun. Cocok
+                              dengan tipe pointer apa pun.
+not                           Negasi Boolean, atau pembalikan bit pada bilangan
+                              bulat: not True = False.
+object                        Tipe objek gaya Turbo Pascal 7 dengan field dan
+                              metode: TKotak = object(TInduk) ... end;
+of                            Dipakai pada array ... of, case ... of, file of,
+                              set of, dan deklarasi object.
+or                            Operator logika OR (Boolean) atau OR bit demi
+                              bit. Beri tanda kurung pada perbandingan.
+packed                        Meminta penyimpanan padat untuk array, record,
+                              atau set. Di Turbo Pascal 7 tidak berefek pada
+                              record biasa; pakai packed record untuk data
+                              dialog Odin Vision.
+procedure                     Mendeklarasikan prosedur (subprogram tanpa nilai
+                              kembali). Parameter var dilewatkan per acuan.
+program                       Kepala program: program Nama; atau program
+                              Nama(Input, Output);
+record                        Tipe rekaman dengan field bernama; boleh punya
+                              bagian varian: record ... case Tipe: Byte of ...
+                              end;
+repeat                        Pengulangan yang menguji kondisi di akhir: repeat
+                              ... until Kondisi; badan selalu jalan minimal
+                              sekali.
+set                           Tipe himpunan: set of Char, set of 0..255.
+                              Maksimum 256 elemen.
+shl                           Geser bit ke kiri: 1 shl 3 = 8.
+shr                           Geser bit ke kanan: 16 shr 2 = 4.
+string                        Tipe teks. string = hingga 255 karakter;
+                              string[N] = panjang maksimum N; indeks 0
+                              menyimpan panjang.
+then                          Mengikuti kondisi pada if.
+to                            Pada for, menghitung naik: for I := 1 to 10 do
+                              ...
+type                          Bagian deklarasi tipe baru: type TSiswa = record
+                              ... end;
+unit                          Kepala unit: unit Nama; lalu interface,
+                              implementation, dan opsional initialization.
+until                         Penutup repeat; pengulangan berhenti ketika
+                              kondisinya True.
+uses                          Mengimpor unit: uses Crt, Dos;. Unit System
+                              selalu otomatis.
+var                           Deklarasi variabel, atau parameter per acuan pada
+                              prosedur/fungsi: procedure Tukar(var A, B:
+                              Integer);
+while                         Pengulangan yang menguji kondisi di awal: while
+                              Kondisi do ... Badan bisa tidak jalan sama
+                              sekali.
+with                          Mempersingkat akses field: with Siswa do Nama :=
+                              'Budi'; (setara Siswa.Nama := 'Budi';).
+xor                           Operator OR eksklusif: Boolean atau bit demi bit.
+class, try, except            Kata tambahan Object Pascal (mode FPC
+                              objfpc/delphi). finally, raise, out, property,
+                              dan threadvar juga dicadangkan. Tidak ada di
+                              Turbo Pascal 7; jangan dipakai sebagai nama.
+
+DIREKTIF STANDAR
+Kata berikut punya arti khusus hanya pada konteksnya dan bukan kata cadangan
+penuh, tetapi sebaiknya tidak dipakai sebagai nama.
+
+absolute                      Variabel berbagi alamat dengan variabel lain: var
+                              B: Byte absolute A;. Bentuk $Seg:$Ofs tidak
+                              berlaku di macOS 64-bit.
+assembler                     Rutin yang badannya hanya blok asm.
+external                      Rutin atau variabel yang didefinisikan di luar
+                              program (pustaka lain).
+far, near                     Model pemanggilan DOS 16-bit. Diterima dan
+                              diabaikan.
+forward                       Deklarasi maju: kepala rutin ditulis dulu,
+                              badannya menyusul. Dipakai untuk rekursi tidak
+                              langsung.
+interrupt                     Prosedur penangan interrupt DOS. Dapat
+                              dikompilasi tetapi tidak berefek.
+private, public, protected    Pembatas akses anggota object. public (bawaan)
+                              terlihat di mana saja; private hanya di unit yang
+                              sama.
+virtual                       Metode object yang dapat ditimpa turunan dan
+                              dipilih saat program berjalan lewat tabel VMT.
+name, index, resident         Direktif pada deklarasi external dan pustaka.
+                              Jarang dipakai.
+
+OPERATOR
+Urutan prioritas dari yang terkuat: (1) not, @ ; (2) *, /, div, mod, and, shl,
+shr ; (3) +, -, or, xor ; (4) =, <>, <, >, <=, >=, in.
+
+:=                            Penugasan: X := 5.
++                             Penjumlahan; penyambung string ('a' + 'b');
+                              gabungan himpunan.
+-                             Pengurangan; negatif; selisih himpunan.
+*                             Perkalian; irisan himpunan.
+/                             Pembagian real. Hasilnya selalu Real, juga untuk
+                              operand bulat.
+= <> < > <= >=                Perbandingan. Pada himpunan, <= berarti himpunan
+                              bagian dan >= superset.
+@                             Alamat variabel atau rutin: P := @X;. Hasilnya
+                              Pointer.
+^                             Dereferensi pointer: P^ adalah nilai yang
+                              ditunjuk. Pada tipe, ^Integer berarti pointer ke
+                              Integer.
+.                             Akses field record/object (Siswa.Nama) dan akhir
+                              program (end.).
+..                            Rentang subrentang: 1..10, 'a'..'z'.
+#13                           Konstanta karakter dari kode: #10, #13, #27. #$1B
+                              juga sah.
+$FF                           Awalan $ menandai bilangan heksadesimal.
+{ } (* *)                     Komentar blok. // komentar sampai akhir baris
+                              (mode FPC). {$...} adalah direktif compiler,
+                              bukan komentar.
+
+TIPE DATA
+Ukuran mengikuti mode Turbo Pascal pada Odin dan FPC -Mtp.
+
+Byte                          0..255, 1 byte.
+ShortInt                      -128..127, 1 byte.
+Word                          0..65535, 2 byte.
+Integer                       -32768..32767, 2 byte pada mode TP. Hitungan yang
+                              bisa melebihi itu pakai LongInt.
+SmallInt                      -32768..32767, 2 byte.
+LongInt                       -2147483648..2147483647, 4 byte.
+Cardinal, QWord               Bilangan bulat tak bertanda (32-bit dan 64-bit).
+Int64                         Bilangan bulat bertanda 64-bit.
+Real                          Bilangan pecahan, 8 byte (Double) pada Odin/FPC;
+                              di TP asli 6 byte. Selalu format keluarannya:
+                              Write(X:0:2).
+Single, Double                Pecahan 4 byte dan 8 byte.
+Extended                      Di Odin sama dengan Double (8 byte); di FPC x86
+                              10 byte.
+Comp                          Bilangan bulat 64-bit yang diperlakukan sebagai
+                              real, dari era koprosesor 8087.
+Boolean                       False atau True. ByteBool, WordBool, LongBool:
+                              lebar 1, 2, 4 byte.
+Char                          Satu karakter 8-bit. Ord(C) memberi kode, Chr(N)
+                              kebalikannya.
+string                        Teks pendek, hingga 255 karakter. string[20]
+                              membatasi panjang. S[0] adalah panjang (Length(S)
+                              lebih aman).
+ShortString                   Sama dengan string 255 karakter.
+Text                          Tipe berkas teks: var F: Text;
+Pointer                       Penunjuk tanpa tipe. Pointer bertipe: ^Integer;
+                              PChar = ^Char untuk string C yang diakhiri #0.
+PChar                         Penunjuk ke string berakhir nol (unit Strings).
+Enumerasi                     type Hari = (Senin, Selasa, Rabu); Dapat dipakai
+                              pada for, case, array, Ord, Succ, Pred, tetapi
+                              tidak boleh di-Write di Turbo Pascal.
+Subrentang                    type Nilai = 0..100; Pelanggaran rentang
+                              menimbulkan error 201 bila {$R+} aktif.
+
+KONSTANTA BAWAAN
+True, False                   Nilai Boolean.
+nil                           Pointer kosong.
+MaxInt                        32767, Integer terbesar.
+MaxLongInt                    2147483647, LongInt terbesar.
+Pi                            Fungsi tanpa parameter, 3.14159265358979.
+Input, Output                 Berkas teks standar masukan (papan ketik) dan
+                              keluaran (layar).
+ErrorAddr                     Alamat error saat program berhenti karena runtime
+                              error; nil bila berhenti normal.
+ExitCode                      Kode keluar proses. Dapat dibaca/diatur dalam
+                              prosedur ExitProc.
+RandSeed                      Benih generator bilangan acak. Isi dengan nilai
+                              tetap agar urutan Random dapat diulang.
+FileMode                      Mode buka berkas bertipe untuk Reset: 0 baca
+                              saja, 1 tulis saja, 2 baca-tulis (bawaan).
+
+RUTIN MATEMATIKA
+Abs(X)                        Nilai mutlak X. Hasil bertipe sama dengan X.
+ArcTan(X)                     Arc tangens X dalam radian.
+Cos(X), Sin(X)                Cosinus dan sinus, X dalam radian.
+Exp(X)                        e pangkat X.
+Ln(X)                         Logaritma natural X, X harus > 0.
+Frac(X)                       Bagian pecahan X: Frac(3.75) = 0.75.
+Int(X)                        Bagian bulat X, hasil tetap Real: Int(3.75) =
+                              3.0.
+Odd(N)                        True jika N bilangan ganjil.
+Pi                            Nilai 3.14159265358979.
+Random                        Real acak 0 <= R < 1.
+Random(N)                     Bilangan bulat acak 0..N-1.
+Randomize                     Menyiapkan RandSeed dari jam sistem. Panggil
+                              sekali di awal.
+Round(X)                      Membulatkan Real ke LongInt. Bilangan .5
+                              dibulatkan ke genap: Round(2.5) = 2.
+Sqr(X)                        Kuadrat X.
+Sqrt(X)                       Akar kuadrat, X >= 0.
+Trunc(X)                      Memotong pecahan, hasil LongInt: Trunc(-3.7) =
+                              -3.
+
+RUTIN ORDINAL
+Chr(N)                        Karakter dengan kode N.
+Ord(X)                        Nomor urut nilai ordinal; Ord('A') = 65.
+Pred(X), Succ(X)              Nilai ordinal sebelum dan sesudah X.
+Inc(X), Inc(X, N)             Menambah X dengan 1 atau N. Lebih cepat dari X :=
+                              X + 1.
+Dec(X), Dec(X, N)             Mengurangi X dengan 1 atau N.
+High(X), Low(X)               Batas atas dan bawah tipe atau larik: High(Byte)
+                              = 255, High(A) = indeks terakhir.
+Include(S, E)                 Menambahkan elemen E ke himpunan S.
+Exclude(S, E)                 Membuang elemen E dari himpunan S.
+SizeOf(X)                     Ukuran tipe atau variabel dalam byte.
+
+RUTIN STRING
+Length(S)                     Panjang string.
+Copy(S, P, N)                 Mengambil N karakter dari S mulai posisi P (basis
+                              1).
+Concat(S1, S2, ...)           Menyambung string, sama dengan operator +.
+Pos(Sub, S)                   Posisi kemunculan pertama Sub di S, atau 0 jika
+                              tidak ada.
+Delete(S, P, N)               Menghapus N karakter dari S mulai posisi P.
+Insert(Sumber, S, P)          Menyisipkan Sumber ke S pada posisi P.
+UpCase(C)                     Huruf besar untuk satu Char. Untuk string, ulangi
+                              per karakter.
+Str(X, S)                     Mengubah angka ke string; boleh berformat:
+                              Str(X:6:2, S).
+Val(S, N, Kode)               Mengubah string ke angka. Kode = 0 jika berhasil,
+                              selain itu posisi karakter yang salah.
+FillChar(X, N, V)             Mengisi N byte dari variabel X dengan nilai V.
+
+RUTIN MEMORI DAN POINTER
+New(P)                        Mengalokasikan variabel dinamis dan mengisi
+                              pointer P.
+Dispose(P)                    Membebaskan variabel dinamis dari New.
+GetMem(P, N)                  Mengalokasikan N byte. Pasangkan dengan
+                              FreeMem(P, N).
+FreeMem(P, N)                 Membebaskan N byte dari GetMem.
+Move(Sumber, Tujuan, N)       Menyalin N byte; area boleh tumpang-tindih.
+Assigned(P)                   True jika pointer P tidak nil.
+MemAvail, MaxAvail            Sisa memori heap. Tidak dapat dikompilasi di FPC
+                              64-bit (lihat COMPATIBILITY.txt).
+Addr(X)                       Alamat X, sama dengan @X.
+
+RUTIN BERKAS DAN DIREKTORI
+Mulai dari Assign, lalu Reset/Rewrite/Append, baca atau tulis, terakhir Close.
+Dengan {$I-}, periksa IOResult sesudah tiap operasi.
+
+Assign(F, Nama)               Menghubungkan variabel berkas dengan nama berkas
+                              pada disk.
+Reset(F)                      Membuka berkas yang sudah ada untuk dibaca.
+                              Berkas bertipe: dibaca dan ditulis.
+Rewrite(F)                    Membuat berkas baru atau mengosongkan yang lama,
+                              untuk ditulis.
+Append(F)                     Membuka berkas teks untuk ditambah di akhir.
+Close(F)                      Menutup berkas; data yang tertahan di buffer
+                              ditulis.
+Flush(F)                      Menulis buffer berkas teks keluaran ke disk.
+Erase(F)                      Menghapus berkas dari disk. Berkas harus sudah
+                              di-Assign dan ditutup.
+Rename(F, NamaBaru)           Mengganti nama berkas di disk.
+Eof(F)                        True jika sudah di akhir berkas.
+Eoln(F)                       True jika di akhir baris berkas teks.
+SeekEof, SeekEoln             Seperti Eof dan Eoln tetapi melewati spasi dan
+                              tab.
+Seek(F, N)                    Pindah ke komponen ke-N (mulai 0) berkas bertipe.
+FilePos(F)                    Posisi komponen sekarang pada berkas bertipe.
+FileSize(F)                   Jumlah komponen berkas bertipe.
+Truncate(F)                   Memotong berkas di posisi sekarang.
+BlockRead(F, Buf, N, Hasil)   Membaca N rekaman 128 byte (berkas tanpa tipe).
+BlockWrite(F, Buf, N, Hasil)
+                              Menulis N rekaman ke berkas tanpa tipe.
+Read(F, X, ...)               Membaca nilai dari berkas teks atau komponen
+                              berkas bertipe. Tanpa F, dari Input.
+ReadLn(F, X, ...)             Seperti Read lalu melompat ke baris berikutnya.
+Write(F, X, ...)              Menulis nilai ke berkas atau layar. Format:
+                              X:Lebar, atau X:Lebar:Desimal untuk Real.
+WriteLn(F, X, ...)            Seperti Write lalu mengakhiri baris.
+IOResult                      Kode galat I/O terakhir (0 = sukses); membaca
+                              nilainya me-reset ke 0. Berguna dengan {$I-}.
+GetDir(D, S)                  Direktori kini pada drive D (0 = bawaan).
+ChDir(S)                      Pindah direktori kerja.
+MkDir(S)                      Membuat direktori.
+RmDir(S)                      Menghapus direktori kosong.
+ParamCount                    Jumlah argumen baris perintah.
+ParamStr(N)                   Argumen ke-N; ParamStr(0) adalah nama program.
+                              Atur argumen di Run > Parameters.
+
+KONTROL PROGRAM
+Halt, Halt(Kode)              Mengakhiri program dengan kode keluar (bawaan 0).
+                              Prosedur ExitProc tetap jalan.
+Exit                          Keluar dari prosedur, fungsi, atau program utama
+                              saat itu juga. Exit(nilai) bukan sintaks TP.
+Break                         Keluar dari for, while, atau repeat yang sedang
+                              berjalan.
+Continue                      Lompat ke iterasi berikutnya dari pengulangan.
+RunError(Kode)                Menimbulkan runtime error dengan kode itu.
+ExitProc                      Variabel Pointer. Pasang alamat prosedur untuk
+                              dijalankan saat program berakhir; panggil rantai
+                              lama di akhir.
+Randomize                     Lihat RUTIN MATEMATIKA.
+
+DIREKTIF COMPILER
+Ditulis dalam kurung kurawal: {$R+} atau {$R+,Q-}. Beberapa mengikuti saklar
+tunggal huruf, lainnya berbentuk kata.
+
+$I-, $I+                      Pemeriksaan I/O. Dengan $I- program tidak
+                              berhenti saat galat berkas; periksa IOResult
+                              sendiri.
+$I nama                       Menyertakan berkas sumber lain: {$I utils.inc}.
+$R+, $R-                      Pemeriksaan rentang indeks array dan subrentang
+                              (runtime error 201).
+$Q+, $Q-                      Pemeriksaan overflow aritmetika (runtime error
+                              215).
+$S+, $S-                      Pemeriksaan stack (runtime error 202).
+$N+, $N-                      Mode koprosesor numerik. Diterima; di Odin Real
+                              selalu Double.
+$E+, $E-                      Emulasi 8087. Diterima dan diabaikan.
+$B+, $B-                      Evaluasi boolean lengkap atau hubung-singkat.
+$V+, $V-                      Pemeriksaan panjang parameter string var.
+$X+, $X-                      Sintaks diperluas: memanggil fungsi seperti
+                              prosedur.
+$M                            Ukuran stack dan heap: {$M 16384,0,655360}.
+                              Diterima, tidak berefek di macOS.
+$ASMMODE INTEL                Sintaks Intel untuk blok asm.
+$IFDEF, $IFNDEF               Kompilasi bersyarat: {$IFDEF Debug} ... {$ENDIF}.
+$ELSE, $ENDIF                 Cabang lain dan penutup blok kompilasi bersyarat.
+$DEFINE, $UNDEF               Menetapkan atau menghapus simbol kompilasi.
+
+KODE RUNTIME ERROR
+Muncul sebagai 'Runtime error N at ...' dan menjadi kode keluar program.
+
+2                             File not found.
+3                             Path not found.
+4                             Too many open files.
+5                             File access denied.
+100                           Disk read error (membaca melewati akhir berkas).
+101                           Disk write error.
+102                           File not assigned: lupa Assign.
+103                           File not open: lupa Reset/Rewrite.
+104                           File not open for input.
+105                           File not open for output.
+106                           Invalid numeric format (Read angka dari teks
+                              salah).
+200                           Division by zero.
+201                           Range check error (butuh {$R+}).
+202                           Stack overflow, biasanya rekursi tanpa akhir.
+203                           Heap overflow.
+204                           Invalid pointer operation.
+205                           Floating point overflow.
+206                           Floating point underflow.
+207                           Invalid floating point operation.
+215                           Arithmetic overflow (butuh {$Q+}).
+
+UNIT CRT
+Layar teks dan papan ketik. uses Crt;. Koordinat mulai dari 1,1 pada pojok
+kiri atas; layar 80 kolom x 25 baris.
+
+ClrScr                        Membersihkan jendela aktif dan menaruh kursor di
+                              1,1.
+ClrEol                        Menghapus dari kursor sampai akhir baris.
+GotoXY(X, Y)                  Memindahkan kursor ke kolom X, baris Y (relatif
+                              terhadap jendela).
+WhereX, WhereY                Kolom dan baris kursor sekarang.
+InsLine                       Menyisipkan baris kosong pada kursor.
+DelLine                       Menghapus baris tempat kursor.
+TextColor(C)                  Warna teks 0..15; tambah Blink (128) agar
+                              berkedip.
+TextBackground(C)             Warna latar 0..7.
+TextAttr                      Variabel Byte atribut: bit 0..3 warna depan, 4..6
+                              latar, 7 kedip.
+LowVideo, HighVideo           Meredupkan atau menerangkan warna depan.
+NormVideo                     Mengembalikan atribut awal.
+Window(X1, Y1, X2, Y2)        Membatasi layar ke jendela persegi panjang;
+                              GotoXY relatif ke pojoknya.
+WindMin, WindMax              Pojok jendela aktif (disandikan dalam satu Word).
+TextMode(M)                   Mengatur mode teks: BW40, CO40, BW80, CO80, Mono,
+                              Font8x8, C40, C80. LastMode menyimpan mode
+                              sebelumnya.
+KeyPressed                    True jika ada tombol menunggu di buffer, tanpa
+                              membaca.
+ReadKey                       Menunggu satu tombol tanpa gema. Tombol
+                              fungsi/panah mengirim #0 lalu kode scan: #0#59 =
+                              F1, #0#72 = panah atas, #0#80 = bawah, #0#75 =
+                              kiri, #0#77 = kanan.
+Delay(Ms)                     Menunggu Ms milidetik.
+Sound(Hz), NoSound            Menyalakan dan mematikan nada. Di macOS hanya
+                              diterima, tanpa bunyi.
+CheckBreak, CheckEOF          Variabel Boolean: Ctrl-C menghentikan program;
+                              Ctrl-Z dianggap akhir berkas.
+AssignCrt(F)                  Mengarahkan berkas teks F ke layar Crt.
+DirectVideo, CheckSnow        Variabel kompatibilitas; tidak berefek.
+Black, Blue, Green, Cyan      Konstanta warna 0, 1, 2, 3.
+Red, Magenta, Brown
+                              Konstanta warna 4, 5, 6.
+LightGray                     Konstanta warna 7.
+DarkGray, LightBlue
+                              Konstanta warna 8, 9.
+LightGreen                    Konstanta warna 10.
+LightCyan, LightRed           Konstanta warna 11, 12.
+LightMagenta                  Konstanta warna 13.
+Yellow, White, Blink          Konstanta warna 14, 15, dan 128 (kedip).
+
+UNIT DOS
+Tanggal, waktu, berkas, lingkungan, dan menjalankan program lain. uses Dos;.
+
+GetDate(Y, M, D, DOW)         Tanggal sistem: tahun, bulan, hari, hari minggu
+                              (0 = Minggu).
+GetTime(H, M, S, S100)        Waktu sistem: jam, menit, detik, perseratus
+                              detik.
+SetDate, SetTime              Mengubah jam sistem. Diterima; mungkin tidak
+                              berefek tanpa hak akses.
+DosVersion                    Versi sistem; di sini berisi versi kernel Darwin.
+DiskFree(D), DiskSize(D)      Ruang kosong dan total disk dalam byte (D = 0
+                              drive bawaan, -1 jika galat).
+FindFirst(Pola, Atribut, SR)  Mulai pencarian berkas; hasil di SearchRec.
+                              Periksa DosError (0 = ketemu).
+FindNext(SR)                  Berkas berikutnya yang cocok.
+FindClose(SR)                 Menutup pencarian.
+SearchRec                     Record hasil pencarian: Attr, Time, Size, Name.
+GetFAttr(F, A), SetFAttr      Membaca atau mengubah atribut berkas (ReadOnly,
+                              Hidden, SysFile, VolumeID, Directory, Archive,
+                              AnyFile).
+GetFTime, SetFTime            Waktu ubah berkas dalam format paket.
+PackTime(DT, T)               Mengubah record DateTime (Year, Month, Day, Hour,
+                              Min, Sec) menjadi LongInt paket.
+UnpackTime(T, DT)             Kebalikan PackTime: LongInt paket menjadi record
+                              DateTime.
+FSplit(Path, Dir, Nama, Ext)  Memecah path menjadi direktori, nama, dan
+                              ekstensi.
+FExpand(Path)                 Path lengkap dari path relatif.
+FSearch(Nama, DaftarDir)      Mencari berkas di daftar direktori; hasil kosong
+                              bila tidak ketemu.
+GetEnv(Nama)                  Nilai variabel lingkungan.
+EnvCount, EnvStr(N)           Jumlah dan isi ke-N variabel lingkungan.
+Exec(Path, Args)              Menjalankan program lain. Sebelumnya SwapVectors
+                              di DOS; di sini cukup Exec. Lalu periksa DosError
+                              dan DosExitCode.
+DosExitCode                   Kode keluar program terakhir dari Exec.
+DosError                      Kode galat DOS terakhir dari FindFirst/Exec.
+GetCBreak, SetCBreak          Pemeriksaan Ctrl-Break. Diterima; tidak berefek.
+GetVerify, SetVerify          Verifikasi tulis. Diterima; tidak berefek.
+GetIntVec, SetIntVec, Keep    Dapat dikompilasi tetapi tidak berefek.
+Registers, Intr, MsDos        Tidak tersedia di macOS 64-bit.
+
+UNIT STRINGS
+String berakhir nol (PChar) bergaya C. uses Strings;.
+
+StrLen(P)                     Panjang string P.
+StrEnd(P)                     Pointer ke karakter nol di akhir P.
+StrCopy(Tujuan, Sumber)       Menyalin Sumber ke Tujuan; Tujuan harus cukup
+                              besar.
+StrECopy                      Seperti StrCopy tetapi mengembalikan pointer ke
+                              akhir hasil.
+StrLCopy(T, S, Maks)          Menyalin paling banyak Maks karakter.
+StrPCopy(P, S)                Menyalin string Pascal S ke PChar P.
+StrPas(P)                     Mengubah PChar menjadi string Pascal.
+StrCat, StrLCat               Menyambung string (dengan batas untuk StrLCat).
+StrComp, StrIComp             Membandingkan; StrIComp tak membedakan huruf
+                              besar-kecil. Hasil negatif, 0, atau positif.
+StrLComp, StrLIComp           Membandingkan paling banyak N karakter.
+StrScan, StrRScan             Mencari karakter dari awal atau dari akhir.
+StrPos(S, Sub)                Mencari substring; nil bila tidak ketemu.
+StrUpper, StrLower            Mengubah ke huruf besar atau kecil di tempat.
+StrMove(T, S, N)              Menyalin N byte.
+StrNew(P), StrDispose(P)      Menduplikasi string di heap dan membebaskannya.
+
+UNIT OBJECTS
+Tipe objek dasar, aliran data, dan koleksi. uses Objects;.
+
+TObject                       Induk semua objek; Init, Free, Done.
+TPoint, TRect                 Titik (X, Y) dan persegi panjang (A, B) dengan
+                              Assign, Move, Grow, Intersect, Union, Contains,
+                              Empty.
+TStream                       Aliran data abstrak: Read, Write, Seek, GetPos,
+                              GetSize, Truncate, ReadStr, WriteStr, Get, Put,
+                              Flush.
+TDosStream                    Aliran ke berkas disk tanpa buffer.
+TBufStream                    Aliran ke berkas disk dengan buffer.
+TMemoryStream                 Aliran di memori.
+TCollection                   Koleksi pointer yang membesar sendiri: Insert,
+                              At, Delete, DeleteAll, IndexOf, ForEach,
+                              FirstThat, LastThat.
+TSortedCollection             Koleksi terurut; timpa Compare. Search dan
+                              Duplicates tersedia.
+TStringCollection             Koleksi terurut string Pascal.
+TStrCollection                Koleksi terurut string berakhir nol (PChar).
+stOk, stError                 Nilai Status aliran: 0 baik, -1 galat. Konstanta
+                              stXXX lain menjelaskan galat.
+
+ODIN VISION
+Turbo Vision milik Odin untuk membuat aplikasi teks berjendela, menu, dan
+dialog. API mengikuti Turbo Vision TP7. Aplikasi keluar dengan Alt-X.
+
+Drivers                       Event (TEvent), tombol (kbEnter, kbEsc, kbAltX,
+                              kbF1...), mouse, layar.
+Memory                        Pengelolaan memori; LowMemory selalu False.
+HistList                      Riwayat isian masukan (HistoryAdd, HistoryStr).
+Views                         TView, TGroup, TWindow, TFrame, TScrollBar,
+                              TScroller, TListViewer; dasar semua tampilan.
+Menus                         TMenuBar, TMenuBox, TStatusLine, NewMenu,
+                              NewItem, NewSubMenu, NewLine, NewStatusDef,
+                              NewStatusKey.
+Validate                      TValidator, TFilterValidator, TRangeValidator,
+                              TPXPictureValidator, TLookupValidator.
+Dialogs                       TDialog, TButton, TInputLine, TStaticText,
+                              TLabel, TCheckBoxes, TRadioButtons, TListBox,
+                              THistory.
+App                           TApplication, TProgram, TDesktop, TBackground;
+                              kerangka program.
+MsgBox                        MessageBox dan InputBox: dialog pesan dan isian
+                              cepat.
+StdDlg                        TFileDialog dan TChDirDialog: dialog berkas dan
+                              direktori.
+Editors                       TEditor, TMemo, TFileEditor, TEditWindow,
+                              TIndicator; penyunting teks.
+Outline                       TOutline, TOutlineViewer, TNode; tampilan pohon.
+Rangka program                type TAplikasi = object(TApplication) end; var A:
+                              TAplikasi; begin A.Init; A.Run; A.Done; end.
+
+PERINTAH IDE
+Rangkuman; daftar lengkap ada di SHORTCUTS.txt.
+
+F1                            Help. Di editor: topik untuk kata di kursor atau
+                              seleksi.
+F2, F3                        Save, Open.
+F4                            Go to cursor (debug).
+F5, F6                        Zoom jendela, pindah jendela.
+F7, F8                        Trace into, step over (debug).
+F9                            Compile.
+Ctrl+F9                       Compile lalu jalankan program (Run).
+Alt+F5                        Menampilkan User screen.
+Ctrl+F2                       Menghentikan program yang berjalan.
+Alt+X                         Keluar dari IDE.
+
+CONTOH RINGKAS
+Potongan program untuk mengingat bentuk dasar bahasa.
+
 STRUKTUR PROGRAM
 program NamaProgram;
 uses Crt;

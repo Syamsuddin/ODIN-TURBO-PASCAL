@@ -142,7 +142,11 @@ class Document:
     @classmethod
     def read(cls, path: Path) -> "Document":
         path = path.expanduser().resolve()
-        raw = path.read_bytes()
+        return cls.from_bytes(path.read_bytes(), path)
+
+    @classmethod
+    def from_bytes(cls, raw: bytes, path: Path | None = None) -> "Document":
+        """Detects the encoding and newline style of raw file contents (Document.read without the disk)."""
         encoding = "utf-8-sig" if raw.startswith(b"\xef\xbb\xbf") else "utf-8"
         try:
             text = raw.decode(encoding)
@@ -162,11 +166,15 @@ class Document:
             return False
         return not self.path.exists() or hashlib.sha256(self.path.read_bytes()).hexdigest() != self.disk_hash
 
+    def encoded(self) -> bytes:
+        """The text as file contents, in the document's encoding and newline style."""
+        return self.text.replace("\n", self.newline).encode(self.encoding)
+
     def save(self, path: Path | None = None) -> None:
         target = (path or self.path)
         if target is None:
             raise ValueError("File belum diberi nama.")
-        raw = self.text.replace("\n", self.newline).encode(self.encoding)
+        raw = self.encoded()
         atomic_write(target, raw)
         self.path = target.resolve()
         self.saved_text = self.text
@@ -345,7 +353,7 @@ def locate_toolchain() -> str | None:
 SEVERITY = {"fatal": "Fatal", "error": "Error", "warning": "Warning", "note": "Note", "hint": "Hint"}
 
 
-def build_odin(source: Path, settings: Settings, rebuild=False, cache: Path | None = None, debug=False) -> BuildResult:
+def build_odin(source: Path, settings: Settings, rebuild=False, cache: Path | None = None, debug=False, wrap=None) -> BuildResult:
     toolchain = locate_toolchain()
     if not toolchain:
         return BuildResult(False, [], "Toolchain Odin (odinpc) belum ditemukan. Pilih backend Free Pascal di Options > Compiler.", [], None, source)
@@ -372,7 +380,9 @@ def build_odin(source: Path, settings: Settings, rebuild=False, cache: Path | No
             if p:
                 command += [flag, str(Path(p).expanduser().resolve())]
     try:
-        result = subprocess.run(command, cwd=source.parent, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120, **NO_WINDOW)
+        # wrap (a sandbox, for example) changes how odinpc is started, not the command shown to the user.
+        result = subprocess.run(wrap(command) if wrap else command, cwd=source.parent, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, timeout=120, **NO_WINDOW)
     except subprocess.TimeoutExpired:
         return BuildResult(False, command, "Kompilasi melewati batas 120 detik.", [], None, source)
     except OSError as error:
@@ -422,14 +432,15 @@ def runtime_error_location(debug_info: Path, report: str):
 DEBUG_NEEDS_ODIN = "Debugger memerlukan backend Odin. Pilih Odin native di Options > Compiler."
 
 
-def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = None, debug=False) -> BuildResult:
-    """Compiles source. debug=True makes a build for the debugger (Odin backend only)."""
+def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = None, debug=False, wrap=None) -> BuildResult:
+    """Compiles source. debug=True makes a build for the debugger (Odin backend only). wrap(command) -> command
+    starts odinpc through a wrapper such as a sandbox; the Free Pascal backend ignores it."""
     source = source.resolve()
     note = ""
     if settings["backend"] == "odin":
         usable = locate_toolchain() and odin_supported()
         if usable or not locate_compiler(settings["compiler"]):
-            return build_odin(source, settings, rebuild, cache, debug)
+            return build_odin(source, settings, rebuild, cache, debug, wrap)
         if debug:
             return BuildResult(False, [], DEBUG_NEEDS_ODIN, [], None, source)
         # Without a usable odinpc (a bundle built without it, or a Mac it

@@ -13,7 +13,7 @@ import sys
 import threading
 from pathlib import Path
 
-from .terminal import Process
+from .console import Process
 
 
 class DebugSession:

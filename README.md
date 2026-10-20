@@ -421,7 +421,8 @@ ODIN-TURBO-PASCAL/
 │   ├── windows.py           Jendela desktop: editor, Watches, Local variables, Call stack
 │   ├── core.py              Dokumen, pengaturan, build (Odin dan Free Pascal), diagnostik
 │   ├── debugger.py          Sesi debug: odinpc debug di User screen, perintah JSON
-│   ├── terminal.py          Emulator VT100 80×25 dan proses pseudo-terminal
+│   ├── console.py           Emulator VT100 80×25 dan proses pseudo-terminal (tanpa Tk)
+│   ├── terminal.py          Widget Tk untuk User screen
 │   └── conpty.py            User screen di Windows (ConPTY lewat ctypes)
 ├── toolchain/               odinpc (Rust): lexer, parser, sema, codegen x86-64 dan AArch64,
 │                            assembler, linker Mach-O/ELF/PE, info debug, debugger;

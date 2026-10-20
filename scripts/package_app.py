@@ -10,6 +10,7 @@ apart from the version tag comment in examples/bab01_01_halo_dunia.pas.
 import plistlib
 import re
 import shutil
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -38,12 +39,24 @@ resources.mkdir()
 skip = shutil.ignore_patterns("__pycache__", "*.pyc", "odin-logo-master.png")
 
 
+def git_ignored(directory, names):
+    """Names git ignores here (.gitignore or .git/info/exclude); none without git."""
+    paths = [str((Path(directory) / name).relative_to(ROOT)) for name in names]
+    try:
+        result = subprocess.run(["git", "-C", str(ROOT), "check-ignore", "--stdin"], input="\n".join(paths),
+                                capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return set()
+    return {Path(line).name for line in result.stdout.splitlines()}
+
+
 def ignore(directory, names):
     # The tutorial programs (Bab 17, Bab 20) write data files next to
     # themselves; only the Pascal sources go into the bundle.
     if Path(directory).name == "examples":
         return {name for name in names if not name.lower().endswith(".pas")}
-    return skip(directory, names)
+    # Local files that git ignores stay out of the bundle and the release ZIP.
+    return skip(directory, names) | git_ignored(directory, names)
 
 
 for folder in ("odin", "examples", "docs", "assets"):

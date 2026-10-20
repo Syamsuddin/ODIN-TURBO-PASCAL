@@ -6,9 +6,18 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Ditambahkan
+
+- Bantuan lengkap dalam HTML, `docs/help.html`, dibuka dari **Help › Contents** (F1): satu berkas mandiri dengan daftar isi bertingkat (penanda bagian aktif, panel "Pada halaman ini"), pencarian instan (`/`), tema terang dan Turbo, serta cetak. Isinya panduan penggunaan, referensi menu, referensi bahasa Pascal dan unit, pintasan, kompatibilitas, dan pemecahan masalah. Tabel referensi dibangun dari `docs/PASCAL.txt` dan `docs/SHORTCUTS.txt` oleh `scripts/build_help.py`; jalankan ulang skrip itu setelah mengubah docs atau nomor versi (tes `test_help_html_is_current` memeriksanya).
+- Bantuan konteks di editor: F1 membuka `docs/help.html` di browser pada baris referensi untuk kata di posisi kursor (atau teks yang diseleksi). Kata yang tidak punya entri dimasukkan ke kotak pencarian halaman. Help > Contents juga membuka halaman ini; menu "Help in browser" yang kembar dihapus. `scripts/build_help.py` memberi tiap nama pada baris seperti `Cos(X), Sin(X)` anchor sendiri.
+- `docs/PASCAL.txt` dilengkapi menjadi referensi lengkap dengan daftar isi: semua kata cadangan dan direktif standar beserta penjelasan, operator, tipe data, konstanta, rutin System (matematika, ordinal, string, memori, berkas, kontrol program), direktif compiler, kode runtime error, unit Crt, Dos, Strings, Objects, Odin Vision, dan perintah IDE. Potongan contoh lama pindah ke bagian "Contoh ringkas".
+
 ### Diubah
 
 - CI: `actions/checkout` dan `actions/upload-artifact` naik dari v4 ke v7, yang berjalan di Node.js 24. GitHub Actions tidak lagi memperingatkan bahwa Node.js 20 sudah usang.
+- Emulator VT100 (`Screen`) dan proses pseudo-terminal (`Process`) pindah dari `odin/terminal.py` ke modul baru `odin/console.py` yang tidak membutuhkan Tk. `odin/terminal.py` kini hanya berisi widget Tk dan tetap mengekspor nama lama. `odin/debugger.py` juga tidak lagi memuat Tk.
+- `Document` mendapat `from_bytes()` dan `encoded()` (membaca dan menulis isi berkas tanpa menyentuh disk), dan `core.build()` menerima `wrap` untuk menjalankan `odinpc` lewat pembungkus tanpa mengubah perintah yang ditampilkan.
+- `scripts/package_app.py` tidak menyalin berkas yang diabaikan git ke bundel `.app`.
 
 ## [2.3.0] - 2026-10-16
 

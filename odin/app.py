@@ -13,8 +13,10 @@ import subprocess
 import sys
 import threading
 import traceback
+import webbrowser
 import tkinter as tk
 from pathlib import Path
+from urllib.parse import quote
 from tkinter import filedialog, messagebox
 from tkinter import font as tkfont
 
@@ -28,6 +30,8 @@ from .windows import BLACK, BLUE, CYAN, GRAY, WHITE, Editor, LocalsWindow, Stack
 ASSETS = Path(__file__).resolve().parent.parent
 # Help > Buku opens this PDF in docs/.
 BOOK = "Belajar_Pemrograman_Bahasa_Pascal.pdf"
+# Help > Help in browser opens this page in docs/.
+HELP_HTML = "help.html"
 TEMPLATE = "program Untitled;\n\nbegin\n  WriteLn('Hello, Pascal!');\nend.\n"
 # Compile actions that need a debug build and run under the debugger.
 DEBUG_ACTIONS = ("debug", "step", "cursor")
@@ -93,7 +97,7 @@ class App:
         self.status.pack(side="bottom", fill="x")
         self.keys = tk.Frame(root, bg=GRAY)
         self.keys.pack(side="bottom", fill="x")
-        for label, action in (("F1 Help",self.help), ("F2 Save",self.save), ("F3 Open",self.open_file),
+        for label, action in (("F1 Help",self.help_topic), ("F2 Save",self.save), ("F3 Open",self.open_file),
                               ("F6 Next",self.next_editor), ("F9 Make",self.compile), ("^F9 Run",self.run), ("Alt-X Exit",self.quit)):
             tk.Button(self.keys, text=label, command=action, bg=GRAY, fg="#aa0000", activebackground=CYAN,
                       relief="flat", borderwidth=0, padx=10, pady=3, takefocus=False).pack(side="left")
@@ -219,13 +223,13 @@ class App:
                              ("Environment information",self.environment,"")])
         self.menu("Window", [("Tile",self.tile,""),("Cascade",self.cascade,""),("Zoom",self.zoom,"F5"),
                             ("Next",self.next_editor,"F6"),("Close",self.close_window,"Alt+F3"),("List...",self.window_list,"")])
-        self.menu("Help", [("Contents",self.help,"F1"),("Pascal reference",self.reference,""),
+        self.menu("Help", [("Contents",self.help_html,"F1"),("Pascal reference",self.reference,""),
                           ("Keyboard shortcuts",lambda:self.help("SHORTCUTS.txt"),""),("Buku",self.book,""),
                           ("About Odin",self.about,"")])
         tk.Label(self.menubar,text="◉",bg=GRAY,fg=BLUE,font=self.font).pack(side="right",padx=10)
 
     def bind_keys(self):
-        commands = {"<F1>":self.help,"<F2>":self.save,"<F3>":self.open_file,"<F5>":self.zoom,"<F6>":self.next_editor,
+        commands = {"<F1>":self.help_topic,"<F2>":self.save,"<F3>":self.open_file,"<F5>":self.zoom,"<F6>":self.next_editor,
                     "<F4>":lambda:self.debug_step("cursor"),
                     "<F7>":lambda:self.debug_step("into"),"<F8>":lambda:self.debug_step("over"),"<F9>":self.compile,
                     "<F10>":lambda:self.post_menu(*self.menus["File"]),"<Control-F9>":self.run,"<Alt-F9>":self.compile,
@@ -1157,27 +1161,51 @@ class App:
         text.insert("end",content)
         text.configure(state="disabled")
         win.bind("<Escape>",lambda e:win.destroy())
+        return text
 
     def help(self,name="HELP.txt"):
         try:content=(ASSETS/"docs"/name).read_text(encoding="utf-8")
         except OSError:content="Dokumentasi tidak ditemukan. Lihat README.txt."
         self.show_text("Odin Help",content)
 
+    def help_topic(self):
+        """F1: docs/help.html at the topic of the word under the cursor (or the selection) in the editor."""
+        editor=self.active_editor
+        word=self.word_at_cursor() if editor else ""
+        word=word.splitlines()[0].strip() if word else ""
+        self.help_html(word if re.fullmatch(r"\w+",word) else "")
+
     def reference(self):self.help("PASCAL.txt")
     def book(self):
         """Help > Buku: the tutorial book, opened in the system's PDF viewer (scripts/build_book.py makes it)."""
-        path=ASSETS/"docs"/BOOK
+        self.open_document("Buku",ASSETS/"docs"/BOOK)
+    def help_html(self,topic=""):
+        """Help > Contents: docs/help.html (scripts/build_help.py makes it) in the default browser. With a topic it
+        opens at the reference row k-<name> when the page has one, else with the topic typed in the page's search."""
+        page=ASSETS/"docs"/HELP_HTML
+        if topic and page.is_file():
+            try:
+                anchor="k-"+re.sub(r"[^a-z0-9]+","-",topic.lower()).strip("-")
+                if f'id="{anchor}"' not in page.read_text(encoding="utf-8"):anchor="cari="+quote(topic)
+                if webbrowser.open(f"{page.as_uri()}#{anchor}"):
+                    self.update_status(f"Help: {topic}")
+                    return
+            except OSError:pass
+        self.open_document("Help",page)
+
+    def open_document(self,title,path):
+        """Open a bundled document with the system's default application."""
         if not path.is_file():
-            messagebox.showerror("Buku",f"Buku tidak ditemukan:\n{path}",parent=self.root)
+            messagebox.showerror(title,f"Berkas tidak ditemukan:\n{path}",parent=self.root)
             return
         try:
             if sys.platform=="win32":os.startfile(path)
             else:subprocess.Popen(["/usr/bin/open" if sys.platform=="darwin" else "xdg-open",str(path)],stdin=subprocess.DEVNULL,
                                   stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
         except OSError as error:
-            messagebox.showerror("Buku",f"Buku tidak bisa dibuka: {error}\n{path}",parent=self.root)
+            messagebox.showerror(title,f"Berkas tidak bisa dibuka: {error}\n{path}",parent=self.root)
             return
-        self.update_status(f"Opening {BOOK}")
+        self.update_status(f"Opening {path.name}")
     def about(self):
         self.show_text("About Odin Turbo Pascal",f"ODIN TURBO PASCAL\nVersion {__version_tag__}\nCreated by {__author__}\n\nIndependent classic Pascal IDE.\nPython / Tk + Odin native toolchain; Free Pascal as alternative backend.\n\nInterface inspired by the DOS-era Turbo Pascal IDE.\nThis software is not Borland Turbo Pascal and is not affiliated with Borland.\nNo Borland binaries, logos, fonts, or help files are included.\n\nNative Pascal compilation for the host CPU.\nIntel x86_64 and Apple Silicon arm64 use the same application sources.\n\n{__copyright__}.\nThis program is free software: you can redistribute it and/or modify it\nunder the terms of the GNU General Public License, version 3 or later.\nIt comes with ABSOLUTELY NO WARRANTY. See LICENSE and THIRD_PARTY.txt.\n",self.logo_small)
 

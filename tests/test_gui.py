@@ -114,6 +114,25 @@ class GuiTests(unittest.TestCase):
             self.app.book()
         error.assert_called_once()
 
+    def test_help_in_browser_opens_the_html_help(self):
+        page=Path(__file__).resolve().parent.parent/"docs"/"help.html"
+        self.assertTrue(page.is_file(),"jalankan python3 scripts/build_help.py")
+        with patch("odin.app.subprocess.Popen") as popen,patch("odin.app.os.startfile",create=True) as startfile:
+            self.app.help_html()
+        if sys.platform=="win32":startfile.assert_called_once_with(page)
+        else:self.assertEqual(popen.call_args.args[0][1],str(page))
+
+    def test_f1_opens_the_html_help_at_the_word_under_the_cursor(self):
+        editor=self.app.new()
+        editor.text.insert("1.0","ClrScr; Sin(X); NamaSendiri\n")
+        urls=[]
+        for column,expected in ((2,"#k-clrscr"),(10,"#k-sin"),(22,"#cari=NamaSendiri")):
+            editor.text.mark_set("insert",f"1.{column}")
+            with patch("odin.app.webbrowser.open",side_effect=lambda url:urls.append(url) or True):
+                self.app.help_topic()
+            self.assertTrue(urls[-1].endswith(expected),urls[-1])
+            self.assertIn("/docs/help.html",urls[-1])
+
     def test_menus_dialogs_and_terminal(self):
         self.assertEqual(set(self.app.menus),set("File Edit Search Run Compile Debug Options Window Help".split()))
         for action in (self.app.compiler_options,self.app.directory_options,self.app.editor_options,
