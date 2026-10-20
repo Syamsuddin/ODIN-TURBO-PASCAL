@@ -22,7 +22,6 @@ class DebugSessionTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix="odin debugger ")
         self.root = Path(self.temp.name)
         self.settings = Settings(self.root / "settings.json")
-        self.settings["backend"] = "odin"
         self.events = queue.Queue()
         self.screen = Screen()
         self.session = None

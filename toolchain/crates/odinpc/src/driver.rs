@@ -420,10 +420,8 @@ pub fn write_executable(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
 
 /// Explains a standard TP7 unit that the Odin RTL does not provide (yet).
 fn missing_unit_hint(key: &str) -> &'static str {
-    if matches!(key, "COLORSEL" | "TEXTVIEW") {
-        "; unit Turbo Vision opsional ini belum ada di Odin Vision. Pakai backend FPC untuk program ini"
-    } else if matches!(key, "GRAPH" | "GRAPH3" | "OVERLAY" | "WINDOS" | "TURBO3") {
-        "; unit era DOS ini tidak tersedia di macOS (lihat docs/COMPATIBILITY.txt)"
+    if matches!(key, "GRAPH" | "GRAPH3" | "OVERLAY" | "WINDOS" | "TURBO3") {
+        "; unit era DOS ini tidak tersedia di Odin (lihat docs/COMPATIBILITY.txt)"
     } else {
         ""
     }

@@ -199,5 +199,57 @@ class WindowsInstallTests(unittest.TestCase):
         compile(path.read_text(encoding="utf-8"), str(path), "exec")
 
 
+class LinuxSetupTests(unittest.TestCase):
+    def test_installer_template(self):
+        template = (ROOT / "scripts" / "install_linux.sh.in").read_text()
+        for needle in ("@VERSION@", "@ARCH@", "@SHA256@", '"@OFFSET@"', "__PAYLOAD_BELOW__", "check_linux.py",
+                       "--uninstall", "--prefix", "sha256"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, template)
+        # The offset is padded with spaces: leading zeros would be read as octal by the shell.
+        self.assertNotIn("@OFFSET@\n0", template)
+        sh = shutil.which("sh")
+        if sh:
+            self.assertEqual(subprocess.run([sh, "-n", str(ROOT / "scripts" / "install_linux.sh.in")]).returncode, 0)
+
+    def test_builder_pins_python(self):
+        build = load_script("build_setup_linux")
+        for arch, digest in build.PBS_SHA256.items():
+            self.assertRegex(digest, r"^[0-9a-f]{64}$")
+        self.assertEqual(set(build.PBS_SHA256), {"x86_64", "aarch64"})
+
+    def test_elf_machine(self):
+        check = load_script("check_linux")
+        header = bytearray(64)
+        header[:4] = b"\x7fELF"
+        header[18:20] = struct.pack("<H", 0x3E)
+        path = Path(tempfile.mkdtemp()) / "x"
+        path.write_bytes(bytes(header))
+        self.assertEqual(check.elf_machine(path), "x86_64")
+        path.write_bytes(b"MZ" + bytes(62))
+        self.assertIsNone(check.elf_machine(path))
+        shutil.rmtree(path.parent)
+
+
+class MacSetupTests(unittest.TestCase):
+    def test_builder_pins_python(self):
+        build = load_script("build_setup_mac")
+        self.assertEqual(set(build.PBS_SHA256), {"x86_64", "arm64"})
+        for digest in build.PBS_SHA256.values():
+            self.assertRegex(digest, r"^[0-9a-f]{64}$")
+        # The installer is per user: no administrator password, no location choice.
+        self.assertIn('enable_currentUserHome="true"', build.DISTRIBUTION)
+        self.assertIn('enable_localSystem="false"', build.DISTRIBUTION)
+        self.assertIn("check_mac.py", build.POSTINSTALL)
+
+    def test_launcher_prefers_bundled_python(self):
+        launcher = (ROOT / "scripts" / "launcher.sh").read_text()
+        self.assertIn("Resources/python/bin/python3", launcher)
+        self.assertIn("-E -X utf8", launcher)
+        bash = shutil.which("bash")
+        if bash:
+            self.assertEqual(subprocess.run([bash, "-n", str(ROOT / "scripts" / "launcher.sh")]).returncode, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -10,9 +10,8 @@ begin
   WriteLn('PEMERIKSAAN KOMPILER');
   WriteLn('====================');
 
-  { Nama kompiler: Odin (bawaan IDE) atau Free Pascal (Options > Compiler) }
+  { Nama kompiler: kompiler Odin mendefinisikan simbol ODIN }
   {$IFDEF ODIN} WriteLn('Kompiler : Odin (odinpc)'); {$ENDIF}
-  {$IFDEF FPC} WriteLn('Kompiler : Free Pascal'); {$ENDIF}
 
   { Sistem operasi tempat program berjalan }
   {$IFDEF DARWIN} WriteLn('Sistem   : macOS'); {$ENDIF}

@@ -2236,7 +2236,8 @@ var
   P: PView;
 begin
   inherited Store(S);
-  Count := IndexOf(Last);
+  { The number of subviews: they are numbered from Last (1) to First. }
+  Count := IndexOf(First);
   S.Write(Count, SizeOf(Count));
   if Last <> nil then
   begin

@@ -50,10 +50,7 @@
 
 **Odin Turbo Pascal** adalah IDE Pascal yang menghadirkan kembali pengalaman Turbo Pascal era DOS: layar biru, teks kuning, menu abu-abu, jendela editor berbingkai, dan tombol fungsi klasik. Bedanya, kode Anda dikompilasi menjadi **program native untuk macOS, Linux, atau Windows**, tanpa emulator DOS. Setelah terpasang, Odin tidak memerlukan internet dan tidak mengirim telemetri.
 
-Odin punya dua backend compiler:
-
-- **Odin native.** Toolchain Odin sendiri: compiler Pascal, assembler, linker, runtime library, Odin Vision (Turbo Vision milik Odin), dan debugger, semuanya ditulis dari nol. Backend ini bawaan di macOS (Intel dan Apple Silicon), Linux (x86_64 dan arm64), dan Windows (x86_64).
-- **Free Pascal.** Compiler yang dipakai rilis 1.0.0. Tetap bisa dipilih di **Options › Compiler**, dan dipakai otomatis di sistem yang belum didukung backend Odin.
+Compiler-nya adalah **toolchain Odin sendiri**: compiler Pascal, assembler, linker, runtime library, Odin Vision (Turbo Vision milik Odin), dan debugger, semuanya ditulis dari nol, untuk macOS (Intel dan Apple Silicon), Linux (x86_64 dan arm64), dan Windows (x86_64). Odin tidak memerlukan Free Pascal, Xcode, LLDB, atau GCC; satu-satunya dependensi adalah Python dengan Tk untuk IDE-nya. Free Pascal, yang dipakai rilis 1.0.0 dan menjadi backend alternatif sampai 2.3.0, sudah dicabut.
 
 Odin cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, guru yang mengajar Pascal di kelas, dan siapa saja yang rindu menekan `Ctrl+F9` lalu melihat programnya berjalan.
 
@@ -70,7 +67,7 @@ Odin cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, gur
 - **Nostalgia yang benar-benar bekerja.** Alur kerja Turbo Pascal tetap utuh: `F2` simpan, `F9` make, `Ctrl+F9` jalankan, `Alt+F5` User screen, `F7`/`F8` menelusuri program baris demi baris.
 - **Program native, bukan emulasi.** Hasil kompilasi adalah executable asli untuk CPU dan sistem operasi Anda, dan bisa diekspor untuk dijalankan di luar IDE.
 - **Compiler dan debugger milik sendiri.** Di macOS, Linux, dan Windows, Odin mengompilasi dengan toolchain yang ditulis dari nol dan men-debug tanpa LLDB atau GDB, dengan jendela Watches dan Call stack seperti Turbo Pascal.
-- **Program interaktif sungguhan.** `ReadLn`, `ReadKey`, warna `Crt`, dan `GotoXY` berjalan di User screen 80×25. Aplikasi Turbo Vision juga berjalan di sana, lengkap dengan mouse, baik dengan Odin Vision maupun dengan Free Vision.
+- **Program interaktif sungguhan.** `ReadLn`, `ReadKey`, warna `Crt`, dan `GotoXY` berjalan di User screen 80×25. Aplikasi Turbo Vision (Odin Vision) juga berjalan di sana, lengkap dengan mouse.
 - **Siap untuk kelas.** Ada sebelas contoh program berbahasa Indonesia, referensi Pascal ringkas, dan daftar pesan compiler yang langsung melompat ke baris yang salah.
 - **Aman untuk berkas Anda.** Penyimpanan atomik, deteksi perubahan dari luar, dan pemulihan sesi otomatis setiap 10 detik.
 - **Ringan, terbuka, dan privat.** Source yang mudah dipelajari dan diubah, berlisensi GNU GPL v3, tanpa akun, server, API key, atau telemetri.
@@ -78,7 +75,7 @@ Odin cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, gur
 <details>
 <summary><strong>English summary</strong></summary>
 
-Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS, Linux and Windows. Programs compile into native binaries and run in a built-in 80×25 terminal with Crt and Turbo Vision support, including the mouse. Odin's own toolchain, written from scratch in Rust and Pascal (compiler with x86-64 and AArch64 code generators, assembler, Mach-O, ELF and PE linkers, runtime library, Odin Vision, and an integrated Turbo Pascal–style debugger with Watches, Locals and Call stack windows), is the default backend on Intel and Apple Silicon Macs and on x86_64 and arm64 Linux since release 2.1.0-alpha.1, and on x86_64 Windows since 2.2.0; Apple Silicon, Linux and Windows are verified on GitHub Actions runners. Free Pascal remains available as an alternative backend. Messages and documentation are in Indonesian. Licensed under the GNU GPL v3 or later.
+Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS, Linux and Windows. Programs compile into native binaries and run in a built-in 80×25 terminal with Crt and Turbo Vision support, including the mouse. Odin's own toolchain, written from scratch in Rust and Pascal (compiler with x86-64 and AArch64 code generators, assembler, Mach-O, ELF and PE linkers, runtime library, Odin Vision, and an integrated Turbo Pascal–style debugger with Watches, Locals and Call stack windows), is the only compiler, on Intel and Apple Silicon Macs, x86_64 and arm64 Linux, and x86_64 Windows; Apple Silicon, Linux and Windows are verified on GitHub Actions runners. Free Pascal, Xcode and LLDB are not needed; the IDE itself needs Python with Tk. The Free Pascal backend of releases up to 2.3.0 has been removed. Messages and documentation are in Indonesian. Licensed under the GNU GPL v3 or later.
 
 </details>
 
@@ -95,12 +92,10 @@ Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS, Linux and Wi
 
 ### Kompilasi
 
-- Pilihan backend di **Options › Compiler**:
-  - **Odin native** *(bawaan di macOS, Linux, dan Windows)*. Bahasa Turbo Pascal 7, termasuk tipe `object`, dengan unit standar dan Turbo Vision (lihat [Unit standar](#unit-standar-turbo-pascal)). Tidak memerlukan Free Pascal, Xcode, maupun GCC. Menghasilkan program x86_64 dan arm64 untuk CPU Anda (di Windows: x86_64).
-  - **Free Pascal** dengan mode **Turbo Pascal 7** (`-Mtp`), Object Pascal, atau Delphi.
+- Compiler Odin (`odinpc`): bahasa Turbo Pascal 7, termasuk tipe `object`, dengan unit standar dan Turbo Vision (lihat [Unit standar](#unit-standar-turbo-pascal)). Tidak memerlukan Free Pascal, Xcode, maupun GCC. Menghasilkan program x86_64 dan arm64 untuk CPU Anda (di Windows: x86_64); di Apple Silicon, linker Odin menulis tanda tangan kode ad-hoc yang diwajibkan macOS.
 - Compile, Make, dan Build. Tersedia *primary file* untuk proyek yang terdiri dari program dan unit.
 - Unit path dan include path, range check, dan overflow check.
-- Daftar diagnostik compiler: klik untuk melompat ke baris error, dan `Alt+F8` untuk pesan berikutnya. Pesan backend Odin berbahasa Indonesia dengan nomor galat gaya Turbo Pascal 7.
+- Daftar diagnostik compiler: klik untuk melompat ke baris error, dan `Alt+F8` untuk pesan berikutnya. Pesan compiler berbahasa Indonesia dengan nomor galat gaya Turbo Pascal 7.
 - Hasil build disimpan terpisah di cache. Build yang gagal tidak pernah menjalankan executable lama.
 - Ekspor executable native.
 
@@ -111,22 +106,22 @@ Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS, Linux and Wi
 - Program Turbo Vision menerima klik, seret, dan roda mouse. Setelah program selesai, isi layar sebelumnya kembali.
 - Parameter program (**Run › Parameters**) diteruskan tanpa melewati shell.
 - `Ctrl+C` menginterupsi program, `Ctrl+F2` menghentikannya, dan **Copy screen** menyalin isi layar.
-- Runtime error (backend Odin): baris penyebabnya ditandai merah di editor, dan **Search › Find error** kembali ke baris itu.
+- Runtime error: baris penyebabnya ditandai merah di editor, dan **Search › Find error** kembali ke baris itu.
 
 ### Turbo Vision (Odin Vision)
 
-Odin Vision adalah Turbo Vision milik Odin untuk backend Odin (macOS, Linux, dan Windows), ditulis ulang dari nol (*clean-room*) mengikuti API Turbo Vision di Turbo Pascal 7:
+Odin Vision adalah Turbo Vision milik Odin (macOS, Linux, dan Windows), ditulis ulang dari nol (*clean-room*) mengikuti API Turbo Vision di Turbo Pascal 7:
 
-- Unit `App`, `Drivers`, `Views`, `Menus`, `Dialogs`, `MsgBox`, `StdDlg`, `Memory`, `HistList`, `Validate`, `Editors`, dan `Outline`.
+- Unit `App`, `Drivers`, `Views`, `Menus`, `Dialogs`, `MsgBox`, `StdDlg`, `Memory`, `HistList`, `Validate`, `Editors`, `Outline`, `ColorSel`, dan `TextView`: seluruh unit Turbo Vision TP7.
 - Jendela bertumpuk dengan bayangan, menu bar dan menu drop-down, serta status line.
 - Dialog dengan tombol, input line (dengan validator dan riwayat), check box, radio button, dan list box, ditambah dialog berkas dan dialog ganti direktori.
-- Editor teks dan outline.
+- Editor teks, outline, dialog warna (`TColorDialog`), dan terminal teks (`TTerminal`, ditulis lewat `WriteLn` dengan `AssignDevice`).
 - Keyboard dan mouse di User screen. Perilakunya dijelaskan di [`rtl/vision/SPEC.md`](rtl/vision/SPEC.md).
 - Program demo (menu, jendela editor, dialog, MessageBox) ada di repositori source: [`tests/pascal/vision/VISION.PAS`](tests/pascal/vision/VISION.PAS). Buka dengan **File › Open**, lalu tekan `Ctrl+F9`.
 
 ### Debugger
 
-Debugger terpadu bergaya Turbo Pascal untuk backend Odin (macOS, Linux, dan Windows), tanpa LLDB atau GDB:
+Debugger terpadu bergaya Turbo Pascal (macOS, Linux, dan Windows), tanpa LLDB atau GDB:
 
 - **Breakpoint** dari gutter atau `Ctrl+F8`. Breakpoint ikut bergeser saat baris disisipkan, tersimpan bersama pemulihan sesi, dan bisa diubah saat program berjalan.
 - **Menelusuri program:** **Trace into** (`F7`), **Step over** (`F8`), **Go to cursor** (`F4`), dan Continue. `Ctrl+C` di User screen menghentikan program sementara. Baris yang akan dijalankan berikutnya ditandai hijau.
@@ -143,7 +138,7 @@ Debugger terpadu bergaya Turbo Pascal untuk backend Odin (macOS, Linux, dan Wind
 
 ## Platform yang Didukung
 
-| Platform | Backend Odin | Debugger terpadu | Cara memasang | Diverifikasi di |
+| Platform | Compiler Odin | Debugger terpadu | Cara memasang | Diverifikasi di |
 |---|:---:|:---:|---|---|
 | macOS Intel (x86_64) | ✅ | ✅ | [`Install.command`](#macos) | Mac pengembang dan runner CI |
 | macOS Apple Silicon (arm64) | ✅ | ✅ | [`Install.command`](#macos), bundel berisi `odinpc` universal | Runner GitHub Actions macOS 15 arm64 |
@@ -160,23 +155,24 @@ Debugger terpadu bergaya Turbo Pascal untuk backend Odin (macOS, Linux, dan Wind
 | Linux | x86_64 atau arm64 dengan glibc 2.34 atau lebih baru (Ubuntu 22.04+, Debian 12+, Fedora 35+). musl (Alpine) tidak didukung |
 | Windows | Windows 10 versi 1809 atau lebih baru, 64-bit (x86_64). User screen memakai ConPTY. Windows on ARM belum didukung |
 | Python | 3.10+ dengan Tk ([python.org universal2](https://www.python.org/downloads/macos/) atau Homebrew `python-tk@3.13` di macOS; paket `python3-tk` di Linux; [python.org](https://www.python.org/downloads/windows/) dengan pilihan tcl/tk di Windows) |
-| Free Pascal | 3.2.2+ ([freepascal.org](https://www.freepascal.org/download.html) atau Homebrew `fpc`). Diperiksa pemasang macOS dan Windows, dan dipakai bila backend Free Pascal dipilih |
-| Xcode Command Line Tools | Hanya macOS: linker dan SDK untuk backend Free Pascal dan pemeriksaan pemasang (`xcode-select --install`) |
+| Compiler | Sudah disertakan (`odinpc`). Free Pascal, Xcode Command Line Tools, LLDB, dan GCC tidak diperlukan |
 | Rust | 1.85+ ([rustup.rs](https://rustup.rs)), hanya untuk membangun toolchain Odin dari source |
 
-Pemasang macOS dapat memasang dependensi yang belum ada melalui Homebrew, dan pemasang Windows melalui winget. Di Linux, Odin dijalankan dari source.
+Pemasang macOS dapat memasang Python dengan Tk melalui Homebrew, dan pemasang Windows melalui winget. Di Linux, Odin dijalankan dari source.
 
 ## Instalasi
 
 ### macOS
 
-Pemasang ini memasang **rilis 2.3.0**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Free Pascal tetap dipasang, karena dipakai pemeriksaan pemasang dan bila backend Free Pascal dipilih.
+**Pemasang satu berkas (offline).** Unduh `OdinTurboPascal-VERSI-macos-x86_64.pkg` (Mac Intel) dari halaman Releases, lalu buka. Paket memasang aplikasi di `~/Applications` tanpa kata sandi administrator dan membawa Python dengan Tk sendiri, jadi tidak ada yang diunduh dan tidak perlu Homebrew atau Xcode. Paket belum ditandatangani Apple: bila macOS menahannya, klik kanan paketnya, pilih **Open**, atau gunakan **System Settings › Privacy & Security › Open Anyway**. Dibangun oleh `python3 scripts/build_setup_mac.py` dan oleh CI. Diuji di Mac Intel pengembang (pasang, pemeriksaan kompilasi dengan jaringan diblokir, buka lewat LaunchServices); versi `arm64` hanya dibangun di CI, dan Mac bersih tanpa Python belum diuji.
+
+**Dari repositori (`Install.command`).** Pemasang ini memasang **rilis 2.3.0**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Satu-satunya dependensi adalah Python dengan Tk.
 
 1. **Unduh** repositori ini (**Code › Download ZIP**), lalu ekstrak seluruhnya. Jangan menjalankan pemasang dari pratinjau ZIP.
 2. **Buka `Install.command`.** Pemasang berjalan di Terminal dan akan:
    - mendeteksi chip Intel atau Apple Silicon;
-   - memeriksa Python dengan Tk, Free Pascal, dan Xcode Command Line Tools, lalu menawarkan Homebrew atau tautan unduhan resmi bila ada yang belum terpasang;
-   - **mengompilasi dan menjalankan program uji kecil** untuk memastikan hasilnya cocok dengan CPU Mac Anda. Bila pemeriksaan ini gagal, pemasangan berhenti dengan pesan kesalahan;
+   - memeriksa Python dengan Tk, lalu menawarkan Homebrew atau tautan unduhan resmi bila belum terpasang;
+   - **mengompilasi dan menjalankan program uji kecil** dengan `odinpc` dari bundel untuk memastikan hasilnya cocok dengan CPU Mac Anda. Bila pemeriksaan ini gagal, pemasangan berhenti dengan pesan kesalahan;
    - memasang aplikasi di `~/Applications` dan mencadangkan versi sebelumnya bila ada.
 3. **Jalankan** `~/Applications/Odin Turbo Pascal.app`.
 
@@ -190,20 +186,28 @@ Pemasang ini memasang **rilis 2.3.0**: IDE, toolchain Odin universal untuk Mac I
 
 Pemasang Windows memasang IDE beserta `odinpc.exe` dan runtime library-nya di `%LOCALAPPDATA%\Programs\OdinTurboPascal`, tanpa hak administrator.
 
+**Setup satu berkas (offline).** Pilihan termudah: unduh `OdinTurboPascal-VERSI-Setup-x64.exe` dari halaman Releases, lalu klik dua kali. Berkas ini membawa Python dengan Tk khusus untuk Odin, jadi tidak ada yang diunduh saat memasang dan tidak ada Python lain yang perlu dipasang. Pemasangan senyap untuk banyak PC: `Setup.exe /VERYSILENT /SUPPRESSMSGBOXES`. Hapus lewat **Settings › Apps**. Setup belum ditandatangani kode, sehingga Windows SmartScreen dapat menampilkan peringatan (**More info › Run anyway**). Setup dibangun oleh `python scripts/build_setup_windows.py` (Windows, Inno Setup 6.3+) dan oleh job Windows di CI.
+
+**Dari repositori (`Install.cmd`).** Jalur ini memerlukan Python dengan Tk yang sudah terpasang atau internet untuk memasangnya:
+
 1. **Unduh** repositori ini (**Code › Download ZIP**), lalu ekstrak seluruhnya.
 2. **Klik dua kali `Install.cmd`.** Pemasang berjalan di jendela PowerShell dan akan:
    - memeriksa Windows 10 1809 atau lebih baru, 64-bit;
-   - mencari Python dengan Tk dan Free Pascal, lalu menawarkan winget atau tautan unduhan resmi bila ada yang belum terpasang;
-   - **mengompilasi dan menjalankan program uji kecil** dengan Free Pascal dan dengan toolchain Odin;
+   - mencari Python dengan Tk, lalu menawarkan winget atau tautan unduhan resmi bila belum terpasang;
+   - **mengompilasi dan menjalankan program uji kecil** dengan `odinpc.exe`;
    - memasang aplikasi, mencadangkan versi sebelumnya bila ada, dan membuat pintasan di menu Start dan Desktop.
 3. **Jalankan** Odin Turbo Pascal dari menu Start.
 
 > [!NOTE]
-> Di runner GitHub Actions, pemeriksaan kompilasi dan penyalinan aplikasi oleh pemasang diuji pada setiap commit. Pemasang lengkap, termasuk winget dan pintasan, belum dijalankan di PC Windows sungguhan.
+> Di runner GitHub Actions, pemeriksaan kompilasi dan penyalinan aplikasi oleh pemasang diuji pada setiap commit, dan setup Inno dipasang serta dihapus secara senyap. Pemasang lengkap (`Install.cmd` dengan winget, setup Inno dengan wizard, pintasan, SmartScreen) belum dijalankan di PC Windows sungguhan.
 
 ### Linux
 
-Odin dijalankan dari source. Contoh untuk Ubuntu atau Debian:
+**Pemasang satu berkas (offline).** Unduh `OdinTurboPascal-VERSI-linux-x86_64.run` (atau `-aarch64.run`) dari halaman Releases, lalu jalankan `sh OdinTurboPascal-VERSI-linux-x86_64.run`. Berkas ini membawa IDE, `odinpc`, dan Python dengan Tk sendiri, jadi tidak ada yang diunduh dan tidak perlu hak root: pemasangan masuk ke `~/.local/share/OdinTurboPascal-app` (`--prefix DIR` untuk folder lain), dengan perintah `odin-turbo-pascal` di `~/.local/bin` dan entri menu aplikasi. Dari sistem hanya dibutuhkan pustaka X11 (ada di setiap desktop Linux). Hapus dengan `sh BERKAS.run --uninstall`; program Pascal dan pengaturan tetap tersimpan. Pemasang dibangun oleh `python3 scripts/build_setup_linux.py` setelah `cargo build --release`, dan oleh CI.
+
+> Pemasang ini diuji di VM Ubuntu 24.04 x86_64 dengan jaringan diputus, dan versi arm64 hanya dibangun di CI. Distro lain, glibc 2.34 (build dibuat di glibc 2.39, simbol baru hanya referensi lemah), dan desktop sungguhan belum diuji.
+
+**Dari source.** Contoh untuk Ubuntu atau Debian:
 
 ```bash
 sudo apt install python3-tk git          # IDE (Python + Tk)
@@ -215,7 +219,7 @@ cd ..
 python3 main.py                          # IDE menemukan toolchain/target/release/odinpc
 ```
 
-Backend Odin langsung menjadi bawaan, termasuk debugger dan Odin Vision. Free Pascal (`sudo apt install fpc`) hanya diperlukan bila Anda memilih backend itu.
+Compiler, debugger, dan Odin Vision langsung tersedia. Free Pascal tidak diperlukan.
 
 ### Dari source (macOS dan Windows)
 
@@ -233,7 +237,7 @@ Untuk bundel `.app` yang berjalan di Intel maupun Apple Silicon, bangun `odinpc`
 | Sistem | Cara | Yang tetap tersimpan |
 |---|---|---|
 | macOS | Jalankan `Uninstall.command`; aplikasi dipindahkan ke Trash | Program Pascal dan folder pengaturan |
-| Windows | Jalankan `Uninstall.cmd` | Program Pascal dan `%APPDATA%\OdinTurboPascal` |
+| Windows | Settings › Apps (setup Inno), atau `Uninstall.cmd` (pemasangan `Install.cmd`) | Program Pascal dan `%APPDATA%\OdinTurboPascal` |
 | Linux | Hapus folder hasil `git clone` | Program Pascal dan `~/.local/share/OdinTurboPascal/` |
 
 ## Mulai Cepat
@@ -258,12 +262,12 @@ Untuk bundel `.app` yang berjalan di Intel maupun Apple Silicon, bangun `odinpc`
 
 2. Tekan `F2` untuk menyimpan (di Mac juga bisa `Command+S`).
 3. Tekan `Ctrl+F9` untuk mengompilasi dan menjalankan (di Mac juga bisa `Command+R`). Program tampil di **User screen**; `Alt+F5` menampilkan atau menyembunyikannya.
-4. *(Backend Odin)* Tekan `F8` untuk menjalankan program baris demi baris. Sorot `Nama`, lalu tekan `Ctrl+F7` untuk melihat isinya.
+4. Tekan `F8` untuk menjalankan program baris demi baris. Sorot `Nama`, lalu tekan `Ctrl+F7` untuk melihat isinya.
 5. Buka **File › Examples** untuk belajar Pascal dari awal lewat [tutorial](#tutorial-pascal) 20 bab.
 
 ## Tutorial Pascal
 
-**File › Examples** berisi tutorial Pascal untuk pemula: 90 berkas dalam 20 bab, yaitu 89 program dan satu unit. Setiap kode penting diberi komentar penjelasan singkat dalam bahasa Indonesia. Tes otomatis menjalankan setiap program dengan backend Odin dan Free Pascal.
+**File › Examples** berisi tutorial Pascal untuk pemula: 90 berkas dalam 20 bab, yaitu 89 program dan satu unit. Setiap kode penting diberi komentar penjelasan singkat dalam bahasa Indonesia. Tes otomatis menjalankan setiap program dan memeriksa keluarannya.
 
 | Bagian | Bab |
 |---|---|
@@ -298,31 +302,32 @@ Alternatif Mac: `Command+N/O/S` (New/Open/Save), `Command+B` (Compile), `Command
 
 ### Unit standar Turbo Pascal
 
-Kolom Free Pascal diuji 13 Oktober 2026 melalui jalur kompilasi dan User screen Odin di Mac Intel dengan Free Pascal 3.2.2. Kolom backend Odin diuji dengan korpus tes yang keluarannya dibandingkan dengan Free Pascal 3.2.2: di Mac Intel, di VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu), dan di runner GitHub Actions untuk macOS Apple Silicon, Linux x86_64, Linux arm64, dan Windows x86_64.
+Diuji dengan korpus tes di Mac Intel, di VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu), dan di runner GitHub Actions untuk macOS Apple Silicon, Linux x86_64, Linux arm64, dan Windows x86_64. Sampai 2.3.0, ekspektasi korpus dibuat dengan Free Pascal 3.2.2 sebagai pembanding.
 
-| Unit | Backend Odin | Free Pascal |
-|---|---|---|
-| `System` | ✅ String, matematika, `Str`/`Val`, berkas teks, bertipe, dan tanpa tipe, direktori, `ParamStr`, heap, `ExitProc`, runtime error | ✅ |
-| `Crt` | ✅ `ClrScr`, `GotoXY`, `WhereX`/`WhereY`, warna, `Window`, `ClrEol`, `InsLine`/`DelLine`, `Delay`, `KeyPressed`, `ReadKey`. Layarnya dibandingkan sel demi sel dengan `Crt` milik FPC | ✅ |
-| `Dos` | ✅ `GetDate`/`GetTime`, `GetEnv`, `FSplit`/`FExpand`/`FSearch`, `FindFirst`/`FindNext`, atribut dan waktu berkas, `DiskFree`, `Exec`/`DosExitCode` | ✅ |
-| `Strings` | ✅ Rutin `PChar` | ✅ |
-| `Printer` | ✅ `Lst` diteruskan ke `lpr` (di Windows: `notepad /p`). Pencetakan sungguhan belum diuji | ✅ `Lst` diteruskan ke printer default macOS melalui `lpr` |
-| `Objects` | ✅ `TCollection`, `TSortedCollection`, `TStringCollection`, stream berkas/ber-buffer/memori, `RegisterType`, `Put`/`Get`. Format stream sama dengan FPC | ✅ `TCollection`, `TStringCollection`, stream |
-| Turbo Vision | ✅ Odin Vision (`rtl/vision/`): `App`, `Drivers`, `Views`, `Menus`, `Dialogs`, `MsgBox`, `StdDlg`, `Memory`, `HistList`, `Validate`, `Editors`, `Outline`. Diuji dengan snapshot layar (karakter dan warna). Warna palet dirancang sendiri. Belum ada `ColorSel` dan `TextView` | ✅ Melalui Free Vision: `App`, `Drivers`, `Views`, `Menus`, `Dialogs`, `MsgBox`, `StdDlg`, `Memory`, `HistList`, `Validate`, `Editors`, `Outline` |
-| `Graph`, `Graph3`, `Overlay`, `WinDos`, `Turbo3` | ❌ | ❌ Tidak tersedia di Free Pascal untuk macOS |
+| Unit | Status |
+|---|---|
+| `System` | ✅ String, matematika, `Str`/`Val`, berkas teks, bertipe, dan tanpa tipe, direktori, `ParamStr`, heap, `ExitProc`, runtime error |
+| `Crt` | ✅ `ClrScr`, `GotoXY`, `WhereX`/`WhereY`, warna, `Window`, `ClrEol`, `InsLine`/`DelLine`, `Delay`, `KeyPressed`, `ReadKey`. Layarnya dibandingkan sel demi sel dengan snapshot yang dulu dicocokkan dengan `Crt` milik FPC |
+| `Dos` | ✅ `GetDate`/`GetTime`, `GetEnv`, `FSplit`/`FExpand`/`FSearch`, `FindFirst`/`FindNext`, atribut dan waktu berkas, `DiskFree`, `Exec`/`DosExitCode` |
+| `Strings` | ✅ Rutin `PChar` |
+| `Printer` | ✅ `Lst` diteruskan ke `lpr` (di Windows: `notepad /p`). Pencetakan sungguhan belum diuji |
+| `Objects` | ✅ `TCollection`, `TSortedCollection`, `TStringCollection`, stream berkas/ber-buffer/memori, `RegisterType`, `Put`/`Get` |
+| Turbo Vision | ✅ Odin Vision (`rtl/vision/`): `App`, `Drivers`, `Views`, `Menus`, `Dialogs`, `MsgBox`, `StdDlg`, `Memory`, `HistList`, `Validate`, `Editors`, `Outline`, `ColorSel`, `TextView`. Diuji dengan snapshot layar (karakter dan warna). Warna palet dirancang sendiri |
+| `Graph`, `Graph3`, `Overlay`, `WinDos`, `Turbo3` | ❌ |
 
-Program yang memakai unit yang belum tersedia di backend Odin mendapat pesan yang menyarankan backend Free Pascal. Rincian dan perbedaan perilaku ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBILITY.txt) dan [`tests/pascal/DEVIATIONS.md`](tests/pascal/DEVIATIONS.md).
+Rincian dan perbedaan perilaku ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBILITY.txt) dan [`tests/pascal/DEVIATIONS.md`](tests/pascal/DEVIATIONS.md).
 
 ### Batasan
 
 - Odin adalah **implementasi baru** yang mengikuti antarmuka dan alur Turbo Pascal klasik. Odin bukan salinan Borland dan tidak menyertakan binary, logo, font, maupun berkas bantuan Borland.
 - Hasil kompilasi berupa program 64-bit untuk macOS, Linux, atau Windows, bukan EXE DOS 16-bit. Kode Graph/BGI, `Mem`/`Port`, interrupt DOS, assembler 16-bit, dan pointer berbasis segmen perlu di-porting.
-- `Real` berukuran 8 byte (TP: 6 byte); gunakan `Real48` untuk membaca berkas biner lama. `Round` membulatkan ke bilangan genap untuk nilai `.5`.
-- Backend Odin:
-  - menghasilkan program untuk macOS dan Linux (x86_64 dan arm64) serta Windows (x86_64);
-  - mendukung tipe `object` TP7, unit `Objects`, dan Turbo Vision lewat Odin Vision (tanpa `ColorSel` dan `TextView`). Record data dialog harus `packed record`, seperti di Free Vision;
+- `Real` berukuran 8 byte (TP: 6 byte), dan `Real48` tidak tersedia; berkas biner lama perlu dikonversi. `Round` membulatkan ke bilangan genap untuk nilai `.5`.
+- Compiler Odin:
+  - menghasilkan program untuk macOS dan Linux (x86_64 dan arm64) serta Windows (x86_64); di sistem lain IDE bisa mengedit tetapi tidak mengompilasi;
+  - mengikuti bahasa Turbo Pascal 7, termasuk tipe `object`; mode ObjFPC/Delphi dari backend Free Pascal lama tidak tersedia lagi, begitu pula blok `asm`;
+  - mendukung unit `Objects` dan seluruh Turbo Vision lewat Odin Vision. Record data dialog harus `packed record`;
   - `Extended` sama dengan `Double`, dan fungsi seperti `Exp` dan `Sin` dihitung dalam `Double`.
-- Debugger terpadu hanya tersedia di backend Odin. Rilis 1.0.0 memakai konsol LLDB.
+- Rilis 1.0.0 memakai konsol LLDB; sejak 2.0.0-alpha.1 debugger terpadu menggantikannya.
 - User screen tidak menyediakan scrollback maupun true color. Mouse diteruskan ke program yang memintanya. Option sebagai Alt di keyboard Mac sungguhan belum diuji.
 
 ## Status Pengujian
@@ -336,7 +341,7 @@ Program yang memakai unit yang belum tersedia di backend Odin mendapat pesan yan
 | Linux x86_64, Python 3.12, Tk 9.0, FPC 3.2.2, Xvfb (rilis 1.0.0) | Seluruh suite saat itu lulus. Lihat [`docs/TEST_REPORT.txt`](docs/TEST_REPORT.txt) |
 
 > [!CAUTION]
-> **Belum diverifikasi langsung:** Mac Apple Silicon, PC Linux, dan PC Windows fisik (hanya runner CI dan VM); pemasangan lewat `Install.command` di Apple Silicon; `Install.cmd` lengkap (winget, pintasan, menu Start); Windows on ARM; peluncuran lewat Finder/LaunchServices; Gatekeeper; LLDB di paket rilis 1.0.0; dan pencetakan lewat `Printer`.
+> **Belum diverifikasi langsung:** Mac Apple Silicon, PC Linux, dan PC Windows fisik (hanya runner CI dan VM); pemasangan lewat `Install.command` di Apple Silicon; `Install.cmd` lengkap (winget, pintasan, menu Start); Windows on ARM; peluncuran lewat Finder/LaunchServices; Gatekeeper; Mac bersih tanpa Free Pascal maupun Xcode Command Line Tools; LLDB di paket rilis 1.0.0; dan pencetakan lewat `Printer`.
 
 ## Privasi dan Lokasi Data
 
@@ -384,19 +389,19 @@ python3 -m unittest discover -s tests -v            # seluruh tes Python
 python3 -m unittest tests.test_debugger -v          # sesi debugger tanpa Tk
 python3 -m unittest tests.test_vision -v            # snapshot layar Odin Vision
 ODIN_UPDATE_SNAPSHOTS=1 python3 -m unittest tests.test_vision   # tulis ulang snapshot (tinjau dulu)
-ODIN_FPC=/path/ke/fpc python3 -m unittest discover -s tests -v   # pakai compiler tertentu
 (cd toolchain && cargo build --release)             # bangun odinpc
 (cd toolchain && cargo test --workspace)            # tes Rust, termasuk korpus diferensial
 ODIN_CORPUS_TARGET=aarch64-linux ODIN_CORPUS_RUNNER="qemu-aarch64-static -L /usr/aarch64-linux-gnu" \
   cargo test -p odinpc --test corpus                # korpus untuk target lain (lihat tests/corpus.rs)
-python3 scripts/oracle.py                           # tulis ulang ekspektasi korpus dengan FPC
+python3 scripts/bless_corpus.py NAMA                # ekspektasi korpus untuk program baru (tinjau dulu)
+ODIN_BLESS=1 python3 -m unittest tests.test_core.CompilerTests.test_crt_screen_matches_snapshot   # snapshot layar Crt
+python3 scripts/check_mac.py                        # gerbang pemasang macOS: odinpc compile + run native
 python3 scripts/build_book.py                       # bangun ulang buku PDF (Chrome + PyMuPDF; di luar sandbox, perlu PTY)
 ```
 
 Catatan tes:
 
-- Tes yang memakai Free Pascal dilewati bila FPC tidak ditemukan.
-- Tes backend Odin dilewati bila `odinpc` belum dibangun atau sistemnya belum didukung (`core.ODIN_HOSTS`).
+- Tes compiler dilewati bila `odinpc` belum dibangun atau sistemnya belum didukung (`core.ODIN_HOSTS`). Tidak ada tes yang memerlukan Free Pascal.
 - Tes GUI dilewati bila tidak ada display. Tes yang membuka pseudo-terminal memerlukan izin membuat PTY.
 - GitHub Actions menjalankan semuanya di macOS Intel, macOS Apple Silicon, Linux x86_64, Linux arm64, dan Windows ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). Job Windows juga mengunggah `odinpc.exe` sebagai artefak.
 
@@ -419,7 +424,7 @@ ODIN-TURBO-PASCAL/
 ├── odin/
 │   ├── app.py               Antarmuka Tk: menu, dialog, User screen, sesi debug
 │   ├── windows.py           Jendela desktop: editor, Watches, Local variables, Call stack
-│   ├── core.py              Dokumen, pengaturan, build (Odin dan Free Pascal), diagnostik
+│   ├── core.py              Dokumen, pengaturan, build dengan odinpc, diagnostik
 │   ├── debugger.py          Sesi debug: odinpc debug di User screen, perintah JSON
 │   ├── console.py           Emulator VT100 80×25 dan proses pseudo-terminal (tanpa Tk)
 │   ├── terminal.py          Widget Tk untuk User screen
@@ -428,15 +433,15 @@ ODIN-TURBO-PASCAL/
 │                            assembler, linker Mach-O/ELF/PE, info debug, debugger;
 │                            odinpc.exe untuk paket Windows
 ├── rtl/                     Runtime library (Pascal): System, Crt, Dos, Strings, Printer, Objects
-│   └── vision/              Odin Vision: unit Turbo Vision dan spesifikasinya (SPEC.md)
+│   └── vision/              Odin Vision: semua unit Turbo Vision TP7 dan spesifikasinya (SPEC.md)
 ├── examples/                Tutorial Pascal pemula: 89 program dan satu unit dalam 20 bab
 ├── docs/                    Panduan, referensi Pascal, pintasan, kompatibilitas
 ├── tests/                   Tes Python (fungsional, compiler, debugger, GUI, Odin Vision) dan
-│   └── pascal/              korpus Pascal (keluaran FPC sebagai pembanding) serta snapshot Odin Vision
+│   └── pascal/              korpus Pascal dengan ekspektasi tersimpan serta snapshot Crt dan Odin Vision
 ├── book/                    Sumber buku tutorial (HTML per bab dan buku.css); dibangun scripts/build_book.py
-├── scripts/                 Launcher, pemeriksaan pemasang, oracle FPC, bundel .app, versi, logo, buku
+├── scripts/                 Launcher, pemeriksaan pemasang, ekspektasi korpus, bundel .app, versi, logo, buku
 ├── assets/                  Logo, ikon, dan banner (master PNG serta PNG/ICNS hasil render)
-├── .github/workflows/       CI lima platform dan oracle FPC Windows
+├── .github/workflows/       CI lima platform
 ├── Odin Turbo Pascal.app    Bundel macOS (dibentuk dari source)
 ├── Install.command · Uninstall.command          Pemasang macOS
 ├── Install.cmd · Install.ps1 · Uninstall.cmd   Pemasang Windows
@@ -448,7 +453,7 @@ ODIN-TURBO-PASCAL/
 - **Threading.** `core.py` dan `debugger.py` tidak bergantung pada Tk. Thread kompilasi, pembaca terminal, dan pembaca debugger tidak pernah menyentuh Tk secara langsung. Hasilnya dikirim lewat antrean pesan yang dibaca UI setiap 40 ms.
 - **Tanpa shell.** Kompilasi dan eksekusi program tidak pernah memakai shell.
 - **Debugger berbasis instrumentasi.** Build debug menyisipkan pengait di setiap statement, dan `odinpc debug` berbicara dengan runtime library program lewat Unix socket (di Windows: TCP 127.0.0.1). Tidak ada ptrace, LLDB, maupun GDB, sehingga perilakunya sama di setiap sistem. Kontraknya ada di [`rtl/COMPILER_INTERFACE.md`](rtl/COMPILER_INTERFACE.md).
-- **Clean-room.** Toolchain dan runtime library Odin ditulis tanpa membaca sumber Free Pascal, Free Vision, maupun Borland. Free Pascal hanya dipakai sebagai pembanding keluaran program di korpus `tests/pascal/`.
+- **Clean-room.** Toolchain dan runtime library Odin ditulis tanpa membaca sumber Free Pascal, Free Vision, maupun Borland. Sampai 2.3.0, Free Pascal hanya dipakai sebagai pembanding keluaran program di korpus `tests/pascal/`; kini proyek ini tidak memakainya sama sekali.
 
 ## Riwayat Rilis
 
@@ -469,7 +474,7 @@ Rincian setiap rilis ada di [`CHANGELOG.md`](CHANGELOG.md) dan di halaman [Relea
 Laporan bug, saran, dan pull request dipersilakan melalui [Issues](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/issues) dan [Pull requests](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/pulls). Sebelum mengirim perubahan:
 
 1. Jalankan `python3 -m unittest discover -s tests -v` dan, bila mengubah `toolchain/` atau `rtl/`, `cargo test --workspace` di `toolchain/`. Tambahkan tes untuk perilaku baru.
-2. Untuk perilaku Pascal baru, tambahkan program ke `tests/pascal/` dan buat ekspektasinya dengan `scripts/oracle.py`. Jangan membaca atau menyalin sumber Free Pascal, Free Vision, maupun Borland.
+2. Untuk perilaku Pascal baru, tambahkan program ke `tests/pascal/`, buat ekspektasinya dengan `scripts/bless_corpus.py`, lalu periksa ekspektasi itu terhadap perilaku Turbo Pascal 7 sebelum commit. Jangan membaca atau menyalin sumber Free Pascal, Free Vision, maupun Borland.
 3. Tulis pesan untuk pengguna dalam bahasa Indonesia. Label menu tetap berbahasa Inggris, sesuai gaya Turbo Pascal.
 4. Awali berkas source baru dengan header lisensi `SPDX-License-Identifier: GPL-3.0-or-later`.
 5. Setelah mengubah source, jalankan `python3 scripts/package_app.py` agar bundel `.app` ikut diperbarui.
@@ -480,9 +485,9 @@ Odin Turbo Pascal adalah perangkat lunak bebas di bawah **[GNU General Public Li
 
 **Copyright © 2026 Syams Ideris**
 
-- Program yang dikompilasi dengan backend Odin memuat runtime library Odin, yang juga berlisensi GNU GPL v3 atau yang lebih baru tanpa pengecualian runtime. Bila Anda membagikan program tersebut, ketentuan GPL berlaku untuk program itu.
+- Program yang dikompilasi dengan Odin memuat runtime library Odin, yang juga berlisensi GNU GPL v3 atau yang lebih baru tanpa pengecualian runtime. Bila Anda membagikan program tersebut, ketentuan GPL berlaku untuk program itu.
 - Logo dan ikon Odin adalah karya penulis, diambil dari proyek ODIN Turbo Pascal v2.0, dan berlisensi sama.
-- Python, Tcl/Tk, Free Pascal, Xcode Command Line Tools, Homebrew, dan winget dipasang terpisah dengan lisensinya masing-masing. `odinpc` dibangun dengan pustaka standar Rust (lisensi MIT/Apache-2.0). Sebelum mendistribusikan program hasil kompilasi Free Pascal, baca juga ketentuan runtime Free Pascal. Lihat [`THIRD_PARTY.txt`](THIRD_PARTY.txt).
+- Python, Tcl/Tk, Homebrew, dan winget dipasang terpisah dengan lisensinya masing-masing. `odinpc` dibangun dengan pustaka standar Rust (lisensi MIT/Apache-2.0). Lihat [`THIRD_PARTY.txt`](THIRD_PARTY.txt).
 
 > [!NOTE]
 > Odin adalah aplikasi independen dan tidak berafiliasi dengan Borland maupun pemilik merek Turbo Pascal saat ini. "Turbo Pascal" dan "Borland" adalah merek dagang dari pemiliknya masing-masing. Nama tersebut dipakai hanya untuk menjelaskan kompatibilitas dan inspirasi.

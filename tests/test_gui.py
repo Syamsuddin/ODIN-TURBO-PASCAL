@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from odin import __copyright__, __version_tag__
-from odin.core import Document, Settings, locate_compiler, locate_toolchain, odin_supported
+from odin.core import Document, Settings, locate_toolchain, odin_supported
 from odin.terminal import ALT_MASKS
 
 
@@ -362,12 +362,10 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(len(items),len(self.app.editors))
         self.assertEqual(Path(items[0]["path"]).name,"bab01_01_halo_dunia.pas")
 
-    @unittest.skipUnless(locate_compiler(os.environ.get("ODIN_FPC", "")), "Needs FPC")
+    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
     def test_real_gui_compile_and_run(self):
-        self.settings["compiler"]=os.environ.get("ODIN_FPC", "")
-        self.settings["backend"]="fpc"
         source=self.path/"gui-check.pas"
-        source.write_text("program GuiCheck; begin WriteLn('GUI_RUN_OK'); end.")
+        source.write_text("program GuiCheck; var N: Integer; begin N := 6 * 7; WriteLn('GUI_RUN_OK ', N); end.")
         self.app.open_file(source)
         # A failure to start the program shows an error dialog; record it instead of blocking.
         with patch("odin.app.messagebox.showerror") as error:
@@ -380,23 +378,6 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(error.call_args_list,[])
         self.assertIsNotNone(self.app.last_build)
         self.assertTrue(self.app.last_build.success,self.app.last_build.output)
-        self.assertIn("GUI_RUN_OK",self.app.console.screen.text())
-
-
-    @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
-    def test_real_gui_compile_and_run_odin(self):
-        self.settings["backend"]="odin"
-        source=self.path/"gui-check.pas"
-        source.write_text("program GuiCheck; var N: Integer; begin N := 6 * 7; WriteLn('GUI_RUN_OK ', N); end.")
-        self.app.open_file(source)
-        self.app.run()
-        deadline=time.monotonic()+8
-        while time.monotonic()<deadline:
-            self.root.update()
-            if self.app.console and "Process finished" in self.app.console.screen.text():break
-            time.sleep(.02)
-        self.assertIsNotNone(self.app.last_build)
-        self.assertTrue(self.app.last_build.success,self.app.last_build.output)
         self.assertEqual(self.app.last_build.command[1],"build")
         self.assertIn("GUI_RUN_OK 42",self.app.console.screen.text())
 
@@ -404,7 +385,6 @@ class GuiTests(unittest.TestCase):
     def test_vision_example_in_user_screen(self):
         # tests/pascal/vision/VISION.PAS (Odin Vision) in the User screen: a mouse click opens the Help
         # menu, Esc closes it, Alt+X quits and the screen before the program comes back.
-        self.settings["backend"]="odin"
         root=Path(__file__).resolve().parent.parent
         self.app.open_file(root/"tests"/"pascal"/"vision"/"VISION.PAS")
         self.app.run()
@@ -507,7 +487,6 @@ class GuiTests(unittest.TestCase):
 
     @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
     def test_real_gui_debug_session(self):
-        self.settings["backend"]="odin"
         source=self.path/"REKURSI.PAS"
         source.write_text((Path(__file__).resolve().parent/"pascal"/"debug"/"REKURSI.PAS").read_text())
         editor=self.app.open_file(source)
@@ -537,7 +516,6 @@ class GuiTests(unittest.TestCase):
 
     @unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc on a host it supports (core.ODIN_HOSTS)")
     def test_runtime_error_line_after_run(self):
-        self.settings["backend"]="odin"
         source=self.path/"crash.pas"
         source.write_text("program Crash;\nvar P: ^Integer;\nbegin\n  P := nil;\n  WriteLn(P^);\nend.\n")
         editor=self.app.open_file(source)

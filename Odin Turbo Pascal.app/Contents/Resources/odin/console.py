@@ -26,9 +26,9 @@ else:
 
 PALETTE = ["#000000", "#aa0000", "#00aa00", "#aa5500", "#0000aa", "#aa00aa", "#00aaaa", "#aaaaaa",
            "#555555", "#ff5555", "#55ff55", "#ffff55", "#5555ff", "#ff55ff", "#55ffff", "#ffffff"]
-# DEC Special Graphics, used by Free Vision for frames and the desktop pattern.
+# DEC Special Graphics, used by some terminal programs for frames and patterns.
 DEC_GRAPHICS = dict(zip("`afgjklmnopqrstuvwxyz{|}~", "◆▒°±┘┐┌└┼⎺⎻─⎼⎽├┤┴┬│≤≥π≠£·"))
-# xterm sequences; FPC Crt.ReadKey and Free Vision decode them to #0 + scan code.
+# xterm sequences; Crt.ReadKey and Odin Vision decode them to #0 + scan code.
 KEYS = {"Return": b"\r", "BackSpace": b"\x7f", "Tab": b"\t", "Escape": b"\x1b",
         "Up": b"\x1b[A", "Down": b"\x1b[B", "Right": b"\x1b[C", "Left": b"\x1b[D",
         "Home": b"\x1b[H", "End": b"\x1b[F", "Insert": b"\x1b[2~", "Delete": b"\x1b[3~",
@@ -298,8 +298,8 @@ class Screen:
                 del self.grid[self.y]
                 self.grid.insert(self.bottom, [self.blank()] * self.cols)
         elif final == "n" and not private:
-            # Device status report: FPC's Crt on Linux waits for the cursor
-            # position before it draws anything.
+            # Device status report: Crt asks for the cursor position
+            # (QueryCursor) before it draws anything.
             if p[0] == 5:
                 self.replies.append(b"\x1b[0n")
             elif p[0] == 6:

@@ -40,9 +40,8 @@ and                           Operator logika AND untuk Boolean, dan AND bit
 array                         Tipe larik: array[1..10] of Integer,
                               array[Boolean] of Byte, array[1..3, 1..3] of Real
                               (dua dimensi). Indeks bisa tipe ordinal apa pun.
-asm                           Membuka blok bahasa rakitan, ditutup end. Perlu
-                              {$ASMMODE INTEL}; kode 16-bit dan interrupt DOS
-                              tidak jalan.
+asm                           Membuka blok bahasa rakitan, ditutup end. Belum
+                              didukung compiler Odin.
 begin                         Membuka blok pernyataan majemuk, ditutup end.
                               Badan program, prosedur, dan fungsi selalu
                               diawali begin.
@@ -156,10 +155,10 @@ while                         Pengulangan yang menguji kondisi di awal: while
 with                          Mempersingkat akses field: with Siswa do Nama :=
                               'Budi'; (setara Siswa.Nama := 'Budi';).
 xor                           Operator OR eksklusif: Boolean atau bit demi bit.
-class, try, except            Kata tambahan Object Pascal (mode FPC
-                              objfpc/delphi). finally, raise, out, property,
-                              dan threadvar juga dicadangkan. Tidak ada di
-                              Turbo Pascal 7; jangan dipakai sebagai nama.
+class, try, except            Kata tambahan Object Pascal (dialek yang lebih
+                              baru). finally, raise, out, property, dan
+                              threadvar juga dicadangkan. Tidak ada di Turbo
+                              Pascal 7; jangan dipakai sebagai nama.
 
 DIREKTIF STANDAR
 Kata berikut punya arti khusus hanya pada konteksnya dan bukan kata cadangan
@@ -211,11 +210,11 @@ shr ; (3) +, -, or, xor ; (4) =, <>, <, >, <=, >=, in.
                               juga sah.
 $FF                           Awalan $ menandai bilangan heksadesimal.
 { } (* *)                     Komentar blok. // komentar sampai akhir baris
-                              (mode FPC). {$...} adalah direktif compiler,
-                              bukan komentar.
+                              (diterima Odin, tidak ada di TP7). {$...}
+                              adalah direktif compiler, bukan komentar.
 
 TIPE DATA
-Ukuran mengikuti mode Turbo Pascal pada Odin dan FPC -Mtp.
+Ukuran mengikuti Turbo Pascal 7 pada platform 64-bit (compiler Odin).
 
 Byte                          0..255, 1 byte.
 ShortInt                      -128..127, 1 byte.
@@ -226,11 +225,11 @@ SmallInt                      -32768..32767, 2 byte.
 LongInt                       -2147483648..2147483647, 4 byte.
 Cardinal, QWord               Bilangan bulat tak bertanda (32-bit dan 64-bit).
 Int64                         Bilangan bulat bertanda 64-bit.
-Real                          Bilangan pecahan, 8 byte (Double) pada Odin/FPC;
+Real                          Bilangan pecahan, 8 byte (Double) pada Odin;
                               di TP asli 6 byte. Selalu format keluarannya:
                               Write(X:0:2).
 Single, Double                Pecahan 4 byte dan 8 byte.
-Extended                      Di Odin sama dengan Double (8 byte); di FPC x86
+Extended                      Di Odin sama dengan Double (8 byte); di TP asli
                               10 byte.
 Comp                          Bilangan bulat 64-bit yang diperlakukan sebagai
                               real, dari era koprosesor 8087.
@@ -330,8 +329,8 @@ GetMem(P, N)                  Mengalokasikan N byte. Pasangkan dengan
 FreeMem(P, N)                 Membebaskan N byte dari GetMem.
 Move(Sumber, Tujuan, N)       Menyalin N byte; area boleh tumpang-tindih.
 Assigned(P)                   True jika pointer P tidak nil.
-MemAvail, MaxAvail            Sisa memori heap. Tidak dapat dikompilasi di FPC
-                              64-bit (lihat COMPATIBILITY.txt).
+MemAvail, MaxAvail            Sisa memori heap. Tidak tersedia di Odin
+                              (lihat COMPATIBILITY.txt).
 Addr(X)                       Alamat X, sama dengan @X.
 
 RUTIN BERKAS DAN DIREKTORI
@@ -414,7 +413,7 @@ $X+, $X-                      Sintaks diperluas: memanggil fungsi seperti
                               prosedur.
 $M                            Ukuran stack dan heap: {$M 16384,0,655360}.
                               Diterima, tidak berefek di macOS.
-$ASMMODE INTEL                Sintaks Intel untuk blok asm.
+$ASMMODE INTEL                Diterima dan diabaikan (blok asm belum didukung).
 $IFDEF, $IFNDEF               Kompilasi bersyarat: {$IFDEF Debug} ... {$ENDIF}.
 $ELSE, $ENDIF                 Cabang lain dan penutup blok kompilasi bersyarat.
 $DEFINE, $UNDEF               Menetapkan atau menghapus simbol kompilasi.
@@ -639,9 +638,9 @@ begin
 end.
 
 TIPE DAN VARIABEL
-Integer     Bilangan bulat. Rentang bergantung mode dan target compiler.
-LongInt     Bilangan bulat 32-bit pada target FPC yang dipakai di sini.
-Real        Bilangan pecahan, representasi bergantung target.
+Integer     Bilangan bulat 16-bit (-32768..32767), seperti Turbo Pascal 7.
+LongInt     Bilangan bulat 32-bit.
+Real        Bilangan pecahan, 8 byte (Double) di Odin.
 Boolean     True atau False.
 Char        Satu karakter.
 string      Mode TP memakai short string, umumnya panjang maksimum 255 byte.
@@ -713,8 +712,9 @@ Tombol := ReadKey;           Membaca tombol tanpa Enter.
 UNIT STANDAR
 Tersedia:        System (otomatis), Crt, Dos, Strings, Printer, Objects.
 Turbo Vision:    App, Drivers, Views, Menus, Dialogs, MsgBox, StdDlg, Memory,
-                 HistList, Validate, Editors, Outline (Free Vision).
-Tidak tersedia:  Graph, Graph3, Turbo3, Overlay, WinDos, ColorSel, TextView.
+                 HistList, Validate, Editors, Outline, ColorSel, TextView
+                 (Odin Vision).
+Tidak tersedia:  Graph, Graph3, Turbo3, Overlay, WinDos.
 Printer mengirim Lst ke printer default macOS melalui lpr.
 Rincian dan perbedaan perilaku: docs/COMPATIBILITY.txt.
 
@@ -730,6 +730,7 @@ end;
 end.
 
 Unit dipakai dari program melalui uses UContoh.
-Simpan nama source sesuai nama unit dan pastikan direktorinya ditemukan FPC.
+Simpan nama source sesuai nama unit dan pastikan direktorinya ditemukan
+compiler (folder program, atau Options > Directories).
 
 Contoh lengkap tersedia melalui File > Examples.

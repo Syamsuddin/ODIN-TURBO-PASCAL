@@ -14,7 +14,7 @@
 <h3 id="fitur">Fitur utama</h3>
 <ul>
 <li>Editor dengan <a href="#warna-sintaks">warna sintaks Turbo Biru Lembut</a>, banyak jendela, cari-ganti, dan <a href="#pemulihan">pemulihan otomatis</a>.</li>
-<li>Compiler <strong>odinpc</strong> bawaan (target macOS Intel dan Apple Silicon, Linux x86_64 dan arm64, Windows x86_64), dengan Free Pascal sebagai pilihan alternatif.</li>
+<li>Compiler <strong>odinpc</strong> bawaan (target macOS Intel dan Apple Silicon, Linux x86_64 dan arm64, Windows x86_64), dengan assembler, linker, debugger, dan runtime library sendiri.</li>
 <li><a href="#user-screen">User screen</a> berbasis pseudo-terminal: <code>ReadLn</code>, unit Crt, dan aplikasi Turbo Vision berjalan interaktif, lengkap dengan mouse.</li>
 <li><a href="#debugger">Debugger</a> terpadu: breakpoint, langkah demi langkah, Watches, Local variables, Call stack, Evaluate/Modify.</li>
 <li>Tutorial 20 bab dengan 89 program contoh dan <a href="#tutorial">buku PDF</a> pendampingnya.</li>
@@ -25,9 +25,9 @@
 <div class="tw"><table class="wrap">
 <tr><th>Komponen</th><th>Keterangan</th></tr>
 <tr><td>Python</td><td>3.10 atau lebih baru, dengan Tk. Hanya pustaka standar; tidak ada paket pip.</td></tr>
-<tr><td>macOS</td><td>macOS 11 atau lebih baru; Xcode Command Line Tools untuk linker dan SDK.</td></tr>
+<tr><td>macOS</td><td>macOS 11 atau lebih baru. Xcode Command Line Tools tidak diperlukan.</td></tr>
 <tr><td>Windows</td><td>Windows 10 versi 1809 atau lebih baru, x86_64 (memakai ConPTY).</td></tr>
-<tr><td>Compiler</td><td>odinpc sudah disertakan. Free Pascal 3.2.2 atau lebih baru hanya perlu bila Anda memilihnya di <a href="#opsi-compiler">Options &gt; Compiler</a>.</td></tr>
+<tr><td>Compiler</td><td>odinpc sudah disertakan; tidak ada compiler lain yang perlu dipasang.</td></tr>
 </table></div>
 
 <h3 id="peta">Peta dokumentasi</h3>
@@ -172,7 +172,7 @@ end.</code></pre>
 <tr><th>Perintah</th><th>Tombol</th><th>Perilaku</th></tr>
 <tr><td>Compile</td><td><kbd>Alt+F9</kbd></td><td>Memanggil compiler; unit yang belum berubah memakai hasil sebelumnya.</td></tr>
 <tr><td>Make</td><td><kbd>F9</kbd></td><td>Seperti Compile untuk program dan unit yang berubah.</td></tr>
-<tr><td>Build</td><td>&mdash;</td><td>Menambah <code>-B</code> sehingga semua unit dikompilasi ulang.</td></tr>
+<tr><td>Build</td><td>&mdash;</td><td>Semua unit dikompilasi ulang.</td></tr>
 <tr><td>Run</td><td><kbd>Ctrl+F9</kbd></td><td>Kompilasi lalu jalankan. Executable lama tidak pernah dijalankan bila build gagal.</td></tr>
 </table></div>
 <p>Mengompilasi <strong>unit</strong> saja menghasilkan <code>.ppu</code>/<code>.o</code> tanpa executable dan tidak menjalankan apa pun.</p>
@@ -191,15 +191,13 @@ end.</code></pre>
 
 <h3 id="opsi-compiler">Options &gt; Compiler</h3>
 <ul>
-<li><strong>Mode bahasa</strong>: <em>Turbo Pascal 7 compatibility</em> adalah bawaan untuk sumber bergaya Turbo Pascal. <em>Object Pascal</em> (ObjFPC) dan <em>Delphi</em> hanya berlaku bila backend Free Pascal dipilih; backend Odin hanya mengimplementasikan mode Turbo Pascal. Direktif <code>{$mode ...}</code> di sumber dapat mengalahkan pilihan ini pada Free Pascal.</li>
+<li>Compiler Odin mengikuti bahasa Turbo Pascal 7; tidak ada pilihan mode lain.</li>
 <li><strong>Range checks</strong> dan <strong>overflow checks</strong> aktif secara bawaan.</li>
-<li><strong>Backend</strong>: <em>Odin native</em> (bawaan) atau <em>Free Pascal</em>. Free Pascal dipakai otomatis bila odinpc tidak ditemukan atau sistemnya belum didukung, misalnya Windows on ARM. Isian <em>Free Pascal path</em> (kosong = otomatis) dapat diisi manual, mis. <code>/opt/homebrew/bin/fpc</code> atau <code>/usr/local/bin/fpc</code>.</li>
-<li><strong>Debug information</strong> menambah informasi baris dan DWARF pada build Free Pascal. Debugger Odin tidak memakainya: <strong>Debug &gt; Start debugging</strong> selalu membangun ulang dengan pengait debugger sendiri.</li>
+<li>Informasi baris untuk runtime error selalu dibuat. <strong>Debug &gt; Start debugging</strong> membangun ulang dengan pengait debugger.</li>
 </ul>
-<div class="callout"><b>Catatan</b><p>Opsi Debug information dan pilihan backend Free Pascal tidak berpengaruh pada debugger Odin, yang bekerja hanya dengan backend Odin.</p></div>
 
 <h3 id="direktori">Options &gt; Directories</h3>
-<p>Isi satu path unit atau include per baris. Direktori Free Vision (Turbo Vision) ditambahkan otomatis setelah path Anda, agar <code>uses App</code> tidak tertukar dengan unit <code>Menus</code> milik sistem Apple.</p>
+<p>Isi satu path unit atau include per baris. Unit di folder program ditemukan otomatis, begitu pula unit standar dan Odin Vision.</p>
 
 <h3 id="parameter">Parameter program</h3>
 <p><strong>Run &gt; Parameters</strong> menerima argumen dengan aturan kutip seperti shell, misalnya:</p>
@@ -207,7 +205,7 @@ end.</code></pre>
 <p>Program membacanya dengan <code>ParamCount</code> dan <code>ParamStr(1)</code>, <code>ParamStr(2)</code>, dan seterusnya. Argumen diteruskan sebagai daftar tanpa menjalankan shell, sehingga tanda seperti <code>*</code> atau <code>;</code> tidak ditafsirkan.</p>
 
 <h3 id="ekspor">Mengekspor executable</h3>
-<p><strong>Compile &gt; Export executable</strong> menyalin hasil build terakhir ke lokasi pilihan Anda. Executable hanya cocok dengan OS dan CPU mesin pembuatnya. Bila dibagikan, program dari backend Odin memuat runtime library Odin yang berlisensi GPL v3 atau lebih baru, sehingga ketentuan GPL berlaku untuk executable itu.</p>
+<p><strong>Compile &gt; Export executable</strong> menyalin hasil build terakhir ke lokasi pilihan Anda. Executable hanya cocok dengan OS dan CPU mesin pembuatnya. Bila dibagikan, program hasil Odin memuat runtime library Odin yang berlisensi GPL v3 atau lebih baru, sehingga ketentuan GPL berlaku untuk executable itu.</p>
 </section>
 
 <section class="sec" id="s-user-screen">
@@ -233,7 +231,7 @@ end.</code></pre>
 
 <section class="sec" id="s-debugger">
 <h2 id="debugger">Debugger</h2>
-<p>Debugger Odin bekerja dengan backend Odin (<strong>Options &gt; Compiler &gt; Odin native</strong>). Program dikompilasi ulang dengan pengait debugger lalu dijalankan di User screen. LLDB, GDB, dan Xcode tidak diperlukan.</p>
+<p>Program dikompilasi ulang dengan pengait debugger lalu dijalankan di User screen. LLDB, GDB, dan Xcode tidak diperlukan.</p>
 
 <h3 id="breakpoint">Breakpoint</h3>
 <ul>
@@ -351,7 +349,7 @@ end.</code></pre>
 <h3 id="menu-options">Options</h3>
 <div class="tw"><table class="wrap">
 <tr><th>Item</th><th>Fungsi</th></tr>
-<tr><td>Compiler...</td><td>Backend, path Free Pascal, mode bahasa, range checks, overflow checks, debug information.</td></tr>
+<tr><td>Compiler...</td><td>Range checks dan overflow checks.</td></tr>
 <tr><td>Directories...</td><td>Path unit dan include, satu per baris.</td></tr>
 <tr><td>Editor...</td><td>Ukuran huruf (10&ndash;30), lebar tab (1&ndash;8), Syntax colors.</td></tr>
 <tr><td>Save options</td><td>Menyimpan pengaturan ke <code>settings.json</code>.</td></tr>
@@ -459,7 +457,7 @@ end.</code></pre>
 
 <section class="sec" id="s-unit">
 <h2 id="unit">Unit Pustaka</h2>
-<p>Unit yang tersedia di backend Odin: System, Crt, Dos, Strings, Printer, Objects, dan Odin Vision. <strong>Tidak tersedia</strong>: Graph, Graph3, Turbo3, Overlay, WinDos, ColorSel, TextView.</p>
+<p>Unit yang tersedia: System, Crt, Dos, Strings, Printer, Objects, dan Odin Vision (termasuk ColorSel dan TextView). <strong>Tidak tersedia</strong>: Graph, Graph3, Turbo3, Overlay, WinDos.</p>
 
 <h3 id="unit-crt">Crt</h3>
 <!--@pascal:UNIT CRT-->
@@ -499,7 +497,7 @@ end.</code></pre>
 <div class="tw"><table class="wrap">
 <tr><th>Komponen</th><th>Status</th></tr>
 <tr><td>Editor dan operasi berkas</td><td>Diimplementasikan, diuji GUI Linux</td></tr>
-<tr><td>Kompilasi mode TP</td><td>Diimplementasikan, diuji dengan FPC 3.2.2 di Linux</td></tr>
+<tr><td>Compiler Odin (bahasa TP7)</td><td>Diimplementasikan, korpus 77 program</td></tr>
 <tr><td><code>ReadLn</code>, <code>WriteLn</code></td><td>Diuji melalui binary dan PTY</td></tr>
 <tr><td>Crt: warna, GotoXY, ClrScr, ReadKey</td><td>Diuji melalui program Crt nyata di Linux</td></tr>
 <tr><td>Unit Pascal</td><td>Diuji dengan unit <code>matematika</code> (Bab 19)</td></tr>
@@ -509,16 +507,16 @@ end.</code></pre>
 <tr><td>BGI/Graph DOS</td><td>Tidak diimplementasikan</td></tr>
 <tr><td>Interrupt, port, mem DOS</td><td>Tidak diemulasi</td></tr>
 <tr><td>Terminal truecolor / Unicode lebar</td><td>Tidak tersedia</td></tr>
-<tr><td>Compiler dan runtime pihak ketiga</td><td>Free Pascal tidak disertakan; dipasang terpisah bila diperlukan</td></tr>
+<tr><td>Compiler dan runtime</td><td>Disertakan (<code>odinpc</code> dan runtime library Odin); Free Pascal, Xcode, dan LLDB tidak diperlukan</td></tr>
 </table></div>
 
 <h3 id="status-uji">Yang sudah dan belum diuji</h3>
-<div class="callout warn"><b>Batas klaim</b><p>Yang diuji: backend Odin di Mac Intel (Darwin 24.6), VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu), serta runner GitHub Actions untuk macOS 15 Apple Silicon, Ubuntu x86_64 dan arm64, dan Windows Server 2025. <strong>Belum diuji langsung</strong>: Mac Apple Silicon fisik, PC Linux fisik, PC Windows fisik, installer di Apple Silicon dan Windows, LaunchServices/Gatekeeper, serta <kbd>Option</kbd> pada keyboard Mac sungguhan.</p></div>
+<div class="callout warn"><b>Batas klaim</b><p>Yang diuji: compiler Odin di Mac Intel (Darwin 24.6), VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu), serta runner GitHub Actions untuk macOS 15 Apple Silicon, Ubuntu x86_64 dan arm64, dan Windows Server 2025. <strong>Belum diuji langsung</strong>: Mac Apple Silicon fisik, PC Linux fisik, PC Windows fisik, installer di Apple Silicon dan Windows, Mac bersih tanpa Xcode Command Line Tools, LaunchServices/Gatekeeper, serta <kbd>Option</kbd> pada keyboard Mac sungguhan.</p></div>
 
-<h3 id="backend">Backend compiler</h3>
-<p>Backend bawaan adalah toolchain Odin: compiler <code>odinpc</code> (Rust) dan runtime library sendiri. Target: x86_64-darwin, aarch64-darwin (Mach-O), x86_64-linux dan aarch64-linux (ELF dinamis, glibc 2.34 atau lebih baru), x86_64-windows (PE32+). Free Pascal tetap bisa dipilih di Options &gt; Compiler.</p>
+<h3 id="backend">Compiler</h3>
+<p>Compiler adalah toolchain Odin: <code>odinpc</code> (Rust) dengan assembler, linker, debugger, dan runtime library sendiri. Target: x86_64-darwin, aarch64-darwin (Mach-O, dengan tanda tangan kode ad-hoc yang diwajibkan macOS di Apple Silicon), x86_64-linux dan aarch64-linux (ELF dinamis, glibc 2.34 atau lebih baru), x86_64-windows (PE32+). Sampai 2.3.0 Free Pascal bisa dipilih sebagai backend alternatif; backend itu, beserta mode ObjFPC/Delphi, sudah dicabut.</p>
 <ul>
-<li>Mode <code>-Mtp</code> mengarahkan FPC mendekati sintaks Turbo Pascal. Perbedaan CPU, ukuran pointer, ABI, sistem berkas, dan unit tetap berlaku.</li>
+<li>Bahasanya Turbo Pascal 7 di platform 64-bit. Perbedaan CPU, ukuran pointer, ABI, sistem berkas, dan unit tetap berlaku.</li>
 <li>Di arm64, bendera FPSR diperiksa sesudah operasi real sehingga runtime error 207, 200, atau 205 muncul seperti di x86-64.</li>
 <li>Di Windows, berkas teks memakai CRLF, path memakai <code>\</code> dan huruf drive, dan <code>Printer</code> mencetak lewat <code>notepad /p</code>.</li>
 </ul>
@@ -532,17 +530,17 @@ end.</code></pre>
 <tr><td>Strings</td><td>Rutin PChar (StrPCopy, StrCat, StrPos, StrNew, dan lainnya).</td></tr>
 <tr><td>Objects</td><td>TStringCollection dan TBufStream diuji berjalan.</td></tr>
 <tr><td>Printer</td><td>Tersedia; <code>Lst</code> diteruskan ke printer default (<code>lpr</code> di macOS).</td></tr>
-<tr><td>Turbo Vision</td><td>Odin Vision: Drivers, Memory, HistList, Views, Menus, Validate, Dialogs, App, MsgBox, StdDlg, Editors, Outline. Dengan backend Free Pascal dipakai Free Vision. ColorSel dan TextView belum tersedia.</td></tr>
+<tr><td>Turbo Vision</td><td>Odin Vision: Drivers, Memory, HistList, Views, Menus, Validate, Dialogs, App, MsgBox, StdDlg, Editors, Outline, ColorSel, TextView.</td></tr>
 <tr><td>Graph, Graph3, Overlay, WinDos, Turbo3</td><td>Tidak tersedia. Hapus <code>uses Overlay</code> dan pemanggilan <code>OvrInit</code>; gunakan Dos dan Strings sebagai pengganti WinDos.</td></tr>
 </table></div>
 
 <h3 id="fitur-dos">Fitur era DOS</h3>
-<p>Tidak dapat dikompilasi di macOS 64-bit: <code>Mem</code>/<code>MemW</code>/<code>MemL</code>, <code>Port</code>, <code>absolute $Seg:$Ofs</code>, <code>PrefixSeg</code>, <code>MemAvail</code>/<code>MaxAvail</code>, <code>Test8087</code>, <code>inline(...)</code>, serta <code>Intr</code>/<code>MsDos</code>/<code>Registers</code>. <code>GetIntVec</code>/<code>SetIntVec</code>, <code>Keep</code>, dan prosedur <code>interrupt</code> dapat dikompilasi tetapi tidak berefek. Blok <code>asm</code> memerlukan <code>{$ASMMODE INTEL}</code>; kode 16-bit tetap tidak jalan.</p>
+<p>Tidak dapat dikompilasi di sistem 64-bit: <code>Mem</code>/<code>MemW</code>/<code>MemL</code>, <code>Port</code>, <code>absolute $Seg:$Ofs</code>, <code>PrefixSeg</code>, <code>MemAvail</code>/<code>MaxAvail</code>, <code>Test8087</code>, <code>inline(...)</code>, prosedur <code>interrupt</code>, serta <code>Intr</code>/<code>MsDos</code>/<code>Registers</code>. <code>GetIntVec</code>/<code>SetIntVec</code> dan <code>Keep</code> dapat dikompilasi tetapi tidak berefek. Blok <code>asm</code> belum didukung.</p>
 
 <h3 id="beda-perilaku">Perbedaan perilaku penting</h3>
 <div class="tw"><table class="wrap">
 <tr><th>Hal</th><th>Turbo Pascal 7</th><th>Odin</th></tr>
-<tr><td><code>Real</code></td><td>6 byte</td><td>8 byte. Pakai <code>Real48</code> dan <code>Real2Double</code> untuk membaca berkas biner Real dari TP.</td></tr>
+<tr><td><code>Real</code></td><td>6 byte</td><td>8 byte. <code>Real48</code> tidak tersedia; berkas biner Real dari TP perlu dikonversi lebih dahulu.</td></tr>
 <tr><td>Pointer</td><td>4 byte</td><td>8 byte. <code>Integer</code> tetap 2 byte, <code>LongInt</code> 4 byte di mode TP.</td></tr>
 <tr><td><code>Round(2.5)</code></td><td>3</td><td>2 (pembulatan ke genap). Periksa program yang bergantung pada nilai .5.</td></tr>
 </table></div>
@@ -555,8 +553,7 @@ end.</code></pre>
 <h3 id="galat-umum">Galat umum</h3>
 <div class="tw"><table class="wrap">
 <tr><th>Gejala</th><th>Penyebab dan solusi</th></tr>
-<tr><td>Compiler not found</td><td>Jalankan lagi <code>Install.command</code>, atau isi path <code>fpc</code> di <strong>Options &gt; Compiler</strong>, mis. <code>/opt/homebrew/bin/fpc</code> atau <code>/usr/local/bin/fpc</code>.</td></tr>
-<tr><td>Linker / SDK error</td><td>Pastikan <code>xcode-select -p</code> dan <code>xcrun --show-sdk-path</code> berhasil di Terminal.</td></tr>
+<tr><td>Compiler not found</td><td>Jalankan lagi <code>Install.command</code> (<code>Install.cmd</code> di Windows). Dari source: <code>cargo build --release</code> di folder <code>toolchain/</code>.</td></tr>
 <tr><td>Unit not found</td><td>Periksa Primary file, nama unit (harus sama dengan nama berkas), dan <strong>Options &gt; Directories</strong>.</td></tr>
 <tr><td><code>ReadLn</code> terlihat diam</td><td>Klik User screen, ketik masukan, lalu <kbd>Enter</kbd>.</td></tr>
 <tr><td>Program macet</td><td><strong>Run &gt; Program reset</strong> (<kbd>Ctrl+F2</kbd>). Proses diterminasi, lalu dipaksa berhenti bila belum keluar setelah satu detik.</td></tr>
@@ -568,12 +565,12 @@ end.</code></pre>
 </table></div>
 
 <h3 id="faq">Tanya jawab</h3>
-<h4>Apakah saya harus memasang Free Pascal?</h4>
-<p>Tidak. Compiler <code>odinpc</code> sudah disertakan dan menjadi backend bawaan. Free Pascal hanya pilihan alternatif.</p>
+<h4>Apakah saya harus memasang Free Pascal atau Xcode?</h4>
+<p>Tidak. Compiler <code>odinpc</code> sudah disertakan dan menjadi satu-satunya compiler; satu-satunya dependensi adalah Python dengan Tk.</p>
 <h4>Mengapa program saya tidak bisa membaca berkas biner dari Turbo Pascal 7?</h4>
-<p>Tipe <code>Real</code> berbeda ukuran (6 byte di TP, 8 byte di sini). Baca dengan <code>Real48</code> dan konversi dengan <code>Real2Double</code>.</p>
+<p>Tipe <code>Real</code> berbeda ukuran (6 byte di TP, 8 byte di sini), dan <code>Real48</code> tidak tersedia. Konversikan berkas itu lebih dahulu.</p>
 <h4>Dapatkah saya membagikan program yang saya kompilasi?</h4>
-<p>Ya, lewat <strong>Compile &gt; Export executable</strong>. Executable hanya jalan di OS dan CPU yang sama, dan program dari backend Odin memuat runtime GPL (lihat <a href="#ekspor">Mengekspor executable</a>).</p>
+<p>Ya, lewat <strong>Compile &gt; Export executable</strong>. Executable hanya jalan di OS dan CPU yang sama, dan program hasil Odin memuat runtime GPL (lihat <a href="#ekspor">Mengekspor executable</a>).</p>
 <h4>Di mana pengaturan saya disimpan?</h4>
 <p>Lihat <a href="#lokasi">Lokasi berkas</a>.</p>
 </section>
@@ -582,9 +579,8 @@ end.</code></pre>
 <h2 id="glosarium" class="appendix">Glosarium</h2>
 <div class="tw"><table class="wrap">
 <tr><th>Istilah</th><th>Arti</th></tr>
-<tr><td>Backend</td><td>Compiler yang membangun program: Odin native (<code>odinpc</code>) atau Free Pascal.</td></tr>
+<tr><td>odinpc</td><td>Compiler Odin yang membangun program: compiler, assembler, linker, dan debugger dalam satu berkas.</td></tr>
 <tr><td>Build cache</td><td>Folder hasil kompilasi per program dan per pilihan compiler, terpisah dari folder sumber.</td></tr>
-<tr><td>Free Vision</td><td>Turbo Vision milik Free Pascal; dipakai dengan backend FPC.</td></tr>
 <tr><td>Odin Vision</td><td>Turbo Vision milik Odin, API-nya mengikuti Turbo Vision TP7.</td></tr>
 <tr><td>Primary file</td><td>Berkas utama yang selalu dikompilasi saat Run, apa pun editor yang aktif.</td></tr>
 <tr><td>PTY</td><td>Pseudo-terminal: saluran masukan/keluaran interaktif antara IDE dan program.</td></tr>

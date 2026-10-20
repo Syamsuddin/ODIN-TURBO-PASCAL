@@ -21,7 +21,7 @@ from tkinter import filedialog, messagebox
 from tkinter import font as tkfont
 
 from . import __author__, __copyright__, __version_tag__
-from .core import (PACKAGE_ROOT, Document, Settings, atomic_write, build, data_dir, join_command, locate_compiler,
+from .core import (PACKAGE_ROOT, Document, Settings, atomic_write, build, data_dir, join_command,
                    locate_toolchain, lock_instance, runtime_error_location, split_arguments, unlock_instance)
 from .debugger import DebugSession
 from .terminal import Process, Screen, TerminalView
@@ -382,7 +382,7 @@ class App:
             editor = self.active_editor
             line,col = editor.text.index("insert").split(".")
             name = str(editor.document.path) if editor.document.path else "NONAME.PAS"
-            self.status.configure(text=f" {'Overwrite' if editor.overwrite_mode else 'Insert'}  {int(line):5}:{int(col)+1:<4}  {name}  [{self.settings['mode'].upper()}]")
+            self.status.configure(text=f" {'Overwrite' if editor.overwrite_mode else 'Insert'}  {int(line):5}:{int(col)+1:<4}  {name}  [TP]")
 
     def next_editor(self):
         if self.windows:
@@ -843,7 +843,7 @@ class App:
         elif error:
             messagebox.showinfo("Find error",f"Runtime error {error[0]} terjadi di luar kode program (di unit RTL).",parent=self.root)
         else:
-            messagebox.showinfo("Find error","Belum ada runtime error. Posisinya dicatat saat program dijalankan dengan backend Odin.",parent=self.root)
+            messagebox.showinfo("Find error","Belum ada runtime error. Posisinya dicatat saat program dijalankan.",parent=self.root)
 
     def breakpoints_changed(self,editor):
         if self.debugging and editor.document.path:
@@ -1083,23 +1083,12 @@ class App:
 
     def compiler_options(self):
         win,body=self.dialog("Compiler options")
-        backend=tk.StringVar(value=self.settings["backend"])
-        tk.Label(body,text="Backend",bg=GRAY,fg=BLUE).pack(anchor="w")
-        for value,label in (("odin","Odin native (experimental)"),("fpc","Free Pascal")):
-            tk.Radiobutton(body,text=label,value=value,variable=backend,bg=GRAY,selectcolor=GRAY).pack(anchor="w")
-        compiler,entry=self.field(body,"Free Pascal path (empty = automatic)",self.settings["compiler"])
-        mode=tk.StringVar(value=self.settings["mode"])
-        for value,label in (("tp","Turbo Pascal 7 compatibility"),("objfpc","Object Pascal"),("delphi","Delphi")):
-            tk.Radiobutton(body,text=label,value=value,variable=mode,bg=GRAY,selectcolor=GRAY).pack(anchor="w")
+        tk.Label(body,text="Odin native compiler, Turbo Pascal 7",bg=GRAY,fg=BLUE).pack(anchor="w")
         flags={}
-        for key,label in (("range_checks","Range checks"),("overflow_checks","Overflow checks"),("debug_info","Debug information")):
+        for key,label in (("range_checks","Range checks"),("overflow_checks","Overflow checks")):
             flags[key]=tk.BooleanVar(value=self.settings[key])
             tk.Checkbutton(body,text=label,variable=flags[key],bg=GRAY,selectcolor=GRAY).pack(anchor="w")
         def save():
-            self.settings["backend"]=backend.get()
-            self.settings["compiler"]=compiler.get().strip()
-            # The Odin backend only implements Turbo Pascal mode.
-            self.settings["mode"]="tp" if backend.get()=="odin" else mode.get()
             for key,var in flags.items():self.settings[key]=var.get()
             self.settings.save()
             win.destroy()
@@ -1207,10 +1196,10 @@ class App:
             return
         self.update_status(f"Opening {path.name}")
     def about(self):
-        self.show_text("About Odin Turbo Pascal",f"ODIN TURBO PASCAL\nVersion {__version_tag__}\nCreated by {__author__}\n\nIndependent classic Pascal IDE.\nPython / Tk + Odin native toolchain; Free Pascal as alternative backend.\n\nInterface inspired by the DOS-era Turbo Pascal IDE.\nThis software is not Borland Turbo Pascal and is not affiliated with Borland.\nNo Borland binaries, logos, fonts, or help files are included.\n\nNative Pascal compilation for the host CPU.\nIntel x86_64 and Apple Silicon arm64 use the same application sources.\n\n{__copyright__}.\nThis program is free software: you can redistribute it and/or modify it\nunder the terms of the GNU General Public License, version 3 or later.\nIt comes with ABSOLUTELY NO WARRANTY. See LICENSE and THIRD_PARTY.txt.\n",self.logo_small)
+        self.show_text("About Odin Turbo Pascal",f"ODIN TURBO PASCAL\nVersion {__version_tag__}\nCreated by {__author__}\n\nIndependent classic Pascal IDE.\nPython / Tk + Odin native toolchain (compiler, RTL, debugger).\n\nInterface inspired by the DOS-era Turbo Pascal IDE.\nThis software is not Borland Turbo Pascal and is not affiliated with Borland.\nNo Borland binaries, logos, fonts, or help files are included.\n\nNative Pascal compilation for the host CPU.\nIntel x86_64 and Apple Silicon arm64 use the same application sources.\n\n{__copyright__}.\nThis program is free software: you can redistribute it and/or modify it\nunder the terms of the GNU General Public License, version 3 or later.\nIt comes with ABSOLUTELY NO WARRANTY. See LICENSE and THIRD_PARTY.txt.\n",self.logo_small)
 
     def environment(self):
-        self.show_text("Environment",f"Odin {__version_tag__}\n\nOS: {platform.platform()}\nCPU: {platform.machine()}\nPython: {sys.version}\nRuntime: {sys.executable}\nTk: {self.root.tk.call('info','patchlevel')}\nBackend: {self.settings['backend']}\nOdin toolchain: {locate_toolchain() or 'NOT FOUND'}\nCompiler: {locate_compiler(self.settings['compiler']) or 'NOT FOUND'}\nMode: {self.settings['mode']}\nPrimary file: {self.settings['main_file'] or '(active editor)'}\nSettings: {self.settings.path}\n")
+        self.show_text("Environment",f"Odin {__version_tag__}\n\nOS: {platform.platform()}\nCPU: {platform.machine()}\nPython: {sys.version}\nRuntime: {sys.executable}\nTk: {self.root.tk.call('info','patchlevel')}\nOdin toolchain: {locate_toolchain() or 'NOT FOUND'}\nPrimary file: {self.settings['main_file'] or '(active editor)'}\nSettings: {self.settings.path}\n")
 
     def recover_tick(self):
         if self.closed:return

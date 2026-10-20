@@ -7,6 +7,9 @@
 yang dibahas adalah Odin Turbo Pascal {{VERSI}}. Petunjuk terbaru selalu ada di berkas <code>README</code> yang menyertai
 aplikasi.</p>
 
+<div class="info"><p>Paket dan kode sumber Odin Turbo Pascal ada di repositori GitHub <a href="https://github.com/Syamsuddin/ODIN-TURBO-PASCAL"><code>github.com/Syamsuddin/ODIN-TURBO-PASCAL</code></a>. Daftar rilis beserta
+catatan perubahannya ada di <a href="https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/releases"><code>github.com/Syamsuddin/ODIN-TURBO-PASCAL/releases</code></a>.</p></div>
+
 <h2>Yang Diperlukan</h2>
 <table class="data">
   <caption>Persyaratan sistem Odin Turbo Pascal {{VERSI}}</caption>
@@ -16,18 +19,17 @@ aplikasi.</p>
     <tr><td>Windows</td><td>Windows 10 versi 1809 atau lebih baru, 64-bit (x86_64).</td></tr>
     <tr><td>Linux</td><td>x86_64 atau arm64 dengan glibc 2.34+ (Ubuntu 22.04+, Debian 12+, Fedora 35+).</td></tr>
     <tr><td>Python</td><td>3.10 atau lebih baru, lengkap dengan Tk (antarmuka grafis).</td></tr>
-    <tr><td>Free Pascal</td><td>3.2.2+ (opsional; hanya bila memilih backend Free Pascal). Kompiler Odin sudah termasuk dalam paket.</td></tr>
+    <tr><td>Kompiler</td><td>Kompiler Odin sudah termasuk dalam paket. Free Pascal dan Xcode tidak diperlukan.</td></tr>
     <tr><td>Rust</td><td>1.85+ (hanya di Linux atau saat membangun dari source, untuk membuat kompiler Odin).</td></tr>
   </tbody>
 </table>
 
 <h2>macOS</h2>
 <ol class="langkah">
-  <li><b>Unduh dan ekstrak.</b> Unduh paket Odin Turbo Pascal (<b>Code ▸ Download ZIP</b>), lalu ekstrak seluruhnya.
+  <li><b>Unduh dan ekstrak.</b> Buka <a href="https://github.com/Syamsuddin/ODIN-TURBO-PASCAL"><code>github.com/Syamsuddin/ODIN-TURBO-PASCAL</code></a>, unduh paketnya (<b>Code ▸ Download ZIP</b>), lalu ekstrak seluruhnya.
   Jangan menjalankan pemasang dari dalam pratinjau ZIP.</li>
   <li><b>Buka <code>Install.command</code>.</b> Pemasang berjalan di Terminal. Ia mendeteksi chip Intel atau Apple Silicon;
-  memeriksa Python (Tk), Free Pascal, dan Xcode Command Line Tools, lalu menawarkan Homebrew atau tautan unduhan resmi
-  bila ada yang belum ada.</li>
+  memeriksa Python (Tk), lalu menawarkan Homebrew atau tautan unduhan resmi bila belum ada.</li>
   <li><b>Tunggu pemeriksaan.</b> Pemasang mengompilasi dan menjalankan sebuah program uji kecil untuk memastikan hasilnya
   cocok dengan CPU Mac Anda. Bila gagal, pemasangan berhenti dengan pesan kesalahan.</li>
   <li><b>Jalankan aplikasi</b> dari <code>~/Applications/Odin Turbo Pascal.app</code>.</li>
@@ -40,10 +42,10 @@ menyeluruh.</p></div>
 
 <h2>Windows</h2>
 <ol class="langkah">
-  <li><b>Unduh dan ekstrak</b> paket seluruhnya.</li>
+  <li><b>Unduh dan ekstrak</b> paket dari <a href="https://github.com/Syamsuddin/ODIN-TURBO-PASCAL"><code>github.com/Syamsuddin/ODIN-TURBO-PASCAL</code></a> (<b>Code ▸ Download ZIP</b>), lalu ekstrak seluruhnya.</li>
   <li><b>Klik dua kali <code>Install.cmd</code>.</b> Pemasang berjalan di PowerShell: memeriksa Windows 10 1809+ 64-bit;
-  mencari Python (Tk) dan Free Pascal, lalu menawarkan winget atau tautan resmi bila belum ada; mengompilasi dan
-  menjalankan program uji dengan Free Pascal dan dengan kompiler Odin.</li>
+  mencari Python (Tk), lalu menawarkan winget atau tautan resmi bila belum ada; mengompilasi dan menjalankan program
+  uji dengan kompiler Odin.</li>
   <li><b>Jalankan</b> Odin Turbo Pascal dari menu Start atau pintasan Desktop.</li>
 </ol>
 <p>Aplikasi dipasang di <code>%LOCALAPPDATA%\Programs\OdinTurboPascal</code> tanpa memerlukan hak administrator.</p>
@@ -57,8 +59,7 @@ cd ODIN-TURBO-PASCAL/toolchain
 cargo build --release                    # membangun kompiler odinpc
 cd ..
 python3 main.py                          # jalankan IDE</x-code>
-<p>Backend Odin, debugger, dan Odin Vision langsung aktif. Free Pascal (<code>sudo apt install fpc</code>) hanya
-diperlukan bila Anda memilih backend itu.</p>
+<p>Kompiler, debugger, dan Odin Vision langsung aktif.</p>
 
 <div class="info"><p>Sebagian hal belum diuji di perangkat keras sungguhan, hanya di runner CI dan mesin virtual, antara
 lain pemasangan di Mac Apple Silicon, peluncuran lewat Finder, Gatekeeper, serta pemasang Windows lengkap. Rincian
@@ -234,7 +235,6 @@ halaman tempat listing lengkapnya dibahas.</p>
 <dl class="istilah">
   <dt>Algoritma</dt><dd>Urutan langkah yang jelas dan berhingga untuk menyelesaikan suatu masalah.</dd>
   <dt>Array</dt><dd>Kumpulan data bertipe sama yang disimpan berurutan dan diakses lewat indeks.</dd>
-  <dt>Backend / kompiler</dt><dd>Program yang menerjemahkan kode sumber menjadi executable. Odin Turbo Pascal memakai kompiler Odin, dengan Free Pascal sebagai alternatif.</dd>
   <dt>Breakpoint</dt><dd>Titik henti yang dipasang pada sebuah baris agar debugger berhenti di situ.</dd>
   <dt>Debugger</dt><dd>Alat untuk menjalankan program langkah demi langkah dan memeriksa nilai variabel.</dd>
   <dt>Deklarasi</dt><dd>Pengumuman nama (variabel, konstanta, tipe, prosedur) beserta sifatnya sebelum dipakai.</dd>
@@ -246,6 +246,7 @@ halaman tempat listing lengkapnya dibahas.</p>
   <dt>Kata tercadang</dt><dd>Kata yang maknanya sudah ditetapkan bahasa dan tidak boleh dipakai sebagai nama sendiri.</dd>
   <dt>Kode sumber</dt><dd>Teks program yang ditulis manusia, misalnya berkas <code>.pas</code>.</dd>
   <dt>Komentar</dt><dd>Catatan untuk pembaca manusia yang diabaikan kompiler, ditulis di antara <code>{ ... }</code>.</dd>
+  <dt>Kompiler</dt><dd>Program yang menerjemahkan kode sumber menjadi executable. Odin Turbo Pascal memakai kompiler Odin (<code>odinpc</code>).</dd>
   <dt>Kompilasi</dt><dd>Proses menerjemahkan kode sumber menjadi executable.</dd>
   <dt>Konstanta</dt><dd>Nilai bernama yang tidak berubah selama program berjalan.</dd>
   <dt>Linked list</dt><dd>Rangkaian node yang saling terhubung lewat pointer, bisa tumbuh dan menyusut saat program berjalan.</dd>

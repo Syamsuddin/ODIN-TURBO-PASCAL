@@ -2,7 +2,7 @@
 
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
-Korpus `tests/pascal/` memakai FPC 3.2.2 (`fpc -Mtp`) sebagai pembanding. Bagian ini mencatat perilaku Odin yang sengaja berbeda. Program yang ditulis di daftar program di bawah (dalam tanda petik balik, misalnya `lang/CONTOH.PAS`) dilewati oleh `scripts/oracle.py`, sehingga ekspektasinya ditulis tangan.
+Sampai 2.3.0, ekspektasi korpus `tests/pascal/` dibuat dengan FPC 3.2.2 (`fpc -Mtp`) sebagai pembanding. Sejak FPC dicabut, ekspektasi program baru dibuat dengan `scripts/bless_corpus.py` dan ditinjau terhadap perilaku Turbo Pascal 7. Bagian ini mencatat perilaku Odin yang sengaja berbeda dari FPC. Program di daftar bawah (dalam tanda petik balik, misalnya `lang/CONTOH.PAS`) punya ekspektasi tulisan tangan.
 
 ## Perilaku
 

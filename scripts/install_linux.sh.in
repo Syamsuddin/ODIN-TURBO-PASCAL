@@ -1,0 +1,140 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 Syams Ideris
+#
+# Odin Turbo Pascal @VERSION@ - self-extracting installer for Linux @ARCH@ (offline).
+# Made by scripts/build_setup_linux.py: this script, then a tar.xz of the app, odinpc and a
+# private Python with Tk. Nothing is downloaded. Run: sh THIS-FILE [--prefix DIR] [--no-menu]
+PAYLOAD_OFFSET="@OFFSET@"
+PAYLOAD_SHA256=@SHA256@
+APP_ARCH=@ARCH@
+APP_VERSION=@VERSION@
+
+PREFIX="${XDG_DATA_HOME:-$HOME/.local/share}/OdinTurboPascal-app"
+BIN_DIR="$HOME/.local/bin"
+MENU=1
+ACTION=install
+
+say() { printf '%s\n' "$*"; }
+die() { printf 'Kesalahan: %s\n' "$*" >&2; exit 1; }
+
+usage() {
+    cat <<USAGE
+Odin Turbo Pascal $APP_VERSION - pemasang Linux $APP_ARCH (offline, tanpa hak root)
+
+Pemakaian: sh $(basename "$0") [pilihan]
+  --prefix DIR   folder pemasangan (bawaan: $PREFIX)
+  --no-menu      jangan buat entri menu aplikasi dan perintah di $BIN_DIR
+  --check        periksa integritas berkas saja
+  --uninstall    hapus pemasangan (program Pascal dan pengaturan tetap disimpan)
+  --help         bantuan ini
+USAGE
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --prefix) [ $# -ge 2 ] || die "--prefix memerlukan folder"; PREFIX="$2"; shift 2 ;;
+        --prefix=*) PREFIX="${1#--prefix=}"; shift ;;
+        --no-menu) MENU=0; shift ;;
+        --check) ACTION=check; shift ;;
+        --uninstall) ACTION=uninstall; shift ;;
+        -h|--help) usage; exit 0 ;;
+        *) usage >&2; die "pilihan tidak dikenal: $1" ;;
+    esac
+done
+
+DESKTOP_FILE="${XDG_DATA_HOME:-$HOME/.local/share}/applications/odin-turbo-pascal.desktop"
+LAUNCHER="$BIN_DIR/odin-turbo-pascal"
+
+sha256_of() {
+    if command -v sha256sum >/dev/null 2>&1; then sha256sum | cut -d' ' -f1
+    elif command -v shasum >/dev/null 2>&1; then shasum -a 256 | cut -d' ' -f1
+    else die "sha256sum atau shasum tidak ditemukan"; fi
+}
+
+payload() { tail -c +$((PAYLOAD_OFFSET + 1)) "$0"; }
+
+if [ "$ACTION" = uninstall ]; then
+    [ -d "$PREFIX" ] && rm -rf "$PREFIX" && say "Dihapus: $PREFIX"
+    rm -rf "$PREFIX.previous"
+    [ -f "$LAUNCHER" ] && rm -f "$LAUNCHER" && say "Dihapus: $LAUNCHER"
+    [ -f "$DESKTOP_FILE" ] && rm -f "$DESKTOP_FILE" && say "Dihapus: $DESKTOP_FILE"
+    say "Selesai. Program Pascal dan pengaturan (~/.local/share/OdinTurboPascal) tetap disimpan."
+    exit 0
+fi
+
+[ "$(uname -s)" = Linux ] || die "pemasang ini khusus Linux"
+MACHINE=$(uname -m)
+case "$MACHINE" in
+    amd64) MACHINE=x86_64 ;;
+    arm64) MACHINE=aarch64 ;;
+esac
+[ "$MACHINE" = "$APP_ARCH" ] || die "pemasang ini untuk $APP_ARCH, sedangkan komputer ini $MACHINE. Pakai pemasang yang sesuai."
+command -v xz >/dev/null 2>&1 || die "perintah xz tidak ditemukan (pasang paket xz-utils)"
+command -v tar >/dev/null 2>&1 || die "perintah tar tidak ditemukan"
+
+say "ODIN TURBO PASCAL $APP_VERSION"
+say "Dibuat oleh Syams Ideris - Lisensi GNU GPL v3 atau yang lebih baru"
+say "Memeriksa integritas paket..."
+[ "$(payload | sha256_of)" = "$PAYLOAD_SHA256" ] || die "paket rusak (SHA-256 tidak cocok). Unduh ulang pemasang ini."
+say "Paket utuh."
+[ "$ACTION" = check ] && exit 0
+
+PARENT=$(dirname "$PREFIX")
+mkdir -p "$PARENT" || die "tidak bisa membuat $PARENT"
+STAGE=$(mktemp -d "$PARENT/.odin-install.XXXXXX") || die "tidak bisa membuat folder sementara di $PARENT"
+trap 'rm -rf "$STAGE"' EXIT INT TERM
+say "Mengekstrak ke $PREFIX ..."
+payload | tar -xJf - -C "$STAGE" || die "ekstraksi gagal (ruang disk cukup?)"
+[ -x "$STAGE/python/bin/python3" ] && [ -x "$STAGE/toolchain/odinpc" ] || die "isi paket tidak lengkap"
+
+say "Memeriksa kompilasi native dengan odinpc..."
+"$STAGE/python/bin/python3" -I "$STAGE/scripts/check_linux.py" || die "pemeriksaan kompilasi gagal; pemasangan dibatalkan, pemasangan lama tidak diubah."
+
+if [ -e "$PREFIX" ]; then
+    rm -rf "$PREFIX.previous"
+    mv "$PREFIX" "$PREFIX.previous" || die "pemasangan lama tidak bisa dipindahkan. Tutup Odin Turbo Pascal."
+    say "Cadangan versi sebelumnya: $PREFIX.previous"
+fi
+mv "$STAGE" "$PREFIX" || die "tidak bisa memasang ke $PREFIX"
+trap - EXIT INT TERM
+chmod 755 "$PREFIX"
+
+cat > "$PREFIX/uninstall.sh" <<UNINSTALL
+#!/bin/sh
+# Removes this installation of Odin Turbo Pascal; Pascal programs and settings stay.
+rm -rf "$PREFIX.previous" "$LAUNCHER" "$DESKTOP_FILE"
+rm -rf "$PREFIX"
+echo "Odin Turbo Pascal dihapus. Pengaturan di ~/.local/share/OdinTurboPascal tetap ada."
+UNINSTALL
+chmod 755 "$PREFIX/uninstall.sh"
+
+if [ "$MENU" = 1 ]; then
+    mkdir -p "$BIN_DIR" "$(dirname "$DESKTOP_FILE")"
+    cat > "$LAUNCHER" <<LAUNCH
+#!/bin/sh
+# Starts Odin Turbo Pascal with its private Python (-E: ignore the user's PYTHON* variables).
+cd "\$HOME" || exit 1
+exec "$PREFIX/python/bin/python3" -E -X utf8 "$PREFIX/main.py" "\$@"
+LAUNCH
+    chmod 755 "$LAUNCHER"
+    cat > "$DESKTOP_FILE" <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=Odin Turbo Pascal
+Comment=IDE Pascal bergaya Turbo Pascal dengan compiler native
+Exec="$LAUNCHER"
+Icon=$PREFIX/assets/odin.png
+Terminal=false
+Categories=Development;IDE;
+StartupWMClass=Tk
+DESKTOP
+    command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$(dirname "$DESKTOP_FILE")" >/dev/null 2>&1
+    say "Perintah: $LAUNCHER (pastikan $BIN_DIR ada di PATH) dan entri menu aplikasi."
+fi
+
+say ""
+say "Selesai. Odin Turbo Pascal terpasang di $PREFIX"
+say "Hapus: sh $PREFIX/uninstall.sh   (atau  sh $(basename "$0") --uninstall)"
+exit 0
+__PAYLOAD_BELOW__

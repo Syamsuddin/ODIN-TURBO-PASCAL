@@ -76,7 +76,7 @@ class TerminalView(tk.Text):
         return (max(0, min(int(column), self.screen.cols - 1)), max(0, min(int(line) - 1, self.screen.rows - 1)))
 
     def mouse_button(self, e, number, release):
-        """Reports a click when the program turned on mouse tracking (Odin Vision, Free Vision)."""
+        """Reports a click when the program turned on mouse tracking (Odin Vision)."""
         self.focus_set()
         if not self.screen.mouse:
             return None

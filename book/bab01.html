@@ -91,8 +91,8 @@ fasih berpikir dengan Pascal, pindah ke bahasa lain akan terasa jauh lebih mudah
 <p><b>Odin Turbo Pascal</b> (OTP) adalah IDE (<i>Integrated Development Environment</i>, lingkungan pengembangan
 terpadu) bergaya Turbo Pascal klasik yang berjalan di macOS, Windows, dan Linux. Di dalamnya ada editor kode, kompiler
 <b>Odin</b> (<code>odinpc</code>) yang menghasilkan program native untuk prosesor komputer Anda, terminal 80×25 tempat
-program berjalan (<i>User screen</i>), dan debugger. Free Pascal juga bisa dipilih sebagai kompiler alternatif lewat
-<span class="menu">Options ▸ Compiler</span>.</p>
+program berjalan (<i>User screen</i>), dan debugger. Semuanya buatan Odin sendiri, sehingga Anda tidak perlu memasang
+kompiler lain.</p>
 
 <div class="info"><p>Odin Turbo Pascal adalah perangkat lunak bebas (GNU GPL v3 atau yang lebih baru) yang ditulis secara
 independen. Tampilannya terinspirasi IDE Turbo Pascal era DOS, tetapi Odin Turbo Pascal <b>bukan</b> produk Borland dan
@@ -127,9 +127,12 @@ Bila suatu saat Anda ragu versi mana yang sedang dipakai, lihat plakat ini atau 
 <p>Cara memasang OTP berbeda untuk setiap sistem operasi. Ringkasannya ada di bawah ini; langkah lengkapnya ada di
 <a class="ref" href="#lampiran-pasang">Lampiran A</a>.</p>
 
+<div class="info"><p>Paket OTP dan kode sumbernya tersedia gratis di repositori GitHub
+<a href="https://github.com/Syamsuddin/ODIN-TURBO-PASCAL"><code>github.com/Syamsuddin/ODIN-TURBO-PASCAL</code></a>. Pilih <b>Code ▸ Download ZIP</b> untuk mengunduh paketnya.</p></div>
+
 <div class="trio">
   <div class="card"><h4><span class="ikon">⌘</span>macOS</h4><p>Ekstrak paket, lalu buka <code>Install.command</code>. Pemasang memeriksa Python dan Tk, lalu menyalin aplikasi ke folder <i>Applications</i> di folder rumah Anda.</p></div>
-  <div class="card"><h4><span class="ikon">⊞</span>Windows</h4><p>Ekstrak paket, lalu klik dua kali <code>Install.cmd</code>. Pemasang memeriksa Python dan Free Pascal, menguji kompilasi, lalu membuat pintasan di menu Start dan Desktop.</p></div>
+  <div class="card"><h4><span class="ikon">⊞</span>Windows</h4><p>Ekstrak paket, lalu klik dua kali <code>Install.cmd</code>. Pemasang memeriksa Python dan Tk, menguji kompilasi, lalu membuat pintasan di menu Start dan Desktop.</p></div>
   <div class="card"><h4><span class="ikon">$</span>Linux</h4><p>Pasang <code>python3-tk</code>, <code>git</code>, dan Rust, unduh kode sumbernya, bangun kompiler dengan <code>cargo build --release</code>, lalu jalankan <code>python3 main.py</code>.</p></div>
 </div>
 
@@ -204,7 +207,7 @@ Perhatikan juga bahwa <code>WriteLn</code> bisa menerima beberapa nilai sekaligu
 dulu, lalu hasilnya, <code>5</code>, yang ditulis.</p>
 
 <div class="tp7"><p>Buku ini memakai aturan Turbo Pascal 7 (mode <code>[TP]</code> di baris status). Semua program contoh
-dikompilasi dan diuji dengan kompiler Odin dan juga dengan Free Pascal dalam mode TP, dan memberi keluaran yang sama.</p></div>
+dikompilasi dan dijalankan dengan kompiler Odin, dan keluarannya diperiksa oleh tes otomatis.</p></div>
 
 <h2>Menyimpan Program Sendiri</h2>
 

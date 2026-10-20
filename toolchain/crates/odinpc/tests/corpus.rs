@@ -2,11 +2,14 @@
 // Copyright (c) 2026 Syams Ideris
 //! Differential corpus: every `tests/pascal/<dir>/NAME.PAS` that has a
 //! `NAME.out` is compiled with `odinpc`, run with `NAME.in` and `NAME.args`,
-//! and its standard output and exit status compared with the expectations
-//! that `scripts/oracle.py` produced with FPC (`NAME.out`, `NAME.code`).
+//! and its standard output and exit status compared with the stored
+//! expectations (`NAME.out`, `NAME.code`). Up to 2.3.0 they were made with
+//! Free Pascal 3.2.2 (`fpc -Mtp`) as reference, apart from the cases in
+//! `tests/pascal/DEVIATIONS.md`; new programs get theirs from
+//! `scripts/bless_corpus.py`, reviewed before they are committed.
 //!
 //! Every program runs twice: built normally and built with `--debug` (with
-//! debugger hooks, but no debugger attached). Both must match FPC.
+//! debugger hooks, but no debugger attached). Both must match.
 //!
 //! `ODIN_CORPUS=crt` limits the run to programs whose path relative to
 //! `tests/pascal` contains `crt` (case-insensitive).
@@ -50,7 +53,7 @@ fn host_target() -> String {
 }
 
 #[test]
-fn pascal_corpus_matches_fpc() {
+fn pascal_corpus_matches_expectations() {
     let root = repo();
     let odinpc = env!("CARGO_BIN_EXE_odinpc");
     let target = std::env::var("ODIN_CORPUS_TARGET").unwrap_or_else(|_| host_target());
@@ -131,8 +134,8 @@ fn pascal_corpus_matches_fpc() {
         child.stdin.take().unwrap().write_all(&input).unwrap();
         let run = child.wait_with_output().unwrap();
         // A program whose behaviour is rightly different on one OS (DOS attributes, paths, CR LF
-        // text files) has expectations of its own there: NAME.<os>.out / NAME.<os>.code, made by
-        // scripts/oracle.py --os with FPC on that OS.
+        // text files) has expectations of its own there: NAME.<os>.out / NAME.<os>.code, made on
+        // that OS.
         let os = target.rsplit('-').next().unwrap_or("");
         let expected = |ext: &str| {
             let own = src.with_extension(format!("{os}.{ext}"));
@@ -144,7 +147,7 @@ fn pascal_corpus_matches_fpc() {
         let code = run.status.code().unwrap_or(-1);
         let mut got_out = run.stdout.clone();
         if target.ends_with("windows") {
-            // WriteLn ends lines with CR LF on Windows; the expectations come from FPC on Unix.
+            // WriteLn ends lines with CR LF on Windows; the shared expectations have LF.
             got_out = String::from_utf8_lossy(&got_out).replace("\r\n", "\n").into_bytes();
             want_out = String::from_utf8_lossy(&want_out).replace("\r\n", "\n").into_bytes();
         }

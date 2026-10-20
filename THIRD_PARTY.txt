@@ -35,15 +35,29 @@ LLVM-exception. Source and full texts: https://github.com/rust-lang/rust
 
 Odin's own toolchain (toolchain/) uses no third-party crates.
 
-The following components are dependencies installed separately, not bundled:
+The Windows setup (OdinTurboPascal-VERSION-Setup-x64.exe) bundles, unmodified, the Python
+runtime from python.org's installer (Python Software Foundation License, https://www.python.org/,
+which includes Tcl/Tk under the Tcl/Tk license, https://www.tcl.tk/software/tcltk/license.html),
+The Linux installer (OdinTurboPascal-VERSION-linux-ARCH.run) bundles, unmodified and stripped,
+CPython from python-build-standalone (https://github.com/astral-sh/python-build-standalone;
+Python Software Foundation License, with Tcl/Tk and the other libraries under their own
+licenses, listed in the python/licenses folder of the bundled runtime where present).
+
+The macOS installer (OdinTurboPascal-VERSION-macos-ARCH.pkg) bundles the same CPython runtime
+(python-build-standalone, macOS build, with Tcl/Tk) inside the application bundle.
+
+The Windows setup is built with Inno Setup (Jordan Russell and Martijn Laan; Inno Setup license,
+https://jrsoftware.org/files/is/license.txt).
+
+The following components are dependencies installed separately, not bundled (macOS and the
+script installer; the Windows setup carries its own Python):
 Python: Python Software Foundation License, https://www.python.org/
 Tcl/Tk: Tcl/Tk license, https://www.tcl.tk/software/tcltk/license.html
-Free Pascal compiler: GPL and runtime licensing as distributed by the FPC
-project, https://www.freepascal.org/. Consult its runtime exception when
-redistributing compiled programs.
-Xcode Command Line Tools (linker and SDK for the Free Pascal backend):
-obtained from Apple separately. Odin no longer uses LLDB.
 Homebrew: https://brew.sh/, its own license and formula licenses apply.
+winget: Microsoft's package manager, its own license and package licenses apply.
+
+Odin no longer uses Free Pascal, Xcode Command Line Tools, or LLDB, which
+earlier releases needed (Free Pascal as alternative backend up to 2.3.0).
 
 Menus and workflow refer to familiar Pascal IDE conventions. Odin is an
 independent application, not an official Borland product or a licensed

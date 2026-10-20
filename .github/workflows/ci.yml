@@ -46,38 +46,32 @@ jobs:
           rustup default stable
           rustc --version
 
-      - name: Python, Tk and Free Pascal (macOS)
+      # odinpc is the only compiler: no Free Pascal is installed.
+      - name: Python and Tk (macOS)
         if: runner.os == 'macOS'
         run: |
           # The Intel image ships python.org's 3.13 in /usr/local/bin, so
           # `brew link` fails after a good install; the keg path below does
           # not need the link, and the next step proves Python + Tk work.
-          brew install python-tk@3.13 fpc || brew list python-tk@3.13 fpc
+          brew install python-tk@3.13 || brew list python-tk@3.13
           echo "PYTHON=$(brew --prefix python@3.13)/bin/python3.13" >> "$GITHUB_ENV"
 
-      - name: Python, Tk and Free Pascal (Linux)
+      - name: Python and Tk (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends python3-tk xvfb xauth fpc
+          sudo apt-get install -y --no-install-recommends python3-tk xvfb xauth
           echo "PYTHON=python3" >> "$GITHUB_ENV"
 
-      - name: Python and Free Pascal (Windows)
+      - name: Python (Windows)
         if: runner.os == 'Windows'
-        run: |
-          choco install freepascal -y --no-progress
-          # The Chocolatey package is the 32-bit compiler, without fpc.cfg (the IDE
-          # adds the unit folders itself then).
-          echo "C:/tools/freepascal/bin/i386-win32" >> "$GITHUB_PATH"
-          echo "PYTHON=python" >> "$GITHUB_ENV"
+        run: echo "PYTHON=python" >> "$GITHUB_ENV"
 
       - name: Versions
         run: |
           "$PYTHON" -c "import sys, tkinter; print(sys.version); print('Tk', tkinter.TkVersion)"
-          fpc -iV || echo "fpc tidak ditemukan"
-          if [ "$RUNNER_OS" = Windows ]; then
-            ls C:/tools/freepascal/bin C:/tools/freepascal/units || true
-          fi
+          # Odin needs no Free Pascal; say so when the runner image has one anyway.
+          if command -v fpc >/dev/null; then echo "catatan: image runner membawa fpc, tidak dipakai"; fi
 
       - name: Build odinpc
         working-directory: toolchain
@@ -96,18 +90,91 @@ jobs:
       - name: Rust tests
         working-directory: toolchain
         run: |
-          # On Windows the corpus runs on drive C:, like the FPC expectations
+          # On Windows the corpus runs on drive C:, like the stored expectations
           # (FExpand puts the current drive into paths).
           if [ "$RUNNER_OS" = Windows ]; then export ODIN_CORPUS_TMP="$TEMP/odin-corpus"; fi
           cargo test --workspace
+
+      # The installer gates: odinpc compiles and runs a native program.
+      - name: macOS installer check
+        if: runner.os == 'macOS'
+        run: |
+          "$PYTHON" scripts/check_mac.py
 
       # The installer gate (Install.ps1) and the install folder it stages.
       - name: Windows installer check
         if: runner.os == 'Windows'
         run: |
-          "$PYTHON" scripts/check_windows.py "$(cygpath -w "$(command -v fpc)")"
+          "$PYTHON" scripts/check_windows.py
           "$PYTHON" scripts/stage_windows.py "$RUNNER_TEMP/odin-install"
           test -f "$RUNNER_TEMP/odin-install/toolchain/odinpc.exe"
+
+      # The single-file offline setup (Inno Setup): app + odinpc.exe + a private Python with Tk.
+      - name: Windows setup (Inno Setup)
+        if: runner.os == 'Windows'
+        run: |
+          choco install innosetup -y --no-progress
+          "$PYTHON" scripts/build_setup_windows.py --out "$RUNNER_TEMP/dist"
+          setup=$(ls "$RUNNER_TEMP"/dist/OdinTurboPascal-*-Setup-x64.exe)
+          # Silent install in a clean folder, then the files and the private Python are checked.
+          "$setup" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CURRENTUSER /TASKS= "/DIR=$(cygpath -w "$RUNNER_TEMP/odin-setup-app")" "/LOG=$(cygpath -w "$RUNNER_TEMP/setup.log")"
+          app="$RUNNER_TEMP/odin-setup-app"
+          cat "$RUNNER_TEMP/setup.log" | tail -5
+          for f in python/pythonw.exe toolchain/odinpc.exe OdinTurboPascal.pyw odin.ico odin/app.py; do test -f "$app/$f"; done
+          test ! -f "$app/check-failed.log"
+          "$app/python/python.exe" -E -c "import tkinter, sys; print(sys.version)"
+          "$app/python/python.exe" -E -X utf8 "$app/scripts/check_windows.py"
+          "$app/unins000.exe" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+          sleep 3
+          test ! -e "$app/odin"
+
+      - name: Upload Windows setup
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: odin-setup-windows-x86_64
+          path: ${{ runner.temp }}/dist/OdinTurboPascal-*-Setup-x64.exe
+          if-no-files-found: error
+
+      # The single-file offline installer: private Python with Tk + odinpc + the app.
+      - name: Linux setup (.run)
+        if: runner.os == 'Linux'
+        run: |
+          "$PYTHON" scripts/build_setup_linux.py --out "$RUNNER_TEMP/dist"
+          run=$(ls "$RUNNER_TEMP"/dist/OdinTurboPascal-*-linux-*.run)
+          # Installed with the network cut (a new network namespace), then checked and removed.
+          sudo unshare -n setpriv --reuid="$(id -u)" --regid="$(id -g)" --init-groups env HOME="$HOME" \
+            sh "$run" --prefix "$RUNNER_TEMP/odin-app" --no-menu
+          "$RUNNER_TEMP/odin-app/python/bin/python3" -I "$RUNNER_TEMP/odin-app/scripts/check_linux.py"
+          sh "$run" --prefix "$RUNNER_TEMP/odin-app" --no-menu --uninstall
+          test ! -e "$RUNNER_TEMP/odin-app"
+
+      - name: Upload Linux setup
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v7
+        with:
+          name: odin-setup-linux-${{ runner.arch }}
+          path: ${{ runner.temp }}/dist/OdinTurboPascal-*-linux-*.run
+          if-no-files-found: error
+
+      # The single-file offline installer (.pkg): app + private Python with Tk + odinpc.
+      - name: macOS setup (.pkg)
+        if: runner.os == 'macOS'
+        run: |
+          "$PYTHON" scripts/build_setup_mac.py --out "$RUNNER_TEMP/dist"
+          pkg=$(ls "$RUNNER_TEMP"/dist/OdinTurboPascal-*-macos-*.pkg)
+          installer -pkg "$pkg" -target CurrentUserHomeDirectory -verbose
+          app="$HOME/Applications/Odin Turbo Pascal.app"
+          test -x "$app/Contents/Resources/python/bin/python3"
+          "$app/Contents/Resources/python/bin/python3" -E -I "$app/Contents/Resources/scripts/check_mac.py" "$app"
+
+      - name: Upload macOS setup
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v7
+        with:
+          name: odin-setup-macos-${{ runner.arch }}
+          path: ${{ runner.temp }}/dist/OdinTurboPascal-*-macos-*.pkg
+          if-no-files-found: error
 
       - name: Python tests
         run: |
