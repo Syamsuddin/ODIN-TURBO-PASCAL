@@ -16,13 +16,13 @@ from pathlib import Path
 
 from odin import __version__, __version_tag__
 from odin import core
-from odin.core import (Document, Settings, build, data_dir, executable_name, free_vision_dir, join_command, locate_compiler,
-                       locate_toolchain, lock_instance, odin_supported, parse_diagnostics, split_arguments, syntax_spans,
-                       unlock_instance)
+from odin.core import (Document, Settings, build, data_dir, executable_name, join_command, locate_toolchain, lock_instance,
+                       odin_supported, split_arguments, syntax_spans, unlock_instance)
 from odin.terminal import ALT_MASKS, KEYS, Process, Screen, color_256, modified_key, mouse_report
 
 ROOT=Path(__file__).resolve().parent.parent
-FPC=locate_compiler(os.environ.get("ODIN_FPC",""))
+HAS_ODIN=bool(locate_toolchain() and odin_supported())
+NEEDS_ODIN="Needs odinpc (cargo build in toolchain/) on a host it supports (core.ODIN_HOSTS)"
 # The IDE's default page, which carries the release tag.
 FIRST_EXAMPLE="bab01_01_halo_dunia.pas"
 
@@ -121,6 +121,11 @@ EXAMPLE_RUNS={
 
 
 class VersionTests(unittest.TestCase):
+    def test_help_html_is_current(self):
+        # docs/help.html is generated from docs/*.txt and the version; a stale copy fails here.
+        result=subprocess.run([sys.executable,str(ROOT/"scripts"/"build_help.py"),"--check"],capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stdout+"\nJalankan python3 scripts/build_help.py")
+
     def test_first_example_carries_release_tag(self):
         # scripts/package_app.py restamps this comment on every build; a stale tag fails here.
         self.assertEqual(__version_tag__,f"v{__version__}")
@@ -188,20 +193,13 @@ class DocumentTests(unittest.TestCase):
     def test_settings_invalid_input_is_recoverable(self):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)/"settings.json"
-            p.write_text('{"font_size":999,"tab_width":0,"syntax":false,"syntax_colors":"wrong","mode":"unsafe","backend":"gcc"}')
+            p.write_text('{"font_size":999,"tab_width":0,"syntax":false,"syntax_colors":"wrong","mode":"objfpc","backend":"fpc","compiler":"/usr/local/bin/fpc"}')
             s=Settings(p)
-            self.assertEqual(s["backend"],"odin")
+            # Settings of the removed Free Pascal backend are ignored.
+            for key in ("mode","backend","compiler"):self.assertNotIn(key,s.values)
             self.assertEqual(s["font_size"],30)
             self.assertEqual(s["tab_width"],1)
             self.assertTrue(s["syntax_colors"])   # the old "syntax" key no longer turns colors off
-            self.assertEqual(s["mode"],"tp")
-
-    def test_diagnostic_path_with_parentheses(self):
-        text="/tmp/my (Pascal)/oops.pas(7,12) Fatal: Syntax error\nfoo.pas(2,1) Warning: Unused"
-        diagnostics=parse_diagnostics(text)
-        self.assertEqual(diagnostics[0].file,"/tmp/my (Pascal)/oops.pas")
-        self.assertEqual((diagnostics[0].line,diagnostics[0].column),(7,12))
-        self.assertEqual(len(diagnostics),2)
 
     def test_lexer_comments_and_escaped_quote(self):
         text="begin { end } WriteLn('it''s a string'); end."
@@ -259,7 +257,7 @@ class TerminalTests(unittest.TestCase):
         self.assertTrue(s.text().startswith("aX"))
 
     def test_g1_charset_shift_and_line_drawing(self):
-        # Free Vision: G1 = DEC graphics, SO/SI switch; ESC ) 0 alone must not alter text.
+        # Turbo Vision programs: G1 = DEC graphics, SO/SI switch; ESC ) 0 alone must not alter text.
         s=Screen(12,2)
         s.feed("\x1b%@\x1b(B\x1b)0File \x0elqk\x0f x\r\n\x1b(0aq\x1b(Bq")
         self.assertEqual(s.text(),"File ┌─┐ x  \n▒─q         ")
@@ -367,11 +365,11 @@ class PlatformTests(unittest.TestCase):
             self.assertEqual(executable_name("HELLO"),"HELLO.exe")
             # Backslashes are path separators on Windows; quotes still group words.
             self.assertEqual(split_arguments(r'C:\Pascal\data.txt "two words" 3'),[r"C:\Pascal\data.txt","two words","3"])
-            self.assertEqual(join_command([r"C:\FPC\fpc.exe",r"-oC:\my dir\a.exe"]),r'C:\FPC\fpc.exe "-oC:\my dir\a.exe"')
+            self.assertEqual(join_command([r"C:\Odin\odinpc.exe",r"C:\my dir\a.pas"]),r'C:\Odin\odinpc.exe "C:\my dir\a.pas"')
         with patch.object(core.sys,"platform","darwin"):
             self.assertEqual(executable_name("HELLO"),"HELLO")
             self.assertEqual(split_arguments("\"hello world\" '$(no shell)' a\\ b"),["hello world","$(no shell)","a b"])
-            self.assertEqual(join_command(["fpc","my file.pas"]),"fpc 'my file.pas'")
+            self.assertEqual(join_command(["odinpc","my file.pas"]),"odinpc 'my file.pas'")
 
     def test_single_instance_lock(self):
         path=self.root/"instance.lock"
@@ -392,81 +390,48 @@ class PlatformTests(unittest.TestCase):
         path.chmod(0o755)
         return path
 
-    def test_locate_compiler_in_windows_install_folders(self):
-        drive=self.root/"drive"
-        self.fake_file(drive/"FPC"/"3.2.0"/"bin"/"x86_64-win64"/"fpc.exe")
-        self.fake_file(drive/"FPC"/"3.2.2"/"bin"/"i386-win32"/"fpc.exe")
-        native=self.fake_file(drive/"FPC"/"3.2.2"/"bin"/"x86_64-win64"/"fpc.exe")
-        choco=self.fake_file(self.root/"tools"/"freepascal"/"bin"/"x86_64-win64"/"fpc.exe")
-        with patch.object(core.sys,"platform","win32"),patch("odin.core.shutil.which",return_value=None),\
-             patch.dict(os.environ,{"SystemDrive":str(drive),"ChocolateyToolsLocation":str(self.root/"tools")}):
-            # Newest version first, a 64-bit compiler before a 32-bit one.
-            self.assertEqual(locate_compiler(),str(native))
-            shutil.rmtree(drive/"FPC")
-            self.assertEqual(locate_compiler(),str(choco))
-            self.assertEqual(locate_compiler(str(native.parent)),str(choco))
-
-    @unittest.skipUnless(os.name=="posix","the fake compiler is a shell script")
-    def test_free_vision_dir_in_windows_layout(self):
-        fpc=self.fake_file(self.root/"FPC"/"3.2.2"/"bin"/"x86_64-win64"/"fpc","#!/bin/sh\necho 3.2.2 x86_64 win64\n")
-        units=self.root/"FPC"/"3.2.2"/"units"/"x86_64-win64"/"fv"
-        units.mkdir(parents=True)
-        free_vision_dir.cache_clear()
-        with patch.object(core.sys,"platform","win32"):
-            self.assertEqual(free_vision_dir(str(fpc)),str(units))
-        free_vision_dir.cache_clear()
-
-    def test_windows_fpc_build_command(self):
+    def test_windows_build_command(self):
         source=self.root/"hello.pas"
         source.write_text("program Hello;\nbegin\nend.\n")
         settings=Settings(self.root/"settings.json")
-        settings["backend"]="fpc"
+        toolchain=self.fake_file(self.root/"toolchain"/"odinpc.exe")
         commands=[]
         def run(command,**options):
             commands.append((command,options))
-            return subprocess.CompletedProcess(command,0,stdout="" if options.get("text") else b"")
-        free_vision_dir.cache_clear()
-        with patch.object(core.sys,"platform","win32"),patch("odin.core.locate_compiler",return_value=r"C:\FPC\fpc.exe"),\
-             patch("odin.core.subprocess.run",side_effect=run):
+            return subprocess.CompletedProcess(command,0,stdout=b"",stderr=b"")
+        with patch.object(core.sys,"platform","win32"),patch("odin.core.locate_toolchain",return_value=str(toolchain)),\
+             patch("odin.core.odin_supported",return_value=True),patch("odin.core.subprocess.run",side_effect=run):
             r=build(source,settings,cache=self.root/"build")
-        free_vision_dir.cache_clear()
         command=r.command
-        output=[a for a in command if a.startswith("-o")][0]
-        self.assertTrue(output.endswith("hello.exe"),output)
-        # No macOS-only flags: no -P (CPU) and no -XR (SDK).
-        self.assertFalse([a for a in command if a.startswith(("-P","-XR"))])
+        self.assertEqual(command[:3],[str(toolchain),"build",str(source.resolve())])
+        self.assertTrue(command[command.index("--out")+1].endswith("hello.exe"))
         self.assertEqual(commands[-1][0],command)
         self.assertEqual(commands[-1][1].get("creationflags"),0x08000000 if os.name=="nt" else None)
-        with patch.object(core.sys,"platform","win32"),patch("odin.core.locate_compiler",return_value=None):
+        with patch.object(core.sys,"platform","win32"),patch("odin.core.locate_toolchain",return_value=None):
             r=build(source,settings,cache=self.root/"build")
+        self.assertFalse(r.success)
         self.assertIn("Install.ps1",r.output)
 
+    def test_unsupported_host_is_reported(self):
+        source=self.root/"hello.pas"
+        source.write_text("program Hello;\nbegin\nend.\n")
+        toolchain=self.fake_file(self.root/"toolchain"/"odinpc")
+        with patch("odin.core.locate_toolchain",return_value=str(toolchain)),patch("odin.core.odin_supported",return_value=False),\
+             patch("odin.core.subprocess.run") as run:
+            r=build(source,Settings(self.root/"settings.json"),cache=self.root/"build")
+        run.assert_not_called()
+        self.assertFalse(r.success)
+        self.assertIn("belum bisa membuat program",r.output)
 
-@unittest.skipUnless(FPC,"Free Pascal is not installed")
-@unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc (cargo build in toolchain/) on a host it supports (core.ODIN_HOSTS)")
+
+@unittest.skipUnless(HAS_ODIN,NEEDS_ODIN)
 class OdinBackendTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory(prefix="odin backend ")
         self.root=Path(self.temp.name)
         self.settings=Settings(self.root/"settings.json")
-        self.settings["backend"]="odin"
 
     def tearDown(self):self.temp.cleanup()
-
-    def test_default_backend_is_odin_and_falls_back_to_fpc(self):
-        self.assertEqual(Settings(self.root/"fresh.json")["backend"],"odin")
-        source=self.root/"hello.pas"
-        source.write_text("program Hello;\nbegin\n  WriteLn('hi');\nend.\n")
-        self.settings["compiler"]=FPC
-        with patch("odin.core.locate_toolchain",return_value=None):
-            r=build(source,self.settings,cache=self.root/"build")
-        self.assertTrue(r.success,r.output)
-        self.assertIn("memakai Free Pascal",r.output)
-        self.assertNotEqual(r.command[1],"build")
-        with patch("odin.core.odin_supported",return_value=False):
-            r=build(source,self.settings,cache=self.root/"build")
-        self.assertTrue(r.success,r.output)
-        self.assertIn("belum mendukung",r.output)
 
     def test_diagnostics_come_back_as_objects(self):
         r=build(ROOT/"tests"/"pascal"/"errors"/"SEMI_STMT.PAS",self.settings,cache=self.root/"build")
@@ -479,13 +444,12 @@ class OdinBackendTests(unittest.TestCase):
         self.assertIn("SEMI_STMT.PAS(5,3) Error 85",r.output)
 
 
+@unittest.skipUnless(HAS_ODIN,NEEDS_ODIN)
 class CompilerTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory(prefix="odin tests ")
         self.root=Path(self.temp.name)
         self.settings=Settings(self.root/"settings.json")
-        self.settings["compiler"]=FPC
-        self.settings["backend"]="fpc"
 
     def tearDown(self):self.temp.cleanup()
 
@@ -576,7 +540,7 @@ class CompilerTests(unittest.TestCase):
             if k=="output":
                 output+=v
                 screen.feed(v)
-                # Answer cursor-position requests as TerminalView does (FPC's Crt asks for WhereX).
+                # Answer cursor-position requests as TerminalView does (Crt asks for WhereX).
                 while screen.replies:p.write(screen.replies.pop(0))
                 if steps and steps[0][0] in output+screen.text():
                     grids.append([row[:] for row in screen.grid])
@@ -617,18 +581,6 @@ class CompilerTests(unittest.TestCase):
         self.assertEqual(grids[1][12][30][2],6)
         self.assertIn("Terima kasih telah memakai menu.",screen.text())
 
-    def test_standard_units_and_turbo_vision(self):
-        source=self.root/"units.pas"
-        source.write_text("program Units;\nuses Crt, Dos, Strings, Printer, Objects;\nbegin\n  WriteLn(StrLen('abc'));\nend.\n")
-        r=build(source,self.settings,cache=self.root/"build")
-        self.assertTrue(r.success,r.output)
-        if not any(flag.startswith("-Fu") and flag.endswith("fv") for flag in r.command):
-            self.skipTest("Free Vision units are not installed")
-        source=self.root/"tv.pas"
-        source.write_text("program TV;\nuses Objects, Drivers, Views, Menus, Dialogs, App, MsgBox, StdDlg;\nvar A: TApplication;\nbegin\n  A.Init;\n  A.Done;\nend.\n")
-        r=build(source,self.settings,cache=self.root/"build")
-        self.assertTrue(r.success,r.output)
-
     def test_crt_function_keys(self):
         names=["F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","Insert","Up"]
         source=self.root/"keys.pas"
@@ -661,16 +613,6 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("59 60 61 62 63 64 65 66 67 68 133 134 82 72 DONE",screen.text())
 
 
-
-@unittest.skipUnless(locate_toolchain() and odin_supported(), "Needs odinpc (cargo build in toolchain/) on a host it supports (core.ODIN_HOSTS)")
-class OdinCompilerTests(CompilerTests):
-    """The same compiler tests with the Odin toolchain as backend."""
-    __unittest_skip__=False
-
-    def setUp(self):
-        super().setUp()
-        self.settings["backend"]="odin"
-
     def test_standard_units_and_turbo_vision(self):
         source=self.root/"units.pas"
         source.write_text("program Units;\nuses Crt, Dos, Strings, Printer, Objects;\nvar C: TStringCollection;\n"
@@ -690,11 +632,12 @@ class OdinCompilerTests(CompilerTests):
         result=subprocess.run([str(r.executable)],capture_output=True,text=True,timeout=5,cwd=self.root)
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertIn("TV ok",result.stdout)
-        # The optional units are not there yet: the error says so.
-        source.write_text("program TV;\nuses ColorSel;\nbegin\nend.\n")
+        # ColorSel and TextView, the last Turbo Vision units, are Odin's own too.
+        source.write_text("program TV;\nuses Objects, Views, Dialogs, App, ColorSel, TextView;\nbegin\n  WriteLn('TV2 ok');\nend.\n")
         r=build(source,self.settings,cache=self.root/"build")
-        self.assertFalse(r.success)
-        self.assertIn("belum ada di Odin Vision",r.output)
+        self.assertTrue(r.success,r.output)
+        result=subprocess.run([str(r.executable)],capture_output=True,text=True,timeout=5,cwd=self.root)
+        self.assertIn("TV2 ok",result.stdout)
 
     def screen_after_run(self,executable):
         """Runs a Crt program on a PTY until it waits in ReadKey, presses a key, returns the screen."""
@@ -712,7 +655,7 @@ class OdinCompilerTests(CompilerTests):
                 continue
             if k=="output":
                 screen.feed(v)
-                # Answer cursor-position requests as TerminalView does (FPC's Crt on Linux asks).
+                # Answer cursor-position requests as TerminalView does (Crt asks for WhereX).
                 while screen.replies:p.write(screen.replies.pop(0))
             elif k=="exit":
                 self.assertEqual(v,0)
@@ -720,24 +663,30 @@ class OdinCompilerTests(CompilerTests):
         p.stop()
         self.fail("Crt program did not finish")
 
-    @unittest.skipUnless(FPC,"Free Pascal is not installed")
-    def test_crt_screen_matches_fpc(self):
-        source=ROOT/"tests"/"pascal"/"crt"/"CRT_WINDOW.PAS"
-        screens=[]
-        for backend in ("fpc","odin"):
-            self.settings["backend"]=backend
-            r=build(source,self.settings,cache=self.root/f"build-{backend}")
-            self.assertTrue(r.success,r.output)
-            screens.append(self.screen_after_run(r.executable))
-        fpc,odin=screens
-        self.assertIn("full width",odin.text())
-        for y in range(fpc.rows):
-            for x in range(fpc.cols):
-                a,b=fpc.grid[y][x],odin.grid[y][x]
+    def test_crt_screen_matches_snapshot(self):
+        # CRT_WINDOW.snap: Window, scrolling, InsLine/DelLine and colors cell by cell (text rows, then fg/bg
+        # hex digits per cell). It was checked against Free Pascal 3.2.2 before that backend was removed;
+        # ODIN_BLESS=1 rewrites it after a reviewed change.
+        r=build(ROOT/"tests"/"pascal"/"crt"/"CRT_WINDOW.PAS",self.settings,cache=self.root/"build")
+        self.assertTrue(r.success,r.output)
+        screen=self.screen_after_run(r.executable)
+        lines=["|"+"".join(c[0] for c in row)+"|" for row in screen.grid]
+        lines+=["".join(f"{c[1]:x}{c[2]:x}" for c in row) for row in screen.grid]
+        lines.append(f"cursor {screen.x} {screen.y}")
+        path=ROOT/"tests"/"pascal"/"crt"/"CRT_WINDOW.snap"
+        if os.environ.get("ODIN_BLESS")=="1":
+            path.write_text("\n".join(lines)+"\n",encoding="utf-8")
+        want=path.read_text(encoding="utf-8").splitlines()
+        self.assertIn("full width",screen.text())
+        rows=screen.rows
+        for y in range(rows):
+            for x in range(screen.cols):
+                a=(want[y][x+1],want[rows+y][2*x],want[rows+y][2*x+1])
+                b=(lines[y][x+1],lines[rows+y][2*x],lines[rows+y][2*x+1])
                 # The foreground of a blank cell cannot be seen.
                 same=a[0]==b[0] and a[2]==b[2] and (a[0]==" " or a[1]==b[1])
-                self.assertTrue(same,f"cell {x+1},{y+1}: FPC {a} Odin {b}")
-        self.assertEqual((fpc.x,fpc.y),(odin.x,odin.y))
+                self.assertTrue(same,f"cell {x+1},{y+1}: snapshot {a} Odin {b}")
+        self.assertEqual(lines[-1],want[-1])
 
 
 if __name__=="__main__":unittest.main()

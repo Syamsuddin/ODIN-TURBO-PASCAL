@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2026 Syams Ideris
-"""Installer gate on Windows: compile with the real Free Pascal, check the PE executable, run it.
-When the package carries odinpc.exe (toolchain/odinpc.exe), the same check runs with the Odin
-backend too.
+"""Installer gate on Windows: compile with the package's odinpc.exe (toolchain/odinpc.exe),
+check the PE executable, run it.
 
-    python scripts/check_windows.py C:\\FPC\\3.2.2\\bin\\x86_64-win64\\fpc.exe
+    python scripts/check_windows.py
 """
 import struct
 import subprocess
@@ -31,37 +30,31 @@ def pe_machine(path):
     return MACHINES.get(struct.unpack("<H", data[offset + 4:offset + 6])[0], "unknown")
 
 
-def check(compiler, backend):
+def check():
     with tempfile.TemporaryDirectory(prefix="odin-check-") as directory:
         root = Path(directory)
         source = root / "check.pas"
         source.write_text("program check; begin WriteLn('ODIN_NATIVE_OK'); end.\n")
-        settings = Settings(root / "settings.json")
-        settings["compiler"] = compiler
-        settings["backend"] = backend
-        result = build(source, settings, cache=root / "build")
-        name = "Free Pascal" if backend == "fpc" else "toolchain Odin (odinpc.exe)"
+        result = build(source, Settings(root / "settings.json"), cache=root / "build")
         if not result.success or not result.executable:
             print(result.output)
-            raise SystemExit(f"Kompilasi dengan {name} gagal. Pastikan {name} terpasang dengan benar.")
+            raise SystemExit("Kompilasi dengan odinpc.exe gagal.")
         machine = pe_machine(result.executable)
-        if machine not in ("x86_64", "i386"):
-            raise SystemExit(f"{name} tidak menghasilkan program Windows x86: {machine}")
+        if machine != "x86_64":
+            raise SystemExit(f"odinpc.exe tidak menghasilkan program Windows x86_64: {machine}")
         output = subprocess.run([str(result.executable)], capture_output=True, text=True, timeout=10, **NO_WINDOW).stdout
         if output.strip() != "ODIN_NATIVE_OK":
-            raise SystemExit(f"Program pemeriksaan dari {name} tidak menghasilkan keluaran yang benar.")
-        print(f"OK: {name}: compile + run native {machine}")
+            raise SystemExit("Program pemeriksaan tidak menghasilkan keluaran yang benar.")
+        print(f"OK: odinpc.exe: compile + run native {machine}")
 
 
-def main(compiler):
+def main():
     if sys.platform != "win32":
         raise SystemExit("Pemeriksaan ini harus dijalankan di Windows.")
-    check(compiler, "fpc")
-    if locate_toolchain():
-        check(compiler, "odin")
+    if not locate_toolchain():
+        raise SystemExit("Compiler Odin (toolchain\\odinpc.exe) tidak ditemukan di paket ini.")
+    check()
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        raise SystemExit("Pemakaian: python scripts/check_windows.py PATH_FPC")
-    main(sys.argv[1])
+    main()

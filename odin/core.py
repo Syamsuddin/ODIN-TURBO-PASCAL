@@ -1,17 +1,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2026 Syams Ideris
-"""Document, settings, diagnostics and native Free Pascal build services."""
+"""Document, settings, diagnostics and native build services (the Odin toolchain, odinpc)."""
 from __future__ import annotations
 
 import bisect
-import functools
 import hashlib
 import json
 import os
 import platform
 import re
 import shlex
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -142,7 +140,11 @@ class Document:
     @classmethod
     def read(cls, path: Path) -> "Document":
         path = path.expanduser().resolve()
-        raw = path.read_bytes()
+        return cls.from_bytes(path.read_bytes(), path)
+
+    @classmethod
+    def from_bytes(cls, raw: bytes, path: Path | None = None) -> "Document":
+        """Detects the encoding and newline style of raw file contents (Document.read without the disk)."""
         encoding = "utf-8-sig" if raw.startswith(b"\xef\xbb\xbf") else "utf-8"
         try:
             text = raw.decode(encoding)
@@ -162,11 +164,15 @@ class Document:
             return False
         return not self.path.exists() or hashlib.sha256(self.path.read_bytes()).hexdigest() != self.disk_hash
 
+    def encoded(self) -> bytes:
+        """The text as file contents, in the document's encoding and newline style."""
+        return self.text.replace("\n", self.newline).encode(self.encoding)
+
     def save(self, path: Path | None = None) -> None:
         target = (path or self.path)
         if target is None:
             raise ValueError("File belum diberi nama.")
-        raw = self.text.replace("\n", self.newline).encode(self.encoding)
+        raw = self.encoded()
         atomic_write(target, raw)
         self.path = target.resolve()
         self.saved_text = self.text
@@ -175,12 +181,11 @@ class Document:
 
 # "syntax_colors" replaces the old "syntax" key, which was off by default, so saved settings start with colors on.
 DEFAULTS = {
-    "compiler": "", "mode": "tp", "font_size": 17,
+    "font_size": 17,
     "syntax_colors": True, "tab_width": 2, "range_checks": True,
-    "overflow_checks": True, "debug_info": True,
+    "overflow_checks": True,
     "unit_paths": [], "include_paths": [], "arguments": "",
     "recent": [], "geometry": "1120x740", "main_file": "",
-    "backend": "odin",
 }
 
 
@@ -198,10 +203,6 @@ class Settings:
             pass
         self.values["font_size"] = min(30, max(10, self.values["font_size"]))
         self.values["tab_width"] = min(8, max(1, self.values["tab_width"]))
-        if self.values["mode"] not in ("tp", "objfpc", "delphi"):
-            self.values["mode"] = "tp"
-        if self.values["backend"] not in ("fpc", "odin"):
-            self.values["backend"] = "odin"
 
     def __getitem__(self, key):
         return self.values[key]
@@ -227,79 +228,6 @@ class Diagnostic:
     message: str
 
 
-DIAGNOSTIC = re.compile(r"^(.+?)\((\d+),(\d+)\)\s+(Fatal|Error|Warning|Note|Hint):\s*(.*)$", re.I)
-
-
-def parse_diagnostics(output: str) -> list[Diagnostic]:
-    result = []
-    for line in output.splitlines():
-        match = DIAGNOSTIC.match(line)
-        if match:
-            file, row, col, kind, message = match.groups()
-            result.append(Diagnostic(file, int(row), int(col), kind, message))
-    return result
-
-
-def version_key(path: Path):
-    """Sorts install folders such as FPC/3.2.2 by their version numbers."""
-    return tuple(int(n) for n in re.findall(r"\d+", path.name))
-
-
-def windows_fpc_candidates() -> list[Path]:
-    """fpc.exe in the usual Windows install folders, newest version first: the freepascal.org
-    installer and winget (C:\\FPC\\<version>), Lazarus (C:\\lazarus\\fpc\\<version>) and
-    Chocolatey (C:\\tools\\freepascal). A native 64-bit compiler comes before a 32-bit one."""
-    drive = Path(os.environ.get("SystemDrive", "C:") + os.sep)
-    tools = Path(os.environ.get("ChocolateyToolsLocation") or drive / "tools")
-    roots = []
-    for parent in (drive / "FPC", drive / "lazarus" / "fpc"):
-        try:
-            roots += sorted((p for p in parent.iterdir() if p.is_dir()), key=version_key, reverse=True)
-        except OSError:
-            pass
-    roots.append(tools / "freepascal")
-    return [root / "bin" / target / "fpc.exe" for root in roots for target in ("x86_64-win64", "i386-win32")]
-
-
-def locate_compiler(preferred="") -> str | None:
-    if sys.platform == "win32":
-        candidates = [preferred, shutil.which("fpc"), *windows_fpc_candidates()]
-    else:
-        candidates = [preferred, shutil.which("fpc"), "/opt/homebrew/bin/fpc", "/usr/local/bin/fpc"]
-    for value in candidates:
-        if value and Path(value).is_file() and os.access(value, os.X_OK):
-            return str(Path(value).absolute())
-    return None
-
-
-@functools.lru_cache(maxsize=16)
-def free_vision_dir(compiler: str, cpu: str | None = None) -> str | None:
-    """Turbo Vision (Free Vision) units of this FPC install.
-
-    fpc.cfg adds every units/<target>/* folder; on macOS Apple's univint/Menus.ppu
-    is found before Free Vision's Menus, so `uses App` fails with "Can't find unit".
-    """
-    try:
-        info = subprocess.run([compiler, "-iVTPTO"], capture_output=True, text=True, timeout=10, **NO_WINDOW).stdout.split()
-    except (OSError, subprocess.TimeoutExpired):
-        return None
-    if len(info) != 3:
-        return None
-    version, default_cpu, target_os = info
-    binary = Path(compiler)
-    target = f"{cpu or default_cpu}-{target_os}"
-    if sys.platform == "win32":
-        # <root>\bin\x86_64-win64\fpc.exe next to <root>\units\x86_64-win64\fv.
-        candidates = [b.parent.parent.parent / "units" / target / "fv" for b in (binary, binary.resolve())]
-    else:
-        candidates = [prefix / "lib" / "fpc" / version / "units" / target / "fv"
-                      for prefix in (binary.parent.parent, binary.resolve().parent.parent)]
-    for path in dict.fromkeys(candidates):
-        if path.is_dir():
-            return str(path)
-    return None
-
-
 @dataclass
 class BuildResult:
     success: bool
@@ -308,7 +236,7 @@ class BuildResult:
     diagnostics: list[Diagnostic]
     executable: Path | None
     source: Path
-    # Odin backend: NAME.odbg next to the executable (line table; for debug
+    # NAME.odbg next to the executable (line table; for debug
     # builds also everything the debugger needs).
     debug_info: Path | None = None
     debug: bool = False
@@ -318,7 +246,7 @@ PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 
 
 # Hosts whose native programs odinpc generates (IMPLEMENTATION_PLAN.md, Tahap 8).
-# Elsewhere the IDE builds with Free Pascal.
+# Elsewhere the IDE can edit but not compile.
 ODIN_HOSTS = {("darwin", "x86_64"), ("darwin", "aarch64"), ("linux", "x86_64"), ("linux", "aarch64"),
               ("win32", "x86_64")}
 
@@ -345,12 +273,18 @@ def locate_toolchain() -> str | None:
 SEVERITY = {"fatal": "Fatal", "error": "Error", "warning": "Warning", "note": "Note", "hint": "Hint"}
 
 
-def build_odin(source: Path, settings: Settings, rebuild=False, cache: Path | None = None, debug=False) -> BuildResult:
+def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = None, debug=False, wrap=None) -> BuildResult:
+    """Compiles source with odinpc. debug=True makes a build for the debugger (with debugger hooks).
+    wrap(command) -> command starts odinpc through a wrapper such as a sandbox."""
+    source = source.resolve()
     toolchain = locate_toolchain()
     if not toolchain:
-        return BuildResult(False, [], "Toolchain Odin (odinpc) belum ditemukan. Pilih backend Free Pascal di Options > Compiler.", [], None, source)
+        return BuildResult(False, [], f"Compiler Odin (odinpc) tidak ditemukan. Jalankan {installer_name()} kembali.", [], None, source)
+    if not odin_supported():
+        return BuildResult(False, [], f"odinpc belum bisa membuat program untuk {sys.platform} {platform.machine()}. "
+                           "Yang didukung: macOS dan Linux (x86_64, arm64) serta Windows x86_64.", [], None, source)
     stat = Path(toolchain).stat()
-    options = {k: settings[k] for k in ("unit_paths", "include_paths", "range_checks", "overflow_checks", "debug_info")}
+    options = {k: settings[k] for k in ("unit_paths", "include_paths", "range_checks", "overflow_checks")}
     # Debug builds (with debugger hooks) live apart from Run builds.
     options["debug_build"] = debug
     key = hashlib.sha256((str(source) + json.dumps(options) + f"odin:{toolchain}:{stat.st_mtime_ns}:{stat.st_size}").encode()).hexdigest()[:16]
@@ -372,7 +306,9 @@ def build_odin(source: Path, settings: Settings, rebuild=False, cache: Path | No
             if p:
                 command += [flag, str(Path(p).expanduser().resolve())]
     try:
-        result = subprocess.run(command, cwd=source.parent, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120, **NO_WINDOW)
+        # wrap (a sandbox, for example) changes how odinpc is started, not the command shown to the user.
+        result = subprocess.run(wrap(command) if wrap else command, cwd=source.parent, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, timeout=120, **NO_WINDOW)
     except subprocess.TimeoutExpired:
         return BuildResult(False, command, "Kompilasi melewati batas 120 detik.", [], None, source)
     except OSError as error:
@@ -419,83 +355,8 @@ def runtime_error_location(debug_info: Path, report: str):
     return code, Path(info["files"][file]), line
 
 
-DEBUG_NEEDS_ODIN = "Debugger memerlukan backend Odin. Pilih Odin native di Options > Compiler."
-
-
-def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = None, debug=False) -> BuildResult:
-    """Compiles source. debug=True makes a build for the debugger (Odin backend only)."""
-    source = source.resolve()
-    note = ""
-    if settings["backend"] == "odin":
-        usable = locate_toolchain() and odin_supported()
-        if usable or not locate_compiler(settings["compiler"]):
-            return build_odin(source, settings, rebuild, cache, debug)
-        if debug:
-            return BuildResult(False, [], DEBUG_NEEDS_ODIN, [], None, source)
-        # Without a usable odinpc (a bundle built without it, or a Mac it
-        # cannot generate code for yet) the IDE still works: Free Pascal
-        # compiles, and the output says so.
-        if locate_toolchain():
-            note = f"Backend Odin belum mendukung {platform.machine()}; memakai Free Pascal.\n"
-        else:
-            note = "Toolchain Odin (odinpc) tidak ditemukan; memakai Free Pascal.\n"
-    if debug:
-        return BuildResult(False, [], DEBUG_NEEDS_ODIN, [], None, source)
-    compiler = locate_compiler(settings["compiler"])
-    if not compiler:
-        return BuildResult(False, [], f"Free Pascal belum ditemukan. Jalankan {installer_name()} atau atur Options > Compiler.", [], None, source)
-    # Isolate outputs by source AND compiler settings. Never overwrite user files.
-    key = hashlib.sha256((str(source) + json.dumps({k: settings[k] for k in ("mode", "compiler", "unit_paths", "include_paths", "range_checks", "overflow_checks", "debug_info")})).encode()).hexdigest()[:16]
-    output_dir = (cache or data_dir() / "build") / key
-    output_dir.mkdir(parents=True, exist_ok=True)
-    exe = output_dir / executable_name(source.stem)
-    # A failed rebuild must never launch an older executable.
-    exe.unlink(missing_ok=True)
-    command = [compiler, "-M" + settings["mode"], "-FE" + str(output_dir), "-FU" + str(output_dir), "-o" + str(exe)]
-    if settings["range_checks"]:
-        command.append("-Cr")
-    if settings["overflow_checks"]:
-        command.append("-Co")
-    if settings["debug_info"]:
-        command += ["-gl", "-gw"]
-    if rebuild:
-        command.append("-B")
-    for key, flag in (("unit_paths", "-Fu"), ("include_paths", "-Fi")):
-        command += [flag + str(Path(p).expanduser().resolve()) for p in settings[key] if p]
-    cpu = ("aarch64" if platform.machine() == "arm64" else "x86_64") if sys.platform == "darwin" else None
-    # An FPC install without fpc.cfg next to the compiler (some Windows
-    # packages) knows no unit folders at all: add the RTL's, as fpc.cfg would.
-    if sys.platform == "win32" and not (Path(compiler).parent / "fpc.cfg").is_file():
-        vision_dir = free_vision_dir(compiler)
-        if vision_dir:
-            command.append("-Fu" + str(Path(vision_dir).parent / "*"))
-    # FPC searches -Fu in order: the user's own units still win over Free Vision.
-    vision = free_vision_dir(compiler, cpu)
-    if vision:
-        command.append("-Fu" + vision)
-    if sys.platform == "darwin":
-        command.append("-P" + cpu)
-        try:
-            sdk = subprocess.run(["/usr/bin/xcrun", "--show-sdk-path"], capture_output=True, text=True, timeout=10)
-            if sdk.returncode == 0 and sdk.stdout.strip():
-                command.append("-XR" + sdk.stdout.strip())
-        except (OSError, subprocess.TimeoutExpired):
-            pass
-    command.append(str(source))
-    try:
-        result = subprocess.run(command, cwd=source.parent, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120, **NO_WINDOW)
-        output = result.stdout.decode("utf-8", errors="replace")
-        success = result.returncode == 0
-    except subprocess.TimeoutExpired:
-        output, success = "Kompilasi melewati batas 120 detik.", False
-    except OSError as error:
-        output, success = str(error), False
-    output = note + output
-    return BuildResult(success, command, output, parse_diagnostics(output), exe if success and exe.exists() else None, source)
-
-
 # Word lists for syntax_spans(), lower case because Pascal ignores case. RESERVED is TP7's reserved words and
-# standard directives plus the Object Pascal words FPC reserves in objfpc/delphi mode.
+# standard directives plus a few Object Pascal words, so code from newer dialects still reads well.
 RESERVED = set("""and array asm begin case const constructor destructor div do downto else end exports file for function
 goto if implementation in inherited inline interface label library mod not object of or packed procedure program record
 repeat set shl shr string then to type unit until uses var while with xor absolute assembler external far forward

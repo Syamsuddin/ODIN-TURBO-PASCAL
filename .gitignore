@@ -9,3 +9,5 @@ examples/*.txt
 examples/*.dat
 # Build cache of scripts/build_book.py (compiled programs, recorded runs, draft PDFs).
 book/.cache/
+# Output of scripts/build_setup_windows.py (the Windows setup is attached to the release, not committed).
+dist/

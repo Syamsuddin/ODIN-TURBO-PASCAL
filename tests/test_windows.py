@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 from odin import conpty
-from odin.core import locate_compiler, locate_toolchain
+from odin.core import locate_toolchain
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -140,10 +140,13 @@ class WindowsInstallTests(unittest.TestCase):
                 self.assertTrue(data.startswith(b"# SPDX-License-Identifier: GPL-3.0-or-later\n# Copyright (c) 2026 Syams Ideris\n"))
         install = (ROOT / "Install.ps1").read_text(encoding="ascii")
         for text in ("Dibuat oleh Syams Ideris", "Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris",
-                     "FreePascal.FreePascalCompiler", "scripts\\check_windows.py", "scripts\\stage_windows.py",
+                     "Python.Python.3.13", "scripts\\check_windows.py", "scripts\\stage_windows.py",
                      "python-path", "WScript.Shell", "-X utf8", "OdinTurboPascal.pyw", ".backup-"):
             with self.subTest(text=text):
                 self.assertIn(text, install)
+        # odinpc.exe is the only compiler: the installer never looks for or installs Free Pascal.
+        self.assertNotIn("fpc", install.lower())
+        self.assertNotIn("free pascal", install.lower())
         # cmd.exe wrappers keep CRLF line ends (.gitattributes stops Git from converting them).
         for name in ("Install.cmd", "Uninstall.cmd"):
             with self.subTest(name=name):
@@ -152,14 +155,32 @@ class WindowsInstallTests(unittest.TestCase):
                 self.assertEqual(data.count(b"\n"), data.count(b"\r\n"))
                 self.assertIn(b"-ExecutionPolicy Bypass -File \"%~dp0" + name.replace(".cmd", ".ps1").encode(), data)
 
-    @unittest.skipUnless(sys.platform == "win32" and locate_compiler(), "needs Free Pascal on Windows")
+    def test_inno_setup_script(self):
+        # Pure ASCII (Inno reads it in the ANSI code page) and wired to the staging folder.
+        text = (ROOT / "scripts" / "odin_setup.iss").read_bytes().decode("ascii")
+        for needle in ("PrivilegesRequired=lowest", "{localappdata}\\Programs\\OdinTurboPascal", "MinVersion=10.0.17763",
+                       "{#Staging}", "python\\pythonw.exe", "-E -X utf8", "check_windows.py", "x64os",
+                       "OutputBaseFilename=OdinTurboPascal-{#Version}-Setup-x64"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, text)
+        self.assertNotIn("fpc", text.lower())
+        # AppId is the identity of upgrades: it must stay what the first setup used.
+        self.assertIn("AppId={{8BDFFEC5-4A07-4791-ADB8-2CE29C6E1209}", text)
+
+    def test_setup_builder_pins_python(self):
+        build = load_script("build_setup_windows")
+        self.assertRegex(build.PYTHON_SHA256, r"^[0-9a-f]{64}$")
+        self.assertIn(build.PYTHON_VERSION, build.PYTHON_URL)
+        self.assertTrue(build.PYTHON_URL.startswith("https://www.python.org/"))
+        config = (ROOT / "toolchain" / ".cargo" / "config.toml").read_text()
+        self.assertIn("+crt-static", config)
+
+    @unittest.skipUnless(sys.platform == "win32" and locate_toolchain(), "needs odinpc.exe on Windows")
     def test_installer_compile_gate(self):
-        result = subprocess.run([sys.executable, str(ROOT / "scripts" / "check_windows.py"), locate_compiler()],
+        result = subprocess.run([sys.executable, str(ROOT / "scripts" / "check_windows.py")],
                                 capture_output=True, text=True, timeout=180)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("OK: Free Pascal: compile + run native", result.stdout)
-        if locate_toolchain():
-            self.assertIn("OK: toolchain Odin (odinpc.exe): compile + run native x86_64", result.stdout)
+        self.assertIn("OK: odinpc.exe: compile + run native x86_64", result.stdout)
 
     @unittest.skipUnless(sys.platform == "win32" and shutil.which("powershell"), "needs Windows PowerShell")
     def test_powershell_parses_installer_scripts(self):
@@ -176,6 +197,58 @@ class WindowsInstallTests(unittest.TestCase):
     def test_launcher_compiles(self):
         path = ROOT / "scripts" / "launcher_windows.pyw"
         compile(path.read_text(encoding="utf-8"), str(path), "exec")
+
+
+class LinuxSetupTests(unittest.TestCase):
+    def test_installer_template(self):
+        template = (ROOT / "scripts" / "install_linux.sh.in").read_text()
+        for needle in ("@VERSION@", "@ARCH@", "@SHA256@", '"@OFFSET@"', "__PAYLOAD_BELOW__", "check_linux.py",
+                       "--uninstall", "--prefix", "sha256"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, template)
+        # The offset is padded with spaces: leading zeros would be read as octal by the shell.
+        self.assertNotIn("@OFFSET@\n0", template)
+        sh = shutil.which("sh")
+        if sh:
+            self.assertEqual(subprocess.run([sh, "-n", str(ROOT / "scripts" / "install_linux.sh.in")]).returncode, 0)
+
+    def test_builder_pins_python(self):
+        build = load_script("build_setup_linux")
+        for arch, digest in build.PBS_SHA256.items():
+            self.assertRegex(digest, r"^[0-9a-f]{64}$")
+        self.assertEqual(set(build.PBS_SHA256), {"x86_64", "aarch64"})
+
+    def test_elf_machine(self):
+        check = load_script("check_linux")
+        header = bytearray(64)
+        header[:4] = b"\x7fELF"
+        header[18:20] = struct.pack("<H", 0x3E)
+        path = Path(tempfile.mkdtemp()) / "x"
+        path.write_bytes(bytes(header))
+        self.assertEqual(check.elf_machine(path), "x86_64")
+        path.write_bytes(b"MZ" + bytes(62))
+        self.assertIsNone(check.elf_machine(path))
+        shutil.rmtree(path.parent)
+
+
+class MacSetupTests(unittest.TestCase):
+    def test_builder_pins_python(self):
+        build = load_script("build_setup_mac")
+        self.assertEqual(set(build.PBS_SHA256), {"x86_64", "arm64"})
+        for digest in build.PBS_SHA256.values():
+            self.assertRegex(digest, r"^[0-9a-f]{64}$")
+        # The installer is per user: no administrator password, no location choice.
+        self.assertIn('enable_currentUserHome="true"', build.DISTRIBUTION)
+        self.assertIn('enable_localSystem="false"', build.DISTRIBUTION)
+        self.assertIn("check_mac.py", build.POSTINSTALL)
+
+    def test_launcher_prefers_bundled_python(self):
+        launcher = (ROOT / "scripts" / "launcher.sh").read_text()
+        self.assertIn("Resources/python/bin/python3", launcher)
+        self.assertIn("-E -X utf8", launcher)
+        bash = shutil.which("bash")
+        if bash:
+            self.assertEqual(subprocess.run([bash, "-n", str(ROOT / "scripts" / "launcher.sh")]).returncode, 0)
 
 
 if __name__ == "__main__":

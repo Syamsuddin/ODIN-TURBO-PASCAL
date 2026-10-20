@@ -22,10 +22,10 @@ Catatan sejarah: rencana meminta dokumen ini ditulis sebelum kode. Kenyataannya 
 | `StdDlg` | `TFileDialog`, `TChDirDialog`, `TFileList`, `TDirListBox` | `Objects`, `Drivers`, `Views`, `Dialogs`, `Dos` |
 | `Editors` | `TEditor`, `TMemo`, `TFileEditor`, `TEditWindow`, `TIndicator` | `Objects`, `Drivers`, `Views`, `Dialogs` |
 | `Outline` | `TOutlineViewer`, `TOutline` | `Objects`, `Drivers`, `Views` |
+| `ColorSel` | `TColorDialog`, `TColorSelector`, `TMonoSelector`, `TColorDisplay`, `TColorGroupList`, `TColorItemList` | `Objects`, `Drivers`, `Views`, `Dialogs` |
+| `TextView` | `TTextDevice`, `TTerminal`, `AssignDevice` | `Objects`, `Drivers`, `Views` |
 
 `Validate`, `MsgBox`, `StdDlg`, dan `Editors` saling memakai lewat `uses` di bagian implementation (misalnya `Validate` → `MsgBox` → `App` → `Dialogs` → `Validate`). Seperti TP, compiler hanya melarang siklus di bagian interface.
-
-`ColorSel` dan `TextView` belum ada.
 
 ## 2. Layar (Drivers)
 
@@ -144,6 +144,35 @@ Pesan galat validator, judul `MessageBox`, dan label tombol bawaan berbahasa Ing
 
 Baris yang tampil adalah akar, lalu anak dari setiap simpul yang terbuka, dinomori dari 0. Cabang digambar dengan `├ └ │ ─`, dengan `+` untuk simpul tertutup dan `─` untuk simpul terbuka atau daun. Klik pada gambar cabang membuka atau menutup simpul. `FirstThat`/`ForEach` memanggil fungsi lokal pemanggil dengan lima argumen (simpul, level, posisi, garis, flag) lewat shim `ODIN_CALLLOCAL5`.
 
-## 13. User screen IDE
+## 13. ColorSel
+
+- Perintah (semuanya broadcast ke owner, yaitu dialog): `cmColorForegroundChanged` 71, `cmColorBackgroundChanged` 72, `cmColorSet` 73, `cmNewColorItem` 74, `cmNewColorIndex` 75, `cmSaveColorIndex` 76. Nilai kecil dikirim di `InfoByte`.
+- `TColorItem` berisi nama, indeks palet aplikasi, dan `Next`. `TColorGroup` berisi nama, `Index` (nomor item yang terakhir dipilih di grup itu), daftar item, dan `Next`. Keduanya dibuat dengan `ColorItem` dan `ColorGroup`. `DesktopColorItems`, `MenuColorItems`, `DialogColorItems(dpXxx, Next)`, dan `WindowColorItems(wpXxx, Next)` membuat daftar item standar menurut tata letak palet di bagian 7. Nama itemnya berbahasa Inggris. Daftar dialog berisi 31 entri pertama palet dialog (entri cadangan tidak), dan daftar jendela berisi 7 entri pertama palet jendela.
+- `TColorSelector`: setiap warna selebar 3 kolom, 4 warna per baris. `csForeground` punya 16 warna (4 baris) dan `csBackground` 8 warna (2 baris). Warna digambar sebagai `███` dengan warna itu di atas hitam. Warna terpilih memakai `◘` di kolom tengahnya; untuk hitam, lubangnya abu-abu. Panah kiri/kanan berpindah satu warna dan berputar di ujung daftar. Panah atas/bawah berpindah satu baris dan berputar di kolom yang sama. Klik atau seret mouse memilih warna di bawah mouse. Setiap perubahan mengirim `cmColorForegroundChanged` atau `cmColorBackgroundChanged` dengan nomor warnanya. `cmColorSet` (sebuah atribut) memasang warna dari bit 0–3 (depan) atau bit 4–6 (latar). Kursor ada di warna terpilih.
+- `TMonoSelector`: radio button Normal ($07), Highlight ($0F), Underline ($01), dan Inverse ($70). Memilih item mengirim kedua broadcast perubahan warna. `cmColorSet` memilih item yang atributnya sama.
+- `TColorDisplay`: setiap baris diisi `Text` yang diulang, dengan atribut `Color^` apa adanya (tidak lewat palet). `cmColorForegroundChanged` mengganti bit 0–3 `Color^`, dan `cmColorBackgroundChanged` mengganti bit 4–7, sehingga memilih latar dari selector (0–7) mematikan bit 7 (latar terang). `SetColor` menunjuk byte baru, lalu mengirim `cmColorSet` dengan isinya. Bila `Color` nil, view memakai warna indeks 6 owner-nya (teks statis di dialog).
+- `TColorGroupList` dan `TColorItemList` adalah list viewer satu kolom. Memfokus grup mengirim `cmNewColorItem` dengan pointer grup. Daftar item lalu memakai item grup itu dan memfokus item ke-`Index`. Memfokus item mengirim `cmSaveColorIndex` (nomor item, disimpan ke `Index` grup yang terfokus), lalu `cmNewColorIndex` (indeks palet item itu). `TColorGroupList.Done` membebaskan semua grup dan itemnya.
+- `TColorDialog.Init(APalette, AGroups)`: dialog 62×18 berjudul `Colors`, ditengahkan. Dari kiri ke kanan isinya daftar Group, daftar Item, lalu selector Foreground, selector Background, contoh teks (`'Text '` yang diulang), serta tombol OK (default) dan Cancel. Di layar monokrom (`ScreenMode` = `smMono`), kedua selector warna beserta labelnya disembunyikan dan `TMonoSelector` berlabel Color ditampilkan. Pada layar lain `TMonoSelector` yang disembunyikan. `cmNewColorIndex` membuat contoh teks menunjuk ke `Pal[indeks]`, jadi setiap perubahan warna langsung mengubah `Pal`. Indeks di luar panjang `Pal` membuat contoh teks tidak menunjuk ke mana pun.
+- Data dialog adalah `TPalette` (256 byte). `SetData` menyalin palet ke `Pal`, memulihkan grup dan item terpilih dari `ColorIndexes` (bila jumlah grupnya cocok), lalu memfokus ulang grup. `GetData` menyalin `Length(Pal) + 1` byte kembali dan menyimpan pilihan ke `ColorIndexes`. Jadi `ExecuteDialog(D, Application^.GetPalette)` yang diikuti `Application^.Redraw` langsung memakai warna baru, dan dialog berikutnya dibuka di grup dan item yang sama.
+- `ColorIndexes` (`TColorIndex`: grup terpilih, jumlah grup, dan item terpilih per grup) ditulis ke stream dengan `StoreIndexes` dan dibaca dengan `LoadIndexes`. Formatnya satu byte jumlah grup (0 berarti tidak ada), lalu byte grup terpilih dan satu byte per grup.
+- Stream:
+  - `TColorSelector` menyimpan `Color` dan `SelType`, masing-masing 1 byte.
+  - `TColorDisplay` menyimpan `Text`; pointer `Color` tidak disimpan.
+  - `TColorGroupList` menyimpan jumlah grup (`Sw_Integer`), lalu per grup nama, `Index` (1 byte), dan jumlah item (`Sw_Integer`), lalu per item nama dan indeks (1 byte).
+  - `TColorItemList` dimuat tanpa item.
+  - `TColorDialog` menyimpan pointer subview-nya, `GroupIndex`, dan `Pal` (panjang lalu isinya). Setelah dimuat, dialog memfokus ulang grupnya sehingga daftar item dan contoh teks terhubung lagi.
+  - ObjType: `TColorSelector` 21, `TMonoSelector` 22, `TColorDisplay` 23, `TColorGroupList` 24, `TColorItemList` 25, `TColorDialog` 26. `RegisterColorSel` mendaftarkan keenamnya.
+
+## 14. TextView
+
+- `TTextDevice` adalah `TScroller` dengan `StrRead` (bawaannya mengembalikan 0) dan `StrWrite` (abstrak).
+- `TTerminal` menyimpan teks di buffer melingkar sebesar `BufSize` byte (paling sedikit 2), yang memuat paling banyak `BufSize - 1` karakter. `QueBack` menunjuk karakter tertua dan `QueFront` tempat karakter berikutnya ditulis. Buffer kosong bila keduanya sama. Baris dipisah `#10`, dan banyak baris adalah jumlah `#10` ditambah 1. Jadi teks yang diakhiri `#10` punya baris terakhir yang kosong, tempat kursor berada.
+- `StrWrite` membuang `#13` (akhir baris CR LF di Windows) dan menyalin karakter lainnya. Bila buffer penuh, baris teratas dibuang utuh. Satu baris yang lebih panjang dari buffer dibuang per karakter dari depan. Sesudah menulis, `Limit.Y` menjadi banyak baris dan `Limit.X` lebar baris terpanjang. View lalu digeser sehingga baris terakhir tampak di baris paling bawah (`Delta.X` tidak berubah), kemudian digambar ulang. Tanpa scroll bar vertikal, `Delta.Y` digeser langsung.
+- `Draw` menampilkan baris mulai `Delta.Y` dan kolom mulai `Delta.X` dengan warna scroller normal. Tab maju ke kolom kelipatan 8, dan karakter kontrol lain tampil sebagai glyph CP437. Kursor ada di akhir teks.
+- `NextLine(Pos)` mengembalikan awal baris sesudah baris yang memuat `Pos`, atau `QueFront` bila tidak ada. `PrevLines(Pos, N)` mengembalikan awal baris yang memuat `Pos` bila N = 1, awal baris di atasnya bila N = 2, dan seterusnya, paling jauh sampai `QueBack`. N = 0 mengembalikan `Pos`. `CalcWidth` mengembalikan lebar baris terpanjang (tab dihitung sampai kolom kelipatan 8). `CanInsert(N)` bernilai True bila N karakter muat tanpa membuang baris. `BufInc` dan `BufDec` memajukan dan memundurkan offset dengan putaran. `TTerminal.StrRead` mengembalikan 0.
+- `AssignDevice(T, Screen)` sama dengan `Assign(T, '')`, lalu memasang hook `FlushFunc` dan menyimpan `Screen` di `UserData`. Sesudah `Rewrite(T)`, setiap pernyataan `Write`/`WriteLn` ke `T` diteruskan ke `Screen^.StrWrite` dalam potongan paling banyak 255 karakter (`Count: Byte`). Sesudah `Reset(T)`, `Read`/`ReadLn` mengisi buffer lewat `Screen^.StrRead`, dan hasil 0 berarti akhir berkas. `Close(T)` tidak menutup deskriptor apa pun. `T` harus ditutup sebelum view-nya dibuang.
+- Seperti di TP7, unit ini tidak punya registrasi stream.
+
+## 15. User screen IDE
 
 `odin/terminal.py` mencatat mode mouse 9/1000/1002/1003, mode 1006 (SGR), dan layar alternatif 1049/1047/47. Selama program meminta mouse, `TerminalView` mengirim laporan klik, gerakan selama tombol ditekan, dan roda. Shift, Ctrl, dan Alt pada tombol khusus menjadi parameter modifier xterm, Shift+Tab menjadi `ESC[Z`, dan Alt+huruf menjadi `ESC` + huruf. Di macOS, Alt adalah Option; karakter Option tata letak US dipetakan balik ke hurufnya.

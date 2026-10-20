@@ -1,0 +1,1358 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<!-- Dibuat oleh scripts/build_help.py dari scripts/help_shell.html, scripts/help_body.html dan docs/*.txt. Jangan diedit langsung. -->
+<html lang="id" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bantuan Odin Turbo Pascal</title>
+<style>
+:root{
+  --bg:#f6f7fb;--panel:#ffffff;--ink:#1c2233;--muted:#5b6478;--line:#dde1ec;
+  --accent:#1f3fbf;--accent-soft:#e4e9fb;--head:#16257a;--head-ink:#ffffff;
+  --code-bg:#10163a;--code-ink:#ffd86b;--kbd-bg:#eef0f7;--note:#e8f0fe;--note-line:#4a78e0;
+  --warn:#fff3e0;--warn-line:#e08a1e;--tip:#e6f6ea;--tip-line:#2f9e55;--hit:#fff1a8;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+:root[data-theme=turbo]{
+  --bg:#0a1030;--panel:#101a4a;--ink:#e6ebff;--muted:#9fb0e6;--line:#26357e;
+  --accent:#ffd86b;--accent-soft:#1b2a6b;--head:#050a24;--head-ink:#e6ebff;
+  --code-bg:#060b26;--code-ink:#ffd86b;--kbd-bg:#1b2a6b;--note:#14245f;--note-line:#6c9bff;
+  --warn:#3a2a10;--warn-line:#ffb24a;--tip:#10372a;--tip-line:#55d68a;--hit:#6b5a00;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--sans)}
+a{color:var(--accent)}
+:root:not([data-theme=turbo]) a{color:#1a3aa8}
+header.top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;height:60px;padding:0 18px;background:var(--head);color:var(--head-ink);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+header.top img{width:34px;height:34px;border-radius:6px}
+header.top .title{font-weight:700;letter-spacing:.2px;white-space:nowrap}
+header.top .title small{display:block;font-weight:400;font-size:12px;opacity:.75;margin-top:-4px}
+.spacer{flex:1}
+.search{position:relative;width:min(380px,40vw)}
+.search input{width:100%;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;padding:0 38px 0 12px;font:inherit;font-size:14px}
+.search input::placeholder{color:rgba(255,255,255,.65)}
+.search input:focus{outline:2px solid #ffd86b;background:rgba(255,255,255,.2)}
+.search kbd{position:absolute;right:8px;top:7px;background:rgba(255,255,255,.18);border:0;color:#fff;box-shadow:none}
+#results{position:absolute;top:44px;right:0;width:min(560px,92vw);max-height:70vh;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.3);display:none}
+#results a{display:block;padding:10px 14px;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+#results a:last-child{border-bottom:0}
+#results a:hover,#results a.sel{background:var(--accent-soft)}
+#results b{display:block;font-size:14px;color:var(--accent)}
+#results span{font-size:13px;color:var(--muted)}
+#results mark{background:var(--hit);color:inherit;border-radius:2px}
+#results .none{padding:14px;color:var(--muted)}
+button.icon{height:36px;min-width:36px;padding:0 10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;font:inherit;font-size:14px;cursor:pointer}
+button.icon:hover{background:rgba(255,255,255,.22)}
+#menubtn{display:none}
+.progress{position:fixed;top:60px;left:0;height:3px;width:0;background:#ffd86b;z-index:31}
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr) 220px;gap:0;max-width:1560px;margin:0 auto}
+nav.toc{position:sticky;top:60px;align-self:start;height:calc(100vh - 60px);overflow:auto;padding:18px 10px 40px 18px;border-right:1px solid var(--line);font-size:14.5px}
+nav.toc h2{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:0 0 8px 8px}
+nav.toc ul{list-style:none;margin:0;padding:0}
+nav.toc>ul>li>a{display:flex;gap:8px;padding:6px 8px;border-radius:7px;text-decoration:none;color:var(--ink);font-weight:600}
+nav.toc>ul>li>a .n{min-width:22px;color:var(--muted);font-weight:500}
+nav.toc>ul>li>a:hover{background:var(--accent-soft)}
+nav.toc ul ul{display:none;margin:2px 0 6px 30px;border-left:2px solid var(--line)}
+nav.toc li.open>ul{display:block}
+nav.toc ul ul a{display:block;padding:3px 10px;color:var(--muted);text-decoration:none;font-size:13.5px;border-radius:0 6px 6px 0}
+nav.toc ul ul a:hover{color:var(--ink);background:var(--accent-soft)}
+nav.toc a.active{background:var(--accent-soft);color:var(--accent)}
+nav.toc ul ul a.active{background:transparent;color:var(--accent);font-weight:600;box-shadow:inset 2px 0 var(--accent)}
+nav.toc .sep{margin:14px 8px 6px;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
+main{padding:30px 44px 80px;min-width:0}
+article{max-width:820px;margin:0 auto}
+.hero{background:linear-gradient(135deg,#16257a,#2b46c8);color:#fff;border-radius:16px;padding:34px 36px;margin-bottom:30px}
+.hero h1{margin:0 0 6px;font-size:32px;line-height:1.2;color:#fff}
+.hero p{margin:6px 0;opacity:.92}
+.hero .badges{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.hero .badges span{background:rgba(255,255,255,.16);border-radius:20px;padding:3px 12px;font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin:18px 0 8px}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-decoration:none;color:var(--ink)}
+.card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.card b{display:block;color:var(--accent)}
+.card span{font-size:14px;color:var(--muted)}
+section.sec{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 30px 22px;margin-bottom:24px}
+h2{font-size:25px;line-height:1.25;margin:26px 0 12px;padding-bottom:10px;border-bottom:2px solid var(--line)}
+h2 .n{color:var(--accent);margin-right:8px}
+h3{font-size:19px;margin:30px 0 8px}
+h3 .n{color:var(--accent);margin-right:6px;font-weight:500}
+h4{font-size:16px;margin:20px 0 4px}
+h2 a.anchor,h3 a.anchor{opacity:0;margin-left:8px;text-decoration:none;font-weight:400}
+h2:hover a.anchor,h3:hover a.anchor{opacity:.7}
+p{margin:10px 0}
+ul,ol{padding-left:24px}
+li{margin:4px 0}
+code{font:0.9em var(--mono);background:var(--kbd-bg);padding:1px 6px;border-radius:5px}
+pre{position:relative;background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:10px;overflow:auto;font:13.5px/1.55 var(--mono);margin:14px 0;border:1px solid #26357e}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+pre .copy{position:absolute;top:8px;right:8px;font:12px var(--sans);padding:2px 9px;border-radius:6px;border:1px solid #4a5aa8;background:#1b2a6b;color:#dfe6ff;cursor:pointer;opacity:0}
+pre:hover .copy{opacity:1}
+kbd{font:12.5px var(--mono);background:var(--kbd-bg);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;white-space:nowrap}
+.callout{border-left:4px solid var(--note-line);background:var(--note);border-radius:0 10px 10px 0;padding:10px 16px;margin:16px 0}
+.callout>b:first-child{display:block;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+.callout.warn{border-color:var(--warn-line);background:var(--warn)}
+.callout.tip{border-color:var(--tip-line);background:var(--tip)}
+.callout p:first-of-type{margin-top:2px}.callout p:last-child{margin-bottom:2px}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:15px}
+.tw{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:10px}
+.tw table{margin:0}
+th,td{text-align:left;vertical-align:top;padding:8px 14px;border-bottom:1px solid var(--line)}
+th{background:var(--accent-soft);font-size:12.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+td:first-child{white-space:nowrap;font-weight:600}
+table.ref td:first-child{font-family:var(--mono);font-size:13.5px;white-space:normal;word-break:break-word;width:30%;color:var(--accent)}
+tr:target td,tr:has(:target) td{background:var(--hit)}
+table.wrap td:first-child{white-space:normal}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:18px 0}
+.flow div{flex:1 1 130px;background:var(--accent-soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:center;font-size:14px;position:relative}
+.flow div b{display:block;color:var(--accent)}
+.flow div:not(:last-child)::after{content:"\2192";position:absolute;right:-13px;top:50%;transform:translateY(-50%);color:var(--muted);z-index:2}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:-1px;border:1px solid rgba(255,255,255,.3)}
+.syn{background:#0b1a8a;border-radius:10px;padding:6px 0}
+.syn table{margin:0;color:#e8edff}
+.syn td{border-color:#26357e;padding:5px 14px}
+.syn td:first-child{color:inherit;font-family:var(--mono)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin:30px 0 0}
+.pager a{flex:1;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:12px 16px;text-decoration:none;color:var(--ink)}
+.pager a:hover{border-color:var(--accent)}
+.pager small{display:block;color:var(--muted)}
+.pager a.next{text-align:right}
+footer.foot{max-width:820px;margin:30px auto 0;color:var(--muted);font-size:13.5px;border-top:1px solid var(--line);padding-top:16px}
+aside.page{position:sticky;top:60px;align-self:start;height:calc(100vh - 60px);overflow:auto;padding:30px 18px;font-size:13.5px}
+aside.page h2{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);border:0;margin:0 0 8px;padding:0}
+aside.page a{display:block;padding:3px 0 3px 10px;color:var(--muted);text-decoration:none;border-left:2px solid var(--line)}
+aside.page a:hover{color:var(--ink)}
+aside.page a.active{color:var(--accent);border-color:var(--accent);font-weight:600}
+@media (max-width:1280px){.layout{grid-template-columns:290px minmax(0,1fr)}aside.page{display:none}}
+@media (max-width:900px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  nav.toc{position:fixed;left:0;top:60px;width:310px;max-width:88vw;z-index:40;background:var(--panel);transform:translateX(-105%);transition:transform .2s;box-shadow:6px 0 24px rgba(0,0,0,.3)}
+  body.menu nav.toc{transform:none}
+  #menubtn{display:inline-block}
+  main{padding:18px 14px 60px}
+  section.sec{padding:2px 16px 16px}
+  .search{width:auto;flex:1}.search kbd{display:none}
+  header.top .title small{display:none}
+  .flow div:not(:last-child)::after{display:none}
+}
+@media print{
+  header.top,nav.toc,aside.page,.progress,.pager,pre .copy{display:none}
+  .layout{display:block}body{background:#fff;color:#000;font-size:11pt}
+  section.sec{border:0;padding:0;break-inside:auto}
+  pre{background:#f3f3f3;color:#000;border-color:#bbb;white-space:pre-wrap}
+  .hero{background:#fff;color:#000;border:1px solid #888}.hero h1{color:#000}
+  a{color:#000;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="icon" id="menubtn" aria-label="Daftar isi">&#9776;</button>
+  <img src="data:image/png;base64,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" alt="">
+  <div class="title">Odin Turbo Pascal<small>Bantuan &middot; versi 2.4.0</small></div>
+  <div class="spacer"></div>
+  <div class="search">
+    <input id="q" type="search" placeholder="Cari topik, rutin, pintasan..." autocomplete="off" aria-label="Cari">
+    <kbd>/</kbd>
+    <div id="results" role="listbox"></div>
+  </div>
+  <button class="icon" id="theme" title="Ganti tema">Tema</button>
+</header>
+<div class="progress" id="progress"></div>
+<div class="layout">
+  <nav class="toc" aria-label="Daftar isi">
+    <h2>Daftar isi</h2>
+    <ul>
+      <li><a href="#selamat-datang"><span class="n">1</span>Selamat Datang</a>
+        <ul><li><a href="#tentang">Tentang Odin</a></li><li><a href="#fitur">Fitur utama</a></li><li><a href="#kebutuhan">Kebutuhan sistem</a></li><li><a href="#peta">Peta dokumentasi</a></li></ul>
+      </li>
+      <li><a href="#memulai"><span class="n">2</span>Memulai</a>
+        <ul><li><a href="#program-pertama">Program pertama</a></li><li><a href="#alur-kerja">Alur kerja</a></li><li><a href="#antarmuka">Tur antarmuka</a></li></ul>
+      </li>
+      <li><a href="#tutorial"><span class="n">3</span>Tutorial dan Buku</a>
+        <ul><li><a href="#tutorial-contoh">Tutorial Pascal untuk pemula</a></li><li><a href="#daftar-bab">Daftar bab dan program</a></li><li><a href="#buku">Buku tutorial (PDF)</a></li></ul>
+      </li>
+      <li><a href="#editor"><span class="n">4</span>Editor</a>
+        <ul><li><a href="#berkas">Membuka dan menyimpan</a></li><li><a href="#menyunting">Menyunting</a></li><li><a href="#warna-sintaks">Warna sintaks</a></li><li><a href="#jendela">Mengatur jendela</a></li><li><a href="#mencari">Mencari dan mengganti</a></li><li><a href="#bantuan-kata">Bantuan untuk kata di kursor</a></li><li><a href="#pemulihan">Pemulihan sesi</a></li></ul>
+      </li>
+      <li><a href="#kompilasi"><span class="n">5</span>Kompilasi dan Run</a>
+        <ul><li><a href="#compile-make-build">Compile, Make, Build</a></li><li><a href="#primary-file">Primary file</a></li><li><a href="#pesan-error">Pesan error</a></li><li><a href="#opsi-compiler">Options &gt; Compiler</a></li><li><a href="#direktori">Options &gt; Directories</a></li><li><a href="#parameter">Parameter program</a></li><li><a href="#ekspor">Mengekspor executable</a></li></ul>
+      </li>
+      <li><a href="#user-screen"><span class="n">6</span>User Screen dan Terminal</a>
+        <ul><li><a href="#terminal">Terminal 80&times;25</a></li><li><a href="#input-terminal">Keyboard dan mouse</a></li><li><a href="#batas-terminal">Keterbatasan</a></li></ul>
+      </li>
+      <li><a href="#debugger"><span class="n">7</span>Debugger</a>
+        <ul><li><a href="#breakpoint">Breakpoint</a></li><li><a href="#menjalankan-debug">Menjalankan dan melangkah</a></li><li><a href="#jendela-debug">Watches, Locals, Call stack</a></li><li><a href="#evaluate">Evaluate/Modify</a></li><li><a href="#contoh-debug">Contoh sesi</a></li></ul>
+      </li>
+      <li><a href="#referensi-menu"><span class="n">8</span>Referensi Menu</a>
+        <ul><li><a href="#menu-file">File</a></li><li><a href="#menu-edit">Edit</a></li><li><a href="#menu-search">Search</a></li><li><a href="#menu-run">Run</a></li><li><a href="#menu-compile">Compile</a></li><li><a href="#menu-debug">Debug</a></li><li><a href="#menu-options">Options</a></li><li><a href="#menu-window">Window</a></li><li><a href="#menu-help">Help</a></li></ul>
+      </li>
+      <li><a href="#bahasa"><span class="n">9</span>Referensi Bahasa Pascal</a>
+        <ul><li><a href="#struktur">Struktur program dan contoh</a></li><li><a href="#kata-cadangan">Kata cadangan</a></li><li><a href="#direktif-standar">Direktif standar</a></li><li><a href="#operator">Operator</a></li><li><a href="#tipe-data">Tipe data</a></li><li><a href="#konstanta">Konstanta bawaan</a></li><li><a href="#rutin-matematika">Rutin matematika</a></li><li><a href="#rutin-ordinal">Rutin ordinal</a></li><li><a href="#rutin-string">Rutin string</a></li><li><a href="#rutin-memori">Rutin memori dan pointer</a></li><li><a href="#rutin-berkas">Rutin berkas dan direktori</a></li><li><a href="#kontrol-program">Kontrol program</a></li><li><a href="#direktif-compiler">Direktif compiler</a></li><li><a href="#kode-error">Kode runtime error</a></li></ul>
+      </li>
+      <li><a href="#unit"><span class="n">10</span>Unit Pustaka</a>
+        <ul><li><a href="#unit-crt">Crt</a></li><li><a href="#unit-dos">Dos</a></li><li><a href="#unit-strings">Strings</a></li><li><a href="#unit-objects">Objects</a></li><li><a href="#odin-vision">Odin Vision</a></li></ul>
+      </li>
+      <li><a href="#pintasan"><span class="n">11</span>Pintasan Keyboard</a>
+        <ul><li><a href="#pintasan-fungsi">Tombol fungsi</a></li><li><a href="#pintasan-umum">Pintasan umum</a></li><li><a href="#pintasan-mac">Alternatif Mac</a></li><li><a href="#pintasan-user">Di User screen</a></li></ul>
+      </li>
+      <li><a href="#kompatibilitas"><span class="n">12</span>Kompatibilitas</a>
+        <ul><li><a href="#status-fitur">Status fitur</a></li><li><a href="#status-uji">Yang sudah dan belum diuji</a></li><li><a href="#backend">Compiler</a></li><li><a href="#unit-tp7">Unit standar Turbo Pascal 7</a></li><li><a href="#fitur-dos">Fitur era DOS</a></li><li><a href="#beda-perilaku">Perbedaan perilaku penting</a></li></ul>
+      </li>
+      <li><a href="#masalah"><span class="n">13</span>Pemecahan Masalah</a>
+        <ul><li><a href="#galat-umum">Galat umum</a></li><li><a href="#faq">Tanya jawab</a></li></ul>
+      </li>
+    </ul>
+    <div class="sep">Lampiran</div>
+    <ul>
+      <li><a href="#glosarium"><span class="n">A</span>Glosarium</a>
+      </li>
+      <li><a href="#lokasi"><span class="n">B</span>Lokasi Berkas dan Pengaturan</a>
+      </li>
+      <li><a href="#tentang-lisensi"><span class="n">C</span>Tentang dan Lisensi</a>
+      </li>
+    </ul>
+  </nav>
+  <main>
+    <article id="content">
+<div class="hero" id="atas">
+  <h1>Bantuan Odin Turbo Pascal</h1>
+  <p>IDE Pascal bergaya Turbo Pascal untuk belajar dan menulis program: editor, kompilator, terminal 80&times;25, dan debugger dalam satu jendela.</p>
+  <div class="badges"><span>Versi 2.4.0</span><span>GNU GPL v3 atau lebih baru</span><span>macOS &middot; Windows &middot; Linux</span></div>
+</div>
+
+<section class="sec" id="s-selamat-datang">
+<h2 id="selamat-datang"><span class="n">1</span>Selamat Datang <a class="anchor" href="#selamat-datang" aria-label="Tautan">#</a></h2>
+
+<h3 id="tentang"><span class="n">1.1</span>Tentang Odin <a class="anchor" href="#tentang" aria-label="Tautan">#</a></h3>
+<p>Odin Turbo Pascal adalah IDE Pascal dengan tampilan terinspirasi IDE Turbo Pascal era DOS. Program ditulis di editor, dikompilasi menjadi program asli (<em>native</em>) untuk CPU Anda, lalu dijalankan di <strong>User screen</strong>, terminal 80 kolom &times; 25 baris yang bersifat interaktif.</p>
+<div class="callout"><b>Catatan</b><p>Odin bukan Borland Turbo Pascal dan tidak berafiliasi dengan Borland. Tidak ada berkas, logo, huruf, atau berkas bantuan Borland di dalamnya. Lihat <a href="#kompatibilitas">Kompatibilitas</a>.</p></div>
+
+<h3 id="fitur"><span class="n">1.2</span>Fitur utama <a class="anchor" href="#fitur" aria-label="Tautan">#</a></h3>
+<ul>
+<li>Editor dengan <a href="#warna-sintaks">warna sintaks Turbo Biru Lembut</a>, banyak jendela, cari-ganti, dan <a href="#pemulihan">pemulihan otomatis</a>.</li>
+<li>Compiler <strong>odinpc</strong> bawaan (target macOS Intel dan Apple Silicon, Linux x86_64 dan arm64, Windows x86_64), dengan assembler, linker, debugger, dan runtime library sendiri.</li>
+<li><a href="#user-screen">User screen</a> berbasis pseudo-terminal: <code>ReadLn</code>, unit Crt, dan aplikasi Turbo Vision berjalan interaktif, lengkap dengan mouse.</li>
+<li><a href="#debugger">Debugger</a> terpadu: breakpoint, langkah demi langkah, Watches, Local variables, Call stack, Evaluate/Modify.</li>
+<li>Tutorial 20 bab dengan 89 program contoh dan <a href="#tutorial">buku PDF</a> pendampingnya.</li>
+<li>Referensi bahasa Pascal dan unit pustaka yang bisa dibuka dengan <kbd>F1</kbd> pada kata di editor.</li>
+</ul>
+
+<h3 id="kebutuhan"><span class="n">1.3</span>Kebutuhan sistem <a class="anchor" href="#kebutuhan" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Komponen</th><th>Keterangan</th></tr>
+<tr><td>Python</td><td>3.10 atau lebih baru, dengan Tk. Hanya pustaka standar; tidak ada paket pip.</td></tr>
+<tr><td>macOS</td><td>macOS 11 atau lebih baru. Xcode Command Line Tools tidak diperlukan.</td></tr>
+<tr><td>Windows</td><td>Windows 10 versi 1809 atau lebih baru, x86_64 (memakai ConPTY).</td></tr>
+<tr><td>Compiler</td><td>odinpc sudah disertakan; tidak ada compiler lain yang perlu dipasang.</td></tr>
+</table></div>
+
+<h3 id="peta"><span class="n">1.4</span>Peta dokumentasi <a class="anchor" href="#peta" aria-label="Tautan">#</a></h3>
+<div class="cards">
+<a class="card" href="#memulai"><b>Memulai</b><span>Program pertama dalam 2 menit</span></a>
+<a class="card" href="#tutorial"><b>Tutorial &amp; Buku</b><span>20 bab untuk pemula</span></a>
+<a class="card" href="#editor"><b>Editor</b><span>Berkas, jendela, pencarian</span></a>
+<a class="card" href="#kompilasi"><b>Kompilasi &amp; Run</b><span>Build, error, opsi</span></a>
+<a class="card" href="#debugger"><b>Debugger</b><span>Breakpoint dan Watches</span></a>
+<a class="card" href="#referensi-menu"><b>Referensi Menu</b><span>Semua menu dan pintasannya</span></a>
+<a class="card" href="#bahasa"><b>Bahasa Pascal</b><span>Kata cadangan sampai rutin</span></a>
+<a class="card" href="#pintasan"><b>Pintasan</b><span>Keyboard Windows, Linux, Mac</span></a>
+<a class="card" href="#masalah"><b>Pemecahan Masalah</b><span>Galat umum dan solusinya</span></a>
+</div>
+</section>
+
+<section class="sec" id="s-memulai">
+<h2 id="memulai"><span class="n">2</span>Memulai <a class="anchor" href="#memulai" aria-label="Tautan">#</a></h2>
+
+<h3 id="program-pertama"><span class="n">2.1</span>Program pertama <a class="anchor" href="#program-pertama" aria-label="Tautan">#</a></h3>
+<ol>
+<li>Pilih <strong>File &gt; New</strong>.</li>
+<li>Ketik program berikut.</li>
+<li>Simpan ke folder kerja Anda dengan <kbd>F2</kbd>.</li>
+<li>Tekan <kbd>Ctrl</kbd>+<kbd>F9</kbd> untuk mengompilasi dan menjalankan.</li>
+</ol>
+<pre><code>program Halo;
+var
+  Nama: string;
+begin
+  Write('Nama Anda: ');
+  ReadLn(Nama);
+  WriteLn('Halo, ', Nama);
+end.</code></pre>
+<p><kbd>Ctrl</kbd>+<kbd>F9</kbd> selalu mengompilasi ulang sumber terbaru dan menjalankan executable bila build berhasil. Program yang gagal dikompilasi tidak akan menjalankan executable lama. Tombol <strong>Editor</strong> pada User screen kembali ke editor; <kbd>Alt</kbd>+<kbd>F5</kbd> membukanya lagi.</p>
+<div class="callout tip"><b>Tip</b><p>Program menunggu masukan di User screen. Bila <code>ReadLn</code> terlihat diam, klik User screen, ketik masukan, lalu tekan <kbd>Enter</kbd>.</p></div>
+
+<h3 id="alur-kerja"><span class="n">2.2</span>Alur kerja <a class="anchor" href="#alur-kerja" aria-label="Tautan">#</a></h3>
+<div class="flow">
+<div><b>Tulis</b>Editor</div>
+<div><b>Compile</b><kbd>Alt+F9</kbd></div>
+<div><b>Run</b><kbd>Ctrl+F9</kbd></div>
+<div><b>Debug</b><kbd>F7</kbd> <kbd>F8</kbd></div>
+<div><b>Perbaiki</b><kbd>Alt+F8</kbd></div>
+</div>
+
+<h3 id="antarmuka"><span class="n">2.3</span>Tur antarmuka <a class="anchor" href="#antarmuka" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Bagian</th><th>Fungsi</th></tr>
+<tr><td>Menu bar</td><td>File, Edit, Search, Run, Compile, Debug, Options, Window, Help. Buka dengan klik, <kbd>F10</kbd>, atau <kbd>Alt</kbd>+huruf pertama menu.</td></tr>
+<tr><td>Desktop</td><td>Area kerja berpola Turbo Vision tempat jendela editor, Watches, Locals, dan Call stack ditempatkan. Di bawah logo tampak nomor versi dan nama pembuat.</td></tr>
+<tr><td>Jendela editor</td><td>Satu berkas per jendela, dengan nomor baris, gutter breakpoint di kiri, dan penanda baris debug.</td></tr>
+<tr><td>Pesan compiler</td><td>Daftar error, warning, dan hint. Klik dua kali untuk menuju baris dan kolomnya.</td></tr>
+<tr><td>User screen</td><td>Terminal 80&times;25 tempat program berjalan.</td></tr>
+<tr><td>Status bar</td><td>Petunjuk tombol, status build, posisi kursor, dan pesan singkat.</td></tr>
+</table></div>
+</section>
+
+<section class="sec" id="s-tutorial">
+<h2 id="tutorial"><span class="n">3</span>Tutorial dan Buku <a class="anchor" href="#tutorial" aria-label="Tautan">#</a></h2>
+
+<h3 id="tutorial-contoh"><span class="n">3.1</span>Tutorial Pascal untuk pemula <a class="anchor" href="#tutorial-contoh" aria-label="Tautan">#</a></h3>
+<p><strong>File &gt; Examples</strong> berisi tutorial 20 bab, dari <code>bab01_01_halo_dunia.pas</code> sampai proyek akhir <code>bab20_03_buku_telepon.pas</code>. Nama berkas mengikuti pola <code>babNN_MM_topik.pas</code>, jadi urut dengan sendirinya. Komentar dan keluaran program berbahasa Indonesia.</p>
+<ul>
+<li><strong>Bab 1&ndash;5</strong>: fondasi (program, tipe data, masukan/keluaran, operator).</li>
+<li><strong>Bab 6&ndash;8</strong>: alur kendali (percabangan, pengulangan, latihan logika).</li>
+<li><strong>Bab 9&ndash;10</strong>: prosedur, fungsi, dan rekursi.</li>
+<li><strong>Bab 11&ndash;14</strong>: struktur data (array, string, record, enumerasi, subrentang, set).</li>
+<li><strong>Bab 15&ndash;16</strong>: pencarian dan pengurutan.</li>
+<li><strong>Bab 17&ndash;20</strong>: berkas, pointer, unit, dan proyek akhir.</li>
+</ul>
+<div class="callout warn"><b>Perhatian</b><p>Program Bab 17 dan Bab 20 membuat berkas data (misalnya <code>catatan.txt</code> atau <code>kontak.dat</code>) di folder berkas <code>.pas</code>-nya. Contoh bawaan berstatus templat, jadi simpan salinannya ke folder sendiri dengan <strong>File &gt; Save as</strong> supaya berkas data mudah dicari.</p></div>
+
+<h3 id="daftar-bab"><span class="n">3.2</span>Daftar bab dan program <a class="anchor" href="#daftar-bab" aria-label="Tautan">#</a></h3>
+<p>89 program dalam 20 bab, ditambah unit <code>matematika.pas</code> untuk Bab 19. Arahkan penunjuk ke nama program untuk melihat nama berkasnya.</p>
+<div class="tw"><table class="wrap"><tr><th>Bab</th><th>Topik</th><th>Program</th></tr>
+<tr><td>1</td><td>Pengenalan</td><td><code title="bab01_01_halo_dunia.pas">halo dunia</code>, <code title="bab01_02_cek_kompiler.pas">cek kompiler</code></td></tr>
+<tr><td>2</td><td>Struktur program</td><td><code title="bab02_01_struktur_dasar.pas">struktur dasar</code>, <code title="bab02_02_komentar.pas">komentar</code>, <code title="bab02_03_blok_begin_end.pas">blok begin end</code></td></tr>
+<tr><td>3</td><td>Tipe data</td><td><code title="bab03_01_tipe_integer_real.pas">tipe integer real</code>, <code title="bab03_02_tipe_char_string.pas">tipe char string</code>, <code title="bab03_03_tipe_boolean.pas">tipe boolean</code>, <code title="bab03_04_konstanta.pas">konstanta</code>, <code title="bab03_05_batas_tipe_data.pas">batas tipe data</code></td></tr>
+<tr><td>4</td><td>Masukan dan keluaran</td><td><code title="bab04_01_write_writeln.pas">write writeln</code>, <code title="bab04_02_read_readln.pas">read readln</code>, <code title="bab04_03_format_keluaran.pas">format keluaran</code>, <code title="bab04_04_biodata_sederhana.pas">biodata sederhana</code></td></tr>
+<tr><td>5</td><td>Operator</td><td><code title="bab05_01_operator_aritmetika.pas">operator aritmetika</code>, <code title="bab05_02_div_mod.pas">div mod</code>, <code title="bab05_03_operator_relasional.pas">operator relasional</code>, <code title="bab05_04_operator_logika.pas">operator logika</code>, <code title="bab05_05_prioritas_operator.pas">prioritas operator</code>, <code title="bab05_06_luas_keliling.pas">luas keliling</code></td></tr>
+<tr><td>6</td><td>Percabangan</td><td><code title="bab06_01_if_then.pas">if then</code>, <code title="bab06_02_if_else.pas">if else</code>, <code title="bab06_03_if_bersarang.pas">if bersarang</code>, <code title="bab06_04_case_of.pas">case of</code>, <code title="bab06_05_nilai_huruf.pas">nilai huruf</code>, <code title="bab06_06_tahun_kabisat.pas">tahun kabisat</code></td></tr>
+<tr><td>7</td><td>Pengulangan</td><td><code title="bab07_01_for_to.pas">for to</code>, <code title="bab07_02_for_downto.pas">for downto</code>, <code title="bab07_03_while_do.pas">while do</code>, <code title="bab07_04_repeat_until.pas">repeat until</code>, <code title="bab07_05_perulangan_bersarang.pas">perulangan bersarang</code>, <code title="bab07_06_menu_berulang.pas">menu berulang</code></td></tr>
+<tr><td>8</td><td>Latihan logika</td><td><code title="bab08_01_bilangan_prima.pas">bilangan prima</code>, <code title="bab08_02_fpb_kpk.pas">fpb kpk</code>, <code title="bab08_03_deret_fibonacci.pas">deret fibonacci</code>, <code title="bab08_04_segitiga_bintang.pas">segitiga bintang</code>, <code title="bab08_05_bilangan_sempurna.pas">bilangan sempurna</code>, <code title="bab08_06_tebak_angka.pas">tebak angka</code></td></tr>
+<tr><td>9</td><td>Prosedur dan fungsi</td><td><code title="bab09_01_prosedur_dasar.pas">prosedur dasar</code>, <code title="bab09_02_fungsi_dasar.pas">fungsi dasar</code>, <code title="bab09_03_parameter_nilai.pas">parameter nilai</code>, <code title="bab09_04_parameter_var.pas">parameter var</code>, <code title="bab09_05_lokal_global.pas">lokal global</code>, <code title="bab09_06_kalkulator_modular.pas">kalkulator modular</code></td></tr>
+<tr><td>10</td><td>Rekursi</td><td><code title="bab10_01_faktorial_rekursif.pas">faktorial rekursif</code>, <code title="bab10_02_fibonacci_rekursif.pas">fibonacci rekursif</code>, <code title="bab10_03_pangkat_rekursif.pas">pangkat rekursif</code>, <code title="bab10_04_menara_hanoi.pas">menara hanoi</code></td></tr>
+<tr><td>11</td><td>Array</td><td><code title="bab11_01_array_satu_dimensi.pas">array satu dimensi</code>, <code title="bab11_02_maks_min_rata.pas">maks min rata</code>, <code title="bab11_03_array_dua_dimensi.pas">array dua dimensi</code>, <code title="bab11_04_penjumlahan_matriks.pas">penjumlahan matriks</code>, <code title="bab11_05_perkalian_matriks.pas">perkalian matriks</code></td></tr>
+<tr><td>12</td><td>String</td><td><code title="bab12_01_fungsi_string.pas">fungsi string</code>, <code title="bab12_02_balik_kata.pas">balik kata</code>, <code title="bab12_03_palindrom.pas">palindrom</code>, <code title="bab12_04_hitung_vokal.pas">hitung vokal</code>, <code title="bab12_05_konversi_angka_string.pas">konversi angka string</code></td></tr>
+<tr><td>13</td><td>Record</td><td><code title="bab13_01_record_dasar.pas">record dasar</code>, <code title="bab13_02_array_of_record.pas">array of record</code>, <code title="bab13_03_record_bersarang.pas">record bersarang</code>, <code title="bab13_04_data_mahasiswa.pas">data mahasiswa</code></td></tr>
+<tr><td>14</td><td>Enumerasi, subrentang, dan set</td><td><code title="bab14_01_tipe_enumerasi.pas">tipe enumerasi</code>, <code title="bab14_02_tipe_subrange.pas">tipe subrange</code>, <code title="bab14_03_tipe_set.pas">tipe set</code>, <code title="bab14_04_validasi_huruf_set.pas">validasi huruf set</code></td></tr>
+<tr><td>15</td><td>Pencarian</td><td><code title="bab15_01_sequential_search.pas">sequential search</code>, <code title="bab15_02_binary_search.pas">binary search</code>, <code title="bab15_03_cari_data_record.pas">cari data record</code></td></tr>
+<tr><td>16</td><td>Pengurutan</td><td><code title="bab16_01_bubble_sort.pas">bubble sort</code>, <code title="bab16_02_selection_sort.pas">selection sort</code>, <code title="bab16_03_insertion_sort.pas">insertion sort</code>, <code title="bab16_04_urut_record.pas">urut record</code>, <code title="bab16_05_banding_jumlah_langkah.pas">banding jumlah langkah</code></td></tr>
+<tr><td>17</td><td>Berkas</td><td><code title="bab17_01_tulis_file_teks.pas">tulis file teks</code>, <code title="bab17_02_baca_file_teks.pas">baca file teks</code>, <code title="bab17_03_tambah_file_teks.pas">tambah file teks</code>, <code title="bab17_04_file_bertipe.pas">file bertipe</code>, <code title="bab17_05_simpan_baca_record.pas">simpan baca record</code></td></tr>
+<tr><td>18</td><td>Pointer dan linked list</td><td><code title="bab18_01_pointer_dasar.pas">pointer dasar</code>, <code title="bab18_02_new_dispose.pas">new dispose</code>, <code title="bab18_03_linked_list_tambah.pas">linked list tambah</code>, <code title="bab18_04_linked_list_hapus.pas">linked list hapus</code></td></tr>
+<tr><td>19</td><td>Unit</td><td><code title="bab19_01_pakai_unit_sendiri.pas">pakai unit sendiri</code>, <code title="bab19_02_unit_crt.pas">unit crt</code>, <code title="bab19_03_menu_berwarna.pas">menu berwarna</code></td></tr>
+<tr><td>20</td><td>Proyek akhir</td><td><code title="bab20_01_kasir_sederhana.pas">kasir sederhana</code>, <code title="bab20_02_nilai_siswa.pas">nilai siswa</code>, <code title="bab20_03_buku_telepon.pas">buku telepon</code></td></tr>
+</table></div>
+
+<h3 id="buku"><span class="n">3.3</span>Buku tutorial (PDF) <a class="anchor" href="#buku" aria-label="Tautan">#</a></h3>
+<p><strong>Help &gt; Buku</strong> membuka buku <em>Belajar Pemrograman Bahasa Pascal dengan ODIN Turbo Pascal</em> (<code>docs/Belajar_Pemrograman_Bahasa_Pascal.pdf</code>) di aplikasi PDF bawaan sistem. Buku berwarna penuh ini membahas semua program contoh di atas.</p>
+</section>
+
+<section class="sec" id="s-editor">
+<h2 id="editor"><span class="n">4</span>Editor <a class="anchor" href="#editor" aria-label="Tautan">#</a></h2>
+
+<h3 id="berkas"><span class="n">4.1</span>Membuka dan menyimpan <a class="anchor" href="#berkas" aria-label="Tautan">#</a></h3>
+<p><strong>File &gt; Open</strong> (<kbd>F3</kbd>) menerima <code>.pas</code>, <code>.pp</code>, <code>.inc</code>, dan berkas teks lain. Berkas yang sama dibuka satu kali saja.</p>
+<ul>
+<li><strong>Save</strong> (<kbd>F2</kbd>) menulis secara atomik ke folder tujuan, sehingga berkas tidak rusak bila penulisan terputus.</li>
+<li>Bila berkas diubah pihak lain setelah dibuka, Odin mendeteksinya (lewat hash SHA-256) dan menanyakan tindakan Anda.</li>
+<li><strong>Save as</strong> membuat salinan. Contoh bawaan selalu diarahkan ke Save as.</li>
+<li>Open mengenali <strong>UTF-8</strong>, <strong>UTF-8 dengan BOM</strong>, lalu <strong>CP437</strong> untuk kode DOS lama. Gaya akhir baris LF atau CRLF dipertahankan, jadi berkas kembali identik byte demi byte saat disimpan. Berkas DOS dengan code page selain CP437 perlu dikonversi ke UTF-8 lebih dulu.</li>
+<li><strong>Recent files</strong>, <strong>Examples</strong>, dan <strong>Change directory</strong> mempercepat berpindah folder kerja.</li>
+</ul>
+
+<h3 id="menyunting"><span class="n">4.2</span>Menyunting <a class="anchor" href="#menyunting" aria-label="Tautan">#</a></h3>
+<p><kbd>Enter</kbd> melanjutkan indentasi baris sebelumnya. <kbd>Tab</kbd> memasukkan spasi sesuai pengaturan, <kbd>Shift</kbd>+<kbd>Tab</kbd> menggeser baris ke kiri. <kbd>Ctrl</kbd>+<kbd>L</kbd> menghapus baris, <kbd>Insert</kbd> menukar mode sisip/timpa. Daftar lengkap ada di <a href="#pintasan">Pintasan Keyboard</a>.</p>
+<p><strong>Options &gt; Editor</strong> mengatur ukuran huruf (10&ndash;30), lebar tab (1&ndash;8), dan Syntax colors.</p>
+
+<h3 id="warna-sintaks"><span class="n">4.3</span>Warna sintaks <a class="anchor" href="#warna-sintaks" aria-label="Tautan">#</a></h3>
+<p>Skema Turbo Biru Lembut aktif secara bawaan, di latar biru tua. Matikan <strong>Syntax colors</strong> untuk kembali ke teks kuning klasik di latar biru.</p>
+<div class="syn"><table>
+<tr><td><span class="sw" style="background:#ffffff"></span>putih tebal</td><td>kata tercadang (<code>begin</code>, <code>if</code>, <code>var</code>)</td></tr>
+<tr><td><span class="sw" style="background:#ffe98a"></span>kuning lembut</td><td>variabel dan nama buatan sendiri lainnya</td></tr>
+<tr><td><span class="sw" style="background:#ffc08a"></span>jingga muda</td><td>prosedur dan fungsi buatan sendiri</td></tr>
+<tr><td><span class="sw" style="background:#8ad0ff"></span>biru langit</td><td>rutin bawaan (<code>WriteLn</code>, <code>ClrScr</code>)</td></tr>
+<tr><td><span class="sw" style="background:#9be8a8"></span>hijau muda</td><td>tipe bawaan (<code>Integer</code>, <code>Real</code>, <code>Boolean</code>)</td></tr>
+<tr><td><span class="sw" style="background:#ff9bb5"></span>merah muda</td><td>angka, termasuk heksadesimal (<code>$0E</code>), serta <code>True</code>, <code>False</code>, <code>nil</code></td></tr>
+<tr><td><span class="sw" style="background:#5fe0c8"></span>hijau toska</td><td>string dan konstanta karakter (<code>#13</code>)</td></tr>
+<tr><td><span class="sw" style="background:#c8b6ff"></span>lavender</td><td>operator dan simbol (<code>:= + ; .</code>)</td></tr>
+<tr><td><span class="sw" style="background:#8fa3d6"></span>biru keabuan</td><td>komentar, dicetak miring</td></tr>
+<tr><td><span class="sw" style="background:#ff9a8a"></span>merah salem</td><td>direktif compiler (<code>{$R+}</code>)</td></tr>
+</table></div>
+<p class="muted" style="color:var(--muted);font-size:14px">Swatch di atas hanya perkiraan warna; warna tepat ditentukan oleh IDE.</p>
+
+<h3 id="jendela"><span class="n">4.4</span>Mengatur jendela <a class="anchor" href="#jendela" aria-label="Tautan">#</a></h3>
+<ul>
+<li><strong>Window &gt; List</strong> menampilkan editor yang terbuka; <kbd>F6</kbd> berpindah ke jendela berikutnya.</li>
+<li><strong>Tile</strong> membagi layar, <strong>Cascade</strong> menumpuk jendela, <kbd>F5</kbd> (Zoom) memperbesar atau mengembalikan jendela aktif.</li>
+<li><kbd>Alt</kbd>+<kbd>F3</kbd> menutup jendela aktif.</li>
+<li>Jendela Watches, Local variables, dan Call stack juga jendela desktop biasa, jadi ikut diatur Tile, Cascade, dan List.</li>
+</ul>
+
+<h3 id="mencari"><span class="n">4.5</span>Mencari dan mengganti <a class="anchor" href="#mencari" aria-label="Tautan">#</a></h3>
+<ul>
+<li><strong>Find</strong> (<kbd>Ctrl</kbd>+<kbd>F</kbd>) mencari teks literal, bukan ekspresi reguler. Opsi <em>case sensitive</em> membedakan huruf besar dan kecil.</li>
+<li><strong>Replace</strong> (<kbd>Ctrl</kbd>+<kbd>H</kbd>) mengganti teks; <strong>Search again</strong> (<kbd>Ctrl</kbd>+<kbd>G</kbd>) melanjutkan pencarian.</li>
+<li><strong>Go to line</strong> (<kbd>Ctrl</kbd>+<kbd>J</kbd>) memindahkan kursor ke nomor baris.</li>
+<li><strong>Next error</strong> (<kbd>Alt</kbd>+<kbd>F8</kbd>) dan <strong>Find error</strong> menuju diagnostik atau baris runtime error.</li>
+</ul>
+
+<h3 id="bantuan-kata"><span class="n">4.6</span>Bantuan untuk kata di kursor <a class="anchor" href="#bantuan-kata" aria-label="Tautan">#</a></h3>
+<p>Letakkan kursor pada sebuah kata, misalnya <code>ReadKey</code>, lalu tekan <kbd>F1</kbd>. Odin membuka topik kata itu di referensi dan menandainya.</p>
+
+<h3 id="pemulihan"><span class="n">4.7</span>Pemulihan sesi <a class="anchor" href="#pemulihan" aria-label="Tautan">#</a></h3>
+<p>Setiap 10 detik Odin mencatat salinan isi editor ke <code>recovery.json</code> di folder pengaturan. Sumber pribadi Anda tidak ditimpa oleh mekanisme ini. Bila aplikasi berhenti tidak normal, pembukaan berikutnya menawarkan pemulihan; perubahan pada interval terakhir sebelum snapshot mungkin belum tercatat. Berkas pemulihan dihapus saat Anda keluar secara normal. Breakpoint ikut tersimpan.</p>
+</section>
+
+<section class="sec" id="s-kompilasi">
+<h2 id="kompilasi"><span class="n">5</span>Kompilasi dan Run <a class="anchor" href="#kompilasi" aria-label="Tautan">#</a></h2>
+
+<h3 id="compile-make-build"><span class="n">5.1</span>Compile, Make, Build <a class="anchor" href="#compile-make-build" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Perintah</th><th>Tombol</th><th>Perilaku</th></tr>
+<tr><td>Compile</td><td><kbd>Alt+F9</kbd></td><td>Memanggil compiler; unit yang belum berubah memakai hasil sebelumnya.</td></tr>
+<tr><td>Make</td><td><kbd>F9</kbd></td><td>Seperti Compile untuk program dan unit yang berubah.</td></tr>
+<tr><td>Build</td><td>&mdash;</td><td>Semua unit dikompilasi ulang.</td></tr>
+<tr><td>Run</td><td><kbd>Ctrl+F9</kbd></td><td>Kompilasi lalu jalankan. Executable lama tidak pernah dijalankan bila build gagal.</td></tr>
+</table></div>
+<p>Mengompilasi <strong>unit</strong> saja menghasilkan <code>.ppu</code>/<code>.o</code> tanpa executable dan tidak menjalankan apa pun.</p>
+<p>Hasil build disimpan di <em>build cache</em> yang dipisahkan menurut path program dan pilihan compiler (lihat <a href="#lokasi">Lokasi berkas</a>). Folder sumber Anda tidak pernah menerima berkas hasil build, dan compiler tidak diarahkan untuk menimpa executable di folder sumber.</p>
+
+<h3 id="primary-file"><span class="n">5.2</span>Primary file <a class="anchor" href="#primary-file" aria-label="Tautan">#</a></h3>
+<p>Tanpa Primary file, editor aktif menjadi target kompilasi. Untuk proyek yang terdiri atas beberapa unit, tetapkan program utamanya di <strong>Compile &gt; Primary file</strong>, lalu Run akan selalu membangun berkas itu. <strong>Clear primary file</strong> mengembalikan perilaku awal.</p>
+
+<h3 id="pesan-error"><span class="n">5.3</span>Pesan error <a class="anchor" href="#pesan-error" aria-label="Tautan">#</a></h3>
+<ul>
+<li>Klik dua kali sebuah pesan untuk menuju sumber, baris, dan kolomnya.</li>
+<li><kbd>Alt</kbd>+<kbd>F8</kbd> berpindah ke diagnostik berikutnya, termasuk warning dan hint.</li>
+<li><strong>Compile &gt; Compiler messages</strong> menampilkan perintah dan seluruh keluaran compiler.</li>
+<li><strong>Runtime error</strong>: baris penyebabnya ditandai merah, baik saat Run biasa maupun saat debugging. <strong>Search &gt; Find error</strong> kembali ke baris itu. Daftar kodenya ada di <a href="#kode-error">Kode runtime error</a>.</li>
+</ul>
+
+<h3 id="opsi-compiler"><span class="n">5.4</span>Options &gt; Compiler <a class="anchor" href="#opsi-compiler" aria-label="Tautan">#</a></h3>
+<ul>
+<li>Compiler Odin mengikuti bahasa Turbo Pascal 7; tidak ada pilihan mode lain.</li>
+<li><strong>Range checks</strong> dan <strong>overflow checks</strong> aktif secara bawaan.</li>
+<li>Informasi baris untuk runtime error selalu dibuat. <strong>Debug &gt; Start debugging</strong> membangun ulang dengan pengait debugger.</li>
+</ul>
+
+<h3 id="direktori"><span class="n">5.5</span>Options &gt; Directories <a class="anchor" href="#direktori" aria-label="Tautan">#</a></h3>
+<p>Isi satu path unit atau include per baris. Unit di folder program ditemukan otomatis, begitu pula unit standar dan Odin Vision.</p>
+
+<h3 id="parameter"><span class="n">5.6</span>Parameter program <a class="anchor" href="#parameter" aria-label="Tautan">#</a></h3>
+<p><strong>Run &gt; Parameters</strong> menerima argumen dengan aturan kutip seperti shell, misalnya:</p>
+<pre><code>"hello world" 123</code></pre>
+<p>Program membacanya dengan <code>ParamCount</code> dan <code>ParamStr(1)</code>, <code>ParamStr(2)</code>, dan seterusnya. Argumen diteruskan sebagai daftar tanpa menjalankan shell, sehingga tanda seperti <code>*</code> atau <code>;</code> tidak ditafsirkan.</p>
+
+<h3 id="ekspor"><span class="n">5.7</span>Mengekspor executable <a class="anchor" href="#ekspor" aria-label="Tautan">#</a></h3>
+<p><strong>Compile &gt; Export executable</strong> menyalin hasil build terakhir ke lokasi pilihan Anda. Executable hanya cocok dengan OS dan CPU mesin pembuatnya. Bila dibagikan, program hasil Odin memuat runtime library Odin yang berlisensi GPL v3 atau lebih baru, sehingga ketentuan GPL berlaku untuk executable itu.</p>
+</section>
+
+<section class="sec" id="s-user-screen">
+<h2 id="user-screen"><span class="n">6</span>User Screen dan Terminal <a class="anchor" href="#user-screen" aria-label="Tautan">#</a></h2>
+
+<h3 id="terminal"><span class="n">6.1</span>Terminal 80&times;25 <a class="anchor" href="#terminal" aria-label="Tautan">#</a></h3>
+<p>Program berjalan di pseudo-terminal sistem (ConPTY di Windows), sehingga masukan bersifat interaktif seperti di konsol sungguhan. Ukuran layar emulasi tetap 80 kolom &times; 25 baris; membesarkan jendela tidak mengubahnya. Karakter garis dan pola desktop Turbo Vision tampil benar.</p>
+<p>Jendela terminal yang ditutup hanya disembunyikan, dan program yang sedang berjalan tidak dihentikan. Buka lagi dengan <kbd>Alt</kbd>+<kbd>F5</kbd>.</p>
+
+<h3 id="input-terminal"><span class="n">6.2</span>Keyboard dan mouse <a class="anchor" href="#input-terminal" aria-label="Tautan">#</a></h3>
+<ul>
+<li>Tombol <kbd>F1</kbd>&ndash;<kbd>F12</kbd>, <kbd>Insert</kbd>, panah, dan <kbd>Home</kbd>/<kbd>End</kbd> diteruskan ke program (<code>ReadKey</code>, Turbo Vision).</li>
+<li>Mouse (klik, seret, roda) diteruskan ke program Turbo Vision yang memintanya.</li>
+<li><kbd>Alt</kbd>+huruf dikirim sebagai <kbd>Esc</kbd> + huruf. Di macOS, <kbd>Option</kbd> berperan sebagai Alt.</li>
+<li><kbd>Ctrl</kbd>+<kbd>C</kbd> mengirim interupsi ke seluruh grup proses. <kbd>Ctrl</kbd>+<kbd>F2</kbd> menghentikan program.</li>
+<li><strong>Copy screen</strong> menyalin layar teks 80&times;25 ke clipboard.</li>
+<li>Setelah program Turbo Vision selesai, isi layar sebelumnya kembali.</li>
+</ul>
+
+<h3 id="batas-terminal"><span class="n">6.3</span>Keterbatasan <a class="anchor" href="#batas-terminal" aria-label="Tautan">#</a></h3>
+<p>Ini bukan emulator terminal lengkap: tidak ada <em>scrollback</em>, <em>true color</em>, atau lebar glyph Unicode CJK yang akurat. Gunakan teks ASCII untuk program dengan tata letak kolom ketat.</p>
+</section>
+
+<section class="sec" id="s-debugger">
+<h2 id="debugger"><span class="n">7</span>Debugger <a class="anchor" href="#debugger" aria-label="Tautan">#</a></h2>
+<p>Program dikompilasi ulang dengan pengait debugger lalu dijalankan di User screen. LLDB, GDB, dan Xcode tidak diperlukan.</p>
+
+<h3 id="breakpoint"><span class="n">7.1</span>Breakpoint <a class="anchor" href="#breakpoint" aria-label="Tautan">#</a></h3>
+<ul>
+<li>Pasang atau lepas dengan <kbd>Ctrl</kbd>+<kbd>F8</kbd> atau klik gutter kiri; ditandai lingkaran merah.</li>
+<li>Penanda ikut bergeser saat baris disisipkan atau dihapus, dan tersimpan bersama <a href="#pemulihan">pemulihan sesi</a>.</li>
+<li>Breakpoint di baris tanpa kode dipindahkan ke baris berikutnya yang berisi kode.</li>
+<li>Breakpoint yang diubah selama sesi debug langsung berlaku. <strong>Clear breakpoints</strong> menghapus semuanya.</li>
+</ul>
+
+<h3 id="menjalankan-debug"><span class="n">7.2</span>Menjalankan dan melangkah <a class="anchor" href="#menjalankan-debug" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Perintah</th><th>Tombol</th><th>Fungsi</th></tr>
+<tr><td>Start debugging</td><td>&mdash;</td><td>Jalankan sampai breakpoint pertama.</td></tr>
+<tr><td>Trace into</td><td><kbd>F7</kbd></td><td>Satu baris; masuk ke prosedur yang dipanggil. Bila belum berjalan, mulai dan berhenti di statement pertama.</td></tr>
+<tr><td>Step over</td><td><kbd>F8</kbd></td><td>Satu baris; pemanggilan prosedur tidak dimasuki.</td></tr>
+<tr><td>Go to cursor</td><td><kbd>F4</kbd></td><td>Lanjut sampai baris kursor.</td></tr>
+<tr><td>Continue</td><td><kbd>Ctrl+F9</kbd></td><td>Lanjut sampai breakpoint berikutnya atau program selesai.</td></tr>
+<tr><td>Jeda</td><td><kbd>Ctrl+C</kbd></td><td>Di User screen: hentikan sementara di statement berikutnya.</td></tr>
+<tr><td>Program reset</td><td><kbd>Ctrl+F2</kbd></td><td>Akhiri program.</td></tr>
+</table></div>
+<p>Saat program berhenti, baris yang akan dijalankan ditandai <strong>hijau</strong>. Bila sumber diubah di tengah sesi, perintah langkah berikutnya menanyakan apakah program perlu dibangun ulang.</p>
+
+<h3 id="jendela-debug"><span class="n">7.3</span>Watches, Locals, Call stack <a class="anchor" href="#jendela-debug" aria-label="Tautan">#</a></h3>
+<ul>
+<li><strong>Watches</strong>: <kbd>Insert</kbd> menambah, <kbd>Delete</kbd> menghapus, <kbd>Enter</kbd> mengubah ekspresi. Nilai diperbarui setiap program berhenti.</li>
+<li><strong>Local variables</strong>: variabel lokal pada frame terpilih.</li>
+<li><strong>Call stack</strong>: klik dua kali untuk memilih frame; Watches dan Local variables lalu memakai frame itu.</li>
+</ul>
+
+<h3 id="evaluate"><span class="n">7.4</span>Evaluate/Modify <a class="anchor" href="#evaluate" aria-label="Tautan">#</a></h3>
+<p><kbd>Ctrl</kbd>+<kbd>F7</kbd> menghitung ekspresi Pascal: variabel, field, indeks (dengan cek batas), <code>^</code>, <code>@</code>, aritmetika, perbandingan, <em>typecast</em>, serta <code>Ord</code>, <code>Chr</code>, <code>Length</code>, <code>High</code>, <code>Low</code>, <code>SizeOf</code>. Fungsi buatan program <strong>tidak</strong> dipanggil. <strong>Modify</strong> menulis nilai baru ke variabel dengan pemeriksaan jangkauan.</p>
+<p>Format nilai mengikuti Turbo Pascal: <code>'abc'</code>, <code>(1, 2, 3)</code>, <code>(X:1; Y:2)</code>, <code>[1, 3..5]</code>, <code>TRUE</code>, <code>PTR($...)</code>, dan nama enumerasi.</p>
+
+<h3 id="contoh-debug"><span class="n">7.5</span>Contoh sesi <a class="anchor" href="#contoh-debug" aria-label="Tautan">#</a></h3>
+<ol>
+<li>Buka <code>bab10_01_faktorial_rekursif.pas</code> dari File &gt; Examples.</li>
+<li>Pasang breakpoint di baris pemanggilan fungsi dengan <kbd>Ctrl+F8</kbd>.</li>
+<li>Pilih <strong>Debug &gt; Start debugging</strong>; program berhenti di breakpoint.</li>
+<li>Buka <strong>Call stack</strong> lalu tekan <kbd>F7</kbd> beberapa kali dan amati tumpukan rekursi bertambah.</li>
+<li>Tambahkan <code>N</code> ke Watches untuk melihat nilainya berubah di tiap frame.</li>
+</ol>
+</section>
+
+<section class="sec" id="s-referensi-menu">
+<h2 id="referensi-menu"><span class="n">8</span>Referensi Menu <a class="anchor" href="#referensi-menu" aria-label="Tautan">#</a></h2>
+<p>Tiap menu dapat dibuka dengan <kbd>Alt</kbd>+huruf mnemonik (F, E, S, R, C, D, O, W, H) atau lewat klik.</p>
+
+<h3 id="menu-file"><span class="n">8.1</span>File <a class="anchor" href="#menu-file" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Pintasan</th><th>Fungsi</th></tr>
+<tr><td>New</td><td><kbd>Ctrl+N</kbd></td><td>Berkas baru dari templat program kosong.</td></tr>
+<tr><td>Open...</td><td><kbd>F3</kbd></td><td>Membuka berkas.</td></tr>
+<tr><td>Save</td><td><kbd>F2</kbd></td><td>Menyimpan; contoh bawaan berubah menjadi Save as.</td></tr>
+<tr><td>Save as...</td><td>&mdash;</td><td>Menyimpan salinan dengan nama lain.</td></tr>
+<tr><td>Save all</td><td>&mdash;</td><td>Menyimpan semua editor yang berubah.</td></tr>
+<tr><td>Recent files...</td><td>&mdash;</td><td>Daftar berkas yang baru dibuka.</td></tr>
+<tr><td>Examples...</td><td>&mdash;</td><td>Tutorial dan contoh bawaan.</td></tr>
+<tr><td>Change directory...</td><td>&mdash;</td><td>Mengganti folder kerja dialog berkas.</td></tr>
+<tr><td>Exit</td><td><kbd>Alt+X</kbd></td><td>Keluar dari IDE.</td></tr>
+</table></div>
+
+<h3 id="menu-edit"><span class="n">8.2</span>Edit <a class="anchor" href="#menu-edit" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Pintasan</th></tr>
+<tr><td>Undo</td><td><kbd>Alt+Backspace</kbd></td></tr>
+<tr><td>Redo</td><td><kbd>Ctrl+Y</kbd></td></tr>
+<tr><td>Cut / Copy / Paste</td><td><kbd>Shift+Del</kbd> / <kbd>Ctrl+Ins</kbd> / <kbd>Shift+Ins</kbd></td></tr>
+<tr><td>Select all</td><td><kbd>Ctrl+A</kbd></td></tr>
+<tr><td>Delete line</td><td><kbd>Ctrl+L</kbd></td></tr>
+</table></div>
+
+<h3 id="menu-search"><span class="n">8.3</span>Search <a class="anchor" href="#menu-search" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Pintasan</th></tr>
+<tr><td>Find...</td><td><kbd>Ctrl+F</kbd></td></tr>
+<tr><td>Replace...</td><td><kbd>Ctrl+H</kbd></td></tr>
+<tr><td>Search again</td><td><kbd>Ctrl+G</kbd></td></tr>
+<tr><td>Go to line...</td><td><kbd>Ctrl+J</kbd></td></tr>
+<tr><td>Next error</td><td><kbd>Alt+F8</kbd></td></tr>
+<tr><td>Find error</td><td>&mdash;</td></tr>
+</table></div>
+
+<h3 id="menu-run"><span class="n">8.4</span>Run <a class="anchor" href="#menu-run" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Pintasan</th><th>Fungsi</th></tr>
+<tr><td>Run</td><td><kbd>Ctrl+F9</kbd></td><td>Kompilasi lalu jalankan.</td></tr>
+<tr><td>Program reset</td><td><kbd>Ctrl+F2</kbd></td><td>Menghentikan proses. Bila belum keluar dalam satu detik, dipaksa berhenti.</td></tr>
+<tr><td>Parameters...</td><td>&mdash;</td><td>Argumen baris perintah program.</td></tr>
+<tr><td>User screen</td><td><kbd>Alt+F5</kbd></td><td>Menampilkan terminal program.</td></tr>
+</table></div>
+
+<h3 id="menu-compile"><span class="n">8.5</span>Compile <a class="anchor" href="#menu-compile" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Pintasan</th></tr>
+<tr><td>Compile</td><td><kbd>Alt+F9</kbd></td></tr>
+<tr><td>Make</td><td><kbd>F9</kbd></td></tr>
+<tr><td>Build</td><td>&mdash;</td></tr>
+<tr><td>Primary file... / Clear primary file</td><td>&mdash;</td></tr>
+<tr><td>Compiler messages</td><td>&mdash;</td></tr>
+<tr><td>Export executable...</td><td>&mdash;</td></tr>
+</table></div>
+
+<h3 id="menu-debug"><span class="n">8.6</span>Debug <a class="anchor" href="#menu-debug" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Pintasan</th></tr>
+<tr><td>Start debugging</td><td>&mdash;</td></tr>
+<tr><td>Step over / Trace into / Go to cursor</td><td><kbd>F8</kbd> / <kbd>F7</kbd> / <kbd>F4</kbd></td></tr>
+<tr><td>Continue</td><td><kbd>Ctrl+F9</kbd></td></tr>
+<tr><td>Toggle breakpoint / Clear breakpoints</td><td><kbd>Ctrl+F8</kbd> / &mdash;</td></tr>
+<tr><td>Watch window / Add watch...</td><td>&mdash;</td></tr>
+<tr><td>Local variables / Call stack</td><td>&mdash;</td></tr>
+<tr><td>Evaluate/Modify...</td><td><kbd>Ctrl+F7</kbd></td></tr>
+</table></div>
+
+<h3 id="menu-options"><span class="n">8.7</span>Options <a class="anchor" href="#menu-options" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Fungsi</th></tr>
+<tr><td>Compiler...</td><td>Range checks dan overflow checks.</td></tr>
+<tr><td>Directories...</td><td>Path unit dan include, satu per baris.</td></tr>
+<tr><td>Editor...</td><td>Ukuran huruf (10&ndash;30), lebar tab (1&ndash;8), Syntax colors.</td></tr>
+<tr><td>Save options</td><td>Menyimpan pengaturan ke <code>settings.json</code>.</td></tr>
+<tr><td>Environment information</td><td>Versi, OS, CPU, Python, Tk, dan path runtime.</td></tr>
+</table></div>
+
+<h3 id="menu-window"><span class="n">8.8</span>Window <a class="anchor" href="#menu-window" aria-label="Tautan">#</a></h3>
+<p>Tile, Cascade, Zoom (<kbd>F5</kbd>), Next (<kbd>F6</kbd>), Close (<kbd>Alt+F3</kbd>), dan List.</p>
+
+<h3 id="menu-help"><span class="n">8.9</span>Help <a class="anchor" href="#menu-help" aria-label="Tautan">#</a></h3>
+<p>Contents (<kbd>F1</kbd>), Pascal reference, Keyboard shortcuts, Buku, dan About Odin.</p>
+</section>
+
+<section class="sec" id="s-bahasa">
+<h2 id="bahasa"><span class="n">9</span>Referensi Bahasa Pascal <a class="anchor" href="#bahasa" aria-label="Tautan">#</a></h2>
+<p>Ringkasan bahasa yang berlaku di Odin. Ketik kata di kotak pencarian atas (<kbd>/</kbd>) untuk melompat langsung ke rutin atau kata cadangannya. Ukuran tipe mengikuti mode Turbo Pascal.</p>
+
+<h3 id="struktur"><span class="n">9.1</span>Struktur program dan contoh <a class="anchor" href="#struktur" aria-label="Tautan">#</a></h3>
+<pre><code>program NamaProgram;
+uses Crt;
+const Maksimum = 10;
+var I: Integer;
+begin
+  for I := 1 to Maksimum do
+    WriteLn(I);
+end.</code></pre>
+
+<h4>Percabangan</h4>
+<pre><code>if Nilai &gt;= 75 then
+  WriteLn('Lulus')
+else
+  WriteLn('Belum lulus');</code></pre>
+<p>Tidak ada titik koma sebelum <code>else</code> yang berpasangan dengan <code>if</code> tersebut. Gunakan <code>begin</code>/<code>end</code> bila cabang berisi lebih dari satu pernyataan.</p>
+
+<h4>Pengulangan</h4>
+<pre><code>for I := 1 to 10 do WriteLn(I);
+
+while I &lt; 10 do
+begin
+  Inc(I);
+end;
+
+repeat
+  ReadLn(I);
+until I = 0;</code></pre>
+
+<h4>Procedure dan function</h4>
+<pre><code>procedure Sapa(Nama: string);
+begin
+  WriteLn('Halo ', Nama);
+end;
+
+function Kuadrat(X: Integer): LongInt;
+begin
+  Kuadrat := LongInt(X) * X;
+end;</code></pre>
+
+<h4>Record</h4>
+<pre><code>type
+  TSiswa = record
+    Nama: string[50];
+    Nilai: Integer;
+  end;</code></pre>
+
+<h4>Unit buatan sendiri</h4>
+<pre><code>unit UContoh;
+interface
+procedure Halo;
+implementation
+procedure Halo;
+begin
+  WriteLn('Halo');
+end;
+end.</code></pre>
+<p>Unit dipakai dari program melalui <code>uses UContoh</code>. Simpan sumber dengan nama sesuai nama unit, dan pastikan direktorinya ditemukan compiler (lihat <a href="#direktori">Directories</a>).</p>
+<div class="callout tip"><b>Tip</b><p>Gaya Turbo Pascal 7: tidak ada <code>Result</code> (isi nama fungsi), enumerasi tidak bisa di-<code>Write</code>, dan setiap <code>Real</code> sebaiknya diformat: <code>Write(X:0:2)</code>.</p></div>
+
+<h3 id="kata-cadangan"><span class="n">9.2</span>Kata cadangan <a class="anchor" href="#kata-cadangan" aria-label="Tautan">#</a></h3>
+<p>Kata cadangan tidak boleh dipakai sebagai nama variabel, konstanta, tipe, atau rutin. Huruf besar-kecil tidak dibedakan.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-and"><td><code>and</code></td><td>Operator logika AND untuk Boolean, dan AND bit demi bit untuk bilangan bulat. Prioritasnya lebih tinggi daripada perbandingan, jadi beri tanda kurung: (A &gt; 0) and (B &gt; 0).</td></tr>
+<tr id="k-array"><td><code>array</code></td><td>Tipe larik: array[1..10] of Integer, array[Boolean] of Byte, array[1..3, 1..3] of Real (dua dimensi). Indeks bisa tipe ordinal apa pun.</td></tr>
+<tr id="k-asm"><td><code>asm</code></td><td>Membuka blok bahasa rakitan, ditutup end. Belum didukung compiler Odin.</td></tr>
+<tr id="k-begin"><td><code>begin</code></td><td>Membuka blok pernyataan majemuk, ditutup end. Badan program, prosedur, dan fungsi selalu diawali begin.</td></tr>
+<tr id="k-case"><td><code>case</code></td><td>Percabangan banyak arah pada nilai ordinal: case N of 1: ...; 2, 3: ...; 4..9: ...; else ... end. Selector tidak boleh String atau Real. Juga dipakai di bagian varian record.</td></tr>
+<tr id="k-const"><td><code>const</code></td><td>Bagian deklarasi konstanta (const Maks = 10;) atau konstanta bertipe yang bisa diubah (const Hitung: Integer = 0;).</td></tr>
+<tr id="k-constructor"><td><code>constructor</code></td><td>Metode khusus object yang menyiapkan instance dan tabel metode virtualnya. Biasanya bernama Init: constructor TKotak.Init(...).</td></tr>
+<tr id="k-destructor"><td><code>destructor</code></td><td>Metode khusus object yang membersihkan instance, biasanya bernama Done: destructor TKotak.Done; virtual;</td></tr>
+<tr id="k-div"><td><code>div</code></td><td>Pembagian bulat tanpa pecahan: 17 div 5 = 3. Pembagian dengan nol menimbulkan runtime error 200.</td></tr>
+<tr id="k-do"><td><code>do</code></td><td>Bagian dari for ... do, while ... do, dan with ... do; memisahkan kepala dari pernyataan yang diulang.</td></tr>
+<tr id="k-downto"><td><code>downto</code></td><td>Pada for, menghitung mundur: for I := 10 downto 1 do ...</td></tr>
+<tr id="k-else"><td><code>else</code></td><td>Cabang lain pada if atau case. Jangan beri titik koma tepat sebelum else yang berpasangan dengan if.</td></tr>
+<tr id="k-end"><td><code>end</code></td><td>Menutup begin, case, record, object, asm, atau unit/program (end. dengan titik).</td></tr>
+<tr id="k-exports"><td><code>exports</code></td><td>Daftar rutin yang diekspor dari library. Tidak berguna pada program biasa.</td></tr>
+<tr id="k-file"><td><code>file</code></td><td>Tipe berkas. file of Integer = berkas bertipe, file saja = berkas tanpa tipe untuk BlockRead/BlockWrite.</td></tr>
+<tr id="k-for"><td><code>for</code></td><td>Pengulangan dengan jumlah tetap: for I := 1 to N do ... Variabel kontrol harus ordinal lokal; nilainya tidak boleh diubah di dalam badan dan tidak terdefinisi setelah selesai.</td></tr>
+<tr id="k-function"><td><code>function</code></td><td>Mendeklarasikan fungsi yang mengembalikan nilai. Nilai diberikan dengan menugaskan ke nama fungsi (Kuadrat := X * X). Variabel Result tidak ada di Turbo Pascal.</td></tr>
+<tr id="k-goto"><td><code>goto</code></td><td>Melompat ke label yang dideklarasikan dengan label. Hindari, tetapi sah dalam satu blok.</td></tr>
+<tr id="k-if"><td><code>if</code></td><td>Percabangan: if Kondisi then A else B. Kondisi bertipe Boolean.</td></tr>
+<tr id="k-implementation"><td><code>implementation</code></td><td>Bagian unit berisi badan rutin dan deklarasi privat; di bawah interface.</td></tr>
+<tr id="k-in"><td><code>in</code></td><td>Operator keanggotaan himpunan: if Huruf in ['a'..'z'] then ...</td></tr>
+<tr id="k-inherited"><td><code>inherited</code></td><td>Memanggil metode induk dari dalam metode turunan: inherited Init(...).</td></tr>
+<tr id="k-inline"><td><code>inline</code></td><td>Menyisipkan byte kode mesin langsung. Tidak dapat dikompilasi di macOS 64-bit (lihat COMPATIBILITY.txt).</td></tr>
+<tr id="k-interface"><td><code>interface</code></td><td>Bagian unit yang terlihat oleh pemakai unit: konstanta, tipe, variabel, dan kepala rutin.</td></tr>
+<tr id="k-label"><td><code>label</code></td><td>Mendeklarasikan label tujuan goto: label Selesai;</td></tr>
+<tr id="k-library"><td><code>library</code></td><td>Menandai sumber sebagai pustaka dinamis, bukan program.</td></tr>
+<tr id="k-mod"><td><code>mod</code></td><td>Sisa pembagian bulat: 17 mod 5 = 2. Hasil mengikuti tanda pembilang.</td></tr>
+<tr id="k-nil"><td><code>nil</code></td><td>Pointer kosong yang tidak menunjuk apa pun. Cocok dengan tipe pointer apa pun.</td></tr>
+<tr id="k-not"><td><code>not</code></td><td>Negasi Boolean, atau pembalikan bit pada bilangan bulat: not True = False.</td></tr>
+<tr id="k-object"><td><code>object</code></td><td>Tipe objek gaya Turbo Pascal 7 dengan field dan metode: TKotak = object(TInduk) ... end;</td></tr>
+<tr id="k-of"><td><code>of</code></td><td>Dipakai pada array ... of, case ... of, file of, set of, dan deklarasi object.</td></tr>
+<tr id="k-or"><td><code>or</code></td><td>Operator logika OR (Boolean) atau OR bit demi bit. Beri tanda kurung pada perbandingan.</td></tr>
+<tr id="k-packed"><td><code>packed</code></td><td>Meminta penyimpanan padat untuk array, record, atau set. Di Turbo Pascal 7 tidak berefek pada record biasa; pakai packed record untuk data dialog Odin Vision.</td></tr>
+<tr id="k-procedure"><td><code>procedure</code></td><td>Mendeklarasikan prosedur (subprogram tanpa nilai kembali). Parameter var dilewatkan per acuan.</td></tr>
+<tr id="k-program"><td><code>program</code></td><td>Kepala program: program Nama; atau program Nama(Input, Output);</td></tr>
+<tr id="k-record"><td><code>record</code></td><td>Tipe rekaman dengan field bernama; boleh punya bagian varian: record ... case Tipe: Byte of ... end;</td></tr>
+<tr id="k-repeat"><td><code>repeat</code></td><td>Pengulangan yang menguji kondisi di akhir: repeat ... until Kondisi; badan selalu jalan minimal sekali.</td></tr>
+<tr id="k-set"><td><code>set</code></td><td>Tipe himpunan: set of Char, set of 0..255. Maksimum 256 elemen.</td></tr>
+<tr id="k-shl"><td><code>shl</code></td><td>Geser bit ke kiri: 1 shl 3 = 8.</td></tr>
+<tr id="k-shr"><td><code>shr</code></td><td>Geser bit ke kanan: 16 shr 2 = 4.</td></tr>
+<tr id="k-string"><td><code>string</code></td><td>Tipe teks. string = hingga 255 karakter; string[N] = panjang maksimum N; indeks 0 menyimpan panjang.</td></tr>
+<tr id="k-then"><td><code>then</code></td><td>Mengikuti kondisi pada if.</td></tr>
+<tr id="k-to"><td><code>to</code></td><td>Pada for, menghitung naik: for I := 1 to 10 do ...</td></tr>
+<tr id="k-type"><td><code>type</code></td><td>Bagian deklarasi tipe baru: type TSiswa = record ... end;</td></tr>
+<tr id="k-unit"><td><code>unit</code></td><td>Kepala unit: unit Nama; lalu interface, implementation, dan opsional initialization.</td></tr>
+<tr id="k-until"><td><code>until</code></td><td>Penutup repeat; pengulangan berhenti ketika kondisinya True.</td></tr>
+<tr id="k-uses"><td><code>uses</code></td><td>Mengimpor unit: uses Crt, Dos;. Unit System selalu otomatis.</td></tr>
+<tr id="k-var"><td><code>var</code></td><td>Deklarasi variabel, atau parameter per acuan pada prosedur/fungsi: procedure Tukar(var A, B: Integer);</td></tr>
+<tr id="k-while"><td><code>while</code></td><td>Pengulangan yang menguji kondisi di awal: while Kondisi do ... Badan bisa tidak jalan sama sekali.</td></tr>
+<tr id="k-with"><td><code>with</code></td><td>Mempersingkat akses field: with Siswa do Nama := 'Budi'; (setara Siswa.Nama := 'Budi';).</td></tr>
+<tr id="k-xor"><td><code>xor</code></td><td>Operator OR eksklusif: Boolean atau bit demi bit.</td></tr>
+<tr id="k-class"><td><code>class, try, except</code><span id="k-try"></span><span id="k-except"></span></td><td>Kata tambahan Object Pascal (dialek yang lebih baru). finally, raise, out, property, dan threadvar juga dicadangkan. Tidak ada di Turbo Pascal 7; jangan dipakai sebagai nama.</td></tr>
+</table></div>
+<h3 id="direktif-standar"><span class="n">9.3</span>Direktif standar <a class="anchor" href="#direktif-standar" aria-label="Tautan">#</a></h3>
+<p>Kata berikut punya arti khusus hanya pada konteksnya dan bukan kata cadangan penuh, tetapi sebaiknya tidak dipakai sebagai nama.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-absolute"><td><code>absolute</code></td><td>Variabel berbagi alamat dengan variabel lain: var B: Byte absolute A;. Bentuk $Seg:$Ofs tidak berlaku di macOS 64-bit.</td></tr>
+<tr id="k-assembler"><td><code>assembler</code></td><td>Rutin yang badannya hanya blok asm.</td></tr>
+<tr id="k-external"><td><code>external</code></td><td>Rutin atau variabel yang didefinisikan di luar program (pustaka lain).</td></tr>
+<tr id="k-far"><td><code>far, near</code><span id="k-near"></span></td><td>Model pemanggilan DOS 16-bit. Diterima dan diabaikan.</td></tr>
+<tr id="k-forward"><td><code>forward</code></td><td>Deklarasi maju: kepala rutin ditulis dulu, badannya menyusul. Dipakai untuk rekursi tidak langsung.</td></tr>
+<tr id="k-interrupt"><td><code>interrupt</code></td><td>Prosedur penangan interrupt DOS. Dapat dikompilasi tetapi tidak berefek.</td></tr>
+<tr id="k-private"><td><code>private, public, protected</code><span id="k-public"></span><span id="k-protected"></span></td><td>Pembatas akses anggota object. public (bawaan) terlihat di mana saja; private hanya di unit yang sama.</td></tr>
+<tr id="k-virtual"><td><code>virtual</code></td><td>Metode object yang dapat ditimpa turunan dan dipilih saat program berjalan lewat tabel VMT.</td></tr>
+<tr id="k-name"><td><code>name, index, resident</code><span id="k-index"></span><span id="k-resident"></span></td><td>Direktif pada deklarasi external dan pustaka. Jarang dipakai.</td></tr>
+</table></div>
+<h3 id="operator"><span class="n">9.4</span>Operator <a class="anchor" href="#operator" aria-label="Tautan">#</a></h3>
+<p>Urutan prioritas dari yang terkuat: (1) not, @ ; (2) *, /, div, mod, and, shl, shr ; (3) +, -, or, xor ; (4) =, &lt;&gt;, &lt;, &gt;, &lt;=, &gt;=, in.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr><td><code>:=</code></td><td>Penugasan: X := 5.</td></tr>
+<tr><td><code>+</code></td><td>Penjumlahan; penyambung string ('a' + 'b'); gabungan himpunan.</td></tr>
+<tr><td><code>-</code></td><td>Pengurangan; negatif; selisih himpunan.</td></tr>
+<tr><td><code>*</code></td><td>Perkalian; irisan himpunan.</td></tr>
+<tr><td><code>/</code></td><td>Pembagian real. Hasilnya selalu Real, juga untuk operand bulat.</td></tr>
+<tr><td><code>= &lt;&gt; &lt; &gt; &lt;= &gt;=</code></td><td>Perbandingan. Pada himpunan, &lt;= berarti himpunan bagian dan &gt;= superset.</td></tr>
+<tr><td><code>@</code></td><td>Alamat variabel atau rutin: P := @X;. Hasilnya Pointer.</td></tr>
+<tr><td><code>^</code></td><td>Dereferensi pointer: P^ adalah nilai yang ditunjuk. Pada tipe, ^Integer berarti pointer ke Integer.</td></tr>
+<tr><td><code>.</code></td><td>Akses field record/object (Siswa.Nama) dan akhir program (end.).</td></tr>
+<tr><td><code>..</code></td><td>Rentang subrentang: 1..10, 'a'..'z'.</td></tr>
+<tr id="k-13"><td><code>#13</code></td><td>Konstanta karakter dari kode: #10, #13, #27. #$1B juga sah.</td></tr>
+<tr id="k-ff"><td><code>$FF</code></td><td>Awalan $ menandai bilangan heksadesimal.</td></tr>
+<tr><td><code>{ } (* *)</code></td><td>Komentar blok. // komentar sampai akhir baris (diterima Odin, tidak ada di TP7). {$...} adalah direktif compiler, bukan komentar.</td></tr>
+</table></div>
+<h3 id="tipe-data"><span class="n">9.5</span>Tipe data <a class="anchor" href="#tipe-data" aria-label="Tautan">#</a></h3>
+<p>Ukuran mengikuti Turbo Pascal 7 pada platform 64-bit (compiler Odin).</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-byte"><td><code>Byte</code></td><td>0..255, 1 byte.</td></tr>
+<tr id="k-shortint"><td><code>ShortInt</code></td><td>-128..127, 1 byte.</td></tr>
+<tr id="k-word"><td><code>Word</code></td><td>0..65535, 2 byte.</td></tr>
+<tr id="k-integer"><td><code>Integer</code></td><td>-32768..32767, 2 byte pada mode TP. Hitungan yang bisa melebihi itu pakai LongInt.</td></tr>
+<tr id="k-smallint"><td><code>SmallInt</code></td><td>-32768..32767, 2 byte.</td></tr>
+<tr id="k-longint"><td><code>LongInt</code></td><td>-2147483648..2147483647, 4 byte.</td></tr>
+<tr id="k-cardinal"><td><code>Cardinal, QWord</code><span id="k-qword"></span></td><td>Bilangan bulat tak bertanda (32-bit dan 64-bit).</td></tr>
+<tr id="k-int64"><td><code>Int64</code></td><td>Bilangan bulat bertanda 64-bit.</td></tr>
+<tr id="k-real"><td><code>Real</code></td><td>Bilangan pecahan, 8 byte (Double) pada Odin; di TP asli 6 byte. Selalu format keluarannya: Write(X:0:2).</td></tr>
+<tr id="k-single"><td><code>Single, Double</code><span id="k-double"></span></td><td>Pecahan 4 byte dan 8 byte.</td></tr>
+<tr id="k-extended"><td><code>Extended</code></td><td>Di Odin sama dengan Double (8 byte); di TP asli 10 byte.</td></tr>
+<tr id="k-comp"><td><code>Comp</code></td><td>Bilangan bulat 64-bit yang diperlakukan sebagai real, dari era koprosesor 8087.</td></tr>
+<tr id="k-boolean"><td><code>Boolean</code></td><td>False atau True. ByteBool, WordBool, LongBool: lebar 1, 2, 4 byte.</td></tr>
+<tr id="k-char"><td><code>Char</code></td><td>Satu karakter 8-bit. Ord(C) memberi kode, Chr(N) kebalikannya.</td></tr>
+<tr><td><code>string</code></td><td>Teks pendek, hingga 255 karakter. string[20] membatasi panjang. S[0] adalah panjang (Length(S) lebih aman).</td></tr>
+<tr id="k-shortstring"><td><code>ShortString</code></td><td>Sama dengan string 255 karakter.</td></tr>
+<tr id="k-text"><td><code>Text</code></td><td>Tipe berkas teks: var F: Text;</td></tr>
+<tr id="k-pointer"><td><code>Pointer</code></td><td>Penunjuk tanpa tipe. Pointer bertipe: ^Integer; PChar = ^Char untuk string C yang diakhiri #0.</td></tr>
+<tr id="k-pchar"><td><code>PChar</code></td><td>Penunjuk ke string berakhir nol (unit Strings).</td></tr>
+<tr id="k-enumerasi"><td><code>Enumerasi</code></td><td>type Hari = (Senin, Selasa, Rabu); Dapat dipakai pada for, case, array, Ord, Succ, Pred, tetapi tidak boleh di-Write di Turbo Pascal.</td></tr>
+<tr id="k-subrentang"><td><code>Subrentang</code></td><td>type Nilai = 0..100; Pelanggaran rentang menimbulkan error 201 bila {$R+} aktif.</td></tr>
+</table></div>
+<h3 id="konstanta"><span class="n">9.6</span>Konstanta bawaan <a class="anchor" href="#konstanta" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-true"><td><code>True, False</code><span id="k-false"></span></td><td>Nilai Boolean.</td></tr>
+<tr><td><code>nil</code></td><td>Pointer kosong.</td></tr>
+<tr id="k-maxint"><td><code>MaxInt</code></td><td>32767, Integer terbesar.</td></tr>
+<tr id="k-maxlongint"><td><code>MaxLongInt</code></td><td>2147483647, LongInt terbesar.</td></tr>
+<tr id="k-pi"><td><code>Pi</code></td><td>Fungsi tanpa parameter, 3.14159265358979.</td></tr>
+<tr id="k-input"><td><code>Input, Output</code><span id="k-output"></span></td><td>Berkas teks standar masukan (papan ketik) dan keluaran (layar).</td></tr>
+<tr id="k-erroraddr"><td><code>ErrorAddr</code></td><td>Alamat error saat program berhenti karena runtime error; nil bila berhenti normal.</td></tr>
+<tr id="k-exitcode"><td><code>ExitCode</code></td><td>Kode keluar proses. Dapat dibaca/diatur dalam prosedur ExitProc.</td></tr>
+<tr id="k-randseed"><td><code>RandSeed</code></td><td>Benih generator bilangan acak. Isi dengan nilai tetap agar urutan Random dapat diulang.</td></tr>
+<tr id="k-filemode"><td><code>FileMode</code></td><td>Mode buka berkas bertipe untuk Reset: 0 baca saja, 1 tulis saja, 2 baca-tulis (bawaan).</td></tr>
+</table></div>
+<h3 id="rutin-matematika"><span class="n">9.7</span>Rutin matematika <a class="anchor" href="#rutin-matematika" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-abs"><td><code>Abs(X)</code></td><td>Nilai mutlak X. Hasil bertipe sama dengan X.</td></tr>
+<tr id="k-arctan"><td><code>ArcTan(X)</code></td><td>Arc tangens X dalam radian.</td></tr>
+<tr id="k-cos"><td><code>Cos(X), Sin(X)</code><span id="k-sin"></span></td><td>Cosinus dan sinus, X dalam radian.</td></tr>
+<tr id="k-exp"><td><code>Exp(X)</code></td><td>e pangkat X.</td></tr>
+<tr id="k-ln"><td><code>Ln(X)</code></td><td>Logaritma natural X, X harus &gt; 0.</td></tr>
+<tr id="k-frac"><td><code>Frac(X)</code></td><td>Bagian pecahan X: Frac(3.75) = 0.75.</td></tr>
+<tr id="k-int"><td><code>Int(X)</code></td><td>Bagian bulat X, hasil tetap Real: Int(3.75) = 3.0.</td></tr>
+<tr id="k-odd"><td><code>Odd(N)</code></td><td>True jika N bilangan ganjil.</td></tr>
+<tr><td><code>Pi</code></td><td>Nilai 3.14159265358979.</td></tr>
+<tr id="k-random"><td><code>Random</code></td><td>Real acak 0 &lt;= R &lt; 1.</td></tr>
+<tr><td><code>Random(N)</code></td><td>Bilangan bulat acak 0..N-1.</td></tr>
+<tr id="k-randomize"><td><code>Randomize</code></td><td>Menyiapkan RandSeed dari jam sistem. Panggil sekali di awal.</td></tr>
+<tr id="k-round"><td><code>Round(X)</code></td><td>Membulatkan Real ke LongInt. Bilangan .5 dibulatkan ke genap: Round(2.5) = 2.</td></tr>
+<tr id="k-sqr"><td><code>Sqr(X)</code></td><td>Kuadrat X.</td></tr>
+<tr id="k-sqrt"><td><code>Sqrt(X)</code></td><td>Akar kuadrat, X &gt;= 0.</td></tr>
+<tr id="k-trunc"><td><code>Trunc(X)</code></td><td>Memotong pecahan, hasil LongInt: Trunc(-3.7) = -3.</td></tr>
+</table></div>
+<h3 id="rutin-ordinal"><span class="n">9.8</span>Rutin ordinal <a class="anchor" href="#rutin-ordinal" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-chr"><td><code>Chr(N)</code></td><td>Karakter dengan kode N.</td></tr>
+<tr id="k-ord"><td><code>Ord(X)</code></td><td>Nomor urut nilai ordinal; Ord('A') = 65.</td></tr>
+<tr id="k-pred"><td><code>Pred(X), Succ(X)</code><span id="k-succ"></span></td><td>Nilai ordinal sebelum dan sesudah X.</td></tr>
+<tr id="k-inc"><td><code>Inc(X), Inc(X, N)</code></td><td>Menambah X dengan 1 atau N. Lebih cepat dari X := X + 1.</td></tr>
+<tr id="k-dec"><td><code>Dec(X), Dec(X, N)</code></td><td>Mengurangi X dengan 1 atau N.</td></tr>
+<tr id="k-high"><td><code>High(X), Low(X)</code><span id="k-low"></span></td><td>Batas atas dan bawah tipe atau larik: High(Byte) = 255, High(A) = indeks terakhir.</td></tr>
+<tr id="k-include"><td><code>Include(S, E)</code></td><td>Menambahkan elemen E ke himpunan S.</td></tr>
+<tr id="k-exclude"><td><code>Exclude(S, E)</code></td><td>Membuang elemen E dari himpunan S.</td></tr>
+<tr id="k-sizeof"><td><code>SizeOf(X)</code></td><td>Ukuran tipe atau variabel dalam byte.</td></tr>
+</table></div>
+<h3 id="rutin-string"><span class="n">9.9</span>Rutin string <a class="anchor" href="#rutin-string" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-length"><td><code>Length(S)</code></td><td>Panjang string.</td></tr>
+<tr id="k-copy"><td><code>Copy(S, P, N)</code></td><td>Mengambil N karakter dari S mulai posisi P (basis 1).</td></tr>
+<tr id="k-concat"><td><code>Concat(S1, S2, ...)</code></td><td>Menyambung string, sama dengan operator +.</td></tr>
+<tr id="k-pos"><td><code>Pos(Sub, S)</code></td><td>Posisi kemunculan pertama Sub di S, atau 0 jika tidak ada.</td></tr>
+<tr id="k-delete"><td><code>Delete(S, P, N)</code></td><td>Menghapus N karakter dari S mulai posisi P.</td></tr>
+<tr id="k-insert"><td><code>Insert(Sumber, S, P)</code></td><td>Menyisipkan Sumber ke S pada posisi P.</td></tr>
+<tr id="k-upcase"><td><code>UpCase(C)</code></td><td>Huruf besar untuk satu Char. Untuk string, ulangi per karakter.</td></tr>
+<tr id="k-str"><td><code>Str(X, S)</code></td><td>Mengubah angka ke string; boleh berformat: Str(X:6:2, S).</td></tr>
+<tr id="k-val"><td><code>Val(S, N, Kode)</code></td><td>Mengubah string ke angka. Kode = 0 jika berhasil, selain itu posisi karakter yang salah.</td></tr>
+<tr id="k-fillchar"><td><code>FillChar(X, N, V)</code></td><td>Mengisi N byte dari variabel X dengan nilai V.</td></tr>
+</table></div>
+<h3 id="rutin-memori"><span class="n">9.10</span>Rutin memori dan pointer <a class="anchor" href="#rutin-memori" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-new"><td><code>New(P)</code></td><td>Mengalokasikan variabel dinamis dan mengisi pointer P.</td></tr>
+<tr id="k-dispose"><td><code>Dispose(P)</code></td><td>Membebaskan variabel dinamis dari New.</td></tr>
+<tr id="k-getmem"><td><code>GetMem(P, N)</code></td><td>Mengalokasikan N byte. Pasangkan dengan FreeMem(P, N).</td></tr>
+<tr id="k-freemem"><td><code>FreeMem(P, N)</code></td><td>Membebaskan N byte dari GetMem.</td></tr>
+<tr id="k-move"><td><code>Move(Sumber, Tujuan, N)</code></td><td>Menyalin N byte; area boleh tumpang-tindih.</td></tr>
+<tr id="k-assigned"><td><code>Assigned(P)</code></td><td>True jika pointer P tidak nil.</td></tr>
+<tr id="k-memavail"><td><code>MemAvail, MaxAvail</code><span id="k-maxavail"></span></td><td>Sisa memori heap. Tidak tersedia di Odin (lihat COMPATIBILITY.txt).</td></tr>
+<tr id="k-addr"><td><code>Addr(X)</code></td><td>Alamat X, sama dengan @X.</td></tr>
+</table></div>
+<h3 id="rutin-berkas"><span class="n">9.11</span>Rutin berkas dan direktori <a class="anchor" href="#rutin-berkas" aria-label="Tautan">#</a></h3>
+<p>Mulai dari Assign, lalu Reset/Rewrite/Append, baca atau tulis, terakhir Close. Dengan {$I-}, periksa IOResult sesudah tiap operasi.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-assign"><td><code>Assign(F, Nama)</code></td><td>Menghubungkan variabel berkas dengan nama berkas pada disk.</td></tr>
+<tr id="k-reset"><td><code>Reset(F)</code></td><td>Membuka berkas yang sudah ada untuk dibaca. Berkas bertipe: dibaca dan ditulis.</td></tr>
+<tr id="k-rewrite"><td><code>Rewrite(F)</code></td><td>Membuat berkas baru atau mengosongkan yang lama, untuk ditulis.</td></tr>
+<tr id="k-append"><td><code>Append(F)</code></td><td>Membuka berkas teks untuk ditambah di akhir.</td></tr>
+<tr id="k-close"><td><code>Close(F)</code></td><td>Menutup berkas; data yang tertahan di buffer ditulis.</td></tr>
+<tr id="k-flush"><td><code>Flush(F)</code></td><td>Menulis buffer berkas teks keluaran ke disk.</td></tr>
+<tr id="k-erase"><td><code>Erase(F)</code></td><td>Menghapus berkas dari disk. Berkas harus sudah di-Assign dan ditutup.</td></tr>
+<tr id="k-rename"><td><code>Rename(F, NamaBaru)</code></td><td>Mengganti nama berkas di disk.</td></tr>
+<tr id="k-eof"><td><code>Eof(F)</code></td><td>True jika sudah di akhir berkas.</td></tr>
+<tr id="k-eoln"><td><code>Eoln(F)</code></td><td>True jika di akhir baris berkas teks.</td></tr>
+<tr id="k-seekeof"><td><code>SeekEof, SeekEoln</code><span id="k-seekeoln"></span></td><td>Seperti Eof dan Eoln tetapi melewati spasi dan tab.</td></tr>
+<tr id="k-seek"><td><code>Seek(F, N)</code></td><td>Pindah ke komponen ke-N (mulai 0) berkas bertipe.</td></tr>
+<tr id="k-filepos"><td><code>FilePos(F)</code></td><td>Posisi komponen sekarang pada berkas bertipe.</td></tr>
+<tr id="k-filesize"><td><code>FileSize(F)</code></td><td>Jumlah komponen berkas bertipe.</td></tr>
+<tr id="k-truncate"><td><code>Truncate(F)</code></td><td>Memotong berkas di posisi sekarang.</td></tr>
+<tr id="k-blockread"><td><code>BlockRead(F, Buf, N, Hasil)</code></td><td>Membaca N rekaman 128 byte (berkas tanpa tipe).</td></tr>
+<tr id="k-blockwrite"><td><code>BlockWrite(F, Buf, N, Hasil)</code></td><td>Menulis N rekaman ke berkas tanpa tipe.</td></tr>
+<tr id="k-read"><td><code>Read(F, X, ...)</code></td><td>Membaca nilai dari berkas teks atau komponen berkas bertipe. Tanpa F, dari Input.</td></tr>
+<tr id="k-readln"><td><code>ReadLn(F, X, ...)</code></td><td>Seperti Read lalu melompat ke baris berikutnya.</td></tr>
+<tr id="k-write"><td><code>Write(F, X, ...)</code></td><td>Menulis nilai ke berkas atau layar. Format: X:Lebar, atau X:Lebar:Desimal untuk Real.</td></tr>
+<tr id="k-writeln"><td><code>WriteLn(F, X, ...)</code></td><td>Seperti Write lalu mengakhiri baris.</td></tr>
+<tr id="k-ioresult"><td><code>IOResult</code></td><td>Kode galat I/O terakhir (0 = sukses); membaca nilainya me-reset ke 0. Berguna dengan {$I-}.</td></tr>
+<tr id="k-getdir"><td><code>GetDir(D, S)</code></td><td>Direktori kini pada drive D (0 = bawaan).</td></tr>
+<tr id="k-chdir"><td><code>ChDir(S)</code></td><td>Pindah direktori kerja.</td></tr>
+<tr id="k-mkdir"><td><code>MkDir(S)</code></td><td>Membuat direktori.</td></tr>
+<tr id="k-rmdir"><td><code>RmDir(S)</code></td><td>Menghapus direktori kosong.</td></tr>
+<tr id="k-paramcount"><td><code>ParamCount</code></td><td>Jumlah argumen baris perintah.</td></tr>
+<tr id="k-paramstr"><td><code>ParamStr(N)</code></td><td>Argumen ke-N; ParamStr(0) adalah nama program. Atur argumen di Run &gt; Parameters.</td></tr>
+</table></div>
+<h3 id="kontrol-program"><span class="n">9.12</span>Kontrol program <a class="anchor" href="#kontrol-program" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-halt"><td><code>Halt, Halt(Kode)</code></td><td>Mengakhiri program dengan kode keluar (bawaan 0). Prosedur ExitProc tetap jalan.</td></tr>
+<tr id="k-exit"><td><code>Exit</code></td><td>Keluar dari prosedur, fungsi, atau program utama saat itu juga. Exit(nilai) bukan sintaks TP.</td></tr>
+<tr id="k-break"><td><code>Break</code></td><td>Keluar dari for, while, atau repeat yang sedang berjalan.</td></tr>
+<tr id="k-continue"><td><code>Continue</code></td><td>Lompat ke iterasi berikutnya dari pengulangan.</td></tr>
+<tr id="k-runerror"><td><code>RunError(Kode)</code></td><td>Menimbulkan runtime error dengan kode itu.</td></tr>
+<tr id="k-exitproc"><td><code>ExitProc</code></td><td>Variabel Pointer. Pasang alamat prosedur untuk dijalankan saat program berakhir; panggil rantai lama di akhir.</td></tr>
+<tr><td><code>Randomize</code></td><td>Lihat RUTIN MATEMATIKA.</td></tr>
+</table></div>
+<h3 id="direktif-compiler"><span class="n">9.13</span>Direktif compiler <a class="anchor" href="#direktif-compiler" aria-label="Tautan">#</a></h3>
+<p>Ditulis dalam kurung kurawal: {$R+} atau {$R+,Q-}. Beberapa mengikuti saklar tunggal huruf, lainnya berbentuk kata.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-i"><td><code>$I-, $I+</code></td><td>Pemeriksaan I/O. Dengan $I- program tidak berhenti saat galat berkas; periksa IOResult sendiri.</td></tr>
+<tr><td><code>$I nama</code><span id="k-i-nama"></span></td><td>Menyertakan berkas sumber lain: {$I utils.inc}.</td></tr>
+<tr id="k-r"><td><code>$R+, $R-</code></td><td>Pemeriksaan rentang indeks array dan subrentang (runtime error 201).</td></tr>
+<tr id="k-q"><td><code>$Q+, $Q-</code></td><td>Pemeriksaan overflow aritmetika (runtime error 215).</td></tr>
+<tr id="k-s"><td><code>$S+, $S-</code></td><td>Pemeriksaan stack (runtime error 202).</td></tr>
+<tr id="k-n"><td><code>$N+, $N-</code></td><td>Mode koprosesor numerik. Diterima; di Odin Real selalu Double.</td></tr>
+<tr id="k-e"><td><code>$E+, $E-</code></td><td>Emulasi 8087. Diterima dan diabaikan.</td></tr>
+<tr id="k-b"><td><code>$B+, $B-</code></td><td>Evaluasi boolean lengkap atau hubung-singkat.</td></tr>
+<tr id="k-v"><td><code>$V+, $V-</code></td><td>Pemeriksaan panjang parameter string var.</td></tr>
+<tr id="k-x"><td><code>$X+, $X-</code></td><td>Sintaks diperluas: memanggil fungsi seperti prosedur.</td></tr>
+<tr id="k-m"><td><code>$M</code></td><td>Ukuran stack dan heap: {$M 16384,0,655360}. Diterima, tidak berefek di macOS.</td></tr>
+<tr id="k-asmmode"><td><code>$ASMMODE INTEL</code><span id="k-asmmode-intel"></span></td><td>Diterima dan diabaikan (blok asm belum didukung).</td></tr>
+<tr id="k-ifdef"><td><code>$IFDEF, $IFNDEF</code><span id="k-ifndef"></span></td><td>Kompilasi bersyarat: {$IFDEF Debug} ... {$ENDIF}.</td></tr>
+<tr><td><code>$ELSE, $ENDIF</code><span id="k-endif"></span></td><td>Cabang lain dan penutup blok kompilasi bersyarat.</td></tr>
+<tr id="k-define"><td><code>$DEFINE, $UNDEF</code><span id="k-undef"></span></td><td>Menetapkan atau menghapus simbol kompilasi.</td></tr>
+</table></div>
+<h3 id="kode-error"><span class="n">9.14</span>Kode runtime error <a class="anchor" href="#kode-error" aria-label="Tautan">#</a></h3>
+<p>Muncul sebagai 'Runtime error N at ...' dan menjadi kode keluar program.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-2"><td><code>2</code></td><td>File not found.</td></tr>
+<tr id="k-3"><td><code>3</code></td><td>Path not found.</td></tr>
+<tr id="k-4"><td><code>4</code></td><td>Too many open files.</td></tr>
+<tr id="k-5"><td><code>5</code></td><td>File access denied.</td></tr>
+<tr id="k-100"><td><code>100</code></td><td>Disk read error (membaca melewati akhir berkas).</td></tr>
+<tr id="k-101"><td><code>101</code></td><td>Disk write error.</td></tr>
+<tr id="k-102"><td><code>102</code></td><td>File not assigned: lupa Assign.</td></tr>
+<tr id="k-103"><td><code>103</code></td><td>File not open: lupa Reset/Rewrite.</td></tr>
+<tr id="k-104"><td><code>104</code></td><td>File not open for input.</td></tr>
+<tr id="k-105"><td><code>105</code></td><td>File not open for output.</td></tr>
+<tr id="k-106"><td><code>106</code></td><td>Invalid numeric format (Read angka dari teks salah).</td></tr>
+<tr id="k-200"><td><code>200</code></td><td>Division by zero.</td></tr>
+<tr id="k-201"><td><code>201</code></td><td>Range check error (butuh {$R+}).</td></tr>
+<tr id="k-202"><td><code>202</code></td><td>Stack overflow, biasanya rekursi tanpa akhir.</td></tr>
+<tr id="k-203"><td><code>203</code></td><td>Heap overflow.</td></tr>
+<tr id="k-204"><td><code>204</code></td><td>Invalid pointer operation.</td></tr>
+<tr id="k-205"><td><code>205</code></td><td>Floating point overflow.</td></tr>
+<tr id="k-206"><td><code>206</code></td><td>Floating point underflow.</td></tr>
+<tr id="k-207"><td><code>207</code></td><td>Invalid floating point operation.</td></tr>
+<tr id="k-215"><td><code>215</code></td><td>Arithmetic overflow (butuh {$Q+}).</td></tr>
+</table></div>
+</section>
+
+<section class="sec" id="s-unit">
+<h2 id="unit"><span class="n">10</span>Unit Pustaka <a class="anchor" href="#unit" aria-label="Tautan">#</a></h2>
+<p>Unit yang tersedia: System, Crt, Dos, Strings, Printer, Objects, dan Odin Vision (termasuk ColorSel dan TextView). <strong>Tidak tersedia</strong>: Graph, Graph3, Turbo3, Overlay, WinDos.</p>
+
+<h3 id="unit-crt"><span class="n">10.1</span>Crt <a class="anchor" href="#unit-crt" aria-label="Tautan">#</a></h3>
+<p>Layar teks dan papan ketik. uses Crt;. Koordinat mulai dari 1,1 pada pojok kiri atas; layar 80 kolom x 25 baris.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-clrscr"><td><code>ClrScr</code></td><td>Membersihkan jendela aktif dan menaruh kursor di 1,1.</td></tr>
+<tr id="k-clreol"><td><code>ClrEol</code></td><td>Menghapus dari kursor sampai akhir baris.</td></tr>
+<tr id="k-gotoxy"><td><code>GotoXY(X, Y)</code></td><td>Memindahkan kursor ke kolom X, baris Y (relatif terhadap jendela).</td></tr>
+<tr id="k-wherex"><td><code>WhereX, WhereY</code><span id="k-wherey"></span></td><td>Kolom dan baris kursor sekarang.</td></tr>
+<tr id="k-insline"><td><code>InsLine</code></td><td>Menyisipkan baris kosong pada kursor.</td></tr>
+<tr id="k-delline"><td><code>DelLine</code></td><td>Menghapus baris tempat kursor.</td></tr>
+<tr id="k-textcolor"><td><code>TextColor(C)</code></td><td>Warna teks 0..15; tambah Blink (128) agar berkedip.</td></tr>
+<tr id="k-textbackground"><td><code>TextBackground(C)</code></td><td>Warna latar 0..7.</td></tr>
+<tr id="k-textattr"><td><code>TextAttr</code></td><td>Variabel Byte atribut: bit 0..3 warna depan, 4..6 latar, 7 kedip.</td></tr>
+<tr id="k-lowvideo"><td><code>LowVideo, HighVideo</code><span id="k-highvideo"></span></td><td>Meredupkan atau menerangkan warna depan.</td></tr>
+<tr id="k-normvideo"><td><code>NormVideo</code></td><td>Mengembalikan atribut awal.</td></tr>
+<tr id="k-window"><td><code>Window(X1, Y1, X2, Y2)</code></td><td>Membatasi layar ke jendela persegi panjang; GotoXY relatif ke pojoknya.</td></tr>
+<tr id="k-windmin"><td><code>WindMin, WindMax</code><span id="k-windmax"></span></td><td>Pojok jendela aktif (disandikan dalam satu Word).</td></tr>
+<tr id="k-textmode"><td><code>TextMode(M)</code></td><td>Mengatur mode teks: BW40, CO40, BW80, CO80, Mono, Font8x8, C40, C80. LastMode menyimpan mode sebelumnya.</td></tr>
+<tr id="k-keypressed"><td><code>KeyPressed</code></td><td>True jika ada tombol menunggu di buffer, tanpa membaca.</td></tr>
+<tr id="k-readkey"><td><code>ReadKey</code></td><td>Menunggu satu tombol tanpa gema. Tombol fungsi/panah mengirim #0 lalu kode scan: #0#59 = F1, #0#72 = panah atas, #0#80 = bawah, #0#75 = kiri, #0#77 = kanan.</td></tr>
+<tr id="k-delay"><td><code>Delay(Ms)</code></td><td>Menunggu Ms milidetik.</td></tr>
+<tr id="k-sound"><td><code>Sound(Hz), NoSound</code><span id="k-nosound"></span></td><td>Menyalakan dan mematikan nada. Di macOS hanya diterima, tanpa bunyi.</td></tr>
+<tr id="k-checkbreak"><td><code>CheckBreak, CheckEOF</code><span id="k-checkeof"></span></td><td>Variabel Boolean: Ctrl-C menghentikan program; Ctrl-Z dianggap akhir berkas.</td></tr>
+<tr id="k-assigncrt"><td><code>AssignCrt(F)</code></td><td>Mengarahkan berkas teks F ke layar Crt.</td></tr>
+<tr id="k-directvideo"><td><code>DirectVideo, CheckSnow</code><span id="k-checksnow"></span></td><td>Variabel kompatibilitas; tidak berefek.</td></tr>
+<tr id="k-black"><td><code>Black, Blue, Green, Cyan</code><span id="k-blue"></span><span id="k-green"></span><span id="k-cyan"></span></td><td>Konstanta warna 0, 1, 2, 3.</td></tr>
+<tr id="k-red"><td><code>Red, Magenta, Brown</code><span id="k-magenta"></span><span id="k-brown"></span></td><td>Konstanta warna 4, 5, 6.</td></tr>
+<tr id="k-lightgray"><td><code>LightGray</code></td><td>Konstanta warna 7.</td></tr>
+<tr id="k-darkgray"><td><code>DarkGray, LightBlue</code><span id="k-lightblue"></span></td><td>Konstanta warna 8, 9.</td></tr>
+<tr id="k-lightgreen"><td><code>LightGreen</code></td><td>Konstanta warna 10.</td></tr>
+<tr id="k-lightcyan"><td><code>LightCyan, LightRed</code><span id="k-lightred"></span></td><td>Konstanta warna 11, 12.</td></tr>
+<tr id="k-lightmagenta"><td><code>LightMagenta</code></td><td>Konstanta warna 13.</td></tr>
+<tr id="k-yellow"><td><code>Yellow, White, Blink</code><span id="k-white"></span><span id="k-blink"></span></td><td>Konstanta warna 14, 15, dan 128 (kedip).</td></tr>
+</table></div>
+<h3 id="unit-dos"><span class="n">10.2</span>Dos <a class="anchor" href="#unit-dos" aria-label="Tautan">#</a></h3>
+<p>Tanggal, waktu, berkas, lingkungan, dan menjalankan program lain. uses Dos;.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-getdate"><td><code>GetDate(Y, M, D, DOW)</code></td><td>Tanggal sistem: tahun, bulan, hari, hari minggu (0 = Minggu).</td></tr>
+<tr id="k-gettime"><td><code>GetTime(H, M, S, S100)</code></td><td>Waktu sistem: jam, menit, detik, perseratus detik.</td></tr>
+<tr id="k-setdate"><td><code>SetDate, SetTime</code><span id="k-settime"></span></td><td>Mengubah jam sistem. Diterima; mungkin tidak berefek tanpa hak akses.</td></tr>
+<tr id="k-dosversion"><td><code>DosVersion</code></td><td>Versi sistem; di sini berisi versi kernel Darwin.</td></tr>
+<tr id="k-diskfree"><td><code>DiskFree(D), DiskSize(D)</code><span id="k-disksize"></span></td><td>Ruang kosong dan total disk dalam byte (D = 0 drive bawaan, -1 jika galat).</td></tr>
+<tr id="k-findfirst"><td><code>FindFirst(Pola, Atribut, SR)</code></td><td>Mulai pencarian berkas; hasil di SearchRec. Periksa DosError (0 = ketemu).</td></tr>
+<tr id="k-findnext"><td><code>FindNext(SR)</code></td><td>Berkas berikutnya yang cocok.</td></tr>
+<tr id="k-findclose"><td><code>FindClose(SR)</code></td><td>Menutup pencarian.</td></tr>
+<tr id="k-searchrec"><td><code>SearchRec</code></td><td>Record hasil pencarian: Attr, Time, Size, Name.</td></tr>
+<tr id="k-getfattr"><td><code>GetFAttr(F, A), SetFAttr</code><span id="k-setfattr"></span></td><td>Membaca atau mengubah atribut berkas (ReadOnly, Hidden, SysFile, VolumeID, Directory, Archive, AnyFile).</td></tr>
+<tr id="k-getftime"><td><code>GetFTime, SetFTime</code><span id="k-setftime"></span></td><td>Waktu ubah berkas dalam format paket.</td></tr>
+<tr id="k-packtime"><td><code>PackTime(DT, T)</code></td><td>Mengubah record DateTime (Year, Month, Day, Hour, Min, Sec) menjadi LongInt paket.</td></tr>
+<tr id="k-unpacktime"><td><code>UnpackTime(T, DT)</code></td><td>Kebalikan PackTime: LongInt paket menjadi record DateTime.</td></tr>
+<tr id="k-fsplit"><td><code>FSplit(Path, Dir, Nama, Ext)</code></td><td>Memecah path menjadi direktori, nama, dan ekstensi.</td></tr>
+<tr id="k-fexpand"><td><code>FExpand(Path)</code></td><td>Path lengkap dari path relatif.</td></tr>
+<tr id="k-fsearch"><td><code>FSearch(Nama, DaftarDir)</code></td><td>Mencari berkas di daftar direktori; hasil kosong bila tidak ketemu.</td></tr>
+<tr id="k-getenv"><td><code>GetEnv(Nama)</code></td><td>Nilai variabel lingkungan.</td></tr>
+<tr id="k-envcount"><td><code>EnvCount, EnvStr(N)</code><span id="k-envstr"></span></td><td>Jumlah dan isi ke-N variabel lingkungan.</td></tr>
+<tr id="k-exec"><td><code>Exec(Path, Args)</code></td><td>Menjalankan program lain. Sebelumnya SwapVectors di DOS; di sini cukup Exec. Lalu periksa DosError dan DosExitCode.</td></tr>
+<tr id="k-dosexitcode"><td><code>DosExitCode</code></td><td>Kode keluar program terakhir dari Exec.</td></tr>
+<tr id="k-doserror"><td><code>DosError</code></td><td>Kode galat DOS terakhir dari FindFirst/Exec.</td></tr>
+<tr id="k-getcbreak"><td><code>GetCBreak, SetCBreak</code><span id="k-setcbreak"></span></td><td>Pemeriksaan Ctrl-Break. Diterima; tidak berefek.</td></tr>
+<tr id="k-getverify"><td><code>GetVerify, SetVerify</code><span id="k-setverify"></span></td><td>Verifikasi tulis. Diterima; tidak berefek.</td></tr>
+<tr id="k-getintvec"><td><code>GetIntVec, SetIntVec, Keep</code><span id="k-setintvec"></span><span id="k-keep"></span></td><td>Dapat dikompilasi tetapi tidak berefek.</td></tr>
+<tr id="k-registers"><td><code>Registers, Intr, MsDos</code><span id="k-intr"></span><span id="k-msdos"></span></td><td>Tidak tersedia di macOS 64-bit.</td></tr>
+</table></div>
+<h3 id="unit-strings"><span class="n">10.3</span>Strings <a class="anchor" href="#unit-strings" aria-label="Tautan">#</a></h3>
+<p>String berakhir nol (PChar) bergaya C. uses Strings;.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-strlen"><td><code>StrLen(P)</code></td><td>Panjang string P.</td></tr>
+<tr id="k-strend"><td><code>StrEnd(P)</code></td><td>Pointer ke karakter nol di akhir P.</td></tr>
+<tr id="k-strcopy"><td><code>StrCopy(Tujuan, Sumber)</code></td><td>Menyalin Sumber ke Tujuan; Tujuan harus cukup besar.</td></tr>
+<tr id="k-strecopy"><td><code>StrECopy</code></td><td>Seperti StrCopy tetapi mengembalikan pointer ke akhir hasil.</td></tr>
+<tr id="k-strlcopy"><td><code>StrLCopy(T, S, Maks)</code></td><td>Menyalin paling banyak Maks karakter.</td></tr>
+<tr id="k-strpcopy"><td><code>StrPCopy(P, S)</code></td><td>Menyalin string Pascal S ke PChar P.</td></tr>
+<tr id="k-strpas"><td><code>StrPas(P)</code></td><td>Mengubah PChar menjadi string Pascal.</td></tr>
+<tr id="k-strcat"><td><code>StrCat, StrLCat</code><span id="k-strlcat"></span></td><td>Menyambung string (dengan batas untuk StrLCat).</td></tr>
+<tr id="k-strcomp"><td><code>StrComp, StrIComp</code><span id="k-stricomp"></span></td><td>Membandingkan; StrIComp tak membedakan huruf besar-kecil. Hasil negatif, 0, atau positif.</td></tr>
+<tr id="k-strlcomp"><td><code>StrLComp, StrLIComp</code><span id="k-strlicomp"></span></td><td>Membandingkan paling banyak N karakter.</td></tr>
+<tr id="k-strscan"><td><code>StrScan, StrRScan</code><span id="k-strrscan"></span></td><td>Mencari karakter dari awal atau dari akhir.</td></tr>
+<tr id="k-strpos"><td><code>StrPos(S, Sub)</code></td><td>Mencari substring; nil bila tidak ketemu.</td></tr>
+<tr id="k-strupper"><td><code>StrUpper, StrLower</code><span id="k-strlower"></span></td><td>Mengubah ke huruf besar atau kecil di tempat.</td></tr>
+<tr id="k-strmove"><td><code>StrMove(T, S, N)</code></td><td>Menyalin N byte.</td></tr>
+<tr id="k-strnew"><td><code>StrNew(P), StrDispose(P)</code><span id="k-strdispose"></span></td><td>Menduplikasi string di heap dan membebaskannya.</td></tr>
+</table></div>
+<h3 id="unit-objects"><span class="n">10.4</span>Objects <a class="anchor" href="#unit-objects" aria-label="Tautan">#</a></h3>
+<p>Tipe objek dasar, aliran data, dan koleksi. uses Objects;.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-tobject"><td><code>TObject</code></td><td>Induk semua objek; Init, Free, Done.</td></tr>
+<tr id="k-tpoint"><td><code>TPoint, TRect</code><span id="k-trect"></span></td><td>Titik (X, Y) dan persegi panjang (A, B) dengan Assign, Move, Grow, Intersect, Union, Contains, Empty.</td></tr>
+<tr id="k-tstream"><td><code>TStream</code></td><td>Aliran data abstrak: Read, Write, Seek, GetPos, GetSize, Truncate, ReadStr, WriteStr, Get, Put, Flush.</td></tr>
+<tr id="k-tdosstream"><td><code>TDosStream</code></td><td>Aliran ke berkas disk tanpa buffer.</td></tr>
+<tr id="k-tbufstream"><td><code>TBufStream</code></td><td>Aliran ke berkas disk dengan buffer.</td></tr>
+<tr id="k-tmemorystream"><td><code>TMemoryStream</code></td><td>Aliran di memori.</td></tr>
+<tr id="k-tcollection"><td><code>TCollection</code></td><td>Koleksi pointer yang membesar sendiri: Insert, At, Delete, DeleteAll, IndexOf, ForEach, FirstThat, LastThat.</td></tr>
+<tr id="k-tsortedcollection"><td><code>TSortedCollection</code></td><td>Koleksi terurut; timpa Compare. Search dan Duplicates tersedia.</td></tr>
+<tr id="k-tstringcollection"><td><code>TStringCollection</code></td><td>Koleksi terurut string Pascal.</td></tr>
+<tr id="k-tstrcollection"><td><code>TStrCollection</code></td><td>Koleksi terurut string berakhir nol (PChar).</td></tr>
+<tr id="k-stok"><td><code>stOk, stError</code><span id="k-sterror"></span></td><td>Nilai Status aliran: 0 baik, -1 galat. Konstanta stXXX lain menjelaskan galat.</td></tr>
+</table></div>
+<h3 id="odin-vision"><span class="n">10.5</span>Odin Vision <a class="anchor" href="#odin-vision" aria-label="Tautan">#</a></h3>
+<p>Turbo Vision milik Odin untuk membuat aplikasi teks berjendela, menu, dan dialog. API mengikuti Turbo Vision TP7. Aplikasi keluar dengan Alt-X.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-drivers"><td><code>Drivers</code></td><td>Event (TEvent), tombol (kbEnter, kbEsc, kbAltX, kbF1...), mouse, layar.</td></tr>
+<tr id="k-memory"><td><code>Memory</code></td><td>Pengelolaan memori; LowMemory selalu False.</td></tr>
+<tr id="k-histlist"><td><code>HistList</code></td><td>Riwayat isian masukan (HistoryAdd, HistoryStr).</td></tr>
+<tr id="k-views"><td><code>Views</code></td><td>TView, TGroup, TWindow, TFrame, TScrollBar, TScroller, TListViewer; dasar semua tampilan.</td></tr>
+<tr id="k-menus"><td><code>Menus</code></td><td>TMenuBar, TMenuBox, TStatusLine, NewMenu, NewItem, NewSubMenu, NewLine, NewStatusDef, NewStatusKey.</td></tr>
+<tr id="k-validate"><td><code>Validate</code></td><td>TValidator, TFilterValidator, TRangeValidator, TPXPictureValidator, TLookupValidator.</td></tr>
+<tr id="k-dialogs"><td><code>Dialogs</code></td><td>TDialog, TButton, TInputLine, TStaticText, TLabel, TCheckBoxes, TRadioButtons, TListBox, THistory.</td></tr>
+<tr id="k-app"><td><code>App</code></td><td>TApplication, TProgram, TDesktop, TBackground; kerangka program.</td></tr>
+<tr id="k-msgbox"><td><code>MsgBox</code></td><td>MessageBox dan InputBox: dialog pesan dan isian cepat.</td></tr>
+<tr id="k-stddlg"><td><code>StdDlg</code></td><td>TFileDialog dan TChDirDialog: dialog berkas dan direktori.</td></tr>
+<tr id="k-editors"><td><code>Editors</code></td><td>TEditor, TMemo, TFileEditor, TEditWindow, TIndicator; penyunting teks.</td></tr>
+<tr id="k-outline"><td><code>Outline</code></td><td>TOutline, TOutlineViewer, TNode; tampilan pohon.</td></tr>
+<tr id="k-rangka"><td><code>Rangka program</code><span id="k-rangka-program"></span></td><td>type TAplikasi = object(TApplication) end; var A: TAplikasi; begin A.Init; A.Run; A.Done; end.</td></tr>
+</table></div>
+<pre><code>uses App;
+type TAplikasi = object(TApplication) end;
+var A: TAplikasi;
+begin
+  A.Init; A.Run; A.Done;
+end.</code></pre>
+</section>
+
+<section class="sec" id="s-pintasan">
+<h2 id="pintasan"><span class="n">11</span>Pintasan Keyboard <a class="anchor" href="#pintasan" aria-label="Tautan">#</a></h2>
+<h3 id="pintasan-fungsi"><span class="n">11.1</span>Tombol fungsi <a class="anchor" href="#pintasan-fungsi" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="ref"><tr><th>Tombol</th><th>Fungsi</th></tr>
+<tr id="k-f1"><td><kbd>F1</kbd></td><td>Help; di editor: bantuan untuk kata di kursor/seleksi</td></tr>
+<tr id="k-f2"><td><kbd>F2</kbd></td><td>Save</td></tr>
+<tr id="k-f3"><td><kbd>F3</kbd></td><td>Open</td></tr>
+<tr id="k-f5"><td><kbd>F5</kbd></td><td>Zoom editor</td></tr>
+<tr id="k-f6"><td><kbd>F6</kbd></td><td>Next editor</td></tr>
+<tr id="k-f4"><td><kbd>F4</kbd></td><td>Go to cursor (debugger)</td></tr>
+<tr id="k-f7"><td><kbd>F7</kbd></td><td>Trace into (debugger)</td></tr>
+<tr id="k-f8"><td><kbd>F8</kbd></td><td>Step over (debugger)</td></tr>
+<tr id="k-f9"><td><kbd>F9</kbd></td><td>Make</td></tr>
+<tr id="k-f10"><td><kbd>F10</kbd></td><td>File menu</td></tr>
+<tr id="k-ctrl-f9"><td><kbd>Ctrl+F9</kbd></td><td>Compile and run; continue in the debugger</td></tr>
+<tr id="k-alt-f9"><td><kbd>Alt+F9</kbd></td><td>Compile</td></tr>
+<tr id="k-shift-f9"><td><kbd>Shift+F9</kbd></td><td>Ukur (laporan metrik program)</td></tr>
+<tr id="k-ctrl-f2"><td><kbd>Ctrl+F2</kbd></td><td>Stop program/debugger</td></tr>
+<tr id="k-alt-f3"><td><kbd>Alt+F3</kbd></td><td>Close editor</td></tr>
+<tr id="k-alt-f5"><td><kbd>Alt+F5</kbd></td><td>User screen</td></tr>
+<tr id="k-ctrl-f8"><td><kbd>Ctrl+F8</kbd></td><td>Toggle breakpoint</td></tr>
+<tr id="k-ctrl-f7"><td><kbd>Ctrl+F7</kbd></td><td>Evaluate/Modify (debugger)</td></tr>
+<tr id="k-alt-f8"><td><kbd>Alt+F8</kbd></td><td>Next diagnostic</td></tr>
+<tr id="k-alt-x"><td><kbd>Alt+X</kbd></td><td>Exit</td></tr>
+<tr id="k-alt-backspace"><td><kbd>Alt+Backspace</kbd></td><td>Undo</td></tr>
+</table></div>
+<h3 id="pintasan-umum"><span class="n">11.2</span>Pintasan umum <a class="anchor" href="#pintasan-umum" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="ref"><tr><th>Tombol</th><th>Fungsi</th></tr>
+<tr id="k-ctrl-n"><td><kbd>Ctrl+N</kbd> / <kbd>O</kbd> / <kbd>S</kbd></td><td>New / Open / Save</td></tr>
+<tr id="k-ctrl-f"><td><kbd>Ctrl+F</kbd></td><td>Find</td></tr>
+<tr id="k-ctrl-h"><td><kbd>Ctrl+H</kbd></td><td>Replace</td></tr>
+<tr id="k-ctrl-g"><td><kbd>Ctrl+G</kbd></td><td>Search again</td></tr>
+<tr id="k-ctrl-j"><td><kbd>Ctrl+J</kbd></td><td>Go to line</td></tr>
+<tr id="k-ctrl-l"><td><kbd>Ctrl+L</kbd></td><td>Delete current line</td></tr>
+<tr id="k-ctrl-y"><td><kbd>Ctrl+Y</kbd></td><td>Redo</td></tr>
+<tr id="k-tab"><td><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd></td><td>Indent / Unindent current line</td></tr>
+<tr><td><kbd>Insert</kbd></td><td>Toggle insert / overwrite</td></tr>
+</table></div>
+<h3 id="pintasan-mac"><span class="n">11.3</span>Alternatif Mac <a class="anchor" href="#pintasan-mac" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="ref"><tr><th>Tombol</th><th>Fungsi</th></tr>
+<tr id="k-command-n"><td><kbd>Command+N</kbd> / <kbd>O</kbd> / <kbd>S</kbd></td><td>New / Open / Save</td></tr>
+<tr id="k-command-b"><td><kbd>Command+B</kbd></td><td>Compile</td></tr>
+<tr id="k-command-r"><td><kbd>Command+R</kbd></td><td>Compile and run</td></tr>
+<tr id="k-command-f"><td><kbd>Command+F</kbd></td><td>Find</td></tr>
+<tr id="k-command-w"><td><kbd>Command+W</kbd></td><td>Close editor</td></tr>
+<tr id="k-command-q"><td><kbd>Command+Q</kbd></td><td>Quit</td></tr>
+<tr id="k-command-c"><td><kbd>Command+C</kbd> / <kbd>V</kbd> / <kbd>X</kbd></td><td>Copy / Paste / Cut in the editor (Tk native bindings)</td></tr>
+<tr id="k-command-z"><td><kbd>Command+Z</kbd></td><td>Undo in the editor (Tk native binding)</td></tr>
+</table></div>
+<p>Menu mnemonics: Alt+F/E/S/R/C/D/O/W/H. Di sebagian pengaturan Mac, tombol Option menghasilkan simbol khusus. Gunakan klik menu atau pintasan Command bila mnemonic tidak diteruskan Tk. Tekan Fn bersama F1..F12 jika tombol fungsi dipakai untuk kontrol perangkat.</p>
+<h3 id="pintasan-user"><span class="n">11.4</span>Di User screen <a class="anchor" href="#pintasan-user" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="ref"><tr><th>Tombol</th><th>Fungsi</th></tr>
+<tr id="k-enter"><td><kbd>Enter</kbd></td><td>Input newline</td></tr>
+<tr id="k-arrow-home-end"><td><kbd>Arrow/Home/End</kbd></td><td>Terminal navigation</td></tr>
+<tr id="k-f1-f12"><td><kbd>F1..F12,</kbd> <kbd>Insert</kbd></td><td>Diteruskan ke program (ReadKey, Turbo Vision)</td></tr>
+<tr id="k-option-huruf"><td><kbd>Option+huruf</kbd></td><td>Alt+huruf untuk program (Esc + huruf), misalnya Alt+X</td></tr>
+<tr id="k-mouse"><td><kbd>Mouse</kbd></td><td>Diteruskan ke program Turbo Vision yang memintanya</td></tr>
+<tr id="k-ctrl-c"><td><kbd>Ctrl+C</kbd></td><td>Interrupt process group</td></tr>
+<tr><td><kbd>Ctrl+F2</kbd></td><td>Stop</td></tr>
+<tr><td><kbd>Alt+F5</kbd></td><td>Hide User screen</td></tr>
+<tr id="k-f7-f8"><td><kbd>F7/F8</kbd></td><td>Langkah debugger saat program berhenti, selain itu ke program</td></tr>
+<tr><td><kbd>Ctrl+C</kbd></td><td>Saat debugging: hentikan sementara di statement berikutnya</td></tr>
+<tr><td><kbd>Copy</kbd> <kbd>screen</kbd></td><td>Menyalin layar teks 80x25 ke clipboard</td></tr>
+</table></div>
+<p>Ctrl+Insert/Shift+Insert dan Shift+Delete mengikuti binding clipboard Tk pada platform terkait. Menu Edit tersedia apabila keyboard Mac tidak memiliki Insert.</p>
+</section>
+
+<section class="sec" id="s-kompatibilitas">
+<h2 id="kompatibilitas"><span class="n">12</span>Kompatibilitas <a class="anchor" href="#kompatibilitas" aria-label="Tautan">#</a></h2>
+<p>Odin adalah implementasi baru dengan tampilan terinspirasi IDE Turbo Pascal era DOS. Ini bukan emulasi compiler Borland, bukan replika identik, dan bukan kompatibilitas biner DOS.</p>
+
+<h3 id="status-fitur"><span class="n">12.1</span>Status fitur <a class="anchor" href="#status-fitur" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Komponen</th><th>Status</th></tr>
+<tr><td>Editor dan operasi berkas</td><td>Diimplementasikan, diuji GUI Linux</td></tr>
+<tr><td>Compiler Odin (bahasa TP7)</td><td>Diimplementasikan, korpus 77 program</td></tr>
+<tr><td><code>ReadLn</code>, <code>WriteLn</code></td><td>Diuji melalui binary dan PTY</td></tr>
+<tr><td>Crt: warna, GotoXY, ClrScr, ReadKey</td><td>Diuji melalui program Crt nyata di Linux</td></tr>
+<tr><td>Unit Pascal</td><td>Diuji dengan unit <code>matematika</code> (Bab 19)</td></tr>
+<tr><td>LF/CRLF, UTF-8/BOM, CP437</td><td>Diuji round-trip</td></tr>
+<tr><td>Injeksi shell lewat argumen</td><td>Tidak ada: compile dan run tidak memakai shell</td></tr>
+<tr><td>Signing / notarization Apple</td><td>Belum tersedia</td></tr>
+<tr><td>BGI/Graph DOS</td><td>Tidak diimplementasikan</td></tr>
+<tr><td>Interrupt, port, mem DOS</td><td>Tidak diemulasi</td></tr>
+<tr><td>Terminal truecolor / Unicode lebar</td><td>Tidak tersedia</td></tr>
+<tr><td>Compiler dan runtime</td><td>Disertakan (<code>odinpc</code> dan runtime library Odin); Free Pascal, Xcode, dan LLDB tidak diperlukan</td></tr>
+</table></div>
+
+<h3 id="status-uji"><span class="n">12.2</span>Yang sudah dan belum diuji <a class="anchor" href="#status-uji" aria-label="Tautan">#</a></h3>
+<div class="callout warn"><b>Batas klaim</b><p>Yang diuji: compiler Odin di Mac Intel (Darwin 24.6), VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu), serta runner GitHub Actions untuk macOS 15 Apple Silicon, Ubuntu x86_64 dan arm64, dan Windows Server 2025. <strong>Belum diuji langsung</strong>: Mac Apple Silicon fisik, PC Linux fisik, PC Windows fisik, installer di Apple Silicon dan Windows, Mac bersih tanpa Xcode Command Line Tools, LaunchServices/Gatekeeper, serta <kbd>Option</kbd> pada keyboard Mac sungguhan.</p></div>
+
+<h3 id="backend"><span class="n">12.3</span>Compiler <a class="anchor" href="#backend" aria-label="Tautan">#</a></h3>
+<p>Compiler adalah toolchain Odin: <code>odinpc</code> (Rust) dengan assembler, linker, debugger, dan runtime library sendiri. Target: x86_64-darwin, aarch64-darwin (Mach-O, dengan tanda tangan kode ad-hoc yang diwajibkan macOS di Apple Silicon), x86_64-linux dan aarch64-linux (ELF dinamis, glibc 2.34 atau lebih baru), x86_64-windows (PE32+). Sampai 2.3.0 Free Pascal bisa dipilih sebagai backend alternatif; backend itu, beserta mode ObjFPC/Delphi, sudah dicabut.</p>
+<ul>
+<li>Bahasanya Turbo Pascal 7 di platform 64-bit. Perbedaan CPU, ukuran pointer, ABI, sistem berkas, dan unit tetap berlaku.</li>
+<li>Di arm64, bendera FPSR diperiksa sesudah operasi real sehingga runtime error 207, 200, atau 205 muncul seperti di x86-64.</li>
+<li>Di Windows, berkas teks memakai CRLF, path memakai <code>\</code> dan huruf drive, dan <code>Printer</code> mencetak lewat <code>notepad /p</code>.</li>
+</ul>
+
+<h3 id="unit-tp7"><span class="n">12.4</span>Unit standar Turbo Pascal 7 <a class="anchor" href="#unit-tp7" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Unit</th><th>Status</th></tr>
+<tr><td>System</td><td>Otomatis. Rutin string, matematika, Str/Val, berkas teks dan bertipe, direktori, ParamStr, New/Dispose, Include/Exclude, IOResult, ExitProc.</td></tr>
+<tr><td>Crt</td><td>ClrScr, GotoXY, WhereX/WhereY, warna, Window, ClrEol, DelLine, Delay, Sound/NoSound, KeyPressed, ReadKey (termasuk F1&ndash;F12, Insert, panah dengan kode scan TP).</td></tr>
+<tr><td>Dos</td><td>GetDate/GetTime, GetEnv, FSplit, FExpand, FSearch, FindFirst/FindNext, DiskFree/DiskSize, GetFAttr, GetFTime, Exec/DosExitCode. <code>DosVersion</code> berisi versi kernel Darwin.</td></tr>
+<tr><td>Strings</td><td>Rutin PChar (StrPCopy, StrCat, StrPos, StrNew, dan lainnya).</td></tr>
+<tr><td>Objects</td><td>TStringCollection dan TBufStream diuji berjalan.</td></tr>
+<tr><td>Printer</td><td>Tersedia; <code>Lst</code> diteruskan ke printer default (<code>lpr</code> di macOS).</td></tr>
+<tr><td>Turbo Vision</td><td>Odin Vision: Drivers, Memory, HistList, Views, Menus, Validate, Dialogs, App, MsgBox, StdDlg, Editors, Outline, ColorSel, TextView.</td></tr>
+<tr><td>Graph, Graph3, Overlay, WinDos, Turbo3</td><td>Tidak tersedia. Hapus <code>uses Overlay</code> dan pemanggilan <code>OvrInit</code>; gunakan Dos dan Strings sebagai pengganti WinDos.</td></tr>
+</table></div>
+
+<h3 id="fitur-dos"><span class="n">12.5</span>Fitur era DOS <a class="anchor" href="#fitur-dos" aria-label="Tautan">#</a></h3>
+<p>Tidak dapat dikompilasi di sistem 64-bit: <code>Mem</code>/<code>MemW</code>/<code>MemL</code>, <code>Port</code>, <code>absolute $Seg:$Ofs</code>, <code>PrefixSeg</code>, <code>MemAvail</code>/<code>MaxAvail</code>, <code>Test8087</code>, <code>inline(...)</code>, prosedur <code>interrupt</code>, serta <code>Intr</code>/<code>MsDos</code>/<code>Registers</code>. <code>GetIntVec</code>/<code>SetIntVec</code> dan <code>Keep</code> dapat dikompilasi tetapi tidak berefek. Blok <code>asm</code> belum didukung.</p>
+
+<h3 id="beda-perilaku"><span class="n">12.6</span>Perbedaan perilaku penting <a class="anchor" href="#beda-perilaku" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Hal</th><th>Turbo Pascal 7</th><th>Odin</th></tr>
+<tr><td><code>Real</code></td><td>6 byte</td><td>8 byte. <code>Real48</code> tidak tersedia; berkas biner Real dari TP perlu dikonversi lebih dahulu.</td></tr>
+<tr><td>Pointer</td><td>4 byte</td><td>8 byte. <code>Integer</code> tetap 2 byte, <code>LongInt</code> 4 byte di mode TP.</td></tr>
+<tr><td><code>Round(2.5)</code></td><td>3</td><td>2 (pembulatan ke genap). Periksa program yang bergantung pada nilai .5.</td></tr>
+</table></div>
+<p>Jangan menganggap tata letak record atau berkas biner DOS, atau aritmetika pointer, identik di macOS 64-bit.</p>
+</section>
+
+<section class="sec" id="s-masalah">
+<h2 id="masalah"><span class="n">13</span>Pemecahan Masalah <a class="anchor" href="#masalah" aria-label="Tautan">#</a></h2>
+
+<h3 id="galat-umum"><span class="n">13.1</span>Galat umum <a class="anchor" href="#galat-umum" aria-label="Tautan">#</a></h3>
+<div class="tw"><table class="wrap">
+<tr><th>Gejala</th><th>Penyebab dan solusi</th></tr>
+<tr><td>Compiler not found</td><td>Jalankan lagi <code>Install.command</code> (<code>Install.cmd</code> di Windows). Dari source: <code>cargo build --release</code> di folder <code>toolchain/</code>.</td></tr>
+<tr><td>Unit not found</td><td>Periksa Primary file, nama unit (harus sama dengan nama berkas), dan <strong>Options &gt; Directories</strong>.</td></tr>
+<tr><td><code>ReadLn</code> terlihat diam</td><td>Klik User screen, ketik masukan, lalu <kbd>Enter</kbd>.</td></tr>
+<tr><td>Program macet</td><td><strong>Run &gt; Program reset</strong> (<kbd>Ctrl+F2</kbd>). Proses diterminasi, lalu dipaksa berhenti bila belum keluar setelah satu detik.</td></tr>
+<tr><td>Font terlalu besar</td><td><strong>Options &gt; Editor</strong>.</td></tr>
+<tr><td>F1&ndash;F12 mengatur volume atau kecerahan (Mac)</td><td>Gunakan <kbd>Fn</kbd> bersama tombol fungsi, atau aktifkan &ldquo;gunakan tombol F1, F2 dst. sebagai tombol fungsi standar&rdquo; di pengaturan Keyboard. Alternatif: <kbd>Command+B</kbd> (compile) dan <kbd>Command+R</kbd> (run).</td></tr>
+<tr><td>Aplikasi tidak mau terbuka</td><td>Periksa <code>launch.log</code> dan <code>last-error.log</code> di folder pengaturan. <strong>Options &gt; Environment information</strong> menampilkan path runtime.</td></tr>
+<tr><td>Berkas data tidak ketemu (Bab 17, 20)</td><td>Program berjalan dengan folder sumbernya sebagai direktori kerja; simpan salinan contoh ke folder sendiri.</td></tr>
+<tr><td>Runtime error N</td><td>Lihat tabel <a href="#kode-error">Kode runtime error</a>. Baris penyebab ditandai merah; <strong>Search &gt; Find error</strong> menuju ke sana.</td></tr>
+</table></div>
+
+<h3 id="faq"><span class="n">13.2</span>Tanya jawab <a class="anchor" href="#faq" aria-label="Tautan">#</a></h3>
+<h4>Apakah saya harus memasang Free Pascal atau Xcode?</h4>
+<p>Tidak. Compiler <code>odinpc</code> sudah disertakan dan menjadi satu-satunya compiler; satu-satunya dependensi adalah Python dengan Tk.</p>
+<h4>Mengapa program saya tidak bisa membaca berkas biner dari Turbo Pascal 7?</h4>
+<p>Tipe <code>Real</code> berbeda ukuran (6 byte di TP, 8 byte di sini), dan <code>Real48</code> tidak tersedia. Konversikan berkas itu lebih dahulu.</p>
+<h4>Dapatkah saya membagikan program yang saya kompilasi?</h4>
+<p>Ya, lewat <strong>Compile &gt; Export executable</strong>. Executable hanya jalan di OS dan CPU yang sama, dan program hasil Odin memuat runtime GPL (lihat <a href="#ekspor">Mengekspor executable</a>).</p>
+<h4>Di mana pengaturan saya disimpan?</h4>
+<p>Lihat <a href="#lokasi">Lokasi berkas</a>.</p>
+</section>
+
+<section class="sec" id="s-glosarium">
+<h2 id="glosarium" class="appendix"><span class="n">A</span>Glosarium <a class="anchor" href="#glosarium" aria-label="Tautan">#</a></h2>
+<div class="tw"><table class="wrap">
+<tr><th>Istilah</th><th>Arti</th></tr>
+<tr><td>odinpc</td><td>Compiler Odin yang membangun program: compiler, assembler, linker, dan debugger dalam satu berkas.</td></tr>
+<tr><td>Build cache</td><td>Folder hasil kompilasi per program dan per pilihan compiler, terpisah dari folder sumber.</td></tr>
+<tr><td>Odin Vision</td><td>Turbo Vision milik Odin, API-nya mengikuti Turbo Vision TP7.</td></tr>
+<tr><td>Primary file</td><td>Berkas utama yang selalu dikompilasi saat Run, apa pun editor yang aktif.</td></tr>
+<tr><td>PTY</td><td>Pseudo-terminal: saluran masukan/keluaran interaktif antara IDE dan program.</td></tr>
+<tr><td>TP7</td><td>Turbo Pascal versi 7, acuan sintaks dan unit.</td></tr>
+<tr><td>User screen</td><td>Terminal 80&times;25 tempat program berjalan.</td></tr>
+<tr><td>Watches</td><td>Daftar ekspresi yang nilainya dipantau debugger.</td></tr>
+</table></div>
+</section>
+
+<section class="sec" id="s-lokasi">
+<h2 id="lokasi" class="appendix"><span class="n">B</span>Lokasi Berkas dan Pengaturan <a class="anchor" href="#lokasi" aria-label="Tautan">#</a></h2>
+<p>Pengaturan dan data per pengguna berada di <code>~/Library/Application Support/OdinTurboPascal/</code> di macOS, <code>%APPDATA%\OdinTurboPascal\</code> di Windows, dan <code>~/.local/share/OdinTurboPascal/</code> di Linux.</p>
+<div class="tw"><table class="wrap">
+<tr><th>Berkas</th><th>Isi</th></tr>
+<tr><td><code>settings.json</code></td><td>Pengaturan IDE (Options &gt; Save options).</td></tr>
+<tr><td><code>build/</code></td><td>Build cache.</td></tr>
+<tr><td><code>recovery.json</code></td><td>Salinan editor untuk pemulihan, ditulis tiap 10 detik, dihapus saat keluar normal.</td></tr>
+<tr><td><code>last-error.log</code></td><td>Galat IDE terakhir.</td></tr>
+<tr><td><code>launch.log</code></td><td>Catatan peluncuran aplikasi.</td></tr>
+<tr><td><code>python-path</code></td><td>Interpreter Python yang dicatat pemasang.</td></tr>
+<tr><td><code>instance.lock</code></td><td>Penjaga agar hanya satu jendela Odin berjalan.</td></tr>
+</table></div>
+</section>
+
+<section class="sec" id="s-tentang">
+<h2 id="tentang-lisensi" class="appendix"><span class="n">C</span>Tentang dan Lisensi <a class="anchor" href="#tentang-lisensi" aria-label="Tautan">#</a></h2>
+<p>Odin Turbo Pascal 2.4.0. Dibuat oleh Syams Ideris. Hak cipta &copy; 2026 Syams Ideris.</p>
+<p>Program ini adalah perangkat lunak bebas: Anda dapat menyebarluaskan dan/atau mengubahnya di bawah ketentuan GNU General Public License versi 3 atau, sesuai pilihan Anda, versi yang lebih baru. Program ini <strong>tidak memiliki jaminan apa pun</strong>. Teks lisensi lengkap ada di berkas <code>LICENSE</code>, dan pemberitahuan pihak ketiga di <code>THIRD_PARTY.txt</code>.</p>
+<p>Perangkat lunak ini bukan Borland Turbo Pascal dan tidak berafiliasi dengan Borland. Tidak ada biner, logo, huruf, atau berkas bantuan Borland yang disertakan.</p>
+</section>
+
+      <footer class="foot">
+        Odin Turbo Pascal 2.4.0 &middot; Lisensi GNU GPL v3 atau yang lebih baru, hak cipta &copy; 2026 Syams Ideris.<br>
+        Perangkat lunak ini tidak memiliki jaminan apa pun. Bukan produk Borland dan tidak berafiliasi dengan Borland.
+        Halaman ini dibuat dari <code>docs/*.txt</code> oleh <code>scripts/build_help.py</code>.
+      </footer>
+    </article>
+  </main>
+  <aside class="page" aria-label="Pada halaman ini"><h2>Pada halaman ini</h2><div id="here"></div></aside>
+</div>
+<script>
+(function(){
+  "use strict";
+  var root=document.documentElement,$=function(s,c){return (c||document).querySelector(s)},$$=function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s))};
+  function plain(h){var c=h.cloneNode(true);$$(".n,.anchor",c).forEach(function(x){x.remove()});return c.textContent.trim()}
+  function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+  var theme=store("odin-help-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"turbo":"light");
+  function setTheme(t){root.setAttribute("data-theme",t);store("odin-help-theme",t)}
+  setTheme(theme);
+  $("#theme").onclick=function(){setTheme(root.getAttribute("data-theme")==="turbo"?"light":"turbo")};
+  $("#menubtn").onclick=function(){document.body.classList.toggle("menu")};
+  $("nav.toc").addEventListener("click",function(e){if(e.target.closest("a"))document.body.classList.remove("menu")});
+
+  // Tombol salin pada blok kode
+  $$("pre").forEach(function(pre){
+    var b=document.createElement("button");b.className="copy";b.textContent="Salin";
+    b.onclick=function(){
+      var t=pre.querySelector("code").innerText;
+      (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){b.textContent="Tersalin"},function(){
+        var r=document.createRange();r.selectNodeContents(pre.querySelector("code"));var s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="Pilih+salin"});
+      setTimeout(function(){b.textContent="Salin"},1500)};
+    pre.appendChild(b)});
+
+  // Bagian: tiap h2/h3 beserta teksnya (untuk pencarian dan scroll-spy)
+  var heads=$$("#content h2[id],#content h3[id]"),sections=heads.map(function(h){
+    var txt=[],n=h.nextElementSibling;
+    while(n&&!(n.matches("h2,h3")||n.querySelector(":scope > h2, :scope > h3")&&n.matches("section"))){txt.push(n.innerText||n.textContent);n=n.nextElementSibling}
+    return {el:h,id:h.id,title:plain(h),level:h.tagName==="H2"?2:3,text:txt.join(" ").replace(/\s+/g," ")}});
+  // Baris tabel referensi ikut diindeks sebagai entri tersendiri
+  $$("table.ref tr[id]").forEach(function(tr){
+    var h=tr.closest("section,div").querySelector("h3,h2"),c=tr.cells;
+    sections.push({el:tr,id:tr.id,title:c[0].textContent.trim(),level:4,parent:h?plain(h):"",text:c[1]?c[1].textContent.replace(/\s+/g," "):""})});
+
+  // Pencarian
+  var q=$("#q"),box=$("#results"),sel=-1,hits=[];
+  function esc(s){return s.replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
+  function hl(s,words){return esc(s).replace(new RegExp("("+words.map(function(w){return w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}).join("|")+")","gi"),"<mark>$1</mark>")}
+  function search(){
+    var words=q.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if(!words.length){box.style.display="none";return}
+    hits=[];
+    sections.forEach(function(s){
+      var t=s.title.toLowerCase(),b=s.text.toLowerCase(),score=0;
+      for(var i=0;i<words.length;i++){
+        var w=words[i],inT=t.indexOf(w)>=0,inB=b.indexOf(w)>=0;
+        if(!inT&&!inB){score=0;break}
+        score+=(t===w?50:inT?(t.indexOf(w)===0?20:10):0)+(inB?2:0)+(s.level===4?1:0)}
+      if(score)hits.push({s:s,score:score})});
+    hits.sort(function(a,b){return b.score-a.score});hits=hits.slice(0,12);sel=hits.length?0:-1;
+    box.innerHTML=hits.length?hits.map(function(h,i){
+      var s=h.s,p=s.text.toLowerCase().indexOf(words[0]),snip=s.text.substr(Math.max(0,p-40),130);
+      return '<a href="#'+s.id+'" data-i="'+i+'"'+(i===0?' class="sel"':'')+'><b>'+hl(s.title,words)+(s.parent?' <small style="font-weight:400;color:var(--muted)">&middot; '+esc(s.parent)+'</small>':'')+'</b><span>'+hl(snip,words)+'</span></a>'}).join("")
+      :'<div class="none">Tidak ada hasil untuk &ldquo;'+esc(q.value)+'&rdquo;.</div>';
+    box.style.display="block"}
+  q.addEventListener("input",search);
+  q.addEventListener("keydown",function(e){
+    var items=$$("a",box);
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();if(!items.length)return;
+      sel=(sel+(e.key==="ArrowDown"?1:-1)+items.length)%items.length;items.forEach(function(a,i){a.classList.toggle("sel",i===sel)});box.scrollTop=items[sel].offsetTop-box.clientHeight/2}
+    else if(e.key==="Enter"&&items[sel]){location.hash=items[sel].getAttribute("href").slice(1);box.style.display="none";q.blur()}
+    else if(e.key==="Escape"){q.value="";box.style.display="none";q.blur()}});
+  box.addEventListener("click",function(){box.style.display="none"});
+  document.addEventListener("click",function(e){if(!e.target.closest(".search"))box.style.display="none"});
+  document.addEventListener("keydown",function(e){
+    if(e.key==="/"&&!/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)){e.preventDefault();q.focus();q.select()}});
+
+  // Scroll-spy: tandai bagian aktif di daftar isi dan panel kanan
+  var tocLinks={};$$("nav.toc a").forEach(function(a){tocLinks[a.getAttribute("href").slice(1)]=a});
+  var here=$("#here"),curH2=null;
+  function mark(id){
+    $$("nav.toc a.active").forEach(function(a){a.classList.remove("active")});
+    $$("nav.toc li.open").forEach(function(li){li.classList.remove("open")});
+    var a=tocLinks[id];if(!a)return;
+    a.classList.add("active");var li=a.closest("li");
+    var top=a.closest("nav > ul > li");if(top)top.classList.add("open");
+    var r=a.getBoundingClientRect(),nav=$("nav.toc").getBoundingClientRect();
+    if(r.top<nav.top+40||r.bottom>nav.bottom-40){var tn=$("nav.toc");tn.scrollTop+=r.top-nav.top-tn.clientHeight/2}
+    var h2=id,el=document.getElementById(id);
+    var sec=el&&el.closest("section.sec");var h2el=sec&&sec.querySelector("h2");
+    if(h2el&&h2el.id!==curH2){
+      curH2=h2el.id;
+      here.innerHTML=$$("h3[id]",sec).map(function(h){return '<a href="#'+h.id+'" data-id="'+h.id+'">'+esc(plain(h))+'</a>'}).join("")}
+    $$("a",here).forEach(function(x){x.classList.toggle("active",x.dataset.id===id)})}
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){if(e.isIntersecting)mark(e.target.id)})},{rootMargin:"-70px 0px -75% 0px"});
+  heads.forEach(function(h){io.observe(h)});
+  addEventListener("scroll",function(){
+    var d=document.documentElement;$("#progress").style.width=(100*d.scrollTop/(d.scrollHeight-d.clientHeight||1))+"%"},{passive:true});
+  var find=/^#cari=(.+)/.exec(location.hash);
+  if(find){q.value=decodeURIComponent(find[1]);search();q.focus()}
+  else if(location.hash.length>1){var tgt=document.getElementById(decodeURIComponent(location.hash.slice(1)));if(tgt)addEventListener("load",function(){tgt.scrollIntoView()})}
+  mark((location.hash.slice(1)&&tocLinks[location.hash.slice(1)])?location.hash.slice(1):(heads[0]||{}).id);
+})();
+</script>
+</body>
+</html>

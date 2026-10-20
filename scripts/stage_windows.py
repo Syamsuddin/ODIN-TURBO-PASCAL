@@ -11,6 +11,7 @@ PNG images inside assets/odin.icns. odinpc.exe is copied when a Windows build ex
 """
 import shutil
 import struct
+import subprocess
 import sys
 from pathlib import Path
 
@@ -23,12 +24,24 @@ TOOLCHAIN = (ROOT / "toolchain" / "odinpc.exe", ROOT / "toolchain" / "target" / 
 PNG = b"\x89PNG\r\n\x1a\n"
 
 
+def git_ignored(directory, names):
+    """Names git ignores here (.gitignore or .git/info/exclude); none without git."""
+    paths = [str((Path(directory) / name).relative_to(ROOT)) for name in names]
+    try:
+        result = subprocess.run(["git", "-C", str(ROOT), "check-ignore", "--stdin"], input="\n".join(paths),
+                                capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return set()
+    return {Path(line).name for line in result.stdout.splitlines()}
+
+
 def ignore(directory, names):
     """copytree filter: as SKIP, and only the Pascal sources from examples/, where the tutorial
-    programs (Bab 17, Bab 20) write their data files."""
+    programs (Bab 17, Bab 20) write their data files. Files git ignores stay out, like in
+    package_app.py."""
     if Path(directory).name == "examples":
         return {name for name in names if not name.lower().endswith(".pas")}
-    return SKIP(directory, names)
+    return SKIP(directory, names) | git_ignored(directory, names)
 
 
 def icns_pngs(data):

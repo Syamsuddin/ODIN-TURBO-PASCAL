@@ -6,7 +6,7 @@ Status: Tahap 0–7 dikerjakan di cabang `toolchain/tahap-0`, Tahap 8 di `platfo
 
 Rilis **2.0.0-alpha.1** (15 Oktober 2026) memuat Tahap 0–7 (gerbang G1–G7). **2.0.0-alpha.2** di hari yang sama menambahkan logo baru dari proyek OTP v2.0 dan README yang diperbarui. Rilis **2.0.0** (juga 15 Oktober 2026) dimajukan oleh pemilik proyek: isinya sama dengan 2.0.0-alpha.2, jadi backend Odin tetap hanya untuk Mac Intel. Tahap 8–9 (AArch64, Linux, dan pelepasan FPC) menjadi rilis 2.1.0.
 
-## 0. Status pelaksanaan (per 15 Oktober 2026)
+## 0. Status pelaksanaan (per 20 Oktober 2026)
 
 Angka G0–G7 diukur di Mac pengembang: Intel x86_64, macOS 15.7, FPC 3.2.2 sebagai pembanding. G8 juga diukur di VM Lima dan di runner GitHub Actions.
 
@@ -24,6 +24,7 @@ Angka G0–G7 diukur di Mac pengembang: Intel x86_64, macOS 15.7, FPC 3.2.2 seba
 | G8b | Lolos | Linker ELF (PIE dinamis, glibc). Korpus 77 program (biasa dan debug) dan 92 tes Python dengan backend Odin lulus di VM dan di runner Ubuntu 24.04 x86_64. |
 | G8c | Lolos (CI) | Encoder AArch64 (575 golden dari clang) dan codegen AArch64. Korpus lulus di aarch64 Linux (qemu dan runner Ubuntu arm64) dan native di runner macOS 15 Apple Silicon, bersama tes GUI, debugger, dan Odin Vision. Mac Apple Silicon fisik dan `Install.command` di sana belum diuji. |
 | G8d | Lolos (CI) | Konvensi Win64 di codegen, linker PE32+, RTL Windows (UCRT, Win32, konsol VT, vectored exception handler), `odinpc.exe`, debugger lewat TCP 127.0.0.1, IDE dengan User screen ConPTY (Ctrl-C lewat helper yang menempel ke pseudoconsole). Di runner Windows Server 2025: korpus 77 program (biasa dan debug) identik dengan FPC 3.2.2 untuk Windows (`oracle.yml`), 93 tes Python lulus (GUI, debugger, Odin Vision), dan pemeriksaan pemasang (`check_windows.py`, `stage_windows.py`) lulus. `Install.ps1` lengkap belum dijalankan di PC Windows sungguhan. |
+| G9 | Sebagian (20 Oktober 2026) | FPC dicabut dari IDE, pemasang, tes, dan CI: `build()` hanya memanggil `odinpc`; setting `compiler`, `mode`, `backend`, dan `debug_info` dihapus; `locate_compiler()`, `free_vision_dir()`, dan `parse_diagnostics()` dihapus; `Install.command` tidak lagi memasang FPC maupun Xcode CLT; `check_mac.py` dan `check_windows.py` memakai `odinpc` dari paket (bukan `odinpc selftest`); `scripts/oracle.py` diganti `scripts/bless_corpus.py`. Odin Vision kini juga punya ColorSel dan TextView. **Belum:** enam pemeriksaan macOS di Mac Intel dan Apple Silicon yang bersih (tanpa FPC dan tanpa Xcode CLT). |
 
 Perbedaan dari rencana yang sudah terjadi:
 

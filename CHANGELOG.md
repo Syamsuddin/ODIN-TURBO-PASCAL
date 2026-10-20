@@ -6,6 +6,37 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Ditambahkan
+
+- Bantuan lengkap dalam HTML, `docs/help.html`, dibuka dari **Help › Contents** (F1): satu berkas mandiri dengan daftar isi bertingkat (penanda bagian aktif, panel "Pada halaman ini"), pencarian instan (`/`), tema terang dan Turbo, serta cetak. Isinya panduan penggunaan, referensi menu, referensi bahasa Pascal dan unit, pintasan, kompatibilitas, dan pemecahan masalah. Tabel referensi dibangun dari `docs/PASCAL.txt` dan `docs/SHORTCUTS.txt` oleh `scripts/build_help.py`; jalankan ulang skrip itu setelah mengubah docs atau nomor versi (tes `test_help_html_is_current` memeriksanya).
+- Bantuan konteks di editor: F1 membuka `docs/help.html` di browser pada baris referensi untuk kata di posisi kursor (atau teks yang diseleksi). Kata yang tidak punya entri dimasukkan ke kotak pencarian halaman. Help > Contents juga membuka halaman ini; menu "Help in browser" yang kembar dihapus. `scripts/build_help.py` memberi tiap nama pada baris seperti `Cos(X), Sin(X)` anchor sendiri.
+- `docs/PASCAL.txt` dilengkapi menjadi referensi lengkap dengan daftar isi: semua kata cadangan dan direktif standar beserta penjelasan, operator, tipe data, konstanta, rutin System (matematika, ordinal, string, memori, berkas, kontrol program), direktif compiler, kode runtime error, unit Crt, Dos, Strings, Objects, Odin Vision, dan perintah IDE. Potongan contoh lama pindah ke bagian "Contoh ringkas".
+- Unit Odin Vision `ColorSel` (dialog warna `TColorDialog` dengan pemilih warna, daftar grup, dan daftar item) dan `TextView` (`TTextDevice`, `TTerminal`, dan `AssignDevice` sehingga `WriteLn` bisa menulis ke jendela terminal). Dengan keduanya, seluruh unit Turbo Vision TP7 kini milik Odin sendiri.
+- `scripts/bless_corpus.py`: menulis ekspektasi korpus `tests/pascal/` untuk program baru dengan `odinpc`. Ekspektasi lama tidak ditimpa tanpa `--force`, dan hasilnya ditinjau terhadap perilaku Turbo Pascal 7 sebelum commit.
+- CI menjalankan gerbang pemasang macOS (`scripts/check_mac.py`) di macOS Intel dan Apple Silicon.
+- **Setup Windows satu berkas** (`OdinTurboPascal-VERSI-Setup-x64.exe`), dibuat dengan Inno Setup oleh `scripts/build_setup_windows.py` dan `scripts/odin_setup.iss`. Berkas ini membawa IDE, `odinpc.exe`, dan Python 3.13 dengan Tk khusus untuk Odin (installer python.org yang disematkan dengan SHA-256), sehingga pemasangan tidak memerlukan internet, hak administrator, maupun Python di komputer. Pemasangan per pengguna di `%LOCALAPPDATA%\Programs\OdinTurboPascal` (folder yang sama dengan `Install.cmd`, jadi bisa menimpa pemasangan itu), pintasan di menu Start dan Desktop, pemeriksaan kompilasi dengan `odinpc.exe` setelah penyalinan, uninstaller di Settings > Apps, dan pemasangan senyap (`/VERYSILENT`) untuk lab. CI membangun setup di job Windows, memasangnya secara senyap, menjalankan pemeriksaan, lalu mengunggahnya sebagai artefak `odin-setup-windows-x86_64`. `Install.cmd` tetap ada sebagai jalur kedua.
+- **Pemasang Linux satu berkas** (`OdinTurboPascal-VERSI-linux-ARCH.run`, x86_64 dan arm64), dibuat oleh `scripts/build_setup_linux.py`. Berkas ini berisi skrip shell dan arsip tar.xz: IDE, `odinpc`, dan Python 3.13 dengan Tk khusus untuk Odin (python-build-standalone, disematkan dengan SHA-256), sehingga tidak ada yang diunduh saat memasang dan tidak perlu `python3-tk`, Rust, maupun hak root. Pemasang memeriksa integritas paket, mengompilasi dan menjalankan program uji dengan `odinpc` sebelum memasang, membuat perintah `odin-turbo-pascal` dan entri menu aplikasi, menyimpan satu cadangan versi lama, dan punya `--prefix`, `--no-menu`, `--check`, dan `--uninstall`. Satu-satunya yang diambil dari sistem adalah pustaka X11. CI Linux membangunnya, memasangnya dengan jaringan diputus (`unshare -n`), dan mengunggahnya sebagai artefak. Odin Vision/IDE berjalan di Tk 9.0 bawaan paket ini.
+- **Pemasang macOS satu berkas** (`OdinTurboPascal-VERSI-macos-ARCH.pkg`), dibuat oleh `scripts/build_setup_mac.py` dengan `pkgbuild` dan `productbuild`. Paket ini memasang `Odin Turbo Pascal.app` di `~/Applications` untuk pengguna yang sedang masuk (tanpa kata sandi administrator), dan aplikasinya membawa Python 3.13 dengan Tk sendiri (python-build-standalone, disematkan dengan SHA-256) serta `odinpc`, sehingga tidak ada yang diunduh dan tidak perlu Python, Homebrew, maupun Xcode. Skrip postinstall mengompilasi dan menjalankan program uji dengan `odinpc` (gerbang `check_mac.py`). `scripts/launcher.sh` memakai Python bawaan bundel bila ada (tanpa re-exec arm64, dengan `-E -X utf8`); tanpa Python bawaan perilakunya tidak berubah. `scripts/package_app.py` menerima folder tujuan sebagai argumen. Paket belum ditandatangani Apple (macOS menahannya sampai dibuka lewat klik kanan > Open atau System Settings > Privacy & Security).
+- Buku tutorial menyebut tautan repositori GitHub (`github.com/Syamsuddin/ODIN-TURBO-PASCAL`): di ringkasan pemasangan Bab 1, di Lampiran A (beserta halaman Releases), di halaman hak cipta, dan di penutup. Di PDF tautannya bisa diklik.
+
+### Diperbaiki
+
+- Odin Vision: `TGroup.Store` (menyimpan jendela atau dialog ke stream) hanya menulis satu subview, sehingga `Load` mengembalikan satu subview dan salah membaca data sesudahnya. Kini semua subview tersimpan.
+- `scripts/build_book.py`: permainan tebak angka (Bab 8.6) dimainkan otomatis dengan membaca petunjuk dari keluaran sejak tebakan terakhir. Sebelumnya skrip membaca baris terakhir, yang selalu berupa prompt, sehingga tebakannya tidak pernah berubah. Bug ini tertutup oleh cache buku sampai `odinpc` dibangun ulang.
+
+### Dihapus
+
+- **Backend Free Pascal.** `odinpc` kini satu-satunya compiler. Pilihan backend, path Free Pascal, mode bahasa (TP/ObjFPC/Delphi), dan opsi Debug information (hanya dipakai Free Pascal) hilang dari **Options › Compiler**; pengaturan lama itu diabaikan saat dibaca. Program ObjFPC/Delphi tidak lagi bisa dikompilasi. Di sistem yang tidak didukung `odinpc` (misalnya Windows on ARM), IDE kini mengatakan hal itu, bukan beralih ke Free Pascal.
+- Pemasang macOS tidak lagi memasang Free Pascal maupun Xcode Command Line Tools, dan pemasang Windows tidak lagi memasang Free Pascal. Satu-satunya dependensi adalah Python dengan Tk. Pemeriksaan pemasang (`check_mac.py`, `check_windows.py`) mengompilasi dan menjalankan program uji dengan `odinpc` dari paket.
+- `scripts/oracle.py` dan workflow `oracle.yml` (ekspektasi korpus dari Free Pascal). Ekspektasi yang sudah ada tetap dipakai. Free Pascal tidak lagi dipasang di CI.
+- Tes yang membandingkan dengan Free Pascal. Layar `Crt` kini dibandingkan dengan snapshot tersimpan (`tests/pascal/crt/CRT_WINDOW.snap`), yang dicocokkan dengan Free Pascal 3.2.2 sebelum backend itu dicabut.
+
+### Diubah
+
+- `scripts/package_app.py` tidak menyalin berkas yang diabaikan git ke bundel `.app`.
+- `odinpc.exe` ditautkan dengan runtime C secara statis (`toolchain/.cargo/config.toml`), sehingga tidak lagi memerlukan `VCRUNTIME140.dll` (Visual C++ Redistributable) di PC Windows yang bersih. `odinpc.exe` yang tercatat di repo masih build lama; ambil yang baru dari artefak CI sebelum merilis setup.
+- `scripts/stage_windows.py` tidak menyalin berkas yang diabaikan git, seperti `package_app.py`.
+
 ## [2.4.0] - 2026-10-18
 
 Rilis 2.4.0. Odin Turbo Pascal kini bisa **mengukur** program untuk analisis dan penilaian (misalnya lomba pemrograman). `odinpc build --count-steps` menghitung langkah per pernyataan, puncak heap, dan kedalaman panggilan dengan angka yang sama di macOS, Linux, dan Windows, x86-64 maupun arm64. `odinpc metrics` melaporkan struktur kode. Di IDE, menu **Run › Ukur** (Shift+F9) menampilkan laporan itu di jendela **Metrik**, dan **Run › Periksa...** menilai program dengan paket soal.
@@ -22,6 +53,8 @@ Rilis 2.4.0. Odin Turbo Pascal kini bisa **mengukur** program untuk analisis dan
 ### Diubah
 
 - CI: `actions/checkout` dan `actions/upload-artifact` naik dari v4 ke v7, yang berjalan di Node.js 24. GitHub Actions tidak lagi memperingatkan bahwa Node.js 20 sudah usang.
+- Emulator VT100 (`Screen`) dan proses pseudo-terminal (`Process`) pindah dari `odin/terminal.py` ke modul baru `odin/console.py` yang tidak membutuhkan Tk. `odin/terminal.py` kini hanya berisi widget Tk dan tetap mengekspor nama lama. `odin/debugger.py` juga tidak lagi memuat Tk.
+- `Document` mendapat `from_bytes()` dan `encoded()` (membaca dan menulis isi berkas tanpa menyentuh disk), dan `core.build()` menerima `wrap` untuk menjalankan `odinpc` lewat pembungkus tanpa mengubah perintah yang ditampilkan.
 
 ### Pengujian
 

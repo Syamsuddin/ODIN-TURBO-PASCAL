@@ -8,6 +8,7 @@ import os
 import queue
 import re
 import shutil
+import subprocess
 import tempfile
 import time
 import unittest
@@ -53,6 +54,15 @@ SCENARIOS = {
         ALT_X, ("snap", "save-prompt"),
         b"n",
     ],
+    "VCOLORS": [
+        ("snap", "terminal"),
+        KEYS["F4"], ("snap", "dialog"),
+        KEYS["Down"], KEYS["Tab"], KEYS["Tab"], KEYS["Right"], ("snap", "menus"),
+        click(51, 14), click(14, 7), click(57, 10), ("snap", "desktop"),
+        KEYS["Return"], ("snap", "applied"),
+        KEYS["F4"], ("snap", "reopen"),
+        KEYS["Escape"], ALT_X,
+    ],
 }
 
 # Steps can also be ("expect", text) or ("absent", text): the screen must (not) show text then.
@@ -71,7 +81,36 @@ OUTPUT = {
     "VMENUS": "VMENUS selesai, jendela 3",
     "VDIALOG": "VDIALOG Xy 7 2",
     "VEDITOR": "VEDITOR selesai",
+    "VCOLORS": "VCOLORS 13 50",
 }
+
+
+# VUNITS runs without a terminal and prints the state of ColorSel and TextView objects.
+UNITS_OUTPUT = """\
+[] lines 1 width 0 calc 0 front 0 back 0 top 0
+[abc|] lines 2 width 3 calc 3 front 4 back 0 top 0
+[abc|x\ty] lines 2 width 9 calc 9 front 7 back 0 top 0
+[baris 4|baris 5|baris 6|] lines 4 width 7 calc 7 front 24 back 0 top 1
+[mpai lebih dari tiga puluh dua|] lines 2 width 30 calc 30 front 8 back 9 top 0
+[pendek|] lines 2 width 6 calc 6 front 15 back 8 top 0
+prev 15 15 8 8 next 15 15
+insert TRUE FALSE empty FALSE
+read satu 12
+read dua eof TRUE
+size 256 groups 4 mono FALSE fore TRUE
+display 19 fore 3 back 1
+stream 0 TRUE
+loaded pal 4 groups 4 display 19 fore 3
+Dialogs Frame passive 64 ... Cluster disabled 94 (31)
+Windows Frame passive 24
+menus display 112
+pal 19 73 indexes 1 4 0
+past TRUE
+reopen group 1 display 73
+mono TRUE fore FALSE value 73
+inverse 112
+VUNITS selesai
+""".splitlines()
 
 
 def encode(screen):
@@ -129,7 +168,6 @@ class VisionSnapshotTests(unittest.TestCase):
     def setUp(self):
         self.root = Path(tempfile.mkdtemp(prefix="odin vision "))
         self.settings = Settings(self.root / "settings.json")
-        self.settings["backend"] = "odin"
 
     def tearDown(self):
         # Windows keeps a program's .exe locked for a moment after it has ended.
@@ -216,6 +254,18 @@ class VisionSnapshotTests(unittest.TestCase):
 
     def test_editor_outline_and_save_prompt(self):
         self.check("VEDITOR")
+
+    def test_color_dialog_and_terminal(self):
+        self.check("VCOLORS")
+
+    def test_terminal_buffer_and_color_streams(self):
+        # No terminal needed: the TTerminal buffer through AssignDevice (on Windows the CR of
+        # WriteLn must be dropped), input through StrRead, and TColorDialog through a stream.
+        r = build(VISION / "VUNITS.PAS", self.settings, cache=self.root / "build")
+        self.assertTrue(r.success, r.output)
+        result = subprocess.run([str(r.executable)], capture_output=True, text=True, timeout=10, cwd=self.root)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.splitlines(), UNITS_OUTPUT)
 
     def test_file_dialog_and_change_directory(self):
         for name in ("ALPHA.PAS", "BETA.PAS", "notes.txt", ".hidden.PAS"):

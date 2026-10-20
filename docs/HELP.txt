@@ -89,16 +89,16 @@ Go to line memindahkan kursor ke nomor baris.
 
 KOMPILASI
 
-Alt+F9 / F9: memanggil Free Pascal, unit yang belum berubah memakai hasil
-build sebelumnya bila masih sesuai konfigurasi compiler.
-Compile > Build: menambahkan -B agar unit dikompilasi ulang.
+Alt+F9 / F9: memanggil compiler Odin (odinpc); unit yang belum berubah
+memakai hasil build sebelumnya bila masih sesuai konfigurasi compiler.
+Compile > Build: semua unit dikompilasi ulang.
 Ctrl+F9: kompilasi kemudian run. Tidak menjalankan executable lama saat
 kompilasi terbaru gagal. Semua perubahan berkas terbuka disimpan dahulu.
 
 Tanpa Primary file, editor aktif adalah target kompilasi. Untuk proyek yang
 terdiri dari program dan unit, pilih Compile > Primary file dan tentukan
 berkas program .pas. Clear primary file mengembalikan mode editor aktif.
-Mengompilasi unit saja menghasilkan .ppu/.o tanpa executable, dan tidak run.
+Mengompilasi unit saja tidak menghasilkan executable, dan tidak run.
 
 Build cache dipisahkan menurut path program dan pilihan compiler, di:
 ~/Library/Application Support/OdinTurboPascal/build/
@@ -111,17 +111,14 @@ Alt+F8 berpindah ke diagnostik berikutnya, termasuk warning dan hint.
 Compile > Compiler messages menampilkan perintah dan seluruh keluaran compiler.
 
 Options > Compiler:
-TP adalah mode bawaan untuk sumber bergaya Turbo Pascal.
-ObjFPC dan Delphi tersedia untuk bahasa dengan fitur lebih baru.
-Mode dalam direktif {$mode ...} di source dapat mengalahkan pilihan command line.
+Compiler Odin mengikuti bahasa Turbo Pascal 7; tidak ada pilihan mode lain.
 Range checks dan overflow checks aktif secara bawaan.
-Debug information menambahkan informasi baris dan DWARF pada build Free
-Pascal. Debugger Odin tidak memakainya: Debug > Start debugging selalu
-membuat build debug tersendiri dengan backend Odin.
+Informasi baris untuk runtime error selalu dibuat. Debug > Start debugging
+membuat build debug tersendiri dengan pengait debugger.
 
 Options > Directories menerima satu unit/include path per baris. Path dengan
 spasi didukung tanpa tanda kutip tambahan. Sumber unit pada direktori yang
-sama biasanya ditemukan oleh FPC secara otomatis.
+sama ditemukan compiler secara otomatis.
 
 PROGRAM PARAMETERS
 
@@ -136,8 +133,7 @@ Terminal memakai pseudo-terminal OS sehingga input program bersifat interaktif.
 Ukuran layar emulasi 80 kolom × 25 baris. Membesarkan jendela tidak mengubah
 ukuran buffer. Terminal mendukung bagian VT100/ANSI yang digunakan oleh CRT:
 warna 16, posisi kursor, clear, scroll, insertion/deletion, dan input keyboard.
-Karakter garis dan pola desktop Turbo Vision (Odin Vision dan Free Vision)
-ditampilkan. Tombol F1..F12 dan Insert diteruskan ke program, termasuk
+Karakter garis dan pola desktop Turbo Vision (Odin Vision) ditampilkan. Tombol F1..F12 dan Insert diteruskan ke program, termasuk
 dengan Shift, Ctrl, atau Alt; F7/F8 hanya menjadi perintah debugger saat
 program sedang berhenti di debugger. Program yang meminta mouse (Turbo
 Vision) menerima klik, seret, dan roda mouse. Alt+huruf dikirim sebagai
@@ -199,7 +195,6 @@ Batas waktu, atau Keluaran terlalu panjang.
 
 DEBUGGER
 
-Debugger Odin bekerja dengan backend Odin (Options > Compiler > Odin native).
 Program dikompilasi ulang dengan pengait debugger, lalu dijalankan di User
 screen. LLDB, GDB, dan Xcode tidak diperlukan. Diuji di Mac Intel, dan di
 runner GitHub Actions untuk Mac Apple Silicon, Linux x86_64 dan arm64, serta
@@ -239,7 +234,7 @@ Jika sumber diubah di tengah sesi, perintah langkah berikutnya menanyakan
 apakah program perlu dibuild ulang.
 
 Runtime error: baris penyebabnya ditandai merah, baik saat Run biasa maupun
-saat debugging (backend Odin). Search > Find error kembali ke baris itu.
+saat debugging. Search > Find error kembali ke baris itu.
 
 RECOVERY
 
@@ -251,9 +246,8 @@ File recovery dihapus ketika keluar secara normal.
 
 TROUBLESHOOTING
 
-Compiler not found: jalankan kembali Install.command atau isi path FPC pada
-Options > Compiler, misalnya /opt/homebrew/bin/fpc atau /usr/local/bin/fpc.
-Linker/SDK error: pastikan xcode-select -p dan xcrun --show-sdk-path berhasil.
+Compiler not found: jalankan kembali Install.command (Install.cmd di Windows).
+Dari source: cargo build --release di folder toolchain/.
 Unit not found: periksa primary file, nama unit, dan Options > Directories.
 ReadLn terlihat diam: klik User screen, ketik masukan, lalu Enter.
 Tombol F1..F12 mengatur volume/kecerahan: gunakan Fn bersama tombol fungsi,

@@ -10,6 +10,8 @@ apart from the version tag comment in examples/bab01_01_halo_dunia.pas.
 import plistlib
 import re
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -27,7 +29,9 @@ if found != 1:
     raise SystemExit("examples/bab01_01_halo_dunia.pas: komentar tag versi '{ Odin Turbo Pascal vX.Y.Z - program pertama }' tidak ditemukan.")
 if stamped != source:
     hello.write_bytes(stamped)
-APP = ROOT / "Odin Turbo Pascal.app"
+# An argument is the folder to build the bundle in (scripts/build_setup_mac.py); the default is the
+# repository, which is what the release uses.
+APP = (Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT) / "Odin Turbo Pascal.app"
 CONTENTS = APP / "Contents"
 if APP.exists():
     shutil.rmtree(APP)
@@ -38,30 +42,42 @@ resources.mkdir()
 skip = shutil.ignore_patterns("__pycache__", "*.pyc", "odin-logo-master.png")
 
 
+def git_ignored(directory, names):
+    """Names git ignores here (.gitignore or .git/info/exclude); none without git."""
+    paths = [str((Path(directory) / name).relative_to(ROOT)) for name in names]
+    try:
+        result = subprocess.run(["git", "-C", str(ROOT), "check-ignore", "--stdin"], input="\n".join(paths),
+                                capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return set()
+    return {Path(line).name for line in result.stdout.splitlines()}
+
+
 def ignore(directory, names):
     # The tutorial programs (Bab 17, Bab 20) write data files next to
     # themselves; only the Pascal sources go into the bundle.
     if Path(directory).name == "examples":
         return {name for name in names if not name.lower().endswith(".pas")}
-    return skip(directory, names)
+    # Local files that git ignores stay out of the bundle and the release ZIP.
+    return skip(directory, names) | git_ignored(directory, names)
 
 
 for folder in ("odin", "examples", "docs", "assets"):
     shutil.copytree(ROOT / folder, resources / folder, ignore=ignore)
 # The Odin toolchain: the RTL sources and odinpc, preferably the universal
 # x86_64 + arm64 build of scripts/build_toolchain.py, else the release build
-# for this Mac (cargo build --release in toolchain/). Without odinpc the IDE
-# falls back to Free Pascal.
+# for this Mac (cargo build --release in toolchain/). odinpc is the only
+# compiler, so a bundle without it is refused.
 shutil.copytree(ROOT / "rtl", resources / "rtl")
 odinpc = ROOT / "toolchain" / "target" / "universal" / "odinpc"
 if not odinpc.is_file():
     odinpc = ROOT / "toolchain" / "target" / "release" / "odinpc"
     print("Peringatan: odinpc universal belum dibangun (scripts/build_toolchain.py); bundle hanya untuk CPU Mac ini.")
-if odinpc.is_file():
-    (resources / "toolchain").mkdir()
-    shutil.copy2(odinpc, resources / "toolchain" / "odinpc")
-else:
-    print("Peringatan: toolchain/target/release/odinpc belum ada; bundle memakai Free Pascal.")
+if not odinpc.is_file():
+    shutil.rmtree(APP)
+    raise SystemExit("toolchain/target/release/odinpc belum ada. Jalankan scripts/build_toolchain.py atau cargo build --release di toolchain/.")
+(resources / "toolchain").mkdir()
+shutil.copy2(odinpc, resources / "toolchain" / "odinpc")
 for name in ("main.py", "LICENSE", "THIRD_PARTY.txt"):
     shutil.copy2(ROOT / name, resources / name)
 icon = ROOT / "assets" / "odin.icns"

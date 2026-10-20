@@ -1,7 +1,7 @@
 ODIN TURBO PASCAL - PINTASAN
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
-F1                  Help
+F1                  Help; di editor: bantuan untuk kata di kursor/seleksi
 F2                  Save
 F3                  Open
 F5                  Zoom editor

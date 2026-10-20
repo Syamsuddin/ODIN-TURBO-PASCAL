@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 Syams Ideris
+#
+# Windows: link the C runtime into odinpc.exe, so it needs no VCRUNTIME140.dll (the Visual C++
+# Redistributable) on the target PC. The offline setup (scripts/odin_setup.iss) relies on this.
+# Other targets are not affected.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

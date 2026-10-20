@@ -1,0 +1,613 @@
+<div class="hero" id="atas">
+  <h1>Bantuan Odin Turbo Pascal</h1>
+  <p>IDE Pascal bergaya Turbo Pascal untuk belajar dan menulis program: editor, kompilator, terminal 80&times;25, dan debugger dalam satu jendela.</p>
+  <div class="badges"><span>Versi {{VERSION}}</span><span>GNU GPL v3 atau lebih baru</span><span>macOS &middot; Windows &middot; Linux</span></div>
+</div>
+
+<section class="sec" id="s-selamat-datang">
+<h2 id="selamat-datang">Selamat Datang</h2>
+
+<h3 id="tentang">Tentang Odin</h3>
+<p>Odin Turbo Pascal adalah IDE Pascal dengan tampilan terinspirasi IDE Turbo Pascal era DOS. Program ditulis di editor, dikompilasi menjadi program asli (<em>native</em>) untuk CPU Anda, lalu dijalankan di <strong>User screen</strong>, terminal 80 kolom &times; 25 baris yang bersifat interaktif.</p>
+<div class="callout"><b>Catatan</b><p>Odin bukan Borland Turbo Pascal dan tidak berafiliasi dengan Borland. Tidak ada berkas, logo, huruf, atau berkas bantuan Borland di dalamnya. Lihat <a href="#kompatibilitas">Kompatibilitas</a>.</p></div>
+
+<h3 id="fitur">Fitur utama</h3>
+<ul>
+<li>Editor dengan <a href="#warna-sintaks">warna sintaks Turbo Biru Lembut</a>, banyak jendela, cari-ganti, dan <a href="#pemulihan">pemulihan otomatis</a>.</li>
+<li>Compiler <strong>odinpc</strong> bawaan (target macOS Intel dan Apple Silicon, Linux x86_64 dan arm64, Windows x86_64), dengan assembler, linker, debugger, dan runtime library sendiri.</li>
+<li><a href="#user-screen">User screen</a> berbasis pseudo-terminal: <code>ReadLn</code>, unit Crt, dan aplikasi Turbo Vision berjalan interaktif, lengkap dengan mouse.</li>
+<li><a href="#debugger">Debugger</a> terpadu: breakpoint, langkah demi langkah, Watches, Local variables, Call stack, Evaluate/Modify.</li>
+<li>Tutorial 20 bab dengan 89 program contoh dan <a href="#tutorial">buku PDF</a> pendampingnya.</li>
+<li>Referensi bahasa Pascal dan unit pustaka yang bisa dibuka dengan <kbd>F1</kbd> pada kata di editor.</li>
+</ul>
+
+<h3 id="kebutuhan">Kebutuhan sistem</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Komponen</th><th>Keterangan</th></tr>
+<tr><td>Python</td><td>3.10 atau lebih baru, dengan Tk. Hanya pustaka standar; tidak ada paket pip.</td></tr>
+<tr><td>macOS</td><td>macOS 11 atau lebih baru. Xcode Command Line Tools tidak diperlukan.</td></tr>
+<tr><td>Windows</td><td>Windows 10 versi 1809 atau lebih baru, x86_64 (memakai ConPTY).</td></tr>
+<tr><td>Compiler</td><td>odinpc sudah disertakan; tidak ada compiler lain yang perlu dipasang.</td></tr>
+</table></div>
+
+<h3 id="peta">Peta dokumentasi</h3>
+<div class="cards">
+<a class="card" href="#memulai"><b>Memulai</b><span>Program pertama dalam 2 menit</span></a>
+<a class="card" href="#tutorial"><b>Tutorial &amp; Buku</b><span>20 bab untuk pemula</span></a>
+<a class="card" href="#editor"><b>Editor</b><span>Berkas, jendela, pencarian</span></a>
+<a class="card" href="#kompilasi"><b>Kompilasi &amp; Run</b><span>Build, error, opsi</span></a>
+<a class="card" href="#debugger"><b>Debugger</b><span>Breakpoint dan Watches</span></a>
+<a class="card" href="#referensi-menu"><b>Referensi Menu</b><span>Semua menu dan pintasannya</span></a>
+<a class="card" href="#bahasa"><b>Bahasa Pascal</b><span>Kata cadangan sampai rutin</span></a>
+<a class="card" href="#pintasan"><b>Pintasan</b><span>Keyboard Windows, Linux, Mac</span></a>
+<a class="card" href="#masalah"><b>Pemecahan Masalah</b><span>Galat umum dan solusinya</span></a>
+</div>
+</section>
+
+<section class="sec" id="s-memulai">
+<h2 id="memulai">Memulai</h2>
+
+<h3 id="program-pertama">Program pertama</h3>
+<ol>
+<li>Pilih <strong>File &gt; New</strong>.</li>
+<li>Ketik program berikut.</li>
+<li>Simpan ke folder kerja Anda dengan <kbd>F2</kbd>.</li>
+<li>Tekan <kbd>Ctrl</kbd>+<kbd>F9</kbd> untuk mengompilasi dan menjalankan.</li>
+</ol>
+<pre><code>program Halo;
+var
+  Nama: string;
+begin
+  Write('Nama Anda: ');
+  ReadLn(Nama);
+  WriteLn('Halo, ', Nama);
+end.</code></pre>
+<p><kbd>Ctrl</kbd>+<kbd>F9</kbd> selalu mengompilasi ulang sumber terbaru dan menjalankan executable bila build berhasil. Program yang gagal dikompilasi tidak akan menjalankan executable lama. Tombol <strong>Editor</strong> pada User screen kembali ke editor; <kbd>Alt</kbd>+<kbd>F5</kbd> membukanya lagi.</p>
+<div class="callout tip"><b>Tip</b><p>Program menunggu masukan di User screen. Bila <code>ReadLn</code> terlihat diam, klik User screen, ketik masukan, lalu tekan <kbd>Enter</kbd>.</p></div>
+
+<h3 id="alur-kerja">Alur kerja</h3>
+<div class="flow">
+<div><b>Tulis</b>Editor</div>
+<div><b>Compile</b><kbd>Alt+F9</kbd></div>
+<div><b>Run</b><kbd>Ctrl+F9</kbd></div>
+<div><b>Debug</b><kbd>F7</kbd> <kbd>F8</kbd></div>
+<div><b>Perbaiki</b><kbd>Alt+F8</kbd></div>
+</div>
+
+<h3 id="antarmuka">Tur antarmuka</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Bagian</th><th>Fungsi</th></tr>
+<tr><td>Menu bar</td><td>File, Edit, Search, Run, Compile, Debug, Options, Window, Help. Buka dengan klik, <kbd>F10</kbd>, atau <kbd>Alt</kbd>+huruf pertama menu.</td></tr>
+<tr><td>Desktop</td><td>Area kerja berpola Turbo Vision tempat jendela editor, Watches, Locals, dan Call stack ditempatkan. Di bawah logo tampak nomor versi dan nama pembuat.</td></tr>
+<tr><td>Jendela editor</td><td>Satu berkas per jendela, dengan nomor baris, gutter breakpoint di kiri, dan penanda baris debug.</td></tr>
+<tr><td>Pesan compiler</td><td>Daftar error, warning, dan hint. Klik dua kali untuk menuju baris dan kolomnya.</td></tr>
+<tr><td>User screen</td><td>Terminal 80&times;25 tempat program berjalan.</td></tr>
+<tr><td>Status bar</td><td>Petunjuk tombol, status build, posisi kursor, dan pesan singkat.</td></tr>
+</table></div>
+</section>
+
+<section class="sec" id="s-tutorial">
+<h2 id="tutorial">Tutorial dan Buku</h2>
+
+<h3 id="tutorial-contoh">Tutorial Pascal untuk pemula</h3>
+<p><strong>File &gt; Examples</strong> berisi tutorial 20 bab, dari <code>bab01_01_halo_dunia.pas</code> sampai proyek akhir <code>bab20_03_buku_telepon.pas</code>. Nama berkas mengikuti pola <code>babNN_MM_topik.pas</code>, jadi urut dengan sendirinya. Komentar dan keluaran program berbahasa Indonesia.</p>
+<ul>
+<li><strong>Bab 1&ndash;5</strong>: fondasi (program, tipe data, masukan/keluaran, operator).</li>
+<li><strong>Bab 6&ndash;8</strong>: alur kendali (percabangan, pengulangan, latihan logika).</li>
+<li><strong>Bab 9&ndash;10</strong>: prosedur, fungsi, dan rekursi.</li>
+<li><strong>Bab 11&ndash;14</strong>: struktur data (array, string, record, enumerasi, subrentang, set).</li>
+<li><strong>Bab 15&ndash;16</strong>: pencarian dan pengurutan.</li>
+<li><strong>Bab 17&ndash;20</strong>: berkas, pointer, unit, dan proyek akhir.</li>
+</ul>
+<div class="callout warn"><b>Perhatian</b><p>Program Bab 17 dan Bab 20 membuat berkas data (misalnya <code>catatan.txt</code> atau <code>kontak.dat</code>) di folder berkas <code>.pas</code>-nya. Contoh bawaan berstatus templat, jadi simpan salinannya ke folder sendiri dengan <strong>File &gt; Save as</strong> supaya berkas data mudah dicari.</p></div>
+
+<h3 id="daftar-bab">Daftar bab dan program</h3>
+<!--@tutorial-->
+
+<h3 id="buku">Buku tutorial (PDF)</h3>
+<p><strong>Help &gt; Buku</strong> membuka buku <em>Belajar Pemrograman Bahasa Pascal dengan ODIN Turbo Pascal</em> (<code>docs/Belajar_Pemrograman_Bahasa_Pascal.pdf</code>) di aplikasi PDF bawaan sistem. Buku berwarna penuh ini membahas semua program contoh di atas.</p>
+</section>
+
+<section class="sec" id="s-editor">
+<h2 id="editor">Editor</h2>
+
+<h3 id="berkas">Membuka dan menyimpan</h3>
+<p><strong>File &gt; Open</strong> (<kbd>F3</kbd>) menerima <code>.pas</code>, <code>.pp</code>, <code>.inc</code>, dan berkas teks lain. Berkas yang sama dibuka satu kali saja.</p>
+<ul>
+<li><strong>Save</strong> (<kbd>F2</kbd>) menulis secara atomik ke folder tujuan, sehingga berkas tidak rusak bila penulisan terputus.</li>
+<li>Bila berkas diubah pihak lain setelah dibuka, Odin mendeteksinya (lewat hash SHA-256) dan menanyakan tindakan Anda.</li>
+<li><strong>Save as</strong> membuat salinan. Contoh bawaan selalu diarahkan ke Save as.</li>
+<li>Open mengenali <strong>UTF-8</strong>, <strong>UTF-8 dengan BOM</strong>, lalu <strong>CP437</strong> untuk kode DOS lama. Gaya akhir baris LF atau CRLF dipertahankan, jadi berkas kembali identik byte demi byte saat disimpan. Berkas DOS dengan code page selain CP437 perlu dikonversi ke UTF-8 lebih dulu.</li>
+<li><strong>Recent files</strong>, <strong>Examples</strong>, dan <strong>Change directory</strong> mempercepat berpindah folder kerja.</li>
+</ul>
+
+<h3 id="menyunting">Menyunting</h3>
+<p><kbd>Enter</kbd> melanjutkan indentasi baris sebelumnya. <kbd>Tab</kbd> memasukkan spasi sesuai pengaturan, <kbd>Shift</kbd>+<kbd>Tab</kbd> menggeser baris ke kiri. <kbd>Ctrl</kbd>+<kbd>L</kbd> menghapus baris, <kbd>Insert</kbd> menukar mode sisip/timpa. Daftar lengkap ada di <a href="#pintasan">Pintasan Keyboard</a>.</p>
+<p><strong>Options &gt; Editor</strong> mengatur ukuran huruf (10&ndash;30), lebar tab (1&ndash;8), dan Syntax colors.</p>
+
+<h3 id="warna-sintaks">Warna sintaks</h3>
+<p>Skema Turbo Biru Lembut aktif secara bawaan, di latar biru tua. Matikan <strong>Syntax colors</strong> untuk kembali ke teks kuning klasik di latar biru.</p>
+<div class="syn"><table>
+<tr><td><span class="sw" style="background:#ffffff"></span>putih tebal</td><td>kata tercadang (<code>begin</code>, <code>if</code>, <code>var</code>)</td></tr>
+<tr><td><span class="sw" style="background:#ffe98a"></span>kuning lembut</td><td>variabel dan nama buatan sendiri lainnya</td></tr>
+<tr><td><span class="sw" style="background:#ffc08a"></span>jingga muda</td><td>prosedur dan fungsi buatan sendiri</td></tr>
+<tr><td><span class="sw" style="background:#8ad0ff"></span>biru langit</td><td>rutin bawaan (<code>WriteLn</code>, <code>ClrScr</code>)</td></tr>
+<tr><td><span class="sw" style="background:#9be8a8"></span>hijau muda</td><td>tipe bawaan (<code>Integer</code>, <code>Real</code>, <code>Boolean</code>)</td></tr>
+<tr><td><span class="sw" style="background:#ff9bb5"></span>merah muda</td><td>angka, termasuk heksadesimal (<code>$0E</code>), serta <code>True</code>, <code>False</code>, <code>nil</code></td></tr>
+<tr><td><span class="sw" style="background:#5fe0c8"></span>hijau toska</td><td>string dan konstanta karakter (<code>#13</code>)</td></tr>
+<tr><td><span class="sw" style="background:#c8b6ff"></span>lavender</td><td>operator dan simbol (<code>:= + ; .</code>)</td></tr>
+<tr><td><span class="sw" style="background:#8fa3d6"></span>biru keabuan</td><td>komentar, dicetak miring</td></tr>
+<tr><td><span class="sw" style="background:#ff9a8a"></span>merah salem</td><td>direktif compiler (<code>{$R+}</code>)</td></tr>
+</table></div>
+<p class="muted" style="color:var(--muted);font-size:14px">Swatch di atas hanya perkiraan warna; warna tepat ditentukan oleh IDE.</p>
+
+<h3 id="jendela">Mengatur jendela</h3>
+<ul>
+<li><strong>Window &gt; List</strong> menampilkan editor yang terbuka; <kbd>F6</kbd> berpindah ke jendela berikutnya.</li>
+<li><strong>Tile</strong> membagi layar, <strong>Cascade</strong> menumpuk jendela, <kbd>F5</kbd> (Zoom) memperbesar atau mengembalikan jendela aktif.</li>
+<li><kbd>Alt</kbd>+<kbd>F3</kbd> menutup jendela aktif.</li>
+<li>Jendela Watches, Local variables, dan Call stack juga jendela desktop biasa, jadi ikut diatur Tile, Cascade, dan List.</li>
+</ul>
+
+<h3 id="mencari">Mencari dan mengganti</h3>
+<ul>
+<li><strong>Find</strong> (<kbd>Ctrl</kbd>+<kbd>F</kbd>) mencari teks literal, bukan ekspresi reguler. Opsi <em>case sensitive</em> membedakan huruf besar dan kecil.</li>
+<li><strong>Replace</strong> (<kbd>Ctrl</kbd>+<kbd>H</kbd>) mengganti teks; <strong>Search again</strong> (<kbd>Ctrl</kbd>+<kbd>G</kbd>) melanjutkan pencarian.</li>
+<li><strong>Go to line</strong> (<kbd>Ctrl</kbd>+<kbd>J</kbd>) memindahkan kursor ke nomor baris.</li>
+<li><strong>Next error</strong> (<kbd>Alt</kbd>+<kbd>F8</kbd>) dan <strong>Find error</strong> menuju diagnostik atau baris runtime error.</li>
+</ul>
+
+<h3 id="bantuan-kata">Bantuan untuk kata di kursor</h3>
+<p>Letakkan kursor pada sebuah kata, misalnya <code>ReadKey</code>, lalu tekan <kbd>F1</kbd>. Odin membuka topik kata itu di referensi dan menandainya.</p>
+
+<h3 id="pemulihan">Pemulihan sesi</h3>
+<p>Setiap 10 detik Odin mencatat salinan isi editor ke <code>recovery.json</code> di folder pengaturan. Sumber pribadi Anda tidak ditimpa oleh mekanisme ini. Bila aplikasi berhenti tidak normal, pembukaan berikutnya menawarkan pemulihan; perubahan pada interval terakhir sebelum snapshot mungkin belum tercatat. Berkas pemulihan dihapus saat Anda keluar secara normal. Breakpoint ikut tersimpan.</p>
+</section>
+
+<section class="sec" id="s-kompilasi">
+<h2 id="kompilasi">Kompilasi dan Run</h2>
+
+<h3 id="compile-make-build">Compile, Make, Build</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Perintah</th><th>Tombol</th><th>Perilaku</th></tr>
+<tr><td>Compile</td><td><kbd>Alt+F9</kbd></td><td>Memanggil compiler; unit yang belum berubah memakai hasil sebelumnya.</td></tr>
+<tr><td>Make</td><td><kbd>F9</kbd></td><td>Seperti Compile untuk program dan unit yang berubah.</td></tr>
+<tr><td>Build</td><td>&mdash;</td><td>Semua unit dikompilasi ulang.</td></tr>
+<tr><td>Run</td><td><kbd>Ctrl+F9</kbd></td><td>Kompilasi lalu jalankan. Executable lama tidak pernah dijalankan bila build gagal.</td></tr>
+</table></div>
+<p>Mengompilasi <strong>unit</strong> saja menghasilkan <code>.ppu</code>/<code>.o</code> tanpa executable dan tidak menjalankan apa pun.</p>
+<p>Hasil build disimpan di <em>build cache</em> yang dipisahkan menurut path program dan pilihan compiler (lihat <a href="#lokasi">Lokasi berkas</a>). Folder sumber Anda tidak pernah menerima berkas hasil build, dan compiler tidak diarahkan untuk menimpa executable di folder sumber.</p>
+
+<h3 id="primary-file">Primary file</h3>
+<p>Tanpa Primary file, editor aktif menjadi target kompilasi. Untuk proyek yang terdiri atas beberapa unit, tetapkan program utamanya di <strong>Compile &gt; Primary file</strong>, lalu Run akan selalu membangun berkas itu. <strong>Clear primary file</strong> mengembalikan perilaku awal.</p>
+
+<h3 id="pesan-error">Pesan error</h3>
+<ul>
+<li>Klik dua kali sebuah pesan untuk menuju sumber, baris, dan kolomnya.</li>
+<li><kbd>Alt</kbd>+<kbd>F8</kbd> berpindah ke diagnostik berikutnya, termasuk warning dan hint.</li>
+<li><strong>Compile &gt; Compiler messages</strong> menampilkan perintah dan seluruh keluaran compiler.</li>
+<li><strong>Runtime error</strong>: baris penyebabnya ditandai merah, baik saat Run biasa maupun saat debugging. <strong>Search &gt; Find error</strong> kembali ke baris itu. Daftar kodenya ada di <a href="#kode-error">Kode runtime error</a>.</li>
+</ul>
+
+<h3 id="opsi-compiler">Options &gt; Compiler</h3>
+<ul>
+<li>Compiler Odin mengikuti bahasa Turbo Pascal 7; tidak ada pilihan mode lain.</li>
+<li><strong>Range checks</strong> dan <strong>overflow checks</strong> aktif secara bawaan.</li>
+<li>Informasi baris untuk runtime error selalu dibuat. <strong>Debug &gt; Start debugging</strong> membangun ulang dengan pengait debugger.</li>
+</ul>
+
+<h3 id="direktori">Options &gt; Directories</h3>
+<p>Isi satu path unit atau include per baris. Unit di folder program ditemukan otomatis, begitu pula unit standar dan Odin Vision.</p>
+
+<h3 id="parameter">Parameter program</h3>
+<p><strong>Run &gt; Parameters</strong> menerima argumen dengan aturan kutip seperti shell, misalnya:</p>
+<pre><code>"hello world" 123</code></pre>
+<p>Program membacanya dengan <code>ParamCount</code> dan <code>ParamStr(1)</code>, <code>ParamStr(2)</code>, dan seterusnya. Argumen diteruskan sebagai daftar tanpa menjalankan shell, sehingga tanda seperti <code>*</code> atau <code>;</code> tidak ditafsirkan.</p>
+
+<h3 id="ekspor">Mengekspor executable</h3>
+<p><strong>Compile &gt; Export executable</strong> menyalin hasil build terakhir ke lokasi pilihan Anda. Executable hanya cocok dengan OS dan CPU mesin pembuatnya. Bila dibagikan, program hasil Odin memuat runtime library Odin yang berlisensi GPL v3 atau lebih baru, sehingga ketentuan GPL berlaku untuk executable itu.</p>
+</section>
+
+<section class="sec" id="s-user-screen">
+<h2 id="user-screen">User Screen dan Terminal</h2>
+
+<h3 id="terminal">Terminal 80&times;25</h3>
+<p>Program berjalan di pseudo-terminal sistem (ConPTY di Windows), sehingga masukan bersifat interaktif seperti di konsol sungguhan. Ukuran layar emulasi tetap 80 kolom &times; 25 baris; membesarkan jendela tidak mengubahnya. Karakter garis dan pola desktop Turbo Vision tampil benar.</p>
+<p>Jendela terminal yang ditutup hanya disembunyikan, dan program yang sedang berjalan tidak dihentikan. Buka lagi dengan <kbd>Alt</kbd>+<kbd>F5</kbd>.</p>
+
+<h3 id="input-terminal">Keyboard dan mouse</h3>
+<ul>
+<li>Tombol <kbd>F1</kbd>&ndash;<kbd>F12</kbd>, <kbd>Insert</kbd>, panah, dan <kbd>Home</kbd>/<kbd>End</kbd> diteruskan ke program (<code>ReadKey</code>, Turbo Vision).</li>
+<li>Mouse (klik, seret, roda) diteruskan ke program Turbo Vision yang memintanya.</li>
+<li><kbd>Alt</kbd>+huruf dikirim sebagai <kbd>Esc</kbd> + huruf. Di macOS, <kbd>Option</kbd> berperan sebagai Alt.</li>
+<li><kbd>Ctrl</kbd>+<kbd>C</kbd> mengirim interupsi ke seluruh grup proses. <kbd>Ctrl</kbd>+<kbd>F2</kbd> menghentikan program.</li>
+<li><strong>Copy screen</strong> menyalin layar teks 80&times;25 ke clipboard.</li>
+<li>Setelah program Turbo Vision selesai, isi layar sebelumnya kembali.</li>
+</ul>
+
+<h3 id="batas-terminal">Keterbatasan</h3>
+<p>Ini bukan emulator terminal lengkap: tidak ada <em>scrollback</em>, <em>true color</em>, atau lebar glyph Unicode CJK yang akurat. Gunakan teks ASCII untuk program dengan tata letak kolom ketat.</p>
+</section>
+
+<section class="sec" id="s-debugger">
+<h2 id="debugger">Debugger</h2>
+<p>Program dikompilasi ulang dengan pengait debugger lalu dijalankan di User screen. LLDB, GDB, dan Xcode tidak diperlukan.</p>
+
+<h3 id="breakpoint">Breakpoint</h3>
+<ul>
+<li>Pasang atau lepas dengan <kbd>Ctrl</kbd>+<kbd>F8</kbd> atau klik gutter kiri; ditandai lingkaran merah.</li>
+<li>Penanda ikut bergeser saat baris disisipkan atau dihapus, dan tersimpan bersama <a href="#pemulihan">pemulihan sesi</a>.</li>
+<li>Breakpoint di baris tanpa kode dipindahkan ke baris berikutnya yang berisi kode.</li>
+<li>Breakpoint yang diubah selama sesi debug langsung berlaku. <strong>Clear breakpoints</strong> menghapus semuanya.</li>
+</ul>
+
+<h3 id="menjalankan-debug">Menjalankan dan melangkah</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Perintah</th><th>Tombol</th><th>Fungsi</th></tr>
+<tr><td>Start debugging</td><td>&mdash;</td><td>Jalankan sampai breakpoint pertama.</td></tr>
+<tr><td>Trace into</td><td><kbd>F7</kbd></td><td>Satu baris; masuk ke prosedur yang dipanggil. Bila belum berjalan, mulai dan berhenti di statement pertama.</td></tr>
+<tr><td>Step over</td><td><kbd>F8</kbd></td><td>Satu baris; pemanggilan prosedur tidak dimasuki.</td></tr>
+<tr><td>Go to cursor</td><td><kbd>F4</kbd></td><td>Lanjut sampai baris kursor.</td></tr>
+<tr><td>Continue</td><td><kbd>Ctrl+F9</kbd></td><td>Lanjut sampai breakpoint berikutnya atau program selesai.</td></tr>
+<tr><td>Jeda</td><td><kbd>Ctrl+C</kbd></td><td>Di User screen: hentikan sementara di statement berikutnya.</td></tr>
+<tr><td>Program reset</td><td><kbd>Ctrl+F2</kbd></td><td>Akhiri program.</td></tr>
+</table></div>
+<p>Saat program berhenti, baris yang akan dijalankan ditandai <strong>hijau</strong>. Bila sumber diubah di tengah sesi, perintah langkah berikutnya menanyakan apakah program perlu dibangun ulang.</p>
+
+<h3 id="jendela-debug">Watches, Locals, Call stack</h3>
+<ul>
+<li><strong>Watches</strong>: <kbd>Insert</kbd> menambah, <kbd>Delete</kbd> menghapus, <kbd>Enter</kbd> mengubah ekspresi. Nilai diperbarui setiap program berhenti.</li>
+<li><strong>Local variables</strong>: variabel lokal pada frame terpilih.</li>
+<li><strong>Call stack</strong>: klik dua kali untuk memilih frame; Watches dan Local variables lalu memakai frame itu.</li>
+</ul>
+
+<h3 id="evaluate">Evaluate/Modify</h3>
+<p><kbd>Ctrl</kbd>+<kbd>F7</kbd> menghitung ekspresi Pascal: variabel, field, indeks (dengan cek batas), <code>^</code>, <code>@</code>, aritmetika, perbandingan, <em>typecast</em>, serta <code>Ord</code>, <code>Chr</code>, <code>Length</code>, <code>High</code>, <code>Low</code>, <code>SizeOf</code>. Fungsi buatan program <strong>tidak</strong> dipanggil. <strong>Modify</strong> menulis nilai baru ke variabel dengan pemeriksaan jangkauan.</p>
+<p>Format nilai mengikuti Turbo Pascal: <code>'abc'</code>, <code>(1, 2, 3)</code>, <code>(X:1; Y:2)</code>, <code>[1, 3..5]</code>, <code>TRUE</code>, <code>PTR($...)</code>, dan nama enumerasi.</p>
+
+<h3 id="contoh-debug">Contoh sesi</h3>
+<ol>
+<li>Buka <code>bab10_01_faktorial_rekursif.pas</code> dari File &gt; Examples.</li>
+<li>Pasang breakpoint di baris pemanggilan fungsi dengan <kbd>Ctrl+F8</kbd>.</li>
+<li>Pilih <strong>Debug &gt; Start debugging</strong>; program berhenti di breakpoint.</li>
+<li>Buka <strong>Call stack</strong> lalu tekan <kbd>F7</kbd> beberapa kali dan amati tumpukan rekursi bertambah.</li>
+<li>Tambahkan <code>N</code> ke Watches untuk melihat nilainya berubah di tiap frame.</li>
+</ol>
+</section>
+
+<section class="sec" id="s-referensi-menu">
+<h2 id="referensi-menu">Referensi Menu</h2>
+<p>Tiap menu dapat dibuka dengan <kbd>Alt</kbd>+huruf mnemonik (F, E, S, R, C, D, O, W, H) atau lewat klik.</p>
+
+<h3 id="menu-file">File</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Pintasan</th><th>Fungsi</th></tr>
+<tr><td>New</td><td><kbd>Ctrl+N</kbd></td><td>Berkas baru dari templat program kosong.</td></tr>
+<tr><td>Open...</td><td><kbd>F3</kbd></td><td>Membuka berkas.</td></tr>
+<tr><td>Save</td><td><kbd>F2</kbd></td><td>Menyimpan; contoh bawaan berubah menjadi Save as.</td></tr>
+<tr><td>Save as...</td><td>&mdash;</td><td>Menyimpan salinan dengan nama lain.</td></tr>
+<tr><td>Save all</td><td>&mdash;</td><td>Menyimpan semua editor yang berubah.</td></tr>
+<tr><td>Recent files...</td><td>&mdash;</td><td>Daftar berkas yang baru dibuka.</td></tr>
+<tr><td>Examples...</td><td>&mdash;</td><td>Tutorial dan contoh bawaan.</td></tr>
+<tr><td>Change directory...</td><td>&mdash;</td><td>Mengganti folder kerja dialog berkas.</td></tr>
+<tr><td>Exit</td><td><kbd>Alt+X</kbd></td><td>Keluar dari IDE.</td></tr>
+</table></div>
+
+<h3 id="menu-edit">Edit</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Pintasan</th></tr>
+<tr><td>Undo</td><td><kbd>Alt+Backspace</kbd></td></tr>
+<tr><td>Redo</td><td><kbd>Ctrl+Y</kbd></td></tr>
+<tr><td>Cut / Copy / Paste</td><td><kbd>Shift+Del</kbd> / <kbd>Ctrl+Ins</kbd> / <kbd>Shift+Ins</kbd></td></tr>
+<tr><td>Select all</td><td><kbd>Ctrl+A</kbd></td></tr>
+<tr><td>Delete line</td><td><kbd>Ctrl+L</kbd></td></tr>
+</table></div>
+
+<h3 id="menu-search">Search</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Pintasan</th></tr>
+<tr><td>Find...</td><td><kbd>Ctrl+F</kbd></td></tr>
+<tr><td>Replace...</td><td><kbd>Ctrl+H</kbd></td></tr>
+<tr><td>Search again</td><td><kbd>Ctrl+G</kbd></td></tr>
+<tr><td>Go to line...</td><td><kbd>Ctrl+J</kbd></td></tr>
+<tr><td>Next error</td><td><kbd>Alt+F8</kbd></td></tr>
+<tr><td>Find error</td><td>&mdash;</td></tr>
+</table></div>
+
+<h3 id="menu-run">Run</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Pintasan</th><th>Fungsi</th></tr>
+<tr><td>Run</td><td><kbd>Ctrl+F9</kbd></td><td>Kompilasi lalu jalankan.</td></tr>
+<tr><td>Program reset</td><td><kbd>Ctrl+F2</kbd></td><td>Menghentikan proses. Bila belum keluar dalam satu detik, dipaksa berhenti.</td></tr>
+<tr><td>Parameters...</td><td>&mdash;</td><td>Argumen baris perintah program.</td></tr>
+<tr><td>User screen</td><td><kbd>Alt+F5</kbd></td><td>Menampilkan terminal program.</td></tr>
+</table></div>
+
+<h3 id="menu-compile">Compile</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Pintasan</th></tr>
+<tr><td>Compile</td><td><kbd>Alt+F9</kbd></td></tr>
+<tr><td>Make</td><td><kbd>F9</kbd></td></tr>
+<tr><td>Build</td><td>&mdash;</td></tr>
+<tr><td>Primary file... / Clear primary file</td><td>&mdash;</td></tr>
+<tr><td>Compiler messages</td><td>&mdash;</td></tr>
+<tr><td>Export executable...</td><td>&mdash;</td></tr>
+</table></div>
+
+<h3 id="menu-debug">Debug</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Pintasan</th></tr>
+<tr><td>Start debugging</td><td>&mdash;</td></tr>
+<tr><td>Step over / Trace into / Go to cursor</td><td><kbd>F8</kbd> / <kbd>F7</kbd> / <kbd>F4</kbd></td></tr>
+<tr><td>Continue</td><td><kbd>Ctrl+F9</kbd></td></tr>
+<tr><td>Toggle breakpoint / Clear breakpoints</td><td><kbd>Ctrl+F8</kbd> / &mdash;</td></tr>
+<tr><td>Watch window / Add watch...</td><td>&mdash;</td></tr>
+<tr><td>Local variables / Call stack</td><td>&mdash;</td></tr>
+<tr><td>Evaluate/Modify...</td><td><kbd>Ctrl+F7</kbd></td></tr>
+</table></div>
+
+<h3 id="menu-options">Options</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Item</th><th>Fungsi</th></tr>
+<tr><td>Compiler...</td><td>Range checks dan overflow checks.</td></tr>
+<tr><td>Directories...</td><td>Path unit dan include, satu per baris.</td></tr>
+<tr><td>Editor...</td><td>Ukuran huruf (10&ndash;30), lebar tab (1&ndash;8), Syntax colors.</td></tr>
+<tr><td>Save options</td><td>Menyimpan pengaturan ke <code>settings.json</code>.</td></tr>
+<tr><td>Environment information</td><td>Versi, OS, CPU, Python, Tk, dan path runtime.</td></tr>
+</table></div>
+
+<h3 id="menu-window">Window</h3>
+<p>Tile, Cascade, Zoom (<kbd>F5</kbd>), Next (<kbd>F6</kbd>), Close (<kbd>Alt+F3</kbd>), dan List.</p>
+
+<h3 id="menu-help">Help</h3>
+<p>Contents (<kbd>F1</kbd>), Pascal reference, Keyboard shortcuts, Buku, dan About Odin.</p>
+</section>
+
+<section class="sec" id="s-bahasa">
+<h2 id="bahasa">Referensi Bahasa Pascal</h2>
+<p>Ringkasan bahasa yang berlaku di Odin. Ketik kata di kotak pencarian atas (<kbd>/</kbd>) untuk melompat langsung ke rutin atau kata cadangannya. Ukuran tipe mengikuti mode Turbo Pascal.</p>
+
+<h3 id="struktur">Struktur program dan contoh</h3>
+<pre><code>program NamaProgram;
+uses Crt;
+const Maksimum = 10;
+var I: Integer;
+begin
+  for I := 1 to Maksimum do
+    WriteLn(I);
+end.</code></pre>
+
+<h4>Percabangan</h4>
+<pre><code>if Nilai &gt;= 75 then
+  WriteLn('Lulus')
+else
+  WriteLn('Belum lulus');</code></pre>
+<p>Tidak ada titik koma sebelum <code>else</code> yang berpasangan dengan <code>if</code> tersebut. Gunakan <code>begin</code>/<code>end</code> bila cabang berisi lebih dari satu pernyataan.</p>
+
+<h4>Pengulangan</h4>
+<pre><code>for I := 1 to 10 do WriteLn(I);
+
+while I &lt; 10 do
+begin
+  Inc(I);
+end;
+
+repeat
+  ReadLn(I);
+until I = 0;</code></pre>
+
+<h4>Procedure dan function</h4>
+<pre><code>procedure Sapa(Nama: string);
+begin
+  WriteLn('Halo ', Nama);
+end;
+
+function Kuadrat(X: Integer): LongInt;
+begin
+  Kuadrat := LongInt(X) * X;
+end;</code></pre>
+
+<h4>Record</h4>
+<pre><code>type
+  TSiswa = record
+    Nama: string[50];
+    Nilai: Integer;
+  end;</code></pre>
+
+<h4>Unit buatan sendiri</h4>
+<pre><code>unit UContoh;
+interface
+procedure Halo;
+implementation
+procedure Halo;
+begin
+  WriteLn('Halo');
+end;
+end.</code></pre>
+<p>Unit dipakai dari program melalui <code>uses UContoh</code>. Simpan sumber dengan nama sesuai nama unit, dan pastikan direktorinya ditemukan compiler (lihat <a href="#direktori">Directories</a>).</p>
+<div class="callout tip"><b>Tip</b><p>Gaya Turbo Pascal 7: tidak ada <code>Result</code> (isi nama fungsi), enumerasi tidak bisa di-<code>Write</code>, dan setiap <code>Real</code> sebaiknya diformat: <code>Write(X:0:2)</code>.</p></div>
+
+<h3 id="kata-cadangan">Kata cadangan</h3>
+<!--@pascal:KATA CADANGAN-->
+<h3 id="direktif-standar">Direktif standar</h3>
+<!--@pascal:DIREKTIF STANDAR-->
+<h3 id="operator">Operator</h3>
+<!--@pascal:OPERATOR-->
+<h3 id="tipe-data">Tipe data</h3>
+<!--@pascal:TIPE DATA-->
+<h3 id="konstanta">Konstanta bawaan</h3>
+<!--@pascal:KONSTANTA BAWAAN-->
+<h3 id="rutin-matematika">Rutin matematika</h3>
+<!--@pascal:RUTIN MATEMATIKA-->
+<h3 id="rutin-ordinal">Rutin ordinal</h3>
+<!--@pascal:RUTIN ORDINAL-->
+<h3 id="rutin-string">Rutin string</h3>
+<!--@pascal:RUTIN STRING-->
+<h3 id="rutin-memori">Rutin memori dan pointer</h3>
+<!--@pascal:RUTIN MEMORI DAN POINTER-->
+<h3 id="rutin-berkas">Rutin berkas dan direktori</h3>
+<!--@pascal:RUTIN BERKAS DAN DIREKTORI-->
+<h3 id="kontrol-program">Kontrol program</h3>
+<!--@pascal:KONTROL PROGRAM-->
+<h3 id="direktif-compiler">Direktif compiler</h3>
+<!--@pascal:DIREKTIF COMPILER-->
+<h3 id="kode-error">Kode runtime error</h3>
+<!--@pascal:KODE RUNTIME ERROR-->
+</section>
+
+<section class="sec" id="s-unit">
+<h2 id="unit">Unit Pustaka</h2>
+<p>Unit yang tersedia: System, Crt, Dos, Strings, Printer, Objects, dan Odin Vision (termasuk ColorSel dan TextView). <strong>Tidak tersedia</strong>: Graph, Graph3, Turbo3, Overlay, WinDos.</p>
+
+<h3 id="unit-crt">Crt</h3>
+<!--@pascal:UNIT CRT-->
+<h3 id="unit-dos">Dos</h3>
+<!--@pascal:UNIT DOS-->
+<h3 id="unit-strings">Strings</h3>
+<!--@pascal:UNIT STRINGS-->
+<h3 id="unit-objects">Objects</h3>
+<!--@pascal:UNIT OBJECTS-->
+<h3 id="odin-vision">Odin Vision</h3>
+<!--@pascal:ODIN VISION-->
+<pre><code>uses App;
+type TAplikasi = object(TApplication) end;
+var A: TAplikasi;
+begin
+  A.Init; A.Run; A.Done;
+end.</code></pre>
+</section>
+
+<section class="sec" id="s-pintasan">
+<h2 id="pintasan">Pintasan Keyboard</h2>
+<h3 id="pintasan-fungsi">Tombol fungsi</h3>
+<!--@shortcuts:fn-->
+<h3 id="pintasan-umum">Pintasan umum</h3>
+<!--@shortcuts:general-->
+<h3 id="pintasan-mac">Alternatif Mac</h3>
+<!--@shortcuts:mac-->
+<h3 id="pintasan-user">Di User screen</h3>
+<!--@shortcuts:user-->
+</section>
+
+<section class="sec" id="s-kompatibilitas">
+<h2 id="kompatibilitas">Kompatibilitas</h2>
+<p>Odin adalah implementasi baru dengan tampilan terinspirasi IDE Turbo Pascal era DOS. Ini bukan emulasi compiler Borland, bukan replika identik, dan bukan kompatibilitas biner DOS.</p>
+
+<h3 id="status-fitur">Status fitur</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Komponen</th><th>Status</th></tr>
+<tr><td>Editor dan operasi berkas</td><td>Diimplementasikan, diuji GUI Linux</td></tr>
+<tr><td>Compiler Odin (bahasa TP7)</td><td>Diimplementasikan, korpus 77 program</td></tr>
+<tr><td><code>ReadLn</code>, <code>WriteLn</code></td><td>Diuji melalui binary dan PTY</td></tr>
+<tr><td>Crt: warna, GotoXY, ClrScr, ReadKey</td><td>Diuji melalui program Crt nyata di Linux</td></tr>
+<tr><td>Unit Pascal</td><td>Diuji dengan unit <code>matematika</code> (Bab 19)</td></tr>
+<tr><td>LF/CRLF, UTF-8/BOM, CP437</td><td>Diuji round-trip</td></tr>
+<tr><td>Injeksi shell lewat argumen</td><td>Tidak ada: compile dan run tidak memakai shell</td></tr>
+<tr><td>Signing / notarization Apple</td><td>Belum tersedia</td></tr>
+<tr><td>BGI/Graph DOS</td><td>Tidak diimplementasikan</td></tr>
+<tr><td>Interrupt, port, mem DOS</td><td>Tidak diemulasi</td></tr>
+<tr><td>Terminal truecolor / Unicode lebar</td><td>Tidak tersedia</td></tr>
+<tr><td>Compiler dan runtime</td><td>Disertakan (<code>odinpc</code> dan runtime library Odin); Free Pascal, Xcode, dan LLDB tidak diperlukan</td></tr>
+</table></div>
+
+<h3 id="status-uji">Yang sudah dan belum diuji</h3>
+<div class="callout warn"><b>Batas klaim</b><p>Yang diuji: compiler Odin di Mac Intel (Darwin 24.6), VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu), serta runner GitHub Actions untuk macOS 15 Apple Silicon, Ubuntu x86_64 dan arm64, dan Windows Server 2025. <strong>Belum diuji langsung</strong>: Mac Apple Silicon fisik, PC Linux fisik, PC Windows fisik, installer di Apple Silicon dan Windows, Mac bersih tanpa Xcode Command Line Tools, LaunchServices/Gatekeeper, serta <kbd>Option</kbd> pada keyboard Mac sungguhan.</p></div>
+
+<h3 id="backend">Compiler</h3>
+<p>Compiler adalah toolchain Odin: <code>odinpc</code> (Rust) dengan assembler, linker, debugger, dan runtime library sendiri. Target: x86_64-darwin, aarch64-darwin (Mach-O, dengan tanda tangan kode ad-hoc yang diwajibkan macOS di Apple Silicon), x86_64-linux dan aarch64-linux (ELF dinamis, glibc 2.34 atau lebih baru), x86_64-windows (PE32+). Sampai 2.3.0 Free Pascal bisa dipilih sebagai backend alternatif; backend itu, beserta mode ObjFPC/Delphi, sudah dicabut.</p>
+<ul>
+<li>Bahasanya Turbo Pascal 7 di platform 64-bit. Perbedaan CPU, ukuran pointer, ABI, sistem berkas, dan unit tetap berlaku.</li>
+<li>Di arm64, bendera FPSR diperiksa sesudah operasi real sehingga runtime error 207, 200, atau 205 muncul seperti di x86-64.</li>
+<li>Di Windows, berkas teks memakai CRLF, path memakai <code>\</code> dan huruf drive, dan <code>Printer</code> mencetak lewat <code>notepad /p</code>.</li>
+</ul>
+
+<h3 id="unit-tp7">Unit standar Turbo Pascal 7</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Unit</th><th>Status</th></tr>
+<tr><td>System</td><td>Otomatis. Rutin string, matematika, Str/Val, berkas teks dan bertipe, direktori, ParamStr, New/Dispose, Include/Exclude, IOResult, ExitProc.</td></tr>
+<tr><td>Crt</td><td>ClrScr, GotoXY, WhereX/WhereY, warna, Window, ClrEol, DelLine, Delay, Sound/NoSound, KeyPressed, ReadKey (termasuk F1&ndash;F12, Insert, panah dengan kode scan TP).</td></tr>
+<tr><td>Dos</td><td>GetDate/GetTime, GetEnv, FSplit, FExpand, FSearch, FindFirst/FindNext, DiskFree/DiskSize, GetFAttr, GetFTime, Exec/DosExitCode. <code>DosVersion</code> berisi versi kernel Darwin.</td></tr>
+<tr><td>Strings</td><td>Rutin PChar (StrPCopy, StrCat, StrPos, StrNew, dan lainnya).</td></tr>
+<tr><td>Objects</td><td>TStringCollection dan TBufStream diuji berjalan.</td></tr>
+<tr><td>Printer</td><td>Tersedia; <code>Lst</code> diteruskan ke printer default (<code>lpr</code> di macOS).</td></tr>
+<tr><td>Turbo Vision</td><td>Odin Vision: Drivers, Memory, HistList, Views, Menus, Validate, Dialogs, App, MsgBox, StdDlg, Editors, Outline, ColorSel, TextView.</td></tr>
+<tr><td>Graph, Graph3, Overlay, WinDos, Turbo3</td><td>Tidak tersedia. Hapus <code>uses Overlay</code> dan pemanggilan <code>OvrInit</code>; gunakan Dos dan Strings sebagai pengganti WinDos.</td></tr>
+</table></div>
+
+<h3 id="fitur-dos">Fitur era DOS</h3>
+<p>Tidak dapat dikompilasi di sistem 64-bit: <code>Mem</code>/<code>MemW</code>/<code>MemL</code>, <code>Port</code>, <code>absolute $Seg:$Ofs</code>, <code>PrefixSeg</code>, <code>MemAvail</code>/<code>MaxAvail</code>, <code>Test8087</code>, <code>inline(...)</code>, prosedur <code>interrupt</code>, serta <code>Intr</code>/<code>MsDos</code>/<code>Registers</code>. <code>GetIntVec</code>/<code>SetIntVec</code> dan <code>Keep</code> dapat dikompilasi tetapi tidak berefek. Blok <code>asm</code> belum didukung.</p>
+
+<h3 id="beda-perilaku">Perbedaan perilaku penting</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Hal</th><th>Turbo Pascal 7</th><th>Odin</th></tr>
+<tr><td><code>Real</code></td><td>6 byte</td><td>8 byte. <code>Real48</code> tidak tersedia; berkas biner Real dari TP perlu dikonversi lebih dahulu.</td></tr>
+<tr><td>Pointer</td><td>4 byte</td><td>8 byte. <code>Integer</code> tetap 2 byte, <code>LongInt</code> 4 byte di mode TP.</td></tr>
+<tr><td><code>Round(2.5)</code></td><td>3</td><td>2 (pembulatan ke genap). Periksa program yang bergantung pada nilai .5.</td></tr>
+</table></div>
+<p>Jangan menganggap tata letak record atau berkas biner DOS, atau aritmetika pointer, identik di macOS 64-bit.</p>
+</section>
+
+<section class="sec" id="s-masalah">
+<h2 id="masalah">Pemecahan Masalah</h2>
+
+<h3 id="galat-umum">Galat umum</h3>
+<div class="tw"><table class="wrap">
+<tr><th>Gejala</th><th>Penyebab dan solusi</th></tr>
+<tr><td>Compiler not found</td><td>Jalankan lagi <code>Install.command</code> (<code>Install.cmd</code> di Windows). Dari source: <code>cargo build --release</code> di folder <code>toolchain/</code>.</td></tr>
+<tr><td>Unit not found</td><td>Periksa Primary file, nama unit (harus sama dengan nama berkas), dan <strong>Options &gt; Directories</strong>.</td></tr>
+<tr><td><code>ReadLn</code> terlihat diam</td><td>Klik User screen, ketik masukan, lalu <kbd>Enter</kbd>.</td></tr>
+<tr><td>Program macet</td><td><strong>Run &gt; Program reset</strong> (<kbd>Ctrl+F2</kbd>). Proses diterminasi, lalu dipaksa berhenti bila belum keluar setelah satu detik.</td></tr>
+<tr><td>Font terlalu besar</td><td><strong>Options &gt; Editor</strong>.</td></tr>
+<tr><td>F1&ndash;F12 mengatur volume atau kecerahan (Mac)</td><td>Gunakan <kbd>Fn</kbd> bersama tombol fungsi, atau aktifkan &ldquo;gunakan tombol F1, F2 dst. sebagai tombol fungsi standar&rdquo; di pengaturan Keyboard. Alternatif: <kbd>Command+B</kbd> (compile) dan <kbd>Command+R</kbd> (run).</td></tr>
+<tr><td>Aplikasi tidak mau terbuka</td><td>Periksa <code>launch.log</code> dan <code>last-error.log</code> di folder pengaturan. <strong>Options &gt; Environment information</strong> menampilkan path runtime.</td></tr>
+<tr><td>Berkas data tidak ketemu (Bab 17, 20)</td><td>Program berjalan dengan folder sumbernya sebagai direktori kerja; simpan salinan contoh ke folder sendiri.</td></tr>
+<tr><td>Runtime error N</td><td>Lihat tabel <a href="#kode-error">Kode runtime error</a>. Baris penyebab ditandai merah; <strong>Search &gt; Find error</strong> menuju ke sana.</td></tr>
+</table></div>
+
+<h3 id="faq">Tanya jawab</h3>
+<h4>Apakah saya harus memasang Free Pascal atau Xcode?</h4>
+<p>Tidak. Compiler <code>odinpc</code> sudah disertakan dan menjadi satu-satunya compiler; satu-satunya dependensi adalah Python dengan Tk.</p>
+<h4>Mengapa program saya tidak bisa membaca berkas biner dari Turbo Pascal 7?</h4>
+<p>Tipe <code>Real</code> berbeda ukuran (6 byte di TP, 8 byte di sini), dan <code>Real48</code> tidak tersedia. Konversikan berkas itu lebih dahulu.</p>
+<h4>Dapatkah saya membagikan program yang saya kompilasi?</h4>
+<p>Ya, lewat <strong>Compile &gt; Export executable</strong>. Executable hanya jalan di OS dan CPU yang sama, dan program hasil Odin memuat runtime GPL (lihat <a href="#ekspor">Mengekspor executable</a>).</p>
+<h4>Di mana pengaturan saya disimpan?</h4>
+<p>Lihat <a href="#lokasi">Lokasi berkas</a>.</p>
+</section>
+
+<section class="sec" id="s-glosarium">
+<h2 id="glosarium" class="appendix">Glosarium</h2>
+<div class="tw"><table class="wrap">
+<tr><th>Istilah</th><th>Arti</th></tr>
+<tr><td>odinpc</td><td>Compiler Odin yang membangun program: compiler, assembler, linker, dan debugger dalam satu berkas.</td></tr>
+<tr><td>Build cache</td><td>Folder hasil kompilasi per program dan per pilihan compiler, terpisah dari folder sumber.</td></tr>
+<tr><td>Odin Vision</td><td>Turbo Vision milik Odin, API-nya mengikuti Turbo Vision TP7.</td></tr>
+<tr><td>Primary file</td><td>Berkas utama yang selalu dikompilasi saat Run, apa pun editor yang aktif.</td></tr>
+<tr><td>PTY</td><td>Pseudo-terminal: saluran masukan/keluaran interaktif antara IDE dan program.</td></tr>
+<tr><td>TP7</td><td>Turbo Pascal versi 7, acuan sintaks dan unit.</td></tr>
+<tr><td>User screen</td><td>Terminal 80&times;25 tempat program berjalan.</td></tr>
+<tr><td>Watches</td><td>Daftar ekspresi yang nilainya dipantau debugger.</td></tr>
+</table></div>
+</section>
+
+<section class="sec" id="s-lokasi">
+<h2 id="lokasi" class="appendix">Lokasi Berkas dan Pengaturan</h2>
+<p>Pengaturan dan data per pengguna berada di <code>~/Library/Application Support/OdinTurboPascal/</code> di macOS, <code>%APPDATA%\OdinTurboPascal\</code> di Windows, dan <code>~/.local/share/OdinTurboPascal/</code> di Linux.</p>
+<div class="tw"><table class="wrap">
+<tr><th>Berkas</th><th>Isi</th></tr>
+<tr><td><code>settings.json</code></td><td>Pengaturan IDE (Options &gt; Save options).</td></tr>
+<tr><td><code>build/</code></td><td>Build cache.</td></tr>
+<tr><td><code>recovery.json</code></td><td>Salinan editor untuk pemulihan, ditulis tiap 10 detik, dihapus saat keluar normal.</td></tr>
+<tr><td><code>last-error.log</code></td><td>Galat IDE terakhir.</td></tr>
+<tr><td><code>launch.log</code></td><td>Catatan peluncuran aplikasi.</td></tr>
+<tr><td><code>python-path</code></td><td>Interpreter Python yang dicatat pemasang.</td></tr>
+<tr><td><code>instance.lock</code></td><td>Penjaga agar hanya satu jendela Odin berjalan.</td></tr>
+</table></div>
+</section>
+
+<section class="sec" id="s-tentang">
+<h2 id="tentang-lisensi" class="appendix">Tentang dan Lisensi</h2>
+<p>Odin Turbo Pascal {{VERSION}}. Dibuat oleh Syams Ideris. Hak cipta &copy; 2026 Syams Ideris.</p>
+<p>Program ini adalah perangkat lunak bebas: Anda dapat menyebarluaskan dan/atau mengubahnya di bawah ketentuan GNU General Public License versi 3 atau, sesuai pilihan Anda, versi yang lebih baru. Program ini <strong>tidak memiliki jaminan apa pun</strong>. Teks lisensi lengkap ada di berkas <code>LICENSE</code>, dan pemberitahuan pihak ketiga di <code>THIRD_PARTY.txt</code>.</p>
+<p>Perangkat lunak ini bukan Borland Turbo Pascal dan tidak berafiliasi dengan Borland. Tidak ada biner, logo, huruf, atau berkas bantuan Borland yang disertakan.</p>
+</section>

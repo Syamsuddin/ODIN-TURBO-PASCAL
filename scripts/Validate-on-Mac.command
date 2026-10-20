@@ -12,9 +12,7 @@ if [ -z "$ODIN_PYTHON" ] || [ ! -x "$ODIN_PYTHON" ]; then
   printf 'Jalankan Install.command terlebih dahulu.\n'; exit 1
 fi
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
-ODIN_FPC="$(command -v fpc)"
-export ODIN_FPC
-"$ODIN_PYTHON" scripts/check_mac.py "$ODIN_FPC"
+"$ODIN_PYTHON" scripts/check_mac.py "Odin Turbo Pascal.app"
 "$ODIN_PYTHON" -m unittest discover -s tests -v
-printf '\nUji otomatis selesai. Uji Finder, pintasan Mac, dan LLDB secara manual.\n'
+printf '\nUji otomatis selesai. Uji Finder, pintasan Mac, dan debugger secara manual.\n'
 read -r -p 'Tekan Enter untuk menutup... ' ignored

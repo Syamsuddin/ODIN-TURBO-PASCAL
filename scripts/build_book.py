@@ -365,15 +365,18 @@ def key_feeder(keys: str):
 
 def guessing_feeder():
     """Plays bab08_06 with a binary search, reading the hints the program prints."""
-    state = {"low": 1, "high": 100, "guess": None}
+    state = {"low": 1, "high": 100, "guess": None, "seen": 0}
 
     def feed(output):
         if state["guess"] is not None:
-            hint = output.rstrip().rsplit("\n", 1)[-1]
+            # The hint for the last guess: the output since that guess. Its last line is already the
+            # next prompt, because the program writes the prompt before it waits in ReadLn.
+            hint = output[state["seen"]:]
             if "kecil" in hint:
                 state["low"] = state["guess"] + 1
             elif "besar" in hint:
                 state["high"] = state["guess"] - 1
+        state["seen"] = len(output)
         state["guess"] = (state["low"] + state["high"]) // 2
         return f"{state['guess']}\n".encode(), str(state["guess"])
     return feed
