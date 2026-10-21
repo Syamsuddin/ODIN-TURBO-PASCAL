@@ -94,18 +94,31 @@ class App:
             root.iconphoto(True, self.icon)
         self.logo = self.load_image("odin-logo.png")
         self.logo_small = self.load_image("odin-logo-small.png")
-        self.menubar = tk.Frame(root, bg=GRAY, height=30)
+        self.menubar = tk.Frame(root, bg=GRAY)
         self.menubar.pack(fill="x")
         self.menus = {}
         self.create_menus()
-        self.status = tk.Label(root, bg=GRAY, fg=BLUE, anchor="w", font=self.font, pady=3)
+        # Footer: a compact key row over the status line, split by a dark rule. Labels, not Buttons, so Windows adds no
+        # focus ring or default padding between the rows.
+        self.status = tk.Label(root, bg=GRAY, fg=BLUE, anchor="w", font=self.font, pady=0, padx=2, borderwidth=0, highlightthickness=0)
         self.status.pack(side="bottom", fill="x")
+        tk.Frame(root, bg=BLACK, height=1).pack(side="bottom", fill="x")
         self.keys = tk.Frame(root, bg=GRAY)
         self.keys.pack(side="bottom", fill="x")
         for label, action in (("F1 Help",self.help_topic), ("F2 Save",self.save), ("F3 Open",self.open_file),
                               ("F6 Next",self.next_editor), ("F9 Make",self.compile), ("^F9 Run",self.run), ("Alt-X Exit",self.quit)):
-            tk.Button(self.keys, text=label, command=action, bg=GRAY, fg="#aa0000", activebackground=CYAN,
-                      relief="flat", borderwidth=0, padx=10, pady=3, takefocus=False).pack(side="left")
+            key, _, name = label.partition(" ")
+            cell = tk.Frame(self.keys, bg=GRAY, cursor="hand2")
+            cell.pack(side="left", padx=(0, 2))
+            parts = (tk.Label(cell, text=key, bg=GRAY, fg="#aa0000", padx=0, pady=0, borderwidth=0),
+                     tk.Label(cell, text=" " + name, bg=GRAY, fg=BLACK, padx=0, pady=0, borderwidth=0))
+            for part in parts:
+                part.pack(side="left")
+            cell.configure(padx=6)
+            for widget in (cell, *parts):
+                widget.bind("<Button-1>", lambda e, a=action: a())
+                widget.bind("<Enter>", lambda e, c=cell, p=parts: [w.configure(bg=CYAN) for w in (c, *p)])
+                widget.bind("<Leave>", lambda e, c=cell, p=parts: [w.configure(bg=GRAY) for w in (c, *p)])
         self.desktop = tk.Frame(root, bg=BLUE)
         self.desktop.pack(fill="both", expand=True)
         if self.logo:
@@ -180,7 +193,7 @@ class App:
 
     def menu(self, name, items, underline=0):
         button = tk.Menubutton(self.menubar, text=f" {name} ", bg=GRAY, fg=BLACK, activebackground=CYAN,
-                               activeforeground=BLACK, relief="flat", underline=underline+1, padx=1, pady=3)
+                               activeforeground=BLACK, relief="flat", underline=underline+1, padx=1, pady=1)
         button.pack(side="left")
         menu = tk.Menu(button, tearoff=False, bg=GRAY, fg=BLACK, activebackground=CYAN,
                        activeforeground=BLACK, borderwidth=2)
