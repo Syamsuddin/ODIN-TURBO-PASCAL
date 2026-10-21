@@ -35,16 +35,20 @@ class DesktopWindow:
     def __init__(self, app, title=""):
         self.app = app
         self.frame = tk.Frame(app.desktop, bg=CYAN, borderwidth=0, highlightbackground=GRAY, highlightthickness=2)
-        self.titlebar = tk.Frame(self.frame, bg=GRAY, height=26)
+        self.titlebar = tk.Frame(self.frame, bg=GRAY)
         self.titlebar.pack(fill="x")
-        self.close_label = tk.Label(self.titlebar, text="[■]", bg=GRAY, fg=BLUE, font=app.font)
-        self.close_label.pack(side="left")
+        # Flat Turbo Vision style: a raised square at each end, a bold title between them, a dark rule under the bar.
+        button = dict(bg=GRAY, fg=BLACK, font=app.font, relief="raised", borderwidth=1, padx=5, pady=0, cursor="hand2")
+        self.close_label = tk.Label(self.titlebar, text="\u25a0", **button)
+        self.close_label.pack(side="left", padx=(3, 0), pady=2)
         self.close_label.bind("<Button-1>", lambda e: app.close_window(self))
-        self.title = tk.Label(self.titlebar, bg=GRAY, fg=BLUE, font=app.font)
-        self.title.pack(side="left", expand=True, fill="x")
-        self.zoom_label = tk.Label(self.titlebar, text="[↕]", bg=GRAY, fg=BLUE, font=app.font)
-        self.zoom_label.pack(side="right")
+        self.zoom_label = tk.Label(self.titlebar, text="\u2195", **button)
+        self.zoom_label.pack(side="right", padx=(0, 3), pady=2)
         self.zoom_label.bind("<Button-1>", lambda e: app.zoom(self))
+        self.title = tk.Label(self.titlebar, bg=GRAY, fg=BLUE, font=(app.font.cget("family"), app.font.cget("size"), "bold"), pady=0)
+        self.title.pack(side="left", expand=True, fill="x")
+        self.rule = tk.Frame(self.frame, bg=BLACK, height=1)
+        self.rule.pack(fill="x")
         self.body = tk.Frame(self.frame, bg=BLUE)
         self.body.pack(fill="both", expand=True, padx=3, pady=(0, 3))
         self.title.bind("<Button-1>", self.drag_start)
@@ -54,16 +58,18 @@ class DesktopWindow:
             self.set_title(title)
 
     def set_title(self, text):
-        self.title.configure(text=f" {text} ")
+        self.title.configure(text=f"\u2550\u2561 {text} \u255e\u2550")
 
     def list_label(self):
         """Label shown in Window > List."""
-        return self.title.cget("text").strip()
+        return self.title.cget("text").strip("\u2550\u2561\u255e ")
 
     def set_active(self, active):
         color = GRAY if active else CYAN
         self.titlebar.configure(bg=color)
-        for label in (self.title, self.close_label, self.zoom_label): label.configure(bg=color)
+        self.title.configure(bg=color, fg=BLUE if active else "#005555")
+        for label in (self.close_label, self.zoom_label):
+            label.configure(bg=color, fg=BLACK if active else "#005555", relief="raised" if active else "flat")
 
     def focus(self):
         self.frame.focus_set()

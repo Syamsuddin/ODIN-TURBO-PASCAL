@@ -6,7 +6,7 @@
 
 **Layar biru Turbo Pascal yang Anda kenal, dengan compiler dan debugger yang menghasilkan program native.**
 
-[![Versi](https://img.shields.io/badge/rilis-2.4.0-0000aa?style=flat-square)](CHANGELOG.md)
+[![Versi](https://img.shields.io/badge/rilis-2.5.0-0000aa?style=flat-square)](CHANGELOG.md)
 [![CI](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml/badge.svg)](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml)
 [![Lisensi GPL v3](https://img.shields.io/badge/lisensi-GPL--3.0--or--later-ffff55?style=flat-square)](LICENSE)
 [![Offline](https://img.shields.io/badge/offline-tanpa%20telemetri-55ff55?style=flat-square)](#privasi-dan-lokasi-data)
@@ -175,7 +175,7 @@ Pemasang macOS dapat memasang Python dengan Tk melalui Homebrew, dan pemasang Wi
 
 **Pemasang satu berkas (offline).** Unduh `OdinTurboPascal-VERSI-macos-x86_64.pkg` (Mac Intel) dari halaman Releases, lalu buka. Paket memasang aplikasi di `~/Applications` tanpa kata sandi administrator dan membawa Python dengan Tk sendiri, jadi tidak ada yang diunduh dan tidak perlu Homebrew atau Xcode. Paket belum ditandatangani Apple: bila macOS menahannya, klik kanan paketnya, pilih **Open**, atau gunakan **System Settings › Privacy & Security › Open Anyway**. Dibangun oleh `python3 scripts/build_setup_mac.py` dan oleh CI. Diuji di Mac Intel pengembang (pasang, pemeriksaan kompilasi dengan jaringan diblokir, buka lewat LaunchServices); versi `arm64` hanya dibangun di CI, dan Mac bersih tanpa Python belum diuji.
 
-**Dari repositori (`Install.command`).** Pemasang ini memasang **rilis 2.4.0**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Satu-satunya dependensi adalah Python dengan Tk.
+**Dari repositori (`Install.command`).** Pemasang ini memasang **rilis 2.5.0**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Satu-satunya dependensi adalah Python dengan Tk.
 
 1. **Unduh** repositori ini (**Code › Download ZIP**), lalu ekstrak seluruhnya. Jangan menjalankan pemasang dari pratinjau ZIP.
 2. **Buka `Install.command`.** Pemasang berjalan di Terminal dan akan:
