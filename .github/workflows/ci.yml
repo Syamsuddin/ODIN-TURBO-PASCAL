@@ -112,12 +112,25 @@ jobs:
       # The single-file offline setup (Inno Setup): app + odinpc.exe + a private Python with Tk.
       - name: Windows setup (Inno Setup)
         if: runner.os == 'Windows'
+        timeout-minutes: 15
         run: |
           choco install innosetup -y --no-progress
           "$PYTHON" scripts/build_setup_windows.py --out "$RUNNER_TEMP/dist"
           setup=$(ls "$RUNNER_TEMP"/dist/OdinTurboPascal-*-Setup-x64.exe)
           # Silent install in a clean folder, then the files and the private Python are checked.
-          "$setup" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CURRENTUSER /TASKS= "/DIR=$(cygpath -w "$RUNNER_TEMP/odin-setup-app")" "/LOG=$(cygpath -w "$RUNNER_TEMP/setup.log")"
+          # In the background with a deadline: a setup that hangs must show its log, not eat the job's 45 minutes.
+          "$setup" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CURRENTUSER /TASKS= "/DIR=$(cygpath -w "$RUNNER_TEMP/odin-setup-app")" "/LOG=$(cygpath -w "$RUNNER_TEMP/setup.log")" &
+          pid=$!
+          for i in $(seq 1 60); do kill -0 $pid 2>/dev/null || break; sleep 5; done
+          if kill -0 $pid 2>/dev/null; then
+            echo "::error::Setup masih berjalan setelah 5 menit"
+            tail -60 "$RUNNER_TEMP/setup.log" || true
+            ls -la "$RUNNER_TEMP/odin-setup-app" || true
+            tasklist | grep -i -E "odin|python|cmd" || true
+            taskkill //F //IM "$(basename "$setup")" //T || true
+            exit 1
+          fi
+          wait $pid
           app="$RUNNER_TEMP/odin-setup-app"
           cat "$RUNNER_TEMP/setup.log" | tail -5
           for f in python/pythonw.exe toolchain/odinpc.exe OdinTurboPascal.pyw odin.ico odin/app.py; do test -f "$app/$f"; done

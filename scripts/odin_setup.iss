@@ -49,6 +49,10 @@ Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 CloseApplications=yes
+; Without this, Setup registers every staged file (the private Python/Tk tree, thousands of
+; files) with Restart Manager to check it is not in use, which hangs for minutes on some
+; machines (observed in CI). Only the executables can plausibly be locked by a running Odin.
+CloseApplicationsFilter=*.exe
 RestartApplications=no
 
 [Languages]
