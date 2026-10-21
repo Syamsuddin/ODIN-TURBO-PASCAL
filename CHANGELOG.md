@@ -6,6 +6,8 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-10-21
+
 ### Ditambahkan
 
 - Bantuan lengkap dalam HTML, `docs/help.html`, dibuka dari **Help › Contents** (F1): satu berkas mandiri dengan daftar isi bertingkat (penanda bagian aktif, panel "Pada halaman ini"), pencarian instan (`/`), tema terang dan Turbo, serta cetak. Isinya panduan penggunaan, referensi menu, referensi bahasa Pascal dan unit, pintasan, kompatibilitas, dan pemecahan masalah. Tabel referensi dibangun dari `docs/PASCAL.txt` dan `docs/SHORTCUTS.txt` oleh `scripts/build_help.py`; jalankan ulang skrip itu setelah mengubah docs atau nomor versi (tes `test_help_html_is_current` memeriksanya).
@@ -18,6 +20,10 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 - **Pemasang Linux satu berkas** (`OdinTurboPascal-VERSI-linux-ARCH.run`, x86_64 dan arm64), dibuat oleh `scripts/build_setup_linux.py`. Berkas ini berisi skrip shell dan arsip tar.xz: IDE, `odinpc`, dan Python 3.13 dengan Tk khusus untuk Odin (python-build-standalone, disematkan dengan SHA-256), sehingga tidak ada yang diunduh saat memasang dan tidak perlu `python3-tk`, Rust, maupun hak root. Pemasang memeriksa integritas paket, mengompilasi dan menjalankan program uji dengan `odinpc` sebelum memasang, membuat perintah `odin-turbo-pascal` dan entri menu aplikasi, menyimpan satu cadangan versi lama, dan punya `--prefix`, `--no-menu`, `--check`, dan `--uninstall`. Satu-satunya yang diambil dari sistem adalah pustaka X11. CI Linux membangunnya, memasangnya dengan jaringan diputus (`unshare -n`), dan mengunggahnya sebagai artefak. Odin Vision/IDE berjalan di Tk 9.0 bawaan paket ini.
 - **Pemasang macOS satu berkas** (`OdinTurboPascal-VERSI-macos-ARCH.pkg`), dibuat oleh `scripts/build_setup_mac.py` dengan `pkgbuild` dan `productbuild`. Paket ini memasang `Odin Turbo Pascal.app` di `~/Applications` untuk pengguna yang sedang masuk (tanpa kata sandi administrator), dan aplikasinya membawa Python 3.13 dengan Tk sendiri (python-build-standalone, disematkan dengan SHA-256) serta `odinpc`, sehingga tidak ada yang diunduh dan tidak perlu Python, Homebrew, maupun Xcode. Skrip postinstall mengompilasi dan menjalankan program uji dengan `odinpc` (gerbang `check_mac.py`). `scripts/launcher.sh` memakai Python bawaan bundel bila ada (tanpa re-exec arm64, dengan `-E -X utf8`); tanpa Python bawaan perilakunya tidak berubah. `scripts/package_app.py` menerima folder tujuan sebagai argumen. Paket belum ditandatangani Apple (macOS menahannya sampai dibuka lewat klik kanan > Open atau System Settings > Privacy & Security).
 - Buku tutorial menyebut tautan repositori GitHub (`github.com/Syamsuddin/ODIN-TURBO-PASCAL`): di ringkasan pemasangan Bab 1, di Lampiran A (beserta halaman Releases), di halaman hak cipta, dan di penutup. Di PDF tautannya bisa diklik.
+
+### Diubah
+
+- Tampilan jendela IDE, terutama di Windows. Title bar jendela kini bergaya Turbo Vision: judul tebal dalam bingkai garis ganda (`═╡ NAMA.PAS ╞═`), tombol tutup dan zoom berupa kotak timbul (rata dan redup pada jendela yang tidak aktif), serta garis pemisah di bawahnya. Footer dirapatkan: baris tombol F-key memakai Label (bukan Button, yang di Windows menambah cincin fokus dan padding), nama tombol berwarna merah dan label hitam dengan sorotan cyan saat disentuh mouse, status bar tanpa padding vertikal, dan ada garis pemisah antara kedua baris. Menu bar ikut dirapatkan.
 
 ### Diperbaiki
 
@@ -339,7 +345,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.1.0-alpha.1...v2.2.0

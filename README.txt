@@ -1,4 +1,4 @@
-ODIN TURBO PASCAL 2.4.0
+ODIN TURBO PASCAL 2.5.0
 Paket aplikasi desktop untuk Mac Intel dan Apple Silicon; berjalan dari source di Linux
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
