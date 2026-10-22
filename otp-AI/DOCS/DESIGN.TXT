@@ -1,0 +1,131 @@
+RANCANGAN DAN BATAS OTP-AI 2.0
+
+Hak cipta (c) 2026 Syams Ideris. Lisensi GNU GPL versi 3.0 atau yang lebih baru.
+
+KEBERGANTUNGAN
+
+AITYPES : System bawaan; tipe bersama.
+AIMATH  : AITYPES; matematika dan matriks.
+AISTATS : AITYPES; statistik dan metrik evaluasi.
+AIDATA  : AITYPES; data CSV dan preprocessing; implementasi memakai AISTATS.
+AISPLIT : AITYPES; implementasi memakai AIMATH dan AIDATA.
+AILINEAR: AITYPES, AIOPTIM; implementasi memakai AIDATA dan AIMATH.
+AIOPTIM : AITYPES; implementasi memakai AIMATH.
+AIKNN, AIKMEANS : AITYPES; implementasi memakai AIMATH.
+AINNET  : AITYPES, AIOPTIM; implementasi memakai AIMATH.
+AIBAYES, AITREE, AITEXT, AIRULE, AISEARCH, AIFUZZY : AITYPES.
+AIREWARD: AITYPES, AISEARCH; implementasi memakai AIMATH.
+AIMODEL : tipe dan model dari unit model; implementasi juga memakai AIKNN.
+AIPLOT  : AITYPES; Graph hanya backend Turbo Pascal.
+
+Penggabungan API: AIMATRIX -> AIMATH; AIPREP -> AIDATA;
+AIMETRIC -> AISTATS; AIREG, AILOGREG, AIPERCEP -> AILINEAR.
+Fungsi dan tipe tetap sama; klausa uses pemanggil harus memakai unit baru.
+
+Tidak ada dependensi Python atau API daring pada runtime Pascal.
+Berkas .PAS dikompilasi menjadi .TPU oleh Turbo Pascal. Free Pascal memakai
+.PPU yang tidak bisa dipakai sebagai .TPU Borland.
+
+MEMORI
+
+Default Turbo Pascal memakai Real 6 byte dan Integer 2 byte. Ukuran teoritis
+TDataSet sekitar 13 KB sebelum memperhitungkan kemungkinan alignment compiler.
+Gunakan SizeOf(TDataSet) untuk angka aktual. Pada FPC x86_64 pengujian,
+ukuran record bisa lebih besar karena Real dan alignment; Integer pada
+FPC mode TP yang diuji juga 2 byte.
+
+Empat dataset contoh membutuhkan sekitar 52 KB heap pada TP default,
+bukan 52 KB variabel global. Setiap blok sendiri jauh di bawah 64 KB.
+Unit tidak menyimpan dataset global tersembunyi. KNN menggunakan pointer
+milik pemanggil. K-means dan regresi menyimpan parameter kecil dalam model.
+Buffer lokal terbesar berupa seri/matriks kecil. Program contoh menetapkan
+stack 16 KB pada Turbo Pascal. Jangan menambah variabel lokal TDataSet besar.
+
+Menambah MaxSamples atau MaxFeatures memerlukan audit ukuran record,
+segmen data, stack, loop, format CSV, dan memori keseluruhan.
+Menaikkan konstanta tidak otomatis membuat Turbo Pascal menjadi 32-bit.
+
+NUMERIK
+
+Input publik dataset/vektor/matriks dibatasi |X|<=1E12 dan X bukan NaN.
+Operasi matriks add, subtract, scale dan multiply juga menolak hasil elemen
+di luar batas tersebut, dengan ErrValue dan tanpa mengubah output. Gunakan
+data berskala kecil agar pembulatan mudah dibaca. Batas operasi numerik lain
+tetap mengikuti kontrak fungsi masing-masing.
+SafeExp dibatasi [-80,80]. IntPower dibatasi eksponen [-100,100] dan magnitudo
+hasil sekitar 1E30. Nol pangkat nol mengikuti konvensi komputasi bernilai 1.
+Clamp memeriksa urutan batas. Sigmoid memakai bentuk stabil untuk mencegah
+Exp dengan eksponen positif terlalu besar.
+
+PRNG Park-Miller memakai aritmetika Schrage LongInt 32-bit untuk menghindari
+overflow. Seed yang sama menghasilkan urutan deterministik. PRNG ini untuk
+simulasi pembelajaran dan pengacakan, bukan untuk kriptografi.
+
+KOMPLEKSITAS
+
+Statistik dasar: O(N), median insertion sort O(N^2).
+Regresi: pembentukan normal equations O(N*P^2), eliminasi O(P^3).
+KNN: O(N*P + N^2) per prediksi karena insertion sort.
+K-means: O(iterasi*N*K*P), dengan inisialisasi farthest-first.
+P = fitur, K = tetangga/cluster sesuai algoritma.
+
+LINGKUP
+
+Versi 2 menambahkan jaringan saraf kecil dan penyimpanan model lokal.
+Tidak mencakup transformer, GPU, pandas penuh, autodiff atau penghubung
+langsung ke Python. Unit lanjutan dijelaskan di GUIDE2.TXT.
+
+DATASET
+
+JAMNILAI.CSV  : 30 baris, 1 fitur, target numerik, tren linear + variasi kecil.
+MULTIREG.CSV  : 24 baris, 2 fitur, target tepat Y=5+2X1-3X2.
+BUNGA.CSV     : 45 baris, 2 fitur, 3 kelas terpisah, seluruhnya sintetis.
+CLUSTER.CSV   : 36 baris, 2 fitur, 3 kelompok geometris sintetis.
+MISSING.CSV   : 12 baris, 2 fitur, target numerik, contoh fitur kosong.
+
+SUMBER ACUAN
+
+Borland Turbo Pascal 7.0 User's Guide (manual asli, salinan arsip):
+https://www.turbopascal.nl/docs/Turbo_Pascal_Version_7.0_Users_Guide_1992.pdf
+
+Free Pascal, TP mode dan perbedaan porting:
+https://www.freepascal.org/docs-html/prog/progse73.html
+https://docs.freepascal.org/port.html
+
+scikit-learn, pengelompokan algoritma dan data leakage:
+https://scikit-learn.org/stable/user_guide.html
+https://github.com/scikit-learn/scikit-learn/blob/main/doc/common_pitfalls.rst
+
+Unit otp-AI ditulis sebagai implementasi mandiri. Nama pustaka Python menjadi
+acuan fungsi pembelajaran, bukan pernyataan kompatibilitas API atau performa.
+
+KEBERGANTUNGAN UNIT MODEL DAN AI
+
+AIOPTIM -> AITYPES, AIMATH.
+AILINEAR/AINNET -> AITYPES, AIMATH, AIOPTIM.
+AIBAYES/AITEXT/AIRULE/AISEARCH/AIFUZZY -> AITYPES.
+AITREE -> AITYPES.
+AIREWARD -> AITYPES, AIMATH, AISEARCH.
+AIMODEL -> tipe dan validator model awal serta seluruh model lanjutan.
+AIMODEL hanya tergantung ke model, model tidak tergantung ke AIMODEL.
+
+Record tunggal dibatasi ukuran; buffer raw AIMODEL maksimum 32760 byte.
+Staging file berada di heap; loader KNN tidak menyimpan pointer mentah.
+Text fitting memakai array kandidat lokal terbatas. Pohon memakai partisi
+indeks baris bersama, bukan salinan dataset pada setiap level rekursi.
+Menaikkan kapasitas memerlukan audit ulang stack, segmen, loop dan format
+snapshot. Format snapshot harus diubah jika layout record berubah.
+
+DATA TAMBAHAN
+AND.CSV, XOR.CSV: masing-masing 4 baris kebenaran biner, 2 fitur.
+BINARY.CSV: 40 baris sintetis, 2 fitur, 2 kelas.
+TEXTTRN.TSV: 8 kalimat latih sintetis. TEXTEST.TSV: 4 kalimat uji sintetis.
+
+ACUAN KONSEP TAMBAHAN
+https://scikit-learn.org/stable/modules/naive_bayes.html
+https://scikit-learn.org/1.2/modules/tree.html
+https://www.incompleteideas.net/book/bookdraft2018mar21.pdf
+
+Perhitungan TF-IDF dan inisialisasi Xavier memakai variabel TFloat untuk
+menghindari ekspresi sementara Single pada compiler FPC. REFADV membandingkan
+satu epoch backprop dengan NumPy untuk memeriksa arah gradien dan urutan update.

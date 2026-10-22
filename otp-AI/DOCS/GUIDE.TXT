@@ -1,0 +1,229 @@
+PANDUAN DASAR OTP-AI 2.0
+
+Hak cipta (c) 2026 Syams Ideris. Lisensi GNU GPL versi 3.0 atau yang lebih baru.
+
+1. KONTRAK DATA
+
+TDataSet.Count      Jumlah baris aktif, 1 sampai 200 untuk operasi model.
+TDataSet.Features   Jumlah fitur aktif, 1 sampai 8.
+TDataSet.TargetKind TargetNone=0, TargetReal=1, TargetClass=2.
+TDataSet.X[I,J]     Fitur ke-J dari baris ke-I.
+TDataSet.Y[I]       Target regresi, hanya dipakai jika TargetReal.
+TDataSet.Labels[I]  Label kelas 0 sampai 9, hanya jika TargetClass.
+TDataSet.Missing    Penanda fitur kosong, bukan penanda target kosong.
+TDataSet.Names      Nama kolom, maksimum 31 karakter.
+
+Indeks baris/fitur dimulai dari 1. Label kelas dimulai dari 0.
+Nomor cluster K-means dimulai dari 1. Cluster bukan label kelas.
+
+TVector menyimpan maksimum 8 angka. TSeries menyimpan maksimum 200 angka.
+TMatrix terpisah dari dataset dan dibatasi 16 x 16 untuk latihan aljabar.
+Bagian array setelah Count/Features tidak menjadi data aktif.
+
+2. STATUS KESALAHAN
+
+Sebagian besar operasi mengembalikan Boolean. Jika False, segera baca
+AIErrorCode dan AIError. Operasi berikutnya dapat mengganti status tersebut.
+Pola yang dipakai contoh:
+
+  if not FitLinear(Data^,0,Model) then begin
+    WriteLn(AIError); Halt(1)
+  end;
+
+Kode: 0 sukses, 1 ukuran, 2 nilai, 3 data kosong, 4 I/O, 5 format,
+6 model, 7 matriks singular, 8 memori, 9 grafik.
+
+Output operasi yang gagal tidak boleh dipakai. Tidak semua operasi bersifat
+transaksional: misalnya prediksi batch dapat terisi sebagian sebelum gagal.
+LoadCSV mereset dataset jika gagal, dan Fit menandai model belum terlatih
+jika gagal. Periksa Boolean sebelum memakai hasil.
+
+CopyRow adalah prosedur tingkat rendah. Ia memeriksa batas indeks/dimensi,
+menyalin satu baris, tetapi tidak menambah Count dan tidak memvalidasi ulang
+semua angka. Pemanggil harus mengatur metadata serta Count tujuan sendiri.
+InitData mengosongkan record dan mengatur metadata. CheckData melakukan
+validasi atas jumlah baris, fitur, target, missing dan batas numerik.
+
+3. ALOKASI DATASET
+
+  var Data: PDataSet;
+  ...
+  if not NewData(Data) then begin WriteLn(AIError); Halt(1) end;
+  ...
+  FreeData(Data);
+
+NewData hanya dipanggil untuk pointer yang belum memiliki alokasi.
+Untuk memakai ulang dataset yang sama, gunakan InitData(Data^,...) atau
+LoadCSV(...,Data^), bukan NewData lagi. FreeData mengubah pointer menjadi nil.
+Jangan menyalin kepemilikan pointer lalu membebaskannya dua kali.
+
+TrainTestSplit/FoldSplit memerlukan tiga dataset terpisah. SelectColumns dan
+FilterRange juga memerlukan tujuan terpisah. Jangan menumpangkan array output
+seperti TSeries/TLabels pada field dataset atau field model yang menjadi input.
+Operasi matriks mendukung output yang sama dengan input karena memakai buffer.
+
+4. FORMAT CSV
+
+Pemisah: koma. Desimal: titik. Angka negatif dan notasi E/e didukung.
+Target, jika ada, selalu kolom terakhir.
+Contoh regresi:
+
+  JAM,LATIHAN,NILAI
+  2,3,55
+  3,5,65
+
+Contoh klasifikasi:
+
+  PANJANG,LEBAR,KELAS
+  1.5,0.7,0
+  4.2,2.1,1
+
+Contoh tanpa target:
+
+  X,Y
+  1.2,3.4
+  4.5,6.7
+
+Fitur kosong ditulis sebagai kolom kosong atau ?. Target wajib terisi.
+Kolom boleh memakai kutip ganda. Kutip di dalamnya digandakan.
+Baris kosong dilewati. CSV multiline di dalam kutip tidak didukung.
+UTF-8 BOM, titik koma pemisah, desimal koma, NaN dan Infinity tidak didukung.
+Gunakan CSV ASCII untuk kesesuaian dengan DOS.
+
+Batas: 255 karakter per baris, 63 karakter per nilai, 31 karakter per nama,
+1..8 fitur, maksimum 200 baris data. Header tidak dihitung sebagai baris data.
+Eksponen tertulis dibatasi -30 sampai 30, mantisa integer <=1E12,
+maksimum 30 digit pecahan. Magnitudo hasil yang didukung CSV adalah nol atau
+1E-30 sampai 1E12. Bentuk numerik yang setara tetapi melampaui batas penulisan
+ini harus disederhanakan sebelum diimpor.
+
+SaveCSV menulis header berkutip dan angka ilmiah. Nilai missing ditulis kosong.
+Nama kolom yang membuat panjang header >255 ditolak sebelum menulis.
+Berkas tujuan yang sudah ada akan ditimpa oleh SaveCSV dan ekspor SVG.
+
+5. ALUR PEMBELAJARAN SUPERVISED
+
+a. LoadCSV ke dataset sumber.
+b. TrainTestSplit ke dataset latih dan uji.
+c. FitImputer HANYA pada data latih jika diperlukan.
+d. ImputeData pada latih dan uji menggunakan imputer yang sama.
+e. FitScaler HANYA pada data latih jika diperlukan.
+f. TransformData pada latih dan uji menggunakan scaler yang sama.
+g. FitLinear atau FitKNN pada data latih.
+h. PredictLinearData atau PredictKNNData pada data uji.
+i. Hitung metrik dari target aktual data uji dan prediksi.
+
+Jangan menghitung mean/standar deviasi seluruh dataset sebelum split.
+Cross-validation mengulang langkah c sampai h pada setiap fold secara mandiri.
+AISPLIT menyediakan pembagian acak biasa, bukan stratifikasi kelas atau split
+berdasarkan waktu. Untuk data waktu, pertahankan urutan dengan Shuffle=False.
+
+6. PRAPROSES
+
+FitImputer menghitung mean tiap fitur dari nilai yang tidak kosong.
+Jika seluruh isi satu fitur latih kosong, pelatihan imputer gagal.
+ImputeData mengganti hanya fitur bertanda Missing dan menghapus tandanya.
+
+ScaleMinMax: (X-min)/(max-min).
+ScaleStandard: (X-mean)/SD, SD populasi dengan pembagi N.
+Divisor <1E-10 diganti 1. Data konstan menjadi nol saat transform nilai latih.
+Nilai uji dengan min-max boleh di luar 0..1. Tidak ada clipping otomatis.
+TransformVector dan InverseVector memudahkan prediksi satu observasi baru.
+
+CategoryMap berisi maksimum 16 nama, peka huruf besar/kecil.
+AddCategory membangun kamus dari data latih. EncodeCategory menolak nama baru
+pada tahap prediksi. OneHot mengisi TVector, sehingga maksimum 8 kategori.
+Kode kategori maksimum 15 tidak otomatis valid sebagai label TargetClass,
+yang dibatasi 0..9. Atur jumlah kelas dengan sadar.
+CSV numerik tidak otomatis mengubah teks menjadi kategori. Gunakan fungsi
+kategori untuk data yang dimasukkan program, lalu isi X atau Labels sendiri.
+
+7. REGRESI LINEAR
+
+FitLinear(Data,Ridge,Model) mendukung satu atau beberapa fitur.
+Ridge=0 berarti ordinary least squares. Jumlah baris harus lebih besar
+daripada jumlah fitur dan fitur harus bebas kolinearitas.
+Ridge>0 memberi regularisasi L2 atas koefisien fitur yang distandardisasi.
+Intercept tidak dikenai penalti. Parameter ridge tidak identik dengan
+pelatihan ridge pada fitur mentah tanpa standardisasi.
+
+Unit menstandardisasi fitur secara internal, memusatkan Y, membentuk normal
+equations, dan menyelesaikannya dengan eliminasi Gauss pivot parsial.
+Koefisien dikembalikan ke skala input semula. PredictLinear harus menerima
+fitur dalam skala yang sama dengan input FitLinear.
+
+Normal equations cocok untuk latihan kecil, tetapi kurang stabil pada data
+hampir kolinear dibanding QR/SVD. Toleransi pivot 1E-10. Gunakan skala wajar,
+hapus fitur bermasalah, atau gunakan ridge. AILINEAR memakai solusi langsung
+untuk regresi linear, bukan gradient descent. AIOPTIM dipakai oleh model
+lanjutan dalam AILINEAR dan AINNET; lihat GUIDE2.TXT.
+
+8. KNN
+
+FitKNN menyimpan pointer ke dataset latih, K dan metadata. Ia tidak menyalin
+data dan tidak mengambil alih kepemilikannya. Dataset tersebut harus tetap
+hidup dan tidak diubah sampai model selesai dipakai. Set Model.Fitted=False
+serta Model.Data=nil sebelum membebaskan atau mengubah dataset tersebut.
+Pemeriksaan metadata mendeteksi perubahan ukuran/jenis target, bukan semua
+perubahan nilai atau pointer yang sudah dibebaskan.
+
+Klasifikasi: voting seragam K tetangga. Jika suara sama, pilih label terkecil.
+Jika jarak sama pada batas K, gunakan urutan baris latih yang lebih awal.
+Regresi: rata-rata target K tetangga. Tidak ada pembobotan jarak.
+Jarak Euclidean kuadrat cukup untuk menentukan urutan tetangga.
+Untuk fitur dengan skala berbeda, lakukan standardisasi sebelum FitKNN.
+
+9. K-MEANS
+
+FitKMeans memakai pusat pertama acak berbasis seed, kemudian memilih titik
+terjauh dari pusat yang sudah ada. Ini farthest-first, bukan k-means++.
+K tidak boleh melebihi jumlah titik fitur yang unik.
+
+Iterasi: pilih pusat terdekat, perbarui mean tiap kelompok, ukur perpindahan
+pusat, hitung ulang label dan inertia terhadap pusat terbaru.
+Cluster kosong diperbaiki dengan memindahkan titik terjauh dari cluster donor
+yang memiliki lebih dari satu anggota.
+
+Converged=True ketika perpindahan maksimum pusat <=Tolerance.
+FitKMeans tetap sukses saat MaxIter tercapai, tetapi Converged bisa False.
+History berisi inertia setelah pembaruan pusat, panjangnya HistoryCount.
+Inertia adalah jumlah kuadrat jarak ke pusat terdekat, bukan persentase akurasi.
+Nomor cluster tidak mempunyai urutan mutu atau arti kelas tetap.
+Satu inisialisasi dijalankan per Fit; jika perlu, bandingkan beberapa seed.
+
+10. METRIK
+
+RegressionMetrics: MAE, MSE, RMSE dan R2.
+R2Defined=False jika N<2, target konstan, atau rasio numerik terlalu besar.
+Dalam keadaan tersebut nilai R2 diisi 0 sebagai placeholder, bukan skor sah.
+R2 negatif diperbolehkan.
+
+ConfusionMatrix: baris=aktual, kolom=prediksi.
+ClassificationMetrics: Accuracy, Precision/Recall/F1 tiap kelas dan rata-rata
+macro. Penyebut nol menghasilkan 0. Macro menghitung seluruh Classes yang
+diminta, termasuk kelas tanpa contoh. Nilai semua metrik klasifikasi berada
+pada skala 0..1, bukan 0..100. Tidak ada weighted-F1/micro-F1 dalam versi ini.
+
+11. GRAFIK
+
+BGI: PlotOpen -> PlotScatter/PlotRegression/PlotCurve -> PlotClose.
+SVG: SaveScatterSVG, SaveRegressionSVG, SaveCurveSVG. Tidak perlu PlotOpen.
+Kurva memakai X=1..N. Scatter memakai X dan Y yang diberikan.
+PlotRegression menerima satu slope dan intercept, untuk regresi satu fitur.
+Titik diberi warna berdasarkan label modulo 10. Sumbu menyesuaikan rentang
+data secara otomatis dan memakai label umum X/Y. Gunakan judul untuk konteks.
+SVG dibuat langsung oleh Pascal, tanpa Python, JavaScript atau layanan luar.
+
+12. URUTAN LATIHAN
+
+BASIC    : ubah lima angka, bandingkan mean, median, varians, korelasi.
+DATAPREP : bandingkan imputasi, standar dan min-max; pelajari data leakage.
+REGDEMO  : ubah seed split dan amati MAE/RMSE pada data uji.
+REGMULT  : temukan kembali persamaan Y=5+2X1-3X2.
+KNNDEMO  : bandingkan K=1,3,5 dan perubahan confusion matrix.
+KMEANS   : bandingkan K=2,3,4 serta inertia dan pusat.
+CROSSVAL : bandingkan hasil holdout dengan lima fold.
+PLOTDEMO : lihat hubungan angka dengan posisi titik dan garis.
+
+Setiap latihan dapat diikuti empat tugas: prediksi hasil sebelum menjalankan,
+jalankan program, jelaskan perbedaannya, ubah satu parameter dan uji kembali.

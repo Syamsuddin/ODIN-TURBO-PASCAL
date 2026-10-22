@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+<rect width="800" height="500" fill="#f8fafc"/>
+<g font-family="sans-serif" fill="#0f172a" font-size="12">
+<text x="80" y="30" font-size="18">Suhu vs kipas; kelembapan 70</text>
+<rect x="80" y="55" width="690" height="380" fill="white" stroke="#94a3b8"/>
+<text x="80" y="458" text-anchor="middle">-3.200</text>
+<text x="72" y="439" text-anchor="end">37.628</text>
+<text x="252" y="458" text-anchor="middle">8.400</text>
+<text x="72" y="344" text-anchor="end">48.894</text>
+<text x="425" y="458" text-anchor="middle">20.000</text>
+<text x="72" y="249" text-anchor="end">60.160</text>
+<text x="598" y="458" text-anchor="middle">31.600</text>
+<text x="72" y="154" text-anchor="end">71.426</text>
+<text x="770" y="458" text-anchor="middle">43.200</text>
+<text x="72" y="59" text-anchor="end">82.692</text>
+<circle cx="128" cy="409" r="4" fill="#2563eb"/>
+<circle cx="142" cy="409" r="4" fill="#2563eb"/>
+<circle cx="157" cy="409" r="4" fill="#2563eb"/>
+<circle cx="172" cy="409" r="4" fill="#2563eb"/>
+<circle cx="187" cy="409" r="4" fill="#2563eb"/>
+<circle cx="202" cy="409" r="4" fill="#2563eb"/>
+<circle cx="217" cy="409" r="4" fill="#2563eb"/>
+<circle cx="232" cy="409" r="4" fill="#2563eb"/>
+<circle cx="247" cy="409" r="4" fill="#2563eb"/>
+<circle cx="261" cy="409" r="4" fill="#2563eb"/>
+<circle cx="276" cy="409" r="4" fill="#2563eb"/>
+<circle cx="291" cy="366" r="4" fill="#2563eb"/>
+<circle cx="306" cy="331" r="4" fill="#2563eb"/>
+<circle cx="321" cy="299" r="4" fill="#2563eb"/>
+<circle cx="336" cy="270" r="4" fill="#2563eb"/>
+<circle cx="351" cy="266" r="4" fill="#2563eb"/>
+<circle cx="366" cy="260" r="4" fill="#2563eb"/>
+<circle cx="380" cy="239" r="4" fill="#2563eb"/>
+<circle cx="395" cy="216" r="4" fill="#2563eb"/>
+<circle cx="410" cy="191" r="4" fill="#2563eb"/>
+<circle cx="425" cy="164" r="4" fill="#2563eb"/>
+<circle cx="440" cy="164" r="4" fill="#2563eb"/>
+<circle cx="455" cy="164" r="4" fill="#2563eb"/>
+<circle cx="470" cy="164" r="4" fill="#2563eb"/>
+<circle cx="484" cy="164" r="4" fill="#2563eb"/>
+<circle cx="499" cy="164" r="4" fill="#2563eb"/>
+<circle cx="514" cy="164" r="4" fill="#2563eb"/>
+<circle cx="529" cy="173" r="4" fill="#2563eb"/>
+<circle cx="544" cy="164" r="4" fill="#2563eb"/>
+<circle cx="559" cy="129" r="4" fill="#2563eb"/>
+<circle cx="574" cy="81" r="4" fill="#2563eb"/>
+<circle cx="589" cy="81" r="4" fill="#2563eb"/>
+<circle cx="603" cy="81" r="4" fill="#2563eb"/>
+<circle cx="618" cy="81" r="4" fill="#2563eb"/>
+<circle cx="633" cy="81" r="4" fill="#2563eb"/>
+<circle cx="648" cy="81" r="4" fill="#2563eb"/>
+<circle cx="663" cy="81" r="4" fill="#2563eb"/>
+<circle cx="678" cy="81" r="4" fill="#2563eb"/>
+<circle cx="693" cy="81" r="4" fill="#2563eb"/>
+<circle cx="708" cy="81" r="4" fill="#2563eb"/>
+<circle cx="722" cy="81" r="4" fill="#2563eb"/>
+<text x="760" y="485">X</text><text x="20" y="45">Y</text>
+<text x="80" y="485">OTP-AI 2.0 | Warna mengikuti kode kelompok modulo 10</text>
+</g></svg>

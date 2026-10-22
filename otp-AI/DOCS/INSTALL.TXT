@@ -1,0 +1,148 @@
+INSTALASI DAN KOMPILASI OTP-AI 2.0
+
+Hak cipta (c) 2026 Syams Ideris. Lisensi GNU GPL versi 3.0 atau yang lebih baru.
+
+A. TURBO PASCAL 7.0 DOS
+
+1. Ekstrak folder otp-AI. Contoh lokasi: C:\otp-AI.
+2. Gunakan instalasi Turbo Pascal 7.0 Anda, misalnya C:\TP.
+3. Pastikan TPC.EXE, TURBO.TPL dan unit standar dapat ditemukan.
+4. AIPLOT pada Turbo Pascal memakai GRAPH.TPU. Saat menampilkan grafik,
+   driver seperti EGAVGA.BGI juga perlu tersedia.
+5. Jalankan dari prompt DOS:
+
+   C:
+   CD \otp-AI
+   SET TPBASE=C:\TP
+   BUILDTP.BAT
+
+BUILDTP mencari TPC.EXE di %TPBASE%\BIN, kemudian di %TPBASE%.
+Path unit default: UNITS;%TPBASE%\UNITS;%TPBASE%\BGI.
+Sesuaikan BUILDTP.BAT jika struktur instalasi Anda berbeda.
+Hasil EXE dan TPU diarahkan ke folder BIN. Build berhenti jika ada kegagalan.
+
+Perintah kompilasi satu program dengan lokasi standar:
+
+   C:\TP\BIN\TPC /B /UUNITS;C:\TP\UNITS /IEXAMPLES /EBIN EXAMPLES\BASIC.PAS
+
+Buat BIN terlebih dahulu jika belum ada. /B membangun ulang dependensi,
+/U mengatur direktori unit, /I mengatur include, /E mengatur keluaran EXE/TPU.
+
+Menjalankan program, tetap dari C:\otp-AI:
+
+   BIN\BASIC
+   BIN\REGDEMO
+   BIN\KNNDEMO
+   BIN\KMEANS
+   BIN\CROSSVAL
+   BIN\TESTALL
+   BIN\PLOTDEMO C:\TP\BGI
+
+PLOTDEMO memakai Enter untuk melanjutkan tiap tampilan. Program ini tidak
+memakai CRT. Graph disediakan instalasi Turbo Pascal, bukan paket otp-AI.
+SVG bisa dipindah dari DOS lalu dibuka di peramban pada komputer utama.
+
+B. MELALUI IDE TURBO PASCAL
+
+1. Ubah direktori kerja IDE ke C:\otp-AI.
+2. Options > Directories:
+   Unit directories: C:\otp-AI\UNITS;C:\TP\UNITS
+   Include directories: C:\otp-AI\EXAMPLES
+   EXE & TPU directory: C:\otp-AI\BIN
+3. Options > Compiler: aktifkan range checking dan stack checking saat belajar.
+4. Gunakan Real default. Source tidak memerlukan mode 8087/N+.
+5. Buka EXAMPLES\REGDEMO.PAS dan pilih Compile > Build.
+6. Jalankan dari IDE atau DOS dengan direktori kerja C:\otp-AI.
+7. Untuk grafik, arahkan BGIPath sesuai lokasi EGAVGA.BGI Anda.
+
+Jika IDE memiliki heap terbatas, kompilasi lewat TPC dari DOS memberi ruang
+lebih banyak. Dataset wajib dialokasikan melalui NewData/FreeData seperti
+contoh. Hindari menaruh beberapa TDataSet sebagai variabel lokal prosedur.
+
+C. ODIN TURBO PASCAL DI PROYEK INI
+
+1. Buka project otp-AI di Odin Turbo Pascal dan buka salah satu program di
+   EXAMPLES, misalnya BASIC.PAS.
+2. Buka Options > Directories. Tambahkan folder UNITS pada Unit search paths
+   dan folder EXAMPLES pada Include search paths. Gunakan satu path per baris.
+3. Jalankan program dengan direktori kerja folder utama otp-AI agar berkas DATA
+   dan OUTPUT dapat ditemukan.
+4. Pilih Compile > Build, lalu Run.
+5. Contoh paket sudah menggunakan unit canonical. Source dari paket lama
+   perlu memetakan AIMatrix ke AIMath, AIPrep ke AIData, AIMetric ke AIStats,
+   serta AIReg/AILogReg/AIPercep ke AILinear pada klausa uses.
+
+Kompilasi dari terminal juga dapat dilakukan dari folder utama otp-AI:
+
+   mkdir -p BIN
+   odinpc build EXAMPLES/BASIC.PAS --out BIN/BASIC --unit-path UNITS --include-path EXAMPLES --rtl /path/ke/Odin_Turbo_Pascal/rtl
+
+Ganti /path/ke/Odin_Turbo_Pascal/rtl dengan folder rtl dari checkout project.
+AIPLOT pada Odin mendukung ekspor SVG. PlotOpen dan plot layar BGI hanya
+tersedia pada build Turbo Pascal yang memiliki GRAPH.TPU dan driver BGI.
+File model .TPM Odin memiliki penanda ABI tersendiri; jangan bertukar model
+antara Odin, Free Pascal, dan Turbo Pascal.
+
+D. FREE PASCAL LINUX / MACOS
+
+Free Pascal perlu sudah terpasang dan perintah fpc tersedia di PATH.
+Dari folder otp-AI:
+
+   sh BUILDFPC.SH
+   ./BIN/TESTALL
+   ./BIN/REGDEMO
+   ./BIN/KNNDEMO
+   ./BIN/KMEANS
+
+Script mengompilasi ulang unit dan contoh dengan -Mtp, pemeriksaan rentang,
+overflow, I/O, dan stack. BUILD berisi .o/.ppu, BIN berisi program native.
+FPC membentuk program native untuk sistem operasi saat kompilasi, bukan EXE DOS.
+Pada build FPC bawaan, AIPLOT menggunakan ekspor SVG. PlotOpen melaporkan
+ErrGraphics karena backend BGI DOS tidak diaktifkan.
+
+Kompilasi manual:
+
+   mkdir -p BIN BUILD
+   fpc -Mtp -B -Cr -Co -Ci -Ct -FuUNITS -FiEXAMPLES -FUBUILD -FEBIN EXAMPLES/BASIC.PAS
+
+E. FREE PASCAL WINDOWS
+
+Buka Command Prompt pada folder otp-AI, pastikan fpc ada di PATH:
+
+   BUILDWIN.BAT
+   BIN\TESTALL.EXE
+   BIN\REGDEMO.EXE
+
+F. PENGUJIAN PEMBANDING NUMPY
+
+BUILD FPC juga mengompilasi TESTS/ORACLE.PAS. Setelah NumPy tersedia pada
+Python pengembang:
+
+   python TESTS/REFTEST.PY
+
+Script membuat DATA/ORACLE.CSV sementara, menjalankan ORACLE, membandingkan
+hasil terhadap NumPy, lalu menghapus atau memulihkan fixture tersebut.
+Variabel lingkungan TPAI_ORACLE dapat menunjuk binary ORACLE lain.
+Pengujian ini opsional dan tidak diperlukan untuk belajar Pascal.
+
+G. PEMECAHAN MASALAH
+
+Unit not found: periksa Unit directories dan nama file di UNITS.
+Include not found: periksa Include directories menuju EXAMPLES.
+File CSV not found: jalankan program dari root otp-AI.
+BGI not found: berikan lokasi driver yang benar pada PLOTDEMO.
+Heap tidak cukup: tutup program lain, gunakan TPC, alokasikan dataset di heap.
+ErrSingular: hilangkan fitur konstan/kolinear atau gunakan ridge positif.
+ErrMissing: FitImputer pada data latih lalu ImputeData pada latih dan uji.
+ErrSize: periksa jumlah fitur, baris, kelas dan cluster terhadap kapasitas.
+
+H. UNIT LANJUTAN DAN PENGUJIAN TAMBAHAN
+
+Script build sekarang mencakup 20 contoh dan seluruh TESTS/*.PAS.
+Jalankan BIN\TESTADV pada DOS/Windows atau ./BIN/TESTADV pada Linux.
+Jalankan python TESTS/REFADV.PY untuk 14 pembanding numerik tambahan.
+TPAI_ORACL2 dapat mengatur lokasi binary ORACL2 jika berbeda.
+Coba BIN\NNDEMO, BIN\TEXTDEMO dan BIN\QDEMO pada DOS; tambahkan ./ pada
+Linux. Model .TPM dibuat ulang oleh contoh dengan ABI compiler Anda.
+Kode contoh bebas CRT. Dukungan Graph tetap diperlukan oleh AIPLOT di TP.
+TP7 asli belum diuji; verifikasi batas stack/segmen pada instalasi target.

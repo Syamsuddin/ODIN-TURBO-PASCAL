@@ -1,0 +1,650 @@
+REFERENSI API OTP-AI 2.0 - 19 UNIT
+
+Hak cipta (c) 2026 Syams Ideris. Lisensi GNU GPL versi 3.0 atau yang lebih baru.
+
+Interface aktual setiap unit konsolidasi. Baca GUIDE.TXT dan GUIDE2.TXT untuk semantik.
+
+======================================================================
+AIBAYES.PAS
+======================================================================
+
+unit AIBayes;
+interface
+uses AITypes;
+const BayesGaussian=1; BayesMultinomial=2;
+type
+  TClassProb = array[0..MaxClasses-1] of TFloat;
+  TBayesModel = record
+    Fitted: Boolean;
+    Kind,Features,Classes,Total: Integer;
+    Counts: array[0..MaxClasses-1] of Integer;
+    LogPrior: TClassProb;
+    Means,Variances,LogFeature: array[0..MaxClasses-1] of TVector;
+  end;
+function CheckBayes(var M: TBayesModel): Boolean;
+function FitGaussian(var D: TDataSet; VarianceFloor: TFloat;
+  var M: TBayesModel): Boolean;
+function FitMultinomial(var D: TDataSet; Alpha: TFloat;
+  var M: TBayesModel): Boolean;
+function PredictBayes(var M: TBayesModel; var X: TVector;
+  var LabelValue: Integer; var Probabilities: TClassProb): Boolean;
+
+======================================================================
+AIDATA.PAS
+======================================================================
+
+unit AIData;
+{$B-}
+interface
+uses AITypes;
+function LoadCSV(FileName: TFileName; HasHeader: Boolean;
+  TargetKind: Integer; var D: TDataSet): Boolean;
+function SaveCSV(FileName: TFileName; var D: TDataSet): Boolean;
+function GetColumn(var D: TDataSet; Col: Integer;
+  var Values: TSeries): Boolean;
+function SelectColumns(var Source: TDataSet; var Columns: TIndexList;
+  N: Integer; var Dest: TDataSet): Boolean;
+function FilterRange(var Source: TDataSet; Col: Integer;
+  Minimum, Maximum: TFloat; var Dest: TDataSet): Boolean;
+procedure CopyRow(var Source: TDataSet; SourceRow: Integer;
+  var Dest: TDataSet; DestRow: Integer);
+procedure DescribeData(var D: TDataSet);
+
+function FitImputer(var D: TDataSet; var M: TImputer): Boolean;
+function ImputeData(var M: TImputer; var D: TDataSet): Boolean;
+function FitScaler(var D: TDataSet; Kind: Integer;
+  var S: TScaler): Boolean;
+function TransformData(var S: TScaler; var D: TDataSet): Boolean;
+function TransformVector(var S: TScaler; var V: TVector): Boolean;
+function InverseVector(var S: TScaler; var V: TVector): Boolean;
+procedure InitCategories(var Map: TCategoryMap);
+function AddCategory(var Map: TCategoryMap; Name: TName;
+  var Code: Integer): Boolean;
+function EncodeCategory(var Map: TCategoryMap; Name: TName;
+  var Code: Integer): Boolean;
+function OneHot(Code, Count: Integer; var V: TVector): Boolean;
+
+======================================================================
+AIFUZZY.PAS
+======================================================================
+
+unit AIFuzzy;
+interface
+uses AITypes;
+const FuzzyInputs=2; FuzzySets=3; MaxFuzzyRules=9;
+type
+  TTriangle = record A,B,C: TFloat end;
+  TFuzzyRule = record Set1,Set2,OutputSet: Integer; Weight: TFloat end;
+  TFuzzySystem = record
+    Ready: Boolean;
+    RuleCount: Integer;
+    InMin,InMax: array[1..FuzzyInputs] of TFloat;
+    OutMin,OutMax: TFloat;
+    Inputs: array[1..FuzzyInputs,1..FuzzySets] of TTriangle;
+    Outputs: array[1..FuzzySets] of TTriangle;
+    Rules: array[1..MaxFuzzyRules] of TFuzzyRule;
+  end;
+  TFuzzyStrength = array[1..MaxFuzzyRules] of TFloat;
+function TriangleMembership(X: TFloat; var T: TTriangle;
+  var Degree: TFloat): Boolean;
+function CheckFuzzy(var S: TFuzzySystem): Boolean;
+procedure DefaultFuzzy(var S: TFuzzySystem);
+function EvaluateFuzzy(var S: TFuzzySystem; Input1,Input2: TFloat;
+  Segments: Integer; var Output: TFloat; var Strengths: TFuzzyStrength): Boolean;
+
+======================================================================
+AIKMEANS.PAS
+======================================================================
+
+unit AIKMeans;
+interface
+uses AITypes;
+function FitKMeans(var D: TDataSet; K, MaxIter: Integer;
+  Tolerance: TFloat; Seed: LongInt; var Model: TKMeansModel;
+  var Labels: TLabels; var History: TSeries; var HistoryCount: Integer): Boolean;
+function PredictCluster(var Model: TKMeansModel; var X: TVector;
+  var Cluster: Integer; var Distance2: TFloat): Boolean;
+function PredictClusters(var Model: TKMeansModel; var D: TDataSet;
+  var Labels: TLabels; var Inertia: TFloat): Boolean;
+
+======================================================================
+AIKNN.PAS
+======================================================================
+
+unit AIKNN;
+interface
+uses AITypes;
+function FitKNN(var D: TDataSet; K: Integer;
+  var Model: TKNNModel): Boolean;
+function PredictKNN(var Model: TKNNModel; var X: TVector;
+  var ClassLabel: Integer; var Prediction: TFloat): Boolean;
+function PredictKNNData(var Model: TKNNModel; var D: TDataSet;
+  var ClassLabels: TLabels; var Predictions: TSeries): Boolean;
+
+======================================================================
+AILINEAR.PAS
+======================================================================
+
+unit AILinear;
+interface
+uses AITypes,AIOptim;
+function FitLinear(var D: TDataSet; Ridge: TFloat;
+  var Model: TLinearModel): Boolean;
+function PredictLinear(var Model: TLinearModel; var X: TVector;
+  var Prediction: TFloat): Boolean;
+function PredictLinearData(var Model: TLinearModel; var D: TDataSet;
+  var Predictions: TSeries): Boolean;
+
+type
+  TLogisticModel = record
+    Fitted: Boolean;
+    Features: Integer;
+    Weights: TVector;
+    Bias: TFloat;
+  end;
+function CheckLogistic(var M: TLogisticModel): Boolean;
+function FitLogistic(var D: TDataSet; var Config: TTrainConfig;
+  var M: TLogisticModel; var Info: TTrainInfo): Boolean;
+function PredictLogistic(var M: TLogisticModel; var X: TVector;
+  Threshold: TFloat; var Probability: TFloat; var LabelValue: Integer): Boolean;
+function LogisticData(var M: TLogisticModel; var D: TDataSet;
+  Threshold: TFloat; var Probabilities: TSeries; var Labels: TLabels): Boolean;
+
+type
+  TPerceptronModel = record
+    Fitted: Boolean;
+    Features: Integer;
+    Weights: TVector;
+    Bias: TFloat;
+  end;
+function CheckPerceptron(var M: TPerceptronModel): Boolean;
+function FitPerceptron(var D: TDataSet; MaxEpochs: Integer;
+  Rate: TFloat; Seed: LongInt; var M: TPerceptronModel;
+  var Info: TTrainInfo): Boolean;
+function PredictPerceptron(var M: TPerceptronModel; var X: TVector;
+  var LabelValue: Integer; var Score: TFloat): Boolean;
+
+======================================================================
+AIMATH.PAS
+======================================================================
+
+unit AIMath;
+interface
+uses AITypes;
+function Clamp(X, Lo, Hi: TFloat): TFloat;
+function Sigmoid(X: TFloat): TFloat;
+function SafeExp(X: TFloat; var Value: TFloat): Boolean;
+function SafeLn(X: TFloat; var Value: TFloat): Boolean;
+function SafeSqrt(X: TFloat; var Value: TFloat): Boolean;
+function IntPower(X: TFloat; N: Integer; var Value: TFloat): Boolean;
+function DotProduct(var A,B: TVector; N: Integer;
+  var Value: TFloat): Boolean;
+function DistanceSquared(var A,B: TVector; N: Integer;
+  var Value: TFloat): Boolean;
+function Euclidean(var A,B: TVector; N: Integer;
+  var Value: TFloat): Boolean;
+function Manhattan(var A,B: TVector; N: Integer;
+  var Value: TFloat): Boolean;
+procedure AISetSeed(Seed: LongInt);
+function AIRandom: TFloat;
+function AIRandomInt(Limit: Integer): Integer;
+
+function MatrixInit(var M: TMatrix; Rows, Cols: Integer): Boolean;
+function MatrixIdentity(var M: TMatrix; N: Integer): Boolean;
+function MatrixAdd(var A,B,C: TMatrix): Boolean;
+function MatrixSubtract(var A,B,C: TMatrix): Boolean;
+function MatrixScale(var A: TMatrix; Factor: TFloat;
+  var C: TMatrix): Boolean;
+function MatrixTranspose(var A,C: TMatrix): Boolean;
+function MatrixMultiply(var A,B,C: TMatrix): Boolean;
+
+======================================================================
+AIMODEL.PAS
+======================================================================
+
+unit AIModel;
+interface
+uses AITypes,AILINEAR,AINNet,AIBayes,AITree,AIText,AIRule,AISearch,AIFuzzy,AIReward;
+function SaveLinear(FileName: TFileName; var M: TLinearModel): Boolean;
+function LoadLinear(FileName: TFileName; var M: TLinearModel): Boolean;
+function SaveKMeans(FileName: TFileName; var M: TKMeansModel): Boolean;
+function LoadKMeans(FileName: TFileName; var M: TKMeansModel): Boolean;
+function SaveScaler(FileName: TFileName; var M: TScaler): Boolean;
+function LoadScaler(FileName: TFileName; var M: TScaler): Boolean;
+function SaveImputer(FileName: TFileName; var M: TImputer): Boolean;
+function LoadImputer(FileName: TFileName; var M: TImputer): Boolean;
+function SaveLogistic(FileName: TFileName; var M: TLogisticModel): Boolean;
+function LoadLogistic(FileName: TFileName; var M: TLogisticModel): Boolean;
+function SavePerceptron(FileName: TFileName; var M: TPerceptronModel): Boolean;
+function LoadPerceptron(FileName: TFileName; var M: TPerceptronModel): Boolean;
+function SaveNeural(FileName: TFileName; var M: TNeuralModel): Boolean;
+function LoadNeural(FileName: TFileName; var M: TNeuralModel): Boolean;
+function SaveBayes(FileName: TFileName; var M: TBayesModel): Boolean;
+function LoadBayes(FileName: TFileName; var M: TBayesModel): Boolean;
+function SaveTree(FileName: TFileName; var M: TTreeModel): Boolean;
+function LoadTree(FileName: TFileName; var M: TTreeModel): Boolean;
+function SaveVocabulary(FileName: TFileName; var M: TTextModel): Boolean;
+function LoadVocabulary(FileName: TFileName; var M: TTextModel): Boolean;
+function SaveRules(FileName: TFileName; var M: TRuleSet): Boolean;
+function LoadRules(FileName: TFileName; var M: TRuleSet): Boolean;
+function SaveFacts(FileName: TFileName; var M: TFacts): Boolean;
+function LoadFacts(FileName: TFileName; var M: TFacts): Boolean;
+function SaveGrid(FileName: TFileName; var M: TGrid): Boolean;
+function LoadGrid(FileName: TFileName; var M: TGrid): Boolean;
+function SaveFuzzy(FileName: TFileName; var M: TFuzzySystem): Boolean;
+function LoadFuzzy(FileName: TFileName; var M: TFuzzySystem): Boolean;
+function SaveQ(FileName: TFileName; var M: TQModel): Boolean;
+function LoadQ(FileName: TFileName; var M: TQModel): Boolean;
+
+function SaveKNN(FileName: TFileName; var M: TKNNModel): Boolean;
+function LoadKNN(FileName: TFileName; var Storage: TDataSet;
+  var M: TKNNModel): Boolean;
+
+======================================================================
+AINNET.PAS
+======================================================================
+
+unit AINNet;
+interface
+uses AITypes,AIOptim;
+const MaxHidden=8;
+type
+  TNeuralModel = record
+    Fitted: Boolean;
+    Features,Hidden: Integer;
+    InputW: array[1..MaxHidden] of TVector;
+    HiddenBias,OutputW: TVector;
+    OutputBias: TFloat;
+  end;
+function CheckNeural(var M: TNeuralModel): Boolean;
+function FitNeural(var D: TDataSet; Hidden: Integer;
+  var Config: TTrainConfig; var M: TNeuralModel; var Info: TTrainInfo): Boolean;
+function PredictNeural(var M: TNeuralModel; var X: TVector;
+  var Probability: TFloat; var LabelValue: Integer): Boolean;
+
+======================================================================
+AIOPTIM.PAS
+======================================================================
+
+unit AIOptim;
+interface
+uses AITypes;
+const StopGoal=1; StopPlateau=2; StopLimit=3;
+type
+  TTrainConfig = record
+    MaxEpochs, Patience: Integer;
+    Rate, Momentum, L2, Clip, GoalLoss, MinDelta: TFloat;
+    Seed: LongInt;
+  end;
+  TTrainInfo = record
+    Epochs, StopReason, HistoryCount: Integer;
+    Converged: Boolean;
+    FinalLoss: TFloat;
+    History: TSeries;
+    HistoryEpoch: TIndexList;
+  end;
+  TStopState = record Best: TFloat; Stale: Integer end;
+procedure DefaultTraining(var C: TTrainConfig);
+function CheckTraining(var C: TTrainConfig): Boolean;
+function CheckBinaryData(var D: TDataSet): Boolean;
+function SGDStep(var Value, Velocity: TFloat; Gradient, Rate,
+  Momentum, Clip: TFloat): Boolean;
+function VectorStep(var Values,Velocity,Gradient: TVector;
+  N: Integer; Rate,Momentum,Clip: TFloat): Boolean;
+function BinaryLoss(Logit: TFloat; Target: Integer): TFloat;
+procedure InitTraining(var Info: TTrainInfo; var Stop: TStopState);
+procedure RecordLoss(var Info: TTrainInfo; Epoch,MaxEpochs: Integer;
+  Loss: TFloat; Force: Boolean);
+function ShouldStop(var C: TTrainConfig; var S: TStopState;
+  Loss: TFloat; var Reason: Integer): Boolean;
+procedure ShuffleRows(N: Integer; var Order: TIndexList);
+
+======================================================================
+AIPLOT.PAS
+======================================================================
+
+unit AIPlot;
+{ BGI pada Turbo Pascal. SVG lintas platform tanpa dependensi tambahan. }
+{$IFNDEF FPC}
+  {$IFNDEF ODIN}
+    {$DEFINE TPAIBGI}
+  {$ENDIF}
+{$ENDIF}
+interface
+uses AITypes;
+function PlotOpen(BGIPath: TFileName): Boolean;
+procedure PlotClose;
+function PlotScatter(var X,Y: TSeries; N: Integer;
+  var Groups: TLabels; Title: string): Boolean;
+function PlotCurve(var Y: TSeries; N: Integer; Title: string): Boolean;
+function PlotRegression(var X,Y: TSeries; N: Integer;
+  Intercept,Slope: TFloat; Title: string): Boolean;
+function SaveScatterSVG(FileName: TFileName; var X,Y: TSeries;
+  N: Integer; var Groups: TLabels; Title: string): Boolean;
+function SaveCurveSVG(FileName: TFileName; var Y: TSeries;
+  N: Integer; Title: string): Boolean;
+function SaveRegressionSVG(FileName: TFileName; var X,Y: TSeries;
+  N: Integer; Intercept,Slope: TFloat; Title: string): Boolean;
+
+======================================================================
+AIREWARD.PAS
+======================================================================
+
+unit AIReward;
+interface
+uses AITypes,AISearch;
+const MaxQStates=MaxGridCells; MaxQActions=4;
+type
+  TQModel = record
+    Ready: Boolean;
+    States,Actions: Integer;
+    Alpha,Gamma,Epsilon: TFloat;
+    Q: array[1..MaxQStates,1..MaxQActions] of TFloat;
+  end;
+  TQTrainInfo = record
+    Episodes,Successes,HistoryCount: Integer;
+    TotalSteps: LongInt;
+    LastReturn: TFloat;
+    Returns: TSeries;
+    HistoryEpisode: TIndexList;
+  end;
+function InitQ(States,Actions: Integer; Alpha,Gamma,Epsilon: TFloat;
+  var M: TQModel): Boolean;
+function CheckQ(var M: TQModel): Boolean;
+function ChooseAction(var M: TQModel; State: Integer; Explore: Boolean;
+  var Action: Integer): Boolean;
+function UpdateQ(var M: TQModel; State,Action,NextState: Integer;
+  Reward: TFloat; Terminal: Boolean): Boolean;
+function DecayEpsilon(var M: TQModel; Factor,Minimum: TFloat): Boolean;
+function GridStep(var G: TGrid; State,Action,Goal: Integer;
+  var NextState: Integer; var Reward: TFloat; var Terminal: Boolean): Boolean;
+function TrainGridQ(var M: TQModel; var G: TGrid; Start,Goal,
+  Episodes,MaxSteps: Integer; Seed: LongInt; var Info: TQTrainInfo): Boolean;
+function GreedyGridPath(var M: TQModel; var G: TGrid; Start,Goal: Integer;
+  var Result: TSearchResult): Boolean;
+
+======================================================================
+AIRULE.PAS
+======================================================================
+
+unit AIRule;
+interface
+uses AITypes;
+const MaxFacts=32; MaxRules=32; MaxPremises=4;
+      FactUnknown=-1; FactFalse=0; FactTrue=1;
+type
+  TFacts = record
+    Count: Integer;
+    Names: array[1..MaxFacts] of TName;
+    Values: array[1..MaxFacts] of Integer;
+    SourceRule: array[1..MaxFacts] of Integer;
+  end;
+  TPremises = array[1..MaxPremises] of Integer;
+  TRule = record
+    Name: TName;
+    Count: Integer;
+    FactIDs,Expected: TPremises;
+    Conclusion,Value: Integer;
+  end;
+  TRuleSet = record
+    FactCount,Count: Integer;
+    Rules: array[1..MaxRules] of TRule;
+  end;
+procedure InitFacts(var F: TFacts);
+function CheckFacts(var F: TFacts): Boolean;
+procedure ResetDerivedFacts(var F: TFacts);
+function AddFact(var F: TFacts; Name: TName; Value: Integer;
+  var ID: Integer): Boolean;
+function SetFact(var F: TFacts; ID,Value: Integer): Boolean;
+procedure InitRules(FactCount: Integer; var R: TRuleSet);
+function CheckRules(var R: TRuleSet): Boolean;
+function AddRule(var R: TRuleSet; var Rule: TRule): Boolean;
+function Infer(var R: TRuleSet; var F: TFacts; var Trace: TIndexList;
+  var TraceCount: Integer): Boolean;
+procedure ExplainFact(var R: TRuleSet; var F: TFacts; ID: Integer);
+
+======================================================================
+AISEARCH.PAS
+======================================================================
+
+unit AISearch;
+interface
+uses AITypes;
+const MaxGridSide=16; MaxGridCells=256;
+      SearchBFS=1; SearchDFS=2; SearchAStar=3;
+type
+  TGrid = record
+    Rows,Cols: Integer;
+    Blocked: array[1..MaxGridSide,1..MaxGridSide] of Boolean;
+  end;
+  TGridPath = array[1..MaxGridCells] of Integer;
+  TSearchResult = record
+    Found: Boolean;
+    Count,Cost,Expanded: Integer;
+    Cells: TGridPath;
+  end;
+function InitGrid(Rows,Cols: Integer; var G: TGrid): Boolean;
+function CheckGrid(var G: TGrid): Boolean;
+function CellID(var G: TGrid; Row,Col: Integer): Integer;
+function CellPosition(var G: TGrid; ID: Integer; var Row,Col: Integer): Boolean;
+function SetWall(var G: TGrid; Row,Col: Integer; Blocked: Boolean): Boolean;
+function GridNeighbor(var G: TGrid; State,Action: Integer;
+  var NextState: Integer): Boolean;
+function SearchGrid(var G: TGrid; Start,Goal,Method: Integer;
+  var Result: TSearchResult): Boolean;
+procedure PrintGrid(var G: TGrid; var Result: TSearchResult; Start,Goal: Integer);
+
+======================================================================
+AISPLIT.PAS
+======================================================================
+
+unit AISplit;
+interface
+uses AITypes;
+function MakeOrder(N: Integer; Shuffle: Boolean; Seed: LongInt;
+  var Order: TIndexList): Boolean;
+function TakeRows(var Source: TDataSet; var Order: TIndexList;
+  First, Count: Integer; var Dest: TDataSet): Boolean;
+function TrainTestSplit(var Source, TrainData, TestData: TDataSet;
+  TestFraction: TFloat; Shuffle: Boolean; Seed: LongInt): Boolean;
+function MakeFolds(N, Folds: Integer; Shuffle: Boolean; Seed: LongInt;
+  var FoldOfRow: TIndexList): Boolean;
+function FoldSplit(var Source: TDataSet; var FoldOfRow: TIndexList;
+  Folds, TestFold: Integer; var TrainData, TestData: TDataSet): Boolean;
+
+======================================================================
+AISTATS.PAS
+======================================================================
+
+unit AIStats;
+interface
+uses AITypes;
+function Mean(var A: TSeries; N: Integer; var Value: TFloat): Boolean;
+function Median(var A: TSeries; N: Integer; var Value: TFloat): Boolean;
+function Variance(var A: TSeries; N: Integer; Sample: Boolean;
+  var Value: TFloat): Boolean;
+function StdDev(var A: TSeries; N: Integer; Sample: Boolean;
+  var Value: TFloat): Boolean;
+function MinMax(var A: TSeries; N: Integer;
+  var Minimum, Maximum: TFloat): Boolean;
+function Correlation(var A,B: TSeries; N: Integer;
+  var Value: TFloat): Boolean;
+
+function RegressionMetrics(var Actual,Predicted: TSeries; N: Integer;
+  var Metrics: TRegMetrics): Boolean;
+function ConfusionMatrix(var Actual,Predicted: TLabels;
+  N,Classes: Integer; var Matrix: TConfusion): Boolean;
+function ClassificationMetrics(var Matrix: TConfusion;
+  var Metrics: TClassMetrics): Boolean;
+procedure PrintConfusion(var Matrix: TConfusion);
+
+======================================================================
+AITEXT.PAS
+======================================================================
+
+unit AIText;
+{$B-}
+interface
+uses AITypes;
+const MaxDocuments=32; MaxTokens=64; MaxCandidates=128;
+type
+  TWord = string[31];
+  TTokens = record Count: Integer; Words: array[1..MaxTokens] of TWord end;
+  TCorpus = record
+    Count: Integer;
+    Docs: array[1..MaxDocuments] of string;
+    Labels: array[1..MaxDocuments] of Integer;
+  end;
+  TTextModel = record
+    Fitted,UseIDF,Normalize: Boolean;
+    Count,Documents: Integer;
+    Terms: array[1..MaxFeatures] of TWord;
+    IDF: TVector;
+  end;
+function Tokenize(S: string; var Tokens: TTokens): Boolean;
+function LoadCorpus(FileName: TFileName; var Corpus: TCorpus): Boolean;
+function CheckTextModel(var M: TTextModel): Boolean;
+function FitText(var Corpus: TCorpus; Limit,MinDocumentFreq: Integer;
+  UseIDF,Normalize: Boolean; var M: TTextModel): Boolean;
+function Vectorize(var M: TTextModel; S: string; var V: TVector): Boolean;
+function VectorizeCorpus(var M: TTextModel; var Corpus: TCorpus;
+  var D: TDataSet): Boolean;
+
+======================================================================
+AITREE.PAS
+======================================================================
+
+unit AITree;
+interface
+uses AITypes;
+const MaxTreeNodes=63; MaxTreeDepth=8;
+type
+  TTreeNode = record
+    Feature,LeftChild,RightChild,LabelValue,Samples: Integer;
+    Threshold,Gain: TFloat;
+    Counts: array[0..MaxClasses-1] of Integer;
+  end;
+  TTreeModel = record
+    Fitted,Truncated: Boolean;
+    Features,Classes,NodeCount: Integer;
+    Nodes: array[1..MaxTreeNodes] of TTreeNode;
+  end;
+function CheckTree(var M: TTreeModel): Boolean;
+function FitTree(var D: TDataSet; DepthLimit,MinLeaf: Integer;
+  MinGain: TFloat; var M: TTreeModel): Boolean;
+function PredictTree(var M: TTreeModel; var X: TVector;
+  var LabelValue: Integer): Boolean;
+function TraceTree(var M: TTreeModel; var X: TVector;
+  var Path: TIndexList; var Length,LabelValue: Integer): Boolean;
+
+======================================================================
+AITYPES.PAS
+======================================================================
+
+unit AITypes;
+{ OTP-AI 2.0 - tipe bersama. Indeks data dimulai dari 1. }
+interface
+const
+  MaxSamples = 200;
+  MaxFeatures = 8;
+  MaxClasses = 10;
+  MaxClusters = 8;
+  MaxMatrix = 16;
+  MaxCategories = 16;
+  AIInputLimit = 1.0E12;
+  AIEpsilon = 1.0E-10;
+  TargetNone = 0;
+  TargetReal = 1;
+  TargetClass = 2;
+  ScaleMinMax = 1;
+  ScaleStandard = 2;
+  ErrNone = 0;
+  ErrSize = 1;
+  ErrValue = 2;
+  ErrMissing = 3;
+  ErrIO = 4;
+  ErrFormat = 5;
+  ErrModel = 6;
+  ErrSingular = 7;
+  ErrMemory = 8;
+  ErrGraphics = 9;
+type
+  TFloat = Real;
+  TErrorText = string[127];
+  TFileName = string[127];
+  TName = string[31];
+  TVector = array[1..MaxFeatures] of TFloat;
+  TSeries = array[1..MaxSamples] of TFloat;
+  TLabels = array[1..MaxSamples] of Integer;
+  TIndexList = array[1..MaxSamples] of Integer;
+  TFeatureNames = array[1..MaxFeatures] of TName;
+  TDataSet = record
+    Count, Features, TargetKind: Integer;
+    X: array[1..MaxSamples] of TVector;
+    Y: TSeries;
+    Labels: TLabels;
+    Missing: array[1..MaxSamples,1..MaxFeatures] of Boolean;
+    Names: TFeatureNames;
+    TargetName: TName;
+  end;
+  PDataSet = ^TDataSet;
+  TMatrix = record
+    Rows, Cols: Integer;
+    V: array[1..MaxMatrix,1..MaxMatrix] of TFloat;
+  end;
+  TScaler = record
+    Fitted: Boolean;
+    Features, Kind: Integer;
+    Offset, Divisor: TVector;
+  end;
+  TImputer = record
+    Fitted: Boolean;
+    Features: Integer;
+    Means: TVector;
+  end;
+  TCategoryMap = record
+    Count: Integer;
+    Names: array[1..MaxCategories] of TName;
+  end;
+  TLinearModel = record
+    Fitted: Boolean;
+    Features: Integer;
+    Intercept: TFloat;
+    Coeff: TVector;
+  end;
+  TKNNModel = record
+    Fitted: Boolean;
+    K, TargetKind, Features, Count: Integer;
+    { Data tetap dimiliki pemanggil, bukan salinan. }
+    Data: PDataSet;
+  end;
+  TKMeansModel = record
+    Fitted, Converged: Boolean;
+    K, Features, Iterations: Integer;
+    Centers: array[1..MaxClusters] of TVector;
+    Inertia: TFloat;
+  end;
+  TRegMetrics = record
+    MAE, MSE, RMSE, R2: TFloat;
+    R2Defined: Boolean;
+  end;
+  TConfusion = record
+    Classes, Total: Integer;
+    Cells: array[0..MaxClasses-1,0..MaxClasses-1] of Integer;
+  end;
+  TClassMetrics = record
+    Accuracy, MacroPrecision, MacroRecall, MacroF1: TFloat;
+    Precision, Recall, F1: array[0..MaxClasses-1] of TFloat;
+    Support: array[0..MaxClasses-1] of Integer;
+  end;
+var
+  AIErrorCode: Integer;
+  AIError: TErrorText;
+procedure ClearAIError;
+procedure SetAIError(Code: Integer; Msg: TErrorText);
+function ValidNumber(X: TFloat): Boolean;
+procedure InitData(var D: TDataSet; Features, TargetKind: Integer);
+function NewData(var D: PDataSet): Boolean;
+procedure FreeData(var D: PDataSet);
+function CheckData(var D: TDataSet; AllowMissing: Boolean): Boolean;
+function CheckVector(var V: TVector; N: Integer): Boolean;

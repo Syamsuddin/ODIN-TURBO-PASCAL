@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+<rect width="800" height="500" fill="#f8fafc"/>
+<g font-family="sans-serif" fill="#0f172a" font-size="12">
+<text x="80" y="30" font-size="18">Regresi linear - data latih</text>
+<rect x="80" y="55" width="690" height="380" fill="white" stroke="#94a3b8"/>
+<text x="80" y="458" text-anchor="middle">0.690</text>
+<text x="72" y="439" text-anchor="end">44.671</text>
+<text x="252" y="458" text-anchor="middle">2.720</text>
+<text x="72" y="344" text-anchor="end">56.843</text>
+<text x="425" y="458" text-anchor="middle">4.750</text>
+<text x="72" y="249" text-anchor="end">69.014</text>
+<text x="598" y="458" text-anchor="middle">6.780</text>
+<text x="72" y="154" text-anchor="end">81.186</text>
+<text x="770" y="458" text-anchor="middle">8.810</text>
+<text x="72" y="59" text-anchor="end">93.358</text>
+<circle cx="383" cy="257" r="4" fill="#2563eb"/>
+<circle cx="361" cy="284" r="4" fill="#2563eb"/>
+<circle cx="552" cy="171" r="4" fill="#2563eb"/>
+<circle cx="319" cy="323" r="4" fill="#2563eb"/>
+<circle cx="234" cy="347" r="4" fill="#2563eb"/>
+<circle cx="404" cy="269" r="4" fill="#2563eb"/>
+<circle cx="722" cy="93" r="4" fill="#2563eb"/>
+<circle cx="637" cy="148" r="4" fill="#2563eb"/>
+<circle cx="467" cy="226" r="4" fill="#2563eb"/>
+<circle cx="680" cy="109" r="4" fill="#2563eb"/>
+<circle cx="276" cy="315" r="4" fill="#2563eb"/>
+<circle cx="128" cy="405" r="4" fill="#2563eb"/>
+<circle cx="616" cy="151" r="4" fill="#2563eb"/>
+<circle cx="510" cy="210" r="4" fill="#2563eb"/>
+<circle cx="489" cy="198" r="4" fill="#2563eb"/>
+<circle cx="170" cy="374" r="4" fill="#2563eb"/>
+<circle cx="659" cy="112" r="4" fill="#2563eb"/>
+<circle cx="446" cy="230" r="4" fill="#2563eb"/>
+<circle cx="701" cy="81" r="4" fill="#2563eb"/>
+<circle cx="149" cy="401" r="4" fill="#2563eb"/>
+<circle cx="213" cy="382" r="4" fill="#2563eb"/>
+<circle cx="574" cy="167" r="4" fill="#2563eb"/>
+<line x1="128" y1="409" x2="722" y2="85" stroke="#dc2626" stroke-width="2"/>
+<text x="760" y="485">X</text><text x="20" y="45">Y</text>
+<text x="80" y="485">OTP-AI 2.0 | Warna mengikuti kode kelompok modulo 10</text>
+</g></svg>

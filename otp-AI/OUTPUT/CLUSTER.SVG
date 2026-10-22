@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+<rect width="800" height="500" fill="#f8fafc"/>
+<g font-family="sans-serif" fill="#0f172a" font-size="12">
+<text x="80" y="30" font-size="18">K-means - fitur standar</text>
+<rect x="80" y="55" width="690" height="380" fill="white" stroke="#94a3b8"/>
+<text x="80" y="458" text-anchor="middle">-1.603</text>
+<text x="72" y="439" text-anchor="end">-1.094</text>
+<text x="252" y="458" text-anchor="middle">-0.818</text>
+<text x="72" y="344" text-anchor="end">-0.363</text>
+<text x="425" y="458" text-anchor="middle">-0.034</text>
+<text x="72" y="249" text-anchor="end">0.368</text>
+<text x="598" y="458" text-anchor="middle">0.751</text>
+<text x="72" y="154" text-anchor="end">1.099</text>
+<text x="770" y="458" text-anchor="middle">1.535</text>
+<text x="72" y="59" text-anchor="end">1.830</text>
+<circle cx="128" cy="409" r="4" fill="#dc2626"/>
+<circle cx="145" cy="371" r="4" fill="#dc2626"/>
+<circle cx="163" cy="392" r="4" fill="#dc2626"/>
+<circle cx="181" cy="354" r="4" fill="#dc2626"/>
+<circle cx="134" cy="376" r="4" fill="#dc2626"/>
+<circle cx="151" cy="398" r="4" fill="#dc2626"/>
+<circle cx="169" cy="360" r="4" fill="#dc2626"/>
+<circle cx="187" cy="381" r="4" fill="#dc2626"/>
+<circle cx="139" cy="403" r="4" fill="#dc2626"/>
+<circle cx="157" cy="365" r="4" fill="#dc2626"/>
+<circle cx="175" cy="387" r="4" fill="#dc2626"/>
+<circle cx="128" cy="409" r="4" fill="#dc2626"/>
+<circle cx="425" cy="136" r="4" fill="#15803d"/>
+<circle cx="443" cy="98" r="4" fill="#15803d"/>
+<circle cx="461" cy="119" r="4" fill="#15803d"/>
+<circle cx="479" cy="81" r="4" fill="#15803d"/>
+<circle cx="431" cy="103" r="4" fill="#15803d"/>
+<circle cx="449" cy="125" r="4" fill="#15803d"/>
+<circle cx="467" cy="87" r="4" fill="#15803d"/>
+<circle cx="484" cy="109" r="4" fill="#15803d"/>
+<circle cx="437" cy="130" r="4" fill="#15803d"/>
+<circle cx="455" cy="92" r="4" fill="#15803d"/>
+<circle cx="473" cy="114" r="4" fill="#15803d"/>
+<circle cx="425" cy="136" r="4" fill="#15803d"/>
+<circle cx="663" cy="409" r="4" fill="#a16207"/>
+<circle cx="681" cy="371" r="4" fill="#a16207"/>
+<circle cx="699" cy="392" r="4" fill="#a16207"/>
+<circle cx="716" cy="354" r="4" fill="#a16207"/>
+<circle cx="669" cy="376" r="4" fill="#a16207"/>
+<circle cx="687" cy="398" r="4" fill="#a16207"/>
+<circle cx="705" cy="360" r="4" fill="#a16207"/>
+<circle cx="722" cy="381" r="4" fill="#a16207"/>
+<circle cx="675" cy="403" r="4" fill="#a16207"/>
+<circle cx="693" cy="365" r="4" fill="#a16207"/>
+<circle cx="711" cy="387" r="4" fill="#a16207"/>
+<circle cx="663" cy="409" r="4" fill="#a16207"/>
+<text x="760" y="485">X</text><text x="20" y="45">Y</text>
+<text x="80" y="485">OTP-AI 2.0 | Warna mengikuti kode kelompok modulo 10</text>
+</g></svg>

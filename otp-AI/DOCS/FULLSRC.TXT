@@ -1,0 +1,4278 @@
+SOURCE LENGKAP 19 UNIT OTP-AI 2.0
+
+Salin setiap bagian ke nama berkas yang ditunjukkan, atau gunakan UNITS/*.PAS.
+
+======================================================================
+AIBAYES.PAS
+======================================================================
+
+unit AIBayes;
+interface
+uses AITypes;
+const BayesGaussian=1; BayesMultinomial=2;
+type
+  TClassProb = array[0..MaxClasses-1] of TFloat;
+  TBayesModel = record
+    Fitted: Boolean;
+    Kind,Features,Classes,Total: Integer;
+    Counts: array[0..MaxClasses-1] of Integer;
+    LogPrior: TClassProb;
+    Means,Variances,LogFeature: array[0..MaxClasses-1] of TVector;
+  end;
+function CheckBayes(var M: TBayesModel): Boolean;
+function FitGaussian(var D: TDataSet; VarianceFloor: TFloat;
+  var M: TBayesModel): Boolean;
+function FitMultinomial(var D: TDataSet; Alpha: TFloat;
+  var M: TBayesModel): Boolean;
+function PredictBayes(var M: TBayesModel; var X: TVector;
+  var LabelValue: Integer; var Probabilities: TClassProb): Boolean;
+implementation
+function CheckBayes(var M: TBayesModel): Boolean;
+var C,J,Total: Integer;
+begin
+  ClearAIError; CheckBayes:=False;
+  if not M.Fitted or (M.Features<1) or (M.Features>MaxFeatures) or
+     (M.Classes<1) or (M.Classes>MaxClasses) or
+     (M.Total<1) or (M.Total>MaxSamples) or
+     ((M.Kind<>BayesGaussian) and (M.Kind<>BayesMultinomial)) then begin
+    SetAIError(ErrModel,'Model Bayes tidak valid'); Exit
+  end;
+  Total:=0;
+  for C:=0 to M.Classes-1 do begin
+    if (M.Counts[C]<0) or (M.Counts[C]>MaxSamples) then begin
+      SetAIError(ErrModel,'Jumlah kelas Bayes tidak valid'); Exit
+    end;
+    Inc(Total,M.Counts[C]);
+    if M.Counts[C]>0 then begin
+      if not ValidNumber(M.LogPrior[C]) or (M.LogPrior[C]>0) then begin
+        SetAIError(ErrModel,'Prior Bayes tidak valid'); Exit
+      end;
+      for J:=1 to M.Features do
+        if M.Kind=BayesGaussian then begin
+          if not ValidNumber(M.Means[C,J]) or
+             not ValidNumber(M.Variances[C,J]) or (M.Variances[C,J]<1E-8) then begin
+            SetAIError(ErrModel,'Mean/varians Bayes tidak valid'); Exit
+          end
+        end else if not ValidNumber(M.LogFeature[C,J]) or
+                    (M.LogFeature[C,J]>0) then begin
+          SetAIError(ErrModel,'Peluang fitur Bayes tidak valid'); Exit
+        end
+    end
+  end;
+  if Total<>M.Total then begin SetAIError(ErrModel,'Total Bayes tidak cocok'); Exit end;
+  CheckBayes:=True
+end;
+function StartFit(var D: TDataSet; Kind: Integer; var M: TBayesModel): Boolean;
+var I,J,C: Integer;
+begin
+  FillChar(M,SizeOf(M),0); StartFit:=False;
+  if not CheckData(D,False) then Exit;
+  if D.TargetKind<>TargetClass then begin SetAIError(ErrValue,'Bayes memerlukan label kelas'); Exit end;
+  M.Kind:=Kind; M.Features:=D.Features; M.Total:=D.Count;
+  for I:=1 to D.Count do begin
+    C:=D.Labels[I]; Inc(M.Counts[C]);
+    if C+1>M.Classes then M.Classes:=C+1;
+    for J:=1 to D.Features do if Abs(D.X[I,J])>1E6 then begin
+      SetAIError(ErrValue,'Skalakan fitur Bayes ke magnitudo <=1E6'); Exit
+    end
+  end;
+  for C:=0 to M.Classes-1 do if M.Counts[C]>0 then
+    M.LogPrior[C]:=Ln(M.Counts[C]/M.Total);
+  StartFit:=True
+end;
+function FitGaussian(var D: TDataSet; VarianceFloor: TFloat;
+  var M: TBayesModel): Boolean;
+var Seen: array[0..MaxClasses-1] of Integer;
+    I,J,C: Integer; Delta: TFloat;
+begin
+  FitGaussian:=False;
+  if not StartFit(D,BayesGaussian,M) then Exit;
+  if not ValidNumber(VarianceFloor) or (VarianceFloor<1E-8) or
+     (VarianceFloor>1E6) then begin
+    SetAIError(ErrValue,'Variance floor harus 1E-8..1E6'); Exit
+  end;
+  FillChar(Seen,SizeOf(Seen),0);
+  for I:=1 to D.Count do begin
+    C:=D.Labels[I]; Inc(Seen[C]);
+    for J:=1 to D.Features do begin
+      Delta:=D.X[I,J]-M.Means[C,J];
+      M.Means[C,J]:=M.Means[C,J]+Delta/Seen[C];
+      M.Variances[C,J]:=M.Variances[C,J]+Delta*(D.X[I,J]-M.Means[C,J])
+    end
+  end;
+  for C:=0 to M.Classes-1 do if M.Counts[C]>0 then
+    for J:=1 to M.Features do begin
+      M.Variances[C,J]:=M.Variances[C,J]/M.Counts[C];
+      if M.Variances[C,J]<VarianceFloor then M.Variances[C,J]:=VarianceFloor
+    end;
+  M.Fitted:=True;
+  if not CheckBayes(M) then begin M.Fitted:=False; Exit end;
+  FitGaussian:=True
+end;
+function FitMultinomial(var D: TDataSet; Alpha: TFloat;
+  var M: TBayesModel): Boolean;
+var I,J,C: Integer; Total: TFloat;
+begin
+  FitMultinomial:=False;
+  if not StartFit(D,BayesMultinomial,M) then Exit;
+  if not ValidNumber(Alpha) or (Alpha<1E-8) or (Alpha>1E6) then begin
+    SetAIError(ErrValue,'Alpha harus 1E-8..1E6'); Exit
+  end;
+  for I:=1 to D.Count do begin
+    C:=D.Labels[I];
+    for J:=1 to D.Features do begin
+      if D.X[I,J]<0 then begin SetAIError(ErrValue,'Multinomial memerlukan fitur nonnegatif'); Exit end;
+      M.LogFeature[C,J]:=M.LogFeature[C,J]+D.X[I,J]
+    end
+  end;
+  for C:=0 to M.Classes-1 do if M.Counts[C]>0 then begin
+    Total:=Alpha*M.Features;
+    for J:=1 to M.Features do Total:=Total+M.LogFeature[C,J];
+    for J:=1 to M.Features do M.LogFeature[C,J]:=Ln((M.LogFeature[C,J]+Alpha)/Total)
+  end;
+  M.Fitted:=True; FitMultinomial:=True
+end;
+function PredictBayes(var M: TBayesModel; var X: TVector;
+  var LabelValue: Integer; var Probabilities: TClassProb): Boolean;
+var Scores: TClassProb; C,J: Integer; S,Z,Best,Sum: TFloat;
+begin
+  LabelValue:=-1; FillChar(Probabilities,SizeOf(Probabilities),0); PredictBayes:=False;
+  if not CheckBayes(M) then Exit;
+  if not CheckVector(X,M.Features) then Exit;
+  if M.Kind=BayesMultinomial then
+    for J:=1 to M.Features do if X[J]<0 then begin
+      SetAIError(ErrValue,'Multinomial memerlukan fitur nonnegatif'); Exit
+    end;
+  Best:=-1E35;
+  for C:=0 to M.Classes-1 do if M.Counts[C]>0 then begin
+    S:=M.LogPrior[C];
+    for J:=1 to M.Features do
+      if M.Kind=BayesGaussian then begin
+        Z:=(X[J]-M.Means[C,J])/Sqrt(M.Variances[C,J]);
+        if Abs(Z)>1E15 then begin SetAIError(ErrValue,'Jarak Gaussian terlalu besar'); Exit end;
+        S:=S-0.5*(Ln(6.283185307179586)+Ln(M.Variances[C,J])+Z*Z)
+      end else S:=S+X[J]*M.LogFeature[C,J];
+    Scores[C]:=S;
+    if S>Best then begin Best:=S; LabelValue:=C end
+  end;
+  Sum:=0;
+  for C:=0 to M.Classes-1 do if M.Counts[C]>0 then begin
+    Z:=Scores[C]-Best;
+    if Z < -80 then Probabilities[C]:=0 else Probabilities[C]:=Exp(Z);
+    Sum:=Sum+Probabilities[C]
+  end;
+  for C:=0 to M.Classes-1 do Probabilities[C]:=Probabilities[C]/Sum;
+  PredictBayes:=True
+end;
+end.
+
+======================================================================
+AIDATA.PAS
+======================================================================
+
+unit AIData;
+{$B-}
+interface
+uses AITypes;
+function LoadCSV(FileName: TFileName; HasHeader: Boolean;
+  TargetKind: Integer; var D: TDataSet): Boolean;
+function SaveCSV(FileName: TFileName; var D: TDataSet): Boolean;
+function GetColumn(var D: TDataSet; Col: Integer;
+  var Values: TSeries): Boolean;
+function SelectColumns(var Source: TDataSet; var Columns: TIndexList;
+  N: Integer; var Dest: TDataSet): Boolean;
+function FilterRange(var Source: TDataSet; Col: Integer;
+  Minimum, Maximum: TFloat; var Dest: TDataSet): Boolean;
+procedure CopyRow(var Source: TDataSet; SourceRow: Integer;
+  var Dest: TDataSet; DestRow: Integer);
+procedure DescribeData(var D: TDataSet);
+
+function FitImputer(var D: TDataSet; var M: TImputer): Boolean;
+function ImputeData(var M: TImputer; var D: TDataSet): Boolean;
+function FitScaler(var D: TDataSet; Kind: Integer;
+  var S: TScaler): Boolean;
+function TransformData(var S: TScaler; var D: TDataSet): Boolean;
+function TransformVector(var S: TScaler; var V: TVector): Boolean;
+function InverseVector(var S: TScaler; var V: TVector): Boolean;
+procedure InitCategories(var Map: TCategoryMap);
+function AddCategory(var Map: TCategoryMap; Name: TName;
+  var Code: Integer): Boolean;
+function EncodeCategory(var Map: TCategoryMap; Name: TName;
+  var Code: Integer): Boolean;
+function OneHot(Code, Count: Integer; var V: TVector): Boolean;
+implementation
+uses AIStats;
+type
+  TCell = string[63];
+  TCells = array[1..MaxFeatures+1] of TCell;
+function TrimCell(S: string): string;
+begin
+  while Length(S) > 0 do begin
+    if S[1] > ' ' then Break;
+    Delete(S,1,1)
+  end;
+  while Length(S) > 0 do begin
+    if S[Length(S)] > ' ' then Break;
+    Delete(S,Length(S),1)
+  end;
+  TrimCell := S
+end;
+function ReadLineSafe(var F: Text; var S: string): Boolean;
+var C: Char; TooLong: Boolean; E: Integer;
+begin
+  S := ''; TooLong := False;
+  {$I-}
+  while not Eoln(F) do begin
+    Read(F,C);
+    if Length(S) < 255 then S := S+C else TooLong := True
+  end;
+  ReadLn(F); E := IOResult;
+  {$I+}
+  ReadLineSafe := False;
+  if E <> 0 then begin SetAIError(ErrIO,'Gagal membaca CSV'); Exit end;
+  if TooLong then begin
+    SetAIError(ErrFormat,'Baris CSV melebihi 255 karakter'); Exit
+  end;
+  ReadLineSafe := True
+end;
+function SplitCSV(S: string; var Cells: TCells;
+  var N: Integer): Boolean;
+var I,State: Integer; C: Char; Token: TCell;
+  function AddChar(C: Char): Boolean;
+  begin
+    AddChar := False;
+    if Length(Token) >= 63 then begin
+      SetAIError(ErrFormat,'Kolom CSV melebihi 63 karakter'); Exit
+    end;
+    Token := Token+C; AddChar := True
+  end;
+  function Finish: Boolean;
+  begin
+    Finish := False;
+    if N >= MaxFeatures+1 then begin
+      SetAIError(ErrFormat,'Terlalu banyak kolom CSV'); Exit
+    end;
+    Inc(N); Cells[N] := TrimCell(Token); Token := ''; Finish := True
+  end;
+begin
+  { State: 0 awal, 1 tanpa kutip, 2 di dalam kutip, 3 kutip tutup. }
+  SplitCSV := False; N := 0; I := 1; State := 0; Token := '';
+  while I <= Length(S) do begin
+    C := S[I];
+    case State of
+      0: if C = '"' then State := 2
+         else if C = ',' then begin if not Finish then Exit end
+         else if C > ' ' then begin
+           if not AddChar(C) then Exit; State := 1
+         end;
+      1: if C = ',' then begin
+           if not Finish then Exit; State := 0
+         end else if C = '"' then begin
+           SetAIError(ErrFormat,'Kutip di tengah kolom tanpa kutip'); Exit
+         end else if not AddChar(C) then Exit;
+      2: if C = '"' then begin
+           if I < Length(S) then begin
+             if S[I+1] = '"' then begin
+               if not AddChar('"') then Exit; Inc(I)
+             end else State := 3
+           end else State := 3
+         end else if not AddChar(C) then Exit;
+      3: if C = ',' then begin
+           if not Finish then Exit; State := 0
+         end else if C > ' ' then begin
+           SetAIError(ErrFormat,'Karakter setelah kutip penutup'); Exit
+         end
+    end;
+    Inc(I)
+  end;
+  if State = 2 then begin
+    SetAIError(ErrFormat,'Kutip CSV belum ditutup'); Exit
+  end;
+  if not Finish then Exit;
+  SplitCSV := True
+end;
+function ParseNumber(S: TCell; var V: TFloat): Boolean;
+var I,Sign,ESign,E,Digits,EDigits,FractionDigits: Integer;
+    Fraction: Boolean; Place: TFloat; C: Char;
+begin
+  { Parser desimal terkontrol, tidak memanggil Val pada eksponen liar. }
+  ParseNumber := False; V := 0; I := 1; Sign := 1;
+  ESign := 1; E := 0; Digits := 0; Fraction := False; Place := 1; FractionDigits := 0;
+  S := TrimCell(S);
+  if Length(S) = 0 then Exit;
+  if (S[I] = '+') or (S[I] = '-') then begin
+    if S[I] = '-' then Sign := -1; Inc(I)
+  end;
+  while I <= Length(S) do begin
+    C := S[I];
+    if (C = 'e') or (C = 'E') then Break;
+    if C = '.' then begin
+      if Fraction then Exit;
+      Fraction := True
+    end else if (C >= '0') and (C <= '9') then begin
+      Inc(Digits);
+      if Fraction then begin
+        Inc(FractionDigits); if FractionDigits > 30 then Exit;
+        Place := Place/10;
+        if Place >= 1.0E-30 then V := V+(Ord(C)-Ord('0'))*Place
+      end else begin
+        V := V*10+(Ord(C)-Ord('0'));
+        if V > AIInputLimit then Exit
+      end
+    end else Exit;
+    Inc(I)
+  end;
+  if Digits = 0 then Exit;
+  if I <= Length(S) then begin
+    Inc(I);
+    if I <= Length(S) then
+      if (S[I] = '+') or (S[I] = '-') then begin
+        if S[I] = '-' then ESign := -1; Inc(I)
+      end;
+    EDigits := 0;
+    while I <= Length(S) do begin
+      C := S[I];
+      if (C < '0') or (C > '9') then Exit;
+      Inc(EDigits); E := E*10+Ord(C)-Ord('0');
+      if E > 30 then Exit;
+      Inc(I)
+    end;
+    if EDigits = 0 then Exit
+  end;
+  for I := 1 to E do
+    if ESign > 0 then begin
+      if V > AIInputLimit/10 then Exit;
+      V := V*10
+    end else begin
+      if (V > 0) and (V < 1.0E-29) then Exit;
+      V := V/10
+    end;
+  V := V*Sign;
+  ParseNumber := ValidNumber(V)
+end;
+function LoadCSV(FileName: TFileName; HasHeader: Boolean;
+  TargetKind: Integer; var D: TDataSet): Boolean;
+var F: Text; S: string; Cells: TCells;
+    N,Expected,J,E,LineNo,Row: Integer;
+    HeaderDone,OK: Boolean; V: TFloat; Detail,Num: string[80];
+begin
+  ClearAIError; InitData(D,0,TargetKind); LoadCSV := False;
+  if (TargetKind < TargetNone) or (TargetKind > TargetClass) then begin
+    SetAIError(ErrValue,'Jenis target CSV tidak valid'); Exit
+  end;
+  Assign(F,FileName); {$I-} Reset(F); E := IOResult; {$I+}
+  if E <> 0 then begin SetAIError(ErrIO,'Berkas CSV tidak terbuka'); Exit end;
+  OK := True; Expected := 0; HeaderDone := not HasHeader; LineNo := 0;
+  while not Eof(F) do begin
+    Inc(LineNo);
+    if not ReadLineSafe(F,S) then begin OK := False; Break end;
+    if TrimCell(S) <> '' then begin
+      if not SplitCSV(S,Cells,N) then begin OK := False; Break end;
+      if Expected = 0 then begin
+        Expected := N; D.Features := N;
+        if TargetKind <> TargetNone then Dec(D.Features);
+        if (D.Features < 1) or (D.Features > MaxFeatures) then begin
+          SetAIError(ErrFormat,'CSV memerlukan 1..8 kolom fitur');
+          OK := False; Break
+        end
+      end;
+      if N <> Expected then begin
+        SetAIError(ErrFormat,'Jumlah kolom CSV tidak konsisten');
+        OK := False; Break
+      end;
+      if not HeaderDone then begin
+        for J := 1 to N do if Length(Cells[J]) > 31 then begin
+          SetAIError(ErrFormat,'Nama kolom CSV melebihi 31 karakter');
+          OK := False; Break
+        end;
+        if not OK then Break;
+        for J := 1 to D.Features do D.Names[J] := Cells[J];
+        if TargetKind <> TargetNone then D.TargetName := Cells[N];
+        HeaderDone := True
+      end else begin
+        if D.Count >= MaxSamples then begin
+          SetAIError(ErrSize,'CSV melebihi 200 baris data'); OK := False; Break
+        end;
+        Row := D.Count+1;
+        for J := 1 to D.Features do begin
+          D.Missing[Row,J] := (Cells[J] = '') or (Cells[J] = '?');
+          if not D.Missing[Row,J] then begin
+            if not ParseNumber(Cells[J],V) then begin
+              SetAIError(ErrFormat,'Fitur CSV bukan angka yang didukung');
+              OK := False; Break
+            end;
+            D.X[Row,J] := V
+          end
+        end;
+        if not OK then Break;
+        if TargetKind <> TargetNone then begin
+          if not ParseNumber(Cells[N],V) then begin
+            SetAIError(ErrFormat,'Target CSV harus berisi angka');
+            OK := False; Break
+          end;
+          if TargetKind = TargetReal then D.Y[Row] := V
+          else begin
+            if (V < 0) or (V >= MaxClasses) then begin
+              SetAIError(ErrFormat,'Label CSV harus 0..9'); OK := False; Break
+            end;
+            if V <> Trunc(V) then begin
+              SetAIError(ErrFormat,'Label CSV harus bilangan bulat');
+              OK := False; Break
+            end;
+            D.Labels[Row] := Trunc(V)
+          end
+        end;
+        Inc(D.Count)
+      end
+    end
+  end;
+  {$I-} Close(F); E := IOResult; {$I+}
+  if OK and (E <> 0) then begin
+    SetAIError(ErrIO,'Gagal menutup CSV'); OK := False
+  end;
+  if OK then OK := CheckData(D,True);
+  if not OK then begin
+    Detail := AIError; Str(LineNo,Num);
+    SetAIError(AIErrorCode,'Baris '+Num+': '+Detail);
+    InitData(D,0,TargetKind); Exit
+  end;
+  LoadCSV := True
+end;
+{$I-}
+procedure WriteName(var F: Text; S: TName);
+var I: Integer;
+begin
+  Write(F,'"');
+  for I := 1 to Length(S) do begin
+    if S[I] = '"' then Write(F,'"');
+    Write(F,S[I])
+  end;
+  Write(F,'"')
+end;
+{$I+}
+function SaveCSV(FileName: TFileName; var D: TDataSet): Boolean;
+var F: Text; I,J,K,E,CloseErr,HeaderLen: Integer; S: TName;
+begin
+  SaveCSV := False;
+  if not CheckData(D,True) then Exit;
+  HeaderLen := D.Features-1;
+  if D.TargetKind <> TargetNone then Inc(HeaderLen);
+  for J := 1 to D.Features+Ord(D.TargetKind <> TargetNone) do begin
+    if J <= D.Features then S := D.Names[J] else S := D.TargetName;
+    Inc(HeaderLen,Length(S)+2);
+    for K := 1 to Length(S) do if S[K] = '"' then Inc(HeaderLen)
+  end;
+  if HeaderLen > 255 then begin
+    SetAIError(ErrFormat,'Header CSV terlalu panjang, pendekkan nama kolom'); Exit
+  end;
+  for I := 1 to D.Count do begin
+    for J := 1 to D.Features do
+      if not D.Missing[I,J] and (D.X[I,J] <> 0) then
+        if Abs(D.X[I,J]) < 1.0E-30 then begin
+          SetAIError(ErrValue,'CSV tidak mendukung angka di bawah 1E-30'); Exit
+        end;
+    if (D.TargetKind = TargetReal) and (D.Y[I] <> 0) then
+      if Abs(D.Y[I]) < 1.0E-30 then begin
+        SetAIError(ErrValue,'CSV tidak mendukung target di bawah 1E-30'); Exit
+      end
+  end;
+  Assign(F,FileName); {$I-} Rewrite(F); E := IOResult; {$I+}
+  if E <> 0 then begin SetAIError(ErrIO,'CSV tidak dapat dibuat'); Exit end;
+  {$I-}
+  for J := 1 to D.Features do begin
+    if J > 1 then Write(F,','); WriteName(F,D.Names[J])
+  end;
+  if D.TargetKind <> TargetNone then begin
+    Write(F,','); WriteName(F,D.TargetName)
+  end;
+  WriteLn(F);
+  for I := 1 to D.Count do begin
+    for J := 1 to D.Features do begin
+      if J > 1 then Write(F,',');
+      if not D.Missing[I,J] then Write(F,D.X[I,J]:24)
+    end;
+    if D.TargetKind = TargetReal then Write(F,',',D.Y[I]:24);
+    if D.TargetKind = TargetClass then Write(F,',',D.Labels[I]);
+    WriteLn(F)
+  end;
+  E := IOResult; Close(F); CloseErr := IOResult;
+  {$I+}
+  if (E <> 0) or (CloseErr <> 0) then begin
+    SetAIError(ErrIO,'Gagal menulis CSV'); Exit
+  end;
+  SaveCSV := True
+end;
+function GetColumn(var D: TDataSet; Col: Integer;
+  var Values: TSeries): Boolean;
+var I: Integer;
+begin
+  GetColumn := False; FillChar(Values,SizeOf(Values),0);
+  if not CheckData(D,True) then Exit;
+  if (Col < 1) or (Col > D.Features) then begin
+    SetAIError(ErrSize,'Kolom di luar dataset'); Exit
+  end;
+  for I := 1 to D.Count do begin
+    if D.Missing[I,Col] then begin
+      SetAIError(ErrMissing,'Kolom berisi data kosong'); Exit
+    end;
+    Values[I] := D.X[I,Col]
+  end;
+  GetColumn := True
+end;
+procedure CopyRow(var Source: TDataSet; SourceRow: Integer;
+  var Dest: TDataSet; DestRow: Integer);
+var J: Integer;
+begin
+  ClearAIError;
+  if (Source.Count < 1) or (Source.Count > MaxSamples) or
+     (Source.Features < 1) or (Source.Features > MaxFeatures) or
+     (SourceRow < 1) or (SourceRow > Source.Count) or
+     (DestRow < 1) or (DestRow > MaxSamples) or
+     (Dest.Features <> Source.Features) or
+     (Dest.TargetKind <> Source.TargetKind) then begin
+    SetAIError(ErrSize,'Indeks atau dimensi CopyRow tidak valid'); Exit
+  end;
+  Dest.X[DestRow] := Source.X[SourceRow];
+  Dest.Y[DestRow] := Source.Y[SourceRow];
+  Dest.Labels[DestRow] := Source.Labels[SourceRow];
+  for J := 1 to Source.Features do
+    Dest.Missing[DestRow,J] := Source.Missing[SourceRow,J]
+end;
+function SelectColumns(var Source: TDataSet; var Columns: TIndexList;
+  N: Integer; var Dest: TDataSet): Boolean;
+var I,J: Integer;
+begin
+  SelectColumns := False;
+  if not CheckData(Source,True) then Exit;
+  if @Source = @Dest then begin
+    SetAIError(ErrValue,'SelectColumns memerlukan dataset tujuan terpisah'); Exit
+  end;
+  if (N < 1) or (N > MaxFeatures) then begin
+    SetAIError(ErrSize,'Jumlah kolom pilihan tidak valid'); Exit
+  end;
+  for J := 1 to N do
+    if (Columns[J] < 1) or (Columns[J] > Source.Features) then begin
+      SetAIError(ErrSize,'Indeks kolom pilihan tidak valid'); Exit
+    end;
+  InitData(Dest,N,Source.TargetKind); Dest.Count := Source.Count;
+  Dest.TargetName := Source.TargetName;
+  for J := 1 to N do Dest.Names[J] := Source.Names[Columns[J]];
+  for I := 1 to Source.Count do begin
+    Dest.Y[I] := Source.Y[I]; Dest.Labels[I] := Source.Labels[I];
+    for J := 1 to N do begin
+      Dest.X[I,J] := Source.X[I,Columns[J]];
+      Dest.Missing[I,J] := Source.Missing[I,Columns[J]]
+    end
+  end;
+  SelectColumns := True
+end;
+function FilterRange(var Source: TDataSet; Col: Integer;
+  Minimum, Maximum: TFloat; var Dest: TDataSet): Boolean;
+var I: Integer;
+begin
+  FilterRange := False;
+  if not CheckData(Source,True) then Exit;
+  if @Source = @Dest then begin
+    SetAIError(ErrValue,'FilterRange memerlukan dataset tujuan terpisah'); Exit
+  end;
+  if (Col < 1) or (Col > Source.Features) then begin
+    SetAIError(ErrSize,'Kolom filter tidak valid'); Exit
+  end;
+  if not ValidNumber(Minimum) or not ValidNumber(Maximum) or
+     (Minimum > Maximum) then begin
+    SetAIError(ErrValue,'Batas filter tidak valid'); Exit
+  end;
+  InitData(Dest,Source.Features,Source.TargetKind);
+  Dest.Names := Source.Names; Dest.TargetName := Source.TargetName;
+  for I := 1 to Source.Count do
+    if not Source.Missing[I,Col] then
+      if (Source.X[I,Col] >= Minimum) and
+         (Source.X[I,Col] <= Maximum) then begin
+        Inc(Dest.Count); CopyRow(Source,I,Dest,Dest.Count)
+      end;
+  { Hasil kosong tetap sukses; algoritma model menolaknya. }
+  FilterRange := True
+end;
+procedure DescribeData(var D: TDataSet);
+var J,I,N,MissingCount: Integer; A: TSeries; Avg,SD,Lo,Hi: TFloat;
+    OK: Boolean;
+begin
+  if not CheckData(D,True) then begin WriteLn(AIError); Exit end;
+  WriteLn('Baris: ',D.Count,'  Fitur: ',D.Features,
+    '  Jenis target: ',D.TargetKind);
+  for J := 1 to D.Features do begin
+    N := 0; MissingCount := 0;
+    for I := 1 to D.Count do
+      if D.Missing[I,J] then Inc(MissingCount)
+      else begin Inc(N); A[N] := D.X[I,J] end;
+    Write(D.Names[J],': terisi=',N,' kosong=',MissingCount);
+    if N > 0 then begin
+      OK := Mean(A,N,Avg); OK := StdDev(A,N,False,SD);
+      OK := MinMax(A,N,Lo,Hi);
+      if OK then Write(' mean=',Avg:0:3,' sd=',SD:0:3,
+        ' min=',Lo:0:3,' max=',Hi:0:3)
+    end;
+    WriteLn
+  end
+end;
+
+function FitImputer(var D: TDataSet; var M: TImputer): Boolean;
+var I,J,N: Integer;
+begin
+  FillChar(M,SizeOf(M),0); FitImputer := False;
+  if not CheckData(D,True) then Exit;
+  for J := 1 to D.Features do begin
+    N := 0;
+    for I := 1 to D.Count do if not D.Missing[I,J] then begin
+      Inc(N); M.Means[J] := M.Means[J]+(D.X[I,J]-M.Means[J])/N
+    end;
+    if N = 0 then begin
+      SetAIError(ErrMissing,'Seluruh isi kolom latih kosong'); Exit
+    end
+  end;
+  M.Features := D.Features; M.Fitted := True; FitImputer := True
+end;
+function ImputeData(var M: TImputer; var D: TDataSet): Boolean;
+var I,J: Integer;
+begin
+  ImputeData := False;
+  if not CheckData(D,True) then Exit;
+  if not M.Fitted or (M.Features <> D.Features) then begin
+    SetAIError(ErrModel,'Imputer belum dilatih atau dimensi berbeda'); Exit
+  end;
+  if not CheckVector(M.Means,M.Features) then Exit;
+  for I := 1 to D.Count do for J := 1 to D.Features do
+    if D.Missing[I,J] then begin
+      D.X[I,J] := M.Means[J]; D.Missing[I,J] := False
+    end;
+  ImputeData := True
+end;
+function FitScaler(var D: TDataSet; Kind: Integer;
+  var S: TScaler): Boolean;
+var I,J: Integer; Mean,M2,Delta,Lo,Hi: TFloat;
+begin
+  FillChar(S,SizeOf(S),0); FitScaler := False;
+  if not CheckData(D,False) then Exit;
+  if (Kind <> ScaleMinMax) and (Kind <> ScaleStandard) then begin
+    SetAIError(ErrValue,'Jenis scaler tidak dikenal'); Exit
+  end;
+  for J := 1 to D.Features do begin
+    Mean := 0; M2 := 0; Lo := D.X[1,J]; Hi := Lo;
+    for I := 1 to D.Count do begin
+      Delta := D.X[I,J]-Mean; Mean := Mean+Delta/I;
+      M2 := M2+Delta*(D.X[I,J]-Mean);
+      if D.X[I,J] < Lo then Lo := D.X[I,J];
+      if D.X[I,J] > Hi then Hi := D.X[I,J]
+    end;
+    if Kind = ScaleMinMax then begin
+      S.Offset[J] := Lo; S.Divisor[J] := Hi-Lo
+    end else begin
+      S.Offset[J] := Mean;
+      if M2 < 0 then M2 := 0;
+      S.Divisor[J] := Sqrt(M2/D.Count)
+    end;
+    if S.Divisor[J] < AIEpsilon then S.Divisor[J] := 1
+  end;
+  S.Features := D.Features; S.Kind := Kind; S.Fitted := True;
+  FitScaler := True
+end;
+function GoodScaler(var S: TScaler): Boolean;
+var J: Integer;
+begin
+  ClearAIError; GoodScaler := False;
+  if not S.Fitted or (S.Features < 1) or
+     (S.Features > MaxFeatures) then begin
+    SetAIError(ErrModel,'Scaler belum dilatih'); Exit
+  end;
+  for J := 1 to S.Features do
+    if (S.Divisor[J] < AIEpsilon) or
+       (S.Divisor[J] > 2*AIInputLimit) or
+       (S.Divisor[J] <> S.Divisor[J]) or
+       not ValidNumber(S.Offset[J]) then begin
+      SetAIError(ErrModel,'Parameter scaler tidak valid'); Exit
+    end;
+  GoodScaler := True
+end;
+function TransformVector(var S: TScaler; var V: TVector): Boolean;
+var J: Integer; T: TVector;
+begin
+  TransformVector := False;
+  if not GoodScaler(S) then Exit;
+  if not CheckVector(V,S.Features) then Exit;
+  T := V;
+  for J := 1 to S.Features do begin
+    T[J] := (V[J]-S.Offset[J])/S.Divisor[J];
+    if not ValidNumber(T[J]) then begin
+      SetAIError(ErrValue,'Hasil normalisasi melampaui batas'); Exit
+    end
+  end;
+  V := T; TransformVector := True
+end;
+function TransformData(var S: TScaler; var D: TDataSet): Boolean;
+var I: Integer; V: TVector;
+begin
+  TransformData := False;
+  if not CheckData(D,False) then Exit;
+  if not GoodScaler(S) then Exit;
+  if D.Features <> S.Features then begin
+    SetAIError(ErrSize,'Dimensi scaler dan dataset berbeda'); Exit
+  end;
+  { Validasi seluruh hasil sebelum mutasi. }
+  for I := 1 to D.Count do begin
+    V := D.X[I]; if not TransformVector(S,V) then Exit
+  end;
+  for I := 1 to D.Count do
+    if not TransformVector(S,D.X[I]) then Exit;
+  TransformData := True
+end;
+function InverseVector(var S: TScaler; var V: TVector): Boolean;
+var J: Integer; T: TVector;
+begin
+  InverseVector := False;
+  if not GoodScaler(S) then Exit;
+  if not CheckVector(V,S.Features) then Exit;
+  T := V;
+  for J := 1 to S.Features do begin
+    T[J] := V[J]*S.Divisor[J]+S.Offset[J];
+    if not ValidNumber(T[J]) then begin
+      SetAIError(ErrValue,'Hasil invers scaler melampaui batas'); Exit
+    end
+  end;
+  V := T; InverseVector := True
+end;
+procedure InitCategories(var Map: TCategoryMap);
+begin ClearAIError; FillChar(Map,SizeOf(Map),0) end;
+function EncodeCategory(var Map: TCategoryMap; Name: TName;
+  var Code: Integer): Boolean;
+var I: Integer;
+begin
+  ClearAIError; Code := -1; EncodeCategory := False;
+  if (Map.Count < 0) or (Map.Count > MaxCategories) then begin
+    SetAIError(ErrSize,'Kamus kategori rusak'); Exit
+  end;
+  for I := 1 to Map.Count do if Map.Names[I] = Name then begin
+    Code := I-1; EncodeCategory := True; Exit
+  end;
+  SetAIError(ErrValue,'Kategori belum terdaftar')
+end;
+function AddCategory(var Map: TCategoryMap; Name: TName;
+  var Code: Integer): Boolean;
+begin
+  AddCategory := False;
+  if EncodeCategory(Map,Name,Code) then begin AddCategory := True; Exit end;
+  if AIErrorCode = ErrSize then Exit;
+  ClearAIError;
+  if Name = '' then begin SetAIError(ErrValue,'Nama kategori kosong'); Exit end;
+  if Map.Count >= MaxCategories then begin
+    SetAIError(ErrSize,'Kamus kategori penuh'); Exit
+  end;
+  Inc(Map.Count); Map.Names[Map.Count] := Name; Code := Map.Count-1;
+  AddCategory := True
+end;
+function OneHot(Code, Count: Integer; var V: TVector): Boolean;
+begin
+  ClearAIError; FillChar(V,SizeOf(V),0); OneHot := False;
+  if (Count < 1) or (Count > MaxFeatures) or
+     (Code < 0) or (Code >= Count) then begin
+    SetAIError(ErrSize,'One-hot memerlukan kode valid dan 1..8 kategori'); Exit
+  end;
+  V[Code+1] := 1; OneHot := True
+end;
+end.
+
+======================================================================
+AIFUZZY.PAS
+======================================================================
+
+unit AIFuzzy;
+interface
+uses AITypes;
+const FuzzyInputs=2; FuzzySets=3; MaxFuzzyRules=9;
+type
+  TTriangle = record A,B,C: TFloat end;
+  TFuzzyRule = record Set1,Set2,OutputSet: Integer; Weight: TFloat end;
+  TFuzzySystem = record
+    Ready: Boolean;
+    RuleCount: Integer;
+    InMin,InMax: array[1..FuzzyInputs] of TFloat;
+    OutMin,OutMax: TFloat;
+    Inputs: array[1..FuzzyInputs,1..FuzzySets] of TTriangle;
+    Outputs: array[1..FuzzySets] of TTriangle;
+    Rules: array[1..MaxFuzzyRules] of TFuzzyRule;
+  end;
+  TFuzzyStrength = array[1..MaxFuzzyRules] of TFloat;
+function TriangleMembership(X: TFloat; var T: TTriangle;
+  var Degree: TFloat): Boolean;
+function CheckFuzzy(var S: TFuzzySystem): Boolean;
+procedure DefaultFuzzy(var S: TFuzzySystem);
+function EvaluateFuzzy(var S: TFuzzySystem; Input1,Input2: TFloat;
+  Segments: Integer; var Output: TFloat; var Strengths: TFuzzyStrength): Boolean;
+implementation
+function GoodTriangle(var T: TTriangle): Boolean;
+begin
+  GoodTriangle:=False;
+  if not ValidNumber(T.A) or not ValidNumber(T.B) or not ValidNumber(T.C) or
+     (T.A>T.B) or (T.B>T.C) or (T.A>=T.C) then begin
+    SetAIError(ErrValue,'Segitiga memerlukan A<=B<=C dan A<C'); Exit
+  end;
+  GoodTriangle:=True
+end;
+function TriangleMembership(X: TFloat; var T: TTriangle;
+  var Degree: TFloat): Boolean;
+begin
+  ClearAIError; Degree:=0; TriangleMembership:=False;
+  if not GoodTriangle(T) then Exit;
+  if not ValidNumber(X) then begin SetAIError(ErrValue,'Input membership tidak valid'); Exit end;
+  if X=T.B then Degree:=1
+  else if (X<=T.A) or (X>=T.C) then Degree:=0
+  else if X<T.B then Degree:=(X-T.A)/(T.B-T.A)
+  else Degree:=(T.C-X)/(T.C-T.B);
+  TriangleMembership:=True
+end;
+function CheckFuzzy(var S: TFuzzySystem): Boolean;
+var I,J: Integer;
+begin
+  ClearAIError; CheckFuzzy:=False;
+  if not S.Ready or (S.RuleCount<1) or (S.RuleCount>MaxFuzzyRules) then begin
+    SetAIError(ErrModel,'Sistem fuzzy belum siap'); Exit
+  end;
+  for I:=1 to FuzzyInputs do begin
+    if not ValidNumber(S.InMin[I]) or not ValidNumber(S.InMax[I]) or
+       (Abs(S.InMin[I])>1E6) or (Abs(S.InMax[I])>1E6) or
+       (S.InMin[I]>=S.InMax[I]) then begin SetAIError(ErrModel,'Rentang input fuzzy tidak valid'); Exit end;
+    for J:=1 to FuzzySets do begin
+      if not GoodTriangle(S.Inputs[I,J]) then Exit;
+      if (S.Inputs[I,J].A<S.InMin[I]) or (S.Inputs[I,J].C>S.InMax[I]) then begin
+        SetAIError(ErrModel,'Membership input di luar universe'); Exit
+      end
+    end
+  end;
+  if not ValidNumber(S.OutMin) or not ValidNumber(S.OutMax) or
+     (Abs(S.OutMin)>1E6) or (Abs(S.OutMax)>1E6) or (S.OutMin>=S.OutMax) then begin
+    SetAIError(ErrModel,'Rentang output fuzzy tidak valid'); Exit
+  end;
+  for J:=1 to FuzzySets do begin
+    if not GoodTriangle(S.Outputs[J]) then Exit;
+    if (S.Outputs[J].A<S.OutMin) or (S.Outputs[J].C>S.OutMax) then begin
+      SetAIError(ErrModel,'Membership output di luar universe'); Exit
+    end
+  end;
+  for I:=1 to S.RuleCount do with S.Rules[I] do
+    if (Set1<1) or (Set1>FuzzySets) or (Set2<1) or (Set2>FuzzySets) or
+       (OutputSet<1) or (OutputSet>FuzzySets) or not ValidNumber(Weight) or
+       (Weight<0) or (Weight>1) then begin SetAIError(ErrModel,'Aturan fuzzy tidak valid'); Exit end;
+  CheckFuzzy:=True
+end;
+procedure DefaultFuzzy(var S: TFuzzySystem);
+var I,J,N: Integer;
+  procedure Tri(var T: TTriangle; A,B,C: TFloat);
+  begin T.A:=A; T.B:=B; T.C:=C end;
+begin
+  ClearAIError; FillChar(S,SizeOf(S),0); S.Ready:=True; S.RuleCount:=9;
+  S.InMin[1]:=0; S.InMax[1]:=40; S.InMin[2]:=0; S.InMax[2]:=100;
+  S.OutMin:=0; S.OutMax:=100;
+  Tri(S.Inputs[1,1],0,0,20); Tri(S.Inputs[1,2],10,20,30); Tri(S.Inputs[1,3],20,40,40);
+  Tri(S.Inputs[2,1],0,0,50); Tri(S.Inputs[2,2],25,50,75); Tri(S.Inputs[2,3],50,100,100);
+  for J:=1 to 3 do S.Outputs[J]:=S.Inputs[2,J];
+  N:=0;
+  for I:=1 to 3 do for J:=1 to 3 do begin
+    Inc(N); S.Rules[N].Set1:=I; S.Rules[N].Set2:=J;
+    S.Rules[N].OutputSet:=I;
+    if (J=3) and (I<3) then S.Rules[N].OutputSet:=I+1;
+    S.Rules[N].Weight:=1
+  end
+end;
+function EvaluateFuzzy(var S: TFuzzySystem; Input1,Input2: TFloat;
+  Segments: Integer; var Output: TFloat; var Strengths: TFuzzyStrength): Boolean;
+var I,K: Integer; A,B,X,Mu,T,Sum,Weighted,Weight: TFloat;
+begin
+  Output:=0; FillChar(Strengths,SizeOf(Strengths),0); EvaluateFuzzy:=False;
+  if not CheckFuzzy(S) then Exit;
+  if not ValidNumber(Input1) or not ValidNumber(Input2) or
+     (Input1<S.InMin[1]) or (Input1>S.InMax[1]) or
+     (Input2<S.InMin[2]) or (Input2>S.InMax[2]) or
+     (Segments<10) or (Segments>400) then begin
+    SetAIError(ErrValue,'Input di luar universe atau segmen bukan 10..400'); Exit
+  end;
+  for I:=1 to S.RuleCount do begin
+    if not TriangleMembership(Input1,S.Inputs[1,S.Rules[I].Set1],A) then Exit;
+    if not TriangleMembership(Input2,S.Inputs[2,S.Rules[I].Set2],B) then Exit;
+    if B<A then A:=B;
+    Strengths[I]:=A*S.Rules[I].Weight
+  end;
+  Sum:=0; Weighted:=0;
+  for K:=0 to Segments do begin
+    X:=S.OutMin+(S.OutMax-S.OutMin)*K/Segments; Mu:=0;
+    for I:=1 to S.RuleCount do begin
+      if not TriangleMembership(X,S.Outputs[S.Rules[I].OutputSet],T) then Exit;
+      if Strengths[I]<T then T:=Strengths[I];
+      if T>Mu then Mu:=T
+    end;
+    Weight:=1; if (K=0) or (K=Segments) then Weight:=0.5;
+    Sum:=Sum+Weight*Mu; Weighted:=Weighted+Weight*X*Mu
+  end;
+  if Sum<=0 then begin SetAIError(ErrValue,'Tidak ada keluaran fuzzy yang aktif'); Exit end;
+  Output:=Weighted/Sum; EvaluateFuzzy:=True
+end;
+end.
+
+======================================================================
+AIKMEANS.PAS
+======================================================================
+
+unit AIKMeans;
+interface
+uses AITypes;
+function FitKMeans(var D: TDataSet; K, MaxIter: Integer;
+  Tolerance: TFloat; Seed: LongInt; var Model: TKMeansModel;
+  var Labels: TLabels; var History: TSeries; var HistoryCount: Integer): Boolean;
+function PredictCluster(var Model: TKMeansModel; var X: TVector;
+  var Cluster: Integer; var Distance2: TFloat): Boolean;
+function PredictClusters(var Model: TKMeansModel; var D: TDataSet;
+  var Labels: TLabels; var Inertia: TFloat): Boolean;
+implementation
+uses AIMath;
+function Nearest(var Model: TKMeansModel; var X: TVector;
+  var Cluster: Integer; var Dist: TFloat): Boolean;
+var C: Integer; T: TFloat;
+begin
+  Nearest := False; Cluster := 1; Dist := 1.0E30;
+  for C := 1 to Model.K do begin
+    if not DistanceSquared(X,Model.Centers[C],Model.Features,T) then Exit;
+    if T < Dist then begin Dist := T; Cluster := C end
+  end;
+  Nearest := True
+end;
+function FitKMeans(var D: TDataSet; K, MaxIter: Integer;
+  Tolerance: TFloat; Seed: LongInt; var Model: TKMeansModel;
+  var Labels: TLabels; var History: TSeries; var HistoryCount: Integer): Boolean;
+var Sums: array[1..MaxClusters] of TVector;
+    Counts: array[1..MaxClusters] of Integer;
+    Distances: TSeries;
+    I,J,C,R,OldC,Cluster,Iter,Best: Integer;
+    T,Dist,BestDist,Shift,MaxShift,Inertia: TFloat;
+begin
+  FillChar(Model,SizeOf(Model),0); FillChar(Labels,SizeOf(Labels),0);
+  FillChar(History,SizeOf(History),0); HistoryCount := 0;
+  FitKMeans := False;
+  if not CheckData(D,False) then Exit;
+  if (K < 1) or (K > MaxClusters) or (K > D.Count) or
+     (MaxIter < 1) or (MaxIter > MaxSamples) then begin
+    SetAIError(ErrSize,'K harus 1..8; iterasi harus 1..200'); Exit
+  end;
+  if not ValidNumber(Tolerance) or (Tolerance < 0) then begin
+    SetAIError(ErrValue,'Toleransi harus >= 0'); Exit
+  end;
+  Model.Features := D.Features; Model.K := 1;
+  AISetSeed(Seed); R := AIRandomInt(D.Count)+1;
+  Model.Centers[1] := D.X[R];
+  { Farthest-first: pusat pertama acak, berikutnya titik terjauh. }
+  for C := 2 to K do begin
+    Best := 0; BestDist := -1;
+    for I := 1 to D.Count do begin
+      if not Nearest(Model,D.X[I],Cluster,Dist) then Exit;
+      if Dist > BestDist then begin Best := I; BestDist := Dist end
+    end;
+    if BestDist <= 0 then begin
+      SetAIError(ErrValue,'K melebihi jumlah titik fitur yang unik'); Exit
+    end;
+    Model.Centers[C] := D.X[Best]; Model.K := C
+  end;
+  Iter := 0;
+  repeat
+    Inc(Iter); FillChar(Sums,SizeOf(Sums),0); FillChar(Counts,SizeOf(Counts),0);
+    for I := 1 to D.Count do begin
+      if not Nearest(Model,D.X[I],C,Dist) then Exit;
+      Labels[I] := C; Distances[I] := Dist; Inc(Counts[C]);
+      for J := 1 to D.Features do Sums[C,J] := Sums[C,J]+D.X[I,J]
+    end;
+    { Perbaiki cluster kosong dengan memindah titik terjauh dari donor. }
+    for C := 1 to K do if Counts[C] = 0 then begin
+      Best := 0; BestDist := -1;
+      for I := 1 to D.Count do if Counts[Labels[I]] > 1 then
+        if Distances[I] > BestDist then begin
+          Best := I; BestDist := Distances[I]
+        end;
+      if Best = 0 then begin
+        SetAIError(ErrModel,'Tidak ada donor untuk cluster kosong'); Exit
+      end;
+      OldC := Labels[Best]; Dec(Counts[OldC]); Counts[C] := 1;
+      for J := 1 to D.Features do begin
+        Sums[OldC,J] := Sums[OldC,J]-D.X[Best,J];
+        Sums[C,J] := D.X[Best,J]
+      end;
+      Labels[Best] := C; Distances[Best] := 0
+    end;
+    MaxShift := 0;
+    for C := 1 to K do begin
+      Shift := 0;
+      for J := 1 to D.Features do begin
+        T := Sums[C,J]/Counts[C];
+        Shift := Shift+Sqr(T-Model.Centers[C,J]);
+        Model.Centers[C,J] := T
+      end;
+      if Shift > MaxShift then MaxShift := Shift
+    end;
+    { Label, inertia dan history harus sesuai pusat yang terbaru. }
+    Inertia := 0;
+    for I := 1 to D.Count do begin
+      if not Nearest(Model,D.X[I],C,Dist) then Exit;
+      Labels[I] := C; Inertia := Inertia+Dist
+    end;
+    History[Iter] := Inertia; HistoryCount := Iter;
+    Model.Converged := Sqrt(MaxShift) <= Tolerance
+  until Model.Converged or (Iter >= MaxIter);
+  Model.Iterations := Iter; Model.Inertia := Inertia;
+  Model.Fitted := True; FitKMeans := True
+end;
+function PredictCluster(var Model: TKMeansModel; var X: TVector;
+  var Cluster: Integer; var Distance2: TFloat): Boolean;
+begin
+  ClearAIError; Cluster := 0; Distance2 := 0; PredictCluster := False;
+  if not Model.Fitted or (Model.K < 1) or (Model.K > MaxClusters) or
+     (Model.Features < 1) or (Model.Features > MaxFeatures) then begin
+    SetAIError(ErrModel,'Model K-means belum dilatih'); Exit
+  end;
+  if not CheckVector(X,Model.Features) then Exit;
+  PredictCluster := Nearest(Model,X,Cluster,Distance2)
+end;
+function PredictClusters(var Model: TKMeansModel; var D: TDataSet;
+  var Labels: TLabels; var Inertia: TFloat): Boolean;
+var I: Integer; Dist: TFloat;
+begin
+  PredictClusters := False; Inertia := 0;
+  FillChar(Labels,SizeOf(Labels),0);
+  if not CheckData(D,False) then Exit;
+  if D.Features <> Model.Features then begin
+    SetAIError(ErrSize,'Jumlah fitur cluster berbeda'); Exit
+  end;
+  for I := 1 to D.Count do begin
+    if not PredictCluster(Model,D.X[I],Labels[I],Dist) then Exit;
+    Inertia := Inertia+Dist
+  end;
+  PredictClusters := True
+end;
+end.
+
+======================================================================
+AIKNN.PAS
+======================================================================
+
+unit AIKNN;
+interface
+uses AITypes;
+function FitKNN(var D: TDataSet; K: Integer;
+  var Model: TKNNModel): Boolean;
+function PredictKNN(var Model: TKNNModel; var X: TVector;
+  var ClassLabel: Integer; var Prediction: TFloat): Boolean;
+function PredictKNNData(var Model: TKNNModel; var D: TDataSet;
+  var ClassLabels: TLabels; var Predictions: TSeries): Boolean;
+implementation
+uses AIMath;
+function FitKNN(var D: TDataSet; K: Integer;
+  var Model: TKNNModel): Boolean;
+begin
+  FillChar(Model,SizeOf(Model),0); FitKNN := False;
+  if not CheckData(D,False) then Exit;
+  if (D.TargetKind <> TargetReal) and (D.TargetKind <> TargetClass) then begin
+    SetAIError(ErrValue,'KNN memerlukan target regresi atau kelas'); Exit
+  end;
+  if (K < 1) or (K > D.Count) then begin
+    SetAIError(ErrSize,'K harus 1 sampai jumlah baris latih'); Exit
+  end;
+  Model.Data := @D; Model.K := K; Model.TargetKind := D.TargetKind;
+  Model.Features := D.Features; Model.Count := D.Count;
+  Model.Fitted := True; FitKNN := True
+end;
+function PredictKNN(var Model: TKNNModel; var X: TVector;
+  var ClassLabel: Integer; var Prediction: TFloat): Boolean;
+var Dist: TSeries; Order: TIndexList;
+    Votes: array[0..MaxClasses-1] of Integer;
+    I,J,Index,Best: Integer; V: TFloat;
+begin
+  ClearAIError; ClassLabel := -1; Prediction := 0; PredictKNN := False;
+  if not Model.Fitted or (Model.Data = nil) then begin
+    SetAIError(ErrModel,'Model KNN belum dilatih'); Exit
+  end;
+  { Data tidak boleh dibebaskan/diubah selama model dipakai. }
+  if not CheckData(Model.Data^,False) then Exit;
+  if (Model.K < 1) or (Model.K > Model.Data^.Count) or
+     (Model.Count <> Model.Data^.Count) or
+     (Model.Features <> Model.Data^.Features) or
+     (Model.TargetKind <> Model.Data^.TargetKind) then begin
+    SetAIError(ErrModel,'Dataset latih KNN berubah atau model tidak valid'); Exit
+  end;
+  if (Model.TargetKind <> TargetReal) and
+     (Model.TargetKind <> TargetClass) then begin
+    SetAIError(ErrModel,'Jenis target model KNN tidak valid'); Exit
+  end;
+  if not CheckVector(X,Model.Features) then Exit;
+  for I := 1 to Model.Count do begin
+    Order[I] := I;
+    if not DistanceSquared(X,Model.Data^.X[I],Model.Features,Dist[I]) then Exit
+  end;
+  { Insertion sort stabil: jarak sama memakai urutan baris latih. }
+  for I := 2 to Model.Count do begin
+    Index := Order[I]; V := Dist[Index]; J := I-1;
+    while J >= 1 do begin
+      if Dist[Order[J]] <= V then Break;
+      Order[J+1] := Order[J]; Dec(J)
+    end;
+    Order[J+1] := Index
+  end;
+  if Model.TargetKind = TargetReal then begin
+    for I := 1 to Model.K do
+      Prediction := Prediction+(Model.Data^.Y[Order[I]]-Prediction)/I
+  end else begin
+    FillChar(Votes,SizeOf(Votes),0);
+    for I := 1 to Model.K do Inc(Votes[Model.Data^.Labels[Order[I]]]);
+    Best := 0;
+    for I := 1 to MaxClasses-1 do if Votes[I] > Votes[Best] then Best := I;
+    { Suara sama: label numerik terkecil menang. }
+    ClassLabel := Best; Prediction := Best
+  end;
+  PredictKNN := True
+end;
+function PredictKNNData(var Model: TKNNModel; var D: TDataSet;
+  var ClassLabels: TLabels; var Predictions: TSeries): Boolean;
+var I: Integer;
+begin
+  PredictKNNData := False;
+  FillChar(ClassLabels,SizeOf(ClassLabels),0);
+  FillChar(Predictions,SizeOf(Predictions),0);
+  if not CheckData(D,False) then Exit;
+  if D.Features <> Model.Features then begin
+    SetAIError(ErrSize,'Jumlah fitur KNN berbeda'); Exit
+  end;
+  for I := 1 to D.Count do
+    if not PredictKNN(Model,D.X[I],ClassLabels[I],Predictions[I]) then Exit;
+  PredictKNNData := True
+end;
+end.
+
+======================================================================
+AILINEAR.PAS
+======================================================================
+
+unit AILinear;
+interface
+uses AITypes,AIOptim;
+function FitLinear(var D: TDataSet; Ridge: TFloat;
+  var Model: TLinearModel): Boolean;
+function PredictLinear(var Model: TLinearModel; var X: TVector;
+  var Prediction: TFloat): Boolean;
+function PredictLinearData(var Model: TLinearModel; var D: TDataSet;
+  var Predictions: TSeries): Boolean;
+
+type
+  TLogisticModel = record
+    Fitted: Boolean;
+    Features: Integer;
+    Weights: TVector;
+    Bias: TFloat;
+  end;
+function CheckLogistic(var M: TLogisticModel): Boolean;
+function FitLogistic(var D: TDataSet; var Config: TTrainConfig;
+  var M: TLogisticModel; var Info: TTrainInfo): Boolean;
+function PredictLogistic(var M: TLogisticModel; var X: TVector;
+  Threshold: TFloat; var Probability: TFloat; var LabelValue: Integer): Boolean;
+function LogisticData(var M: TLogisticModel; var D: TDataSet;
+  Threshold: TFloat; var Probabilities: TSeries; var Labels: TLabels): Boolean;
+
+type
+  TPerceptronModel = record
+    Fitted: Boolean;
+    Features: Integer;
+    Weights: TVector;
+    Bias: TFloat;
+  end;
+function CheckPerceptron(var M: TPerceptronModel): Boolean;
+function FitPerceptron(var D: TDataSet; MaxEpochs: Integer;
+  Rate: TFloat; Seed: LongInt; var M: TPerceptronModel;
+  var Info: TTrainInfo): Boolean;
+function PredictPerceptron(var M: TPerceptronModel; var X: TVector;
+  var LabelValue: Integer; var Score: TFloat): Boolean;
+implementation
+uses AIDATA,AIMath;
+function FitLinear(var D: TDataSet; Ridge: TFloat;
+  var Model: TLinearModel): Boolean;
+var A: array[1..MaxFeatures,1..MaxFeatures+1] of TFloat;
+    Coeff,Z: TVector; S: TScaler;
+    I,J,K,P,Best,N: Integer;
+    AvgY,Pivot,Factor,T,BestAbs: TFloat;
+begin
+  FillChar(Model,SizeOf(Model),0); FitLinear := False;
+  if not CheckData(D,False) then Exit;
+  if D.TargetKind <> TargetReal then begin
+    SetAIError(ErrValue,'Regresi memerlukan target numerik'); Exit
+  end;
+  if not ValidNumber(Ridge) or (Ridge < 0) then begin
+    SetAIError(ErrValue,'Ridge harus >= 0'); Exit
+  end;
+  N := D.Features;
+  if (Ridge = 0) and (D.Count <= N) then begin
+    SetAIError(ErrSize,'OLS perlu jumlah baris lebih besar dari fitur'); Exit
+  end;
+  if not FitScaler(D,ScaleStandard,S) then Exit;
+  AvgY := 0;
+  for I := 1 to D.Count do AvgY := AvgY+(D.Y[I]-AvgY)/I;
+  FillChar(A,SizeOf(A),0); FillChar(Coeff,SizeOf(Coeff),0);
+  for I := 1 to D.Count do begin
+    Z := D.X[I];
+    if not TransformVector(S,Z) then Exit;
+    for J := 1 to N do begin
+      for K := 1 to N do A[J,K] := A[J,K]+Z[J]*Z[K];
+      A[J,N+1] := A[J,N+1]+Z[J]*(D.Y[I]-AvgY)
+    end
+  end;
+  { Penalti hanya pada koefisien fitur yang distandardisasi. }
+  for J := 1 to N do A[J,J] := A[J,J]+Ridge;
+  { Eliminasi Gauss dengan pivot parsial atas normal equations. }
+  for P := 1 to N do begin
+    Best := P; BestAbs := Abs(A[P,P]);
+    for I := P+1 to N do if Abs(A[I,P]) > BestAbs then begin
+      Best := I; BestAbs := Abs(A[I,P])
+    end;
+    if BestAbs < AIEpsilon then begin
+      SetAIError(ErrSingular,'Fitur konstan/kolinear. Hapus fitur atau pakai ridge');
+      Exit
+    end;
+    if Best <> P then for K := P to N+1 do begin
+      T := A[P,K]; A[P,K] := A[Best,K]; A[Best,K] := T
+    end;
+    Pivot := A[P,P];
+    for I := P+1 to N do begin
+      Factor := A[I,P]/Pivot;
+      for K := P to N+1 do A[I,K] := A[I,K]-Factor*A[P,K]
+    end
+  end;
+  for I := N downto 1 do begin
+    T := A[I,N+1];
+    for J := I+1 to N do T := T-A[I,J]*Coeff[J];
+    Coeff[I] := T/A[I,I]
+  end;
+  Model.Intercept := AvgY;
+  for J := 1 to N do begin
+    Model.Coeff[J] := Coeff[J]/S.Divisor[J];
+    if not ValidNumber(Model.Coeff[J]) then begin
+      SetAIError(ErrValue,'Koefisien regresi melampaui batas'); Exit
+    end;
+    Model.Intercept := Model.Intercept-Model.Coeff[J]*S.Offset[J]
+  end;
+  if not ValidNumber(Model.Intercept) then begin
+    SetAIError(ErrValue,'Intercept regresi melampaui batas'); Exit
+  end;
+  Model.Features := N; Model.Fitted := True; FitLinear := True
+end;
+function PredictLinear(var Model: TLinearModel; var X: TVector;
+  var Prediction: TFloat): Boolean;
+var J: Integer;
+begin
+  ClearAIError; Prediction := 0; PredictLinear := False;
+  if not Model.Fitted or (Model.Features < 1) or
+     (Model.Features > MaxFeatures) then begin
+    SetAIError(ErrModel,'Model regresi belum dilatih'); Exit
+  end;
+  if not CheckVector(X,Model.Features) then Exit;
+  if not CheckVector(Model.Coeff,Model.Features) then Exit;
+  if not ValidNumber(Model.Intercept) then begin
+    SetAIError(ErrModel,'Intercept tidak valid'); Exit
+  end;
+  Prediction := Model.Intercept;
+  for J := 1 to Model.Features do
+    Prediction := Prediction+Model.Coeff[J]*X[J];
+  if not ValidNumber(Prediction) then begin
+    Prediction := 0; SetAIError(ErrValue,'Prediksi melampaui batas angka'); Exit
+  end;
+  PredictLinear := True
+end;
+function PredictLinearData(var Model: TLinearModel; var D: TDataSet;
+  var Predictions: TSeries): Boolean;
+var I: Integer;
+begin
+  FillChar(Predictions,SizeOf(Predictions),0); PredictLinearData := False;
+  if not CheckData(D,False) then Exit;
+  if D.Features <> Model.Features then begin
+    SetAIError(ErrSize,'Jumlah fitur prediksi berbeda'); Exit
+  end;
+  for I := 1 to D.Count do
+    if not PredictLinear(Model,D.X[I],Predictions[I]) then Exit;
+  PredictLinearData := True
+end;
+
+function CheckLogistic(var M: TLogisticModel): Boolean;
+begin
+  ClearAIError; CheckLogistic:=False;
+  if not M.Fitted then begin SetAIError(ErrModel,'Logistic belum dilatih'); Exit end;
+  if not CheckVector(M.Weights,M.Features) then Exit;
+  if not ValidNumber(M.Bias) then begin SetAIError(ErrModel,'Bias tidak valid'); Exit end;
+  CheckLogistic:=True
+end;
+function Logit(var M: TLogisticModel; var X: TVector): TFloat;
+var J: Integer; Z: TFloat;
+begin
+  Z:=M.Bias;
+  for J:=1 to M.Features do Z:=Z+M.Weights[J]*X[J];
+  Logit:=Z
+end;
+function FitLogistic(var D: TDataSet; var Config: TTrainConfig;
+  var M: TLogisticModel; var Info: TTrainInfo): Boolean;
+var G,V: TVector; GB,VB,Z,E,Loss: TFloat;
+    I,J,Epoch,Reason: Integer; Stop: TStopState; Done: Boolean;
+begin
+  FillChar(M,SizeOf(M),0); InitTraining(Info,Stop); FitLogistic:=False;
+  if not CheckBinaryData(D) then Exit;
+  if not CheckTraining(Config) then Exit;
+  M.Features:=D.Features; FillChar(V,SizeOf(V),0); VB:=0;
+  Epoch:=0;
+  repeat
+    Inc(Epoch); FillChar(G,SizeOf(G),0); GB:=0;
+    for I:=1 to D.Count do begin
+      Z:=Logit(M,D.X[I]);
+      if not ValidNumber(Z) then begin SetAIError(ErrValue,'Logit melampaui batas'); Exit end;
+      E:=Sigmoid(Z)-D.Labels[I]; GB:=GB+E/D.Count;
+      for J:=1 to D.Features do G[J]:=G[J]+E*D.X[I,J]/D.Count
+    end;
+    for J:=1 to D.Features do G[J]:=G[J]+Config.L2*M.Weights[J];
+    if not VectorStep(M.Weights,V,G,D.Features,Config.Rate,Config.Momentum,Config.Clip) then Exit;
+    if not SGDStep(M.Bias,VB,GB,Config.Rate,Config.Momentum,Config.Clip) then Exit;
+    Loss:=0;
+    for I:=1 to D.Count do begin
+      Z:=Logit(M,D.X[I]); E:=BinaryLoss(Z,D.Labels[I]);
+      if AIErrorCode<>0 then Exit;
+      Loss:=Loss+E/D.Count
+    end;
+    for J:=1 to D.Features do Loss:=Loss+0.5*Config.L2*Sqr(M.Weights[J]);
+    if not ValidNumber(Loss) then begin SetAIError(ErrValue,'Loss melampaui batas'); Exit end;
+    Done:=ShouldStop(Config,Stop,Loss,Reason);
+    RecordLoss(Info,Epoch,Config.MaxEpochs,Loss,Done or (Epoch=Config.MaxEpochs))
+  until Done or (Epoch>=Config.MaxEpochs);
+  if Reason=0 then Reason:=StopLimit;
+  Info.StopReason:=Reason; Info.Converged:=Reason=StopGoal;
+  M.Fitted:=True; FitLogistic:=True
+end;
+function PredictLogistic(var M: TLogisticModel; var X: TVector;
+  Threshold: TFloat; var Probability: TFloat; var LabelValue: Integer): Boolean;
+var Z: TFloat;
+begin
+  Probability:=0; LabelValue:=-1; PredictLogistic:=False;
+  if not CheckLogistic(M) then Exit;
+  if not CheckVector(X,M.Features) then Exit;
+  if not ValidNumber(Threshold) or (Threshold<=0) or (Threshold>=1) then begin
+    SetAIError(ErrValue,'Threshold harus antara 0 dan 1'); Exit
+  end;
+  Z:=Logit(M,X);
+  if not ValidNumber(Z) then begin SetAIError(ErrValue,'Logit melampaui batas'); Exit end;
+  Probability:=Sigmoid(Z); LabelValue:=Ord(Probability>=Threshold);
+  PredictLogistic:=True
+end;
+function LogisticData(var M: TLogisticModel; var D: TDataSet;
+  Threshold: TFloat; var Probabilities: TSeries; var Labels: TLabels): Boolean;
+var I: Integer;
+begin
+  LogisticData:=False;
+  if not CheckData(D,False) then Exit;
+  if D.Features<>M.Features then begin SetAIError(ErrSize,'Fitur berbeda'); Exit end;
+  for I:=1 to D.Count do
+    if not PredictLogistic(M,D.X[I],Threshold,Probabilities[I],Labels[I]) then Exit;
+  LogisticData:=True
+end;
+
+function CheckPerceptron(var M: TPerceptronModel): Boolean;
+begin
+  ClearAIError; CheckPerceptron:=False;
+  if not M.Fitted then begin SetAIError(ErrModel,'Perceptron belum dilatih'); Exit end;
+  if not CheckVector(M.Weights,M.Features) then Exit;
+  if not ValidNumber(M.Bias) then begin SetAIError(ErrModel,'Bias tidak valid'); Exit end;
+  CheckPerceptron:=True
+end;
+function ScoreOf(var M: TPerceptronModel; var X: TVector): TFloat;
+var Z: TFloat; J: Integer;
+begin
+  Z:=M.Bias;
+  for J:=1 to M.Features do Z:=Z+M.Weights[J]*X[J];
+  ScoreOf:=Z
+end;
+function FitPerceptron(var D: TDataSet; MaxEpochs: Integer;
+  Rate: TFloat; Seed: LongInt; var M: TPerceptronModel;
+  var Info: TTrainInfo): Boolean;
+var Order: TIndexList; I,J,R,Epoch,E,Mistakes: Integer;
+    Z,Loss: TFloat; Stop: TStopState;
+begin
+  FillChar(M,SizeOf(M),0); InitTraining(Info,Stop); FitPerceptron:=False;
+  if not CheckBinaryData(D) then Exit;
+  if (MaxEpochs<1) or (MaxEpochs>10000) or not ValidNumber(Rate) or
+     (Rate<=0) or (Rate>10) then begin
+    SetAIError(ErrValue,'Epoch 1..10000 dan rate 0<rate<=10 diperlukan'); Exit
+  end;
+  M.Features:=D.Features; AISetSeed(Seed); Epoch:=0;
+  repeat
+    Inc(Epoch); ShuffleRows(D.Count,Order);
+    for I:=1 to D.Count do begin
+      R:=Order[I]; Z:=ScoreOf(M,D.X[R]);
+      if not ValidNumber(Z) then begin SetAIError(ErrValue,'Score melampaui batas'); Exit end;
+      E:=D.Labels[R]-Ord(Z>=0);
+      for J:=1 to D.Features do M.Weights[J]:=M.Weights[J]+Rate*E*D.X[R,J];
+      M.Bias:=M.Bias+Rate*E
+    end;
+    Mistakes:=0;
+    for I:=1 to D.Count do if Ord(ScoreOf(M,D.X[I])>=0)<>D.Labels[I] then Inc(Mistakes);
+    Loss:=Mistakes/D.Count;
+    RecordLoss(Info,Epoch,MaxEpochs,Loss,(Mistakes=0) or (Epoch=MaxEpochs))
+  until (Mistakes=0) or (Epoch>=MaxEpochs);
+  Info.Converged:=Mistakes=0;
+  if Info.Converged then Info.StopReason:=StopGoal else Info.StopReason:=StopLimit;
+  M.Fitted:=True; FitPerceptron:=True
+end;
+function PredictPerceptron(var M: TPerceptronModel; var X: TVector;
+  var LabelValue: Integer; var Score: TFloat): Boolean;
+begin
+  LabelValue:=-1; Score:=0; PredictPerceptron:=False;
+  if not CheckPerceptron(M) then Exit;
+  if not CheckVector(X,M.Features) then Exit;
+  Score:=ScoreOf(M,X);
+  if not ValidNumber(Score) then begin SetAIError(ErrValue,'Score melampaui batas'); Exit end;
+  LabelValue:=Ord(Score>=0); PredictPerceptron:=True
+end;
+end.
+
+======================================================================
+AIMATH.PAS
+======================================================================
+
+unit AIMath;
+interface
+uses AITypes;
+function Clamp(X, Lo, Hi: TFloat): TFloat;
+function Sigmoid(X: TFloat): TFloat;
+function SafeExp(X: TFloat; var Value: TFloat): Boolean;
+function SafeLn(X: TFloat; var Value: TFloat): Boolean;
+function SafeSqrt(X: TFloat; var Value: TFloat): Boolean;
+function IntPower(X: TFloat; N: Integer; var Value: TFloat): Boolean;
+function DotProduct(var A,B: TVector; N: Integer;
+  var Value: TFloat): Boolean;
+function DistanceSquared(var A,B: TVector; N: Integer;
+  var Value: TFloat): Boolean;
+function Euclidean(var A,B: TVector; N: Integer;
+  var Value: TFloat): Boolean;
+function Manhattan(var A,B: TVector; N: Integer;
+  var Value: TFloat): Boolean;
+procedure AISetSeed(Seed: LongInt);
+function AIRandom: TFloat;
+function AIRandomInt(Limit: Integer): Integer;
+
+function MatrixInit(var M: TMatrix; Rows, Cols: Integer): Boolean;
+function MatrixIdentity(var M: TMatrix; N: Integer): Boolean;
+function MatrixAdd(var A,B,C: TMatrix): Boolean;
+function MatrixSubtract(var A,B,C: TMatrix): Boolean;
+function MatrixScale(var A: TMatrix; Factor: TFloat;
+  var C: TMatrix): Boolean;
+function MatrixTranspose(var A,C: TMatrix): Boolean;
+function MatrixMultiply(var A,B,C: TMatrix): Boolean;
+implementation
+var State: LongInt;
+function Clamp(X, Lo, Hi: TFloat): TFloat;
+begin
+  ClearAIError;
+  if Lo > Hi then begin
+    SetAIError(ErrValue, 'Batas Clamp terbalik'); Clamp := 0; Exit
+  end;
+  if X < Lo then X := Lo;
+  if X > Hi then X := Hi;
+  Clamp := X
+end;
+function Sigmoid(X: TFloat): TFloat;
+var E: TFloat;
+begin
+  ClearAIError;
+  if X >= 0 then begin
+    if X > 80 then Sigmoid := 1
+    else Sigmoid := 1 / (1 + Exp(-X))
+  end else begin
+    if X < -80 then Sigmoid := 0
+    else begin E := Exp(X); Sigmoid := E / (1 + E) end
+  end
+end;
+function SafeExp(X: TFloat; var Value: TFloat): Boolean;
+begin
+  ClearAIError; Value := 0; SafeExp := False;
+  if (X <> X) or (X < -80) or (X > 80) then begin
+    SetAIError(ErrValue, 'SafeExp memerlukan -80 <= X <= 80'); Exit
+  end;
+  Value := Exp(X); SafeExp := True
+end;
+function SafeLn(X: TFloat; var Value: TFloat): Boolean;
+begin
+  ClearAIError; Value := 0; SafeLn := False;
+  if not ValidNumber(X) or (X <= 0) then begin
+    SetAIError(ErrValue, 'SafeLn memerlukan X positif <= 1E12'); Exit
+  end;
+  Value := Ln(X); SafeLn := True
+end;
+function SafeSqrt(X: TFloat; var Value: TFloat): Boolean;
+begin
+  ClearAIError; Value := 0; SafeSqrt := False;
+  if not ValidNumber(X) or (X < 0) then begin
+    SetAIError(ErrValue, 'SafeSqrt memerlukan 0 <= X <= 1E12'); Exit
+  end;
+  Value := Sqrt(X); SafeSqrt := True
+end;
+function IntPower(X: TFloat; N: Integer; var Value: TFloat): Boolean;
+var I, Count: Integer; Base: TFloat;
+begin
+  ClearAIError; Value := 0; IntPower := False;
+  if not ValidNumber(X) or (N < -100) or (N > 100) then begin
+    SetAIError(ErrValue, 'Pangkat harus -100..100 dan basis valid'); Exit
+  end;
+  if (X = 0) and (N < 0) then begin
+    SetAIError(ErrValue, 'Nol tidak boleh berpangkat negatif'); Exit
+  end;
+  Base := X; Count := N;
+  if N < 0 then begin
+    if Abs(X) < 1.0E-12 then begin
+      SetAIError(ErrValue, 'Basis terlalu kecil untuk invers'); Exit
+    end;
+    Base := 1/X; Count := -N
+  end;
+  Value := 1;
+  for I := 1 to Count do begin
+    if Abs(Base) > 1 then
+      if Abs(Value) > 1.0E30/Abs(Base) then begin
+        Value := 0; SetAIError(ErrValue, 'Hasil pangkat terlalu besar'); Exit
+      end;
+    Value := Value*Base
+  end;
+  IntPower := True
+end;
+function DotProduct(var A,B: TVector; N: Integer;
+  var Value: TFloat): Boolean;
+var J: Integer;
+begin
+  Value := 0; DotProduct := False;
+  if not CheckVector(A,N) then Exit;
+  if not CheckVector(B,N) then Exit;
+  for J := 1 to N do Value := Value + A[J]*B[J];
+  DotProduct := True
+end;
+function DistanceSquared(var A,B: TVector; N: Integer;
+  var Value: TFloat): Boolean;
+var J: Integer; D: TFloat;
+begin
+  Value := 0; DistanceSquared := False;
+  if not CheckVector(A,N) then Exit;
+  if not CheckVector(B,N) then Exit;
+  for J := 1 to N do begin D := A[J]-B[J]; Value := Value+D*D end;
+  DistanceSquared := True
+end;
+function Euclidean(var A,B: TVector; N: Integer;
+  var Value: TFloat): Boolean;
+begin
+  Euclidean := False;
+  if not DistanceSquared(A,B,N,Value) then Exit;
+  Value := Sqrt(Value); Euclidean := True
+end;
+function Manhattan(var A,B: TVector; N: Integer;
+  var Value: TFloat): Boolean;
+var J: Integer;
+begin
+  Value := 0; Manhattan := False;
+  if not CheckVector(A,N) then Exit;
+  if not CheckVector(B,N) then Exit;
+  for J := 1 to N do Value := Value+Abs(A[J]-B[J]);
+  Manhattan := True
+end;
+procedure AISetSeed(Seed: LongInt);
+begin
+  State := Seed mod 2147483647;
+  if State <= 0 then State := State + 2147483646
+end;
+function AIRandom: TFloat;
+var Hi,Lo,T: LongInt;
+begin
+  { Park-Miller, bentuk Schrage: tidak overflow LongInt 32 bit. }
+  Hi := State div 127773; Lo := State mod 127773;
+  T := 16807*Lo - 2836*Hi;
+  if T > 0 then State := T else State := T + 2147483647;
+  AIRandom := State / 2147483647.0
+end;
+function AIRandomInt(Limit: Integer): Integer;
+var R: Integer;
+begin
+  ClearAIError; AIRandomInt := 0;
+  if Limit <= 0 then begin
+    SetAIError(ErrValue, 'Batas acak harus positif'); Exit
+  end;
+  R := Trunc(AIRandom*Limit);
+  if R >= Limit then R := Limit-1;
+  AIRandomInt := R
+end;
+function GoodMatrix(var M: TMatrix): Boolean;
+var I,J: Integer;
+begin
+  ClearAIError; GoodMatrix := False;
+  if (M.Rows < 1) or (M.Rows > MaxMatrix) or
+     (M.Cols < 1) or (M.Cols > MaxMatrix) then begin
+    SetAIError(ErrSize, 'Ukuran matriks harus 1..16'); Exit
+  end;
+  for I := 1 to M.Rows do for J := 1 to M.Cols do
+    if not ValidNumber(M.V[I,J]) then begin
+      SetAIError(ErrValue, 'Elemen matriks melampaui 1E12'); Exit
+    end;
+  GoodMatrix := True
+end;
+function MatrixInit(var M: TMatrix; Rows, Cols: Integer): Boolean;
+begin
+  ClearAIError; FillChar(M,SizeOf(M),0); MatrixInit := False;
+  if (Rows < 1) or (Rows > MaxMatrix) or
+     (Cols < 1) or (Cols > MaxMatrix) then begin
+    SetAIError(ErrSize, 'Ukuran matriks harus 1..16'); Exit
+  end;
+  M.Rows := Rows; M.Cols := Cols; MatrixInit := True
+end;
+function MatrixIdentity(var M: TMatrix; N: Integer): Boolean;
+var I: Integer;
+begin
+  MatrixIdentity := False;
+  if not MatrixInit(M,N,N) then Exit;
+  for I := 1 to N do M.V[I,I] := 1;
+  MatrixIdentity := True
+end;
+function MatrixAdd(var A,B,C: TMatrix): Boolean;
+var I,J: Integer; T: TMatrix;
+begin
+  MatrixAdd := False;
+  if not GoodMatrix(A) then Exit;
+  if not GoodMatrix(B) then Exit;
+  if (A.Rows <> B.Rows) or (A.Cols <> B.Cols) then begin
+    SetAIError(ErrSize, 'Dimensi penjumlahan tidak cocok'); Exit
+  end;
+  T := A;
+  for I := 1 to A.Rows do for J := 1 to A.Cols do begin
+    T.V[I,J] := A.V[I,J]+B.V[I,J];
+    if not ValidNumber(T.V[I,J]) then begin
+      SetAIError(ErrValue, 'Hasil penjumlahan matriks melampaui 1E12'); Exit
+    end
+  end;
+  C := T; MatrixAdd := True
+end;
+function MatrixSubtract(var A,B,C: TMatrix): Boolean;
+var I,J: Integer; T: TMatrix;
+begin
+  MatrixSubtract := False;
+  if not GoodMatrix(A) then Exit;
+  if not GoodMatrix(B) then Exit;
+  if (A.Rows <> B.Rows) or (A.Cols <> B.Cols) then begin
+    SetAIError(ErrSize, 'Dimensi pengurangan tidak cocok'); Exit
+  end;
+  T := A;
+  for I := 1 to A.Rows do for J := 1 to A.Cols do begin
+    T.V[I,J] := A.V[I,J]-B.V[I,J];
+    if not ValidNumber(T.V[I,J]) then begin
+      SetAIError(ErrValue, 'Hasil pengurangan matriks melampaui 1E12'); Exit
+    end
+  end;
+  C := T; MatrixSubtract := True
+end;
+function MatrixScale(var A: TMatrix; Factor: TFloat;
+  var C: TMatrix): Boolean;
+var I,J: Integer; T: TMatrix;
+begin
+  MatrixScale := False;
+  if not GoodMatrix(A) then Exit;
+  if not ValidNumber(Factor) then begin
+    SetAIError(ErrValue, 'Faktor skala tidak valid'); Exit
+  end;
+  T := A;
+  for I := 1 to A.Rows do for J := 1 to A.Cols do begin
+    T.V[I,J] := A.V[I,J]*Factor;
+    if not ValidNumber(T.V[I,J]) then begin
+      SetAIError(ErrValue, 'Hasil skala matriks melampaui 1E12'); Exit
+    end
+  end;
+  C := T; MatrixScale := True
+end;
+function MatrixTranspose(var A,C: TMatrix): Boolean;
+var I,J: Integer; T: TMatrix;
+begin
+  MatrixTranspose := False;
+  if not GoodMatrix(A) then Exit;
+  FillChar(T,SizeOf(T),0); T.Rows := A.Cols; T.Cols := A.Rows;
+  for I := 1 to A.Rows do for J := 1 to A.Cols do
+    T.V[J,I] := A.V[I,J];
+  C := T; MatrixTranspose := True
+end;
+function MatrixMultiply(var A,B,C: TMatrix): Boolean;
+var I,J,K: Integer; T: TMatrix;
+begin
+  MatrixMultiply := False;
+  if not GoodMatrix(A) then Exit;
+  if not GoodMatrix(B) then Exit;
+  if A.Cols <> B.Rows then begin
+    SetAIError(ErrSize, 'Dimensi perkalian tidak cocok'); Exit
+  end;
+  FillChar(T,SizeOf(T),0); T.Rows := A.Rows; T.Cols := B.Cols;
+  for I := 1 to A.Rows do for J := 1 to B.Cols do
+    for K := 1 to A.Cols do
+      T.V[I,J] := T.V[I,J]+A.V[I,K]*B.V[K,J];
+  for I := 1 to T.Rows do for J := 1 to T.Cols do
+    if not ValidNumber(T.V[I,J]) then begin
+      SetAIError(ErrValue, 'Hasil perkalian matriks melampaui 1E12'); Exit
+    end;
+  C := T; MatrixMultiply := True
+end;
+begin State := 1 end.
+
+======================================================================
+AIMODEL.PAS
+======================================================================
+
+unit AIModel;
+interface
+uses AITypes,AILINEAR,AINNet,AIBayes,AITree,AIText,AIRule,AISearch,AIFuzzy,AIReward;
+function SaveLinear(FileName: TFileName; var M: TLinearModel): Boolean;
+function LoadLinear(FileName: TFileName; var M: TLinearModel): Boolean;
+function SaveKMeans(FileName: TFileName; var M: TKMeansModel): Boolean;
+function LoadKMeans(FileName: TFileName; var M: TKMeansModel): Boolean;
+function SaveScaler(FileName: TFileName; var M: TScaler): Boolean;
+function LoadScaler(FileName: TFileName; var M: TScaler): Boolean;
+function SaveImputer(FileName: TFileName; var M: TImputer): Boolean;
+function LoadImputer(FileName: TFileName; var M: TImputer): Boolean;
+function SaveLogistic(FileName: TFileName; var M: TLogisticModel): Boolean;
+function LoadLogistic(FileName: TFileName; var M: TLogisticModel): Boolean;
+function SavePerceptron(FileName: TFileName; var M: TPerceptronModel): Boolean;
+function LoadPerceptron(FileName: TFileName; var M: TPerceptronModel): Boolean;
+function SaveNeural(FileName: TFileName; var M: TNeuralModel): Boolean;
+function LoadNeural(FileName: TFileName; var M: TNeuralModel): Boolean;
+function SaveBayes(FileName: TFileName; var M: TBayesModel): Boolean;
+function LoadBayes(FileName: TFileName; var M: TBayesModel): Boolean;
+function SaveTree(FileName: TFileName; var M: TTreeModel): Boolean;
+function LoadTree(FileName: TFileName; var M: TTreeModel): Boolean;
+function SaveVocabulary(FileName: TFileName; var M: TTextModel): Boolean;
+function LoadVocabulary(FileName: TFileName; var M: TTextModel): Boolean;
+function SaveRules(FileName: TFileName; var M: TRuleSet): Boolean;
+function LoadRules(FileName: TFileName; var M: TRuleSet): Boolean;
+function SaveFacts(FileName: TFileName; var M: TFacts): Boolean;
+function LoadFacts(FileName: TFileName; var M: TFacts): Boolean;
+function SaveGrid(FileName: TFileName; var M: TGrid): Boolean;
+function LoadGrid(FileName: TFileName; var M: TGrid): Boolean;
+function SaveFuzzy(FileName: TFileName; var M: TFuzzySystem): Boolean;
+function LoadFuzzy(FileName: TFileName; var M: TFuzzySystem): Boolean;
+function SaveQ(FileName: TFileName; var M: TQModel): Boolean;
+function LoadQ(FileName: TFileName; var M: TQModel): Boolean;
+
+function SaveKNN(FileName: TFileName; var M: TKNNModel): Boolean;
+function LoadKNN(FileName: TFileName; var Storage: TDataSet;
+  var M: TKNNModel): Boolean;
+implementation
+uses AIKNN;
+const MaxModelBytes=32760;
+type
+  TByteBlock=array[0..MaxModelBytes-1] of Byte;
+  PByteBlock=^TByteBlock;
+  THeader=packed record
+    Magic: array[1..8] of Char;
+    Version,Kind,Bytes: Word;
+    RealBytes,IntBytes,BoolBytes,LittleEndian,CompilerFamily: Byte;
+    Layout,Checksum: Word;
+  end;
+  TKNNStore=record K: Integer; Data: TDataSet end;
+  PKNNStore=^TKNNStore;
+function NewBuffer(Size: Word; var P: Pointer): Boolean;
+{$IFDEF FPC} var OldNil: Boolean; {$ENDIF}
+begin
+  P:=nil; NewBuffer:=False;
+  if (Size=0) or (Size>MaxModelBytes) then begin SetAIError(ErrSize,'Ukuran model tidak didukung'); Exit end;
+  {$IFNDEF FPC}
+    {$IFNDEF ODIN}
+  if MaxAvail<Size then begin SetAIError(ErrMemory,'Heap model tidak cukup'); Exit end;
+    {$ENDIF}
+  {$ENDIF}
+  {$IFDEF FPC} OldNil:=ReturnNilIfGrowHeapFails; ReturnNilIfGrowHeapFails:=True; {$ENDIF}
+  GetMem(P,Size);
+  {$IFDEF FPC} ReturnNilIfGrowHeapFails:=OldNil; {$ENDIF}
+  if P=nil then begin SetAIError(ErrMemory,'Alokasi model gagal'); Exit end;
+  NewBuffer:=True
+end;
+function SumBytes(var Data; Size: Word): Word;
+var P: PByteBlock; I: Word; S: LongInt;
+begin
+  P:=@Data; S:=5381;
+  for I:=0 to Size-1 do S:=(S*33+P^[I]) mod 65521;
+  SumBytes:=S
+end;
+procedure MakeHeader(Kind,Size: Word; var H: THeader);
+var W: Word; P: PByteBlock;
+begin
+  FillChar(H,SizeOf(H),0);
+  H.Magic[1]:='T'; H.Magic[2]:='P'; H.Magic[3]:='A'; H.Magic[4]:='I';
+  H.Magic[5]:='M'; H.Magic[6]:='D'; H.Magic[7]:='L'; H.Magic[8]:='2';
+  H.Version:=1; H.Kind:=Kind; H.Bytes:=Size;
+  H.RealBytes:=SizeOf(TFloat); H.IntBytes:=SizeOf(Integer);
+  H.BoolBytes:=SizeOf(Boolean); W:=$0102; P:=@W;
+  H.LittleEndian:=Ord(P^[0]=2);
+  {$IFDEF FPC} H.CompilerFamily:=1;
+  {$ELSE}
+    {$IFDEF ODIN} H.CompilerFamily:=3;
+    {$ELSE} H.CompilerFamily:=2;
+    {$ENDIF}
+  {$ENDIF}
+  H.Layout:=2008
+end;
+function SaveRaw(FileName: TFileName; Kind,Size: Word; var Data): Boolean;
+var F: File; H: THeader; Actual: Word; E,E2: Integer; OK: Boolean;
+begin
+  SaveRaw:=False; ClearAIError;
+  if (Size=0) or (Size>MaxModelBytes) then begin SetAIError(ErrSize,'Model terlalu besar'); Exit end;
+  MakeHeader(Kind,Size,H); H.Checksum:=SumBytes(Data,Size);
+  Assign(F,FileName); {$I-} Rewrite(F,1); E:=IOResult; {$I+}
+  if E<>0 then begin SetAIError(ErrIO,'Berkas model tidak dapat dibuat'); Exit end;
+  {$I-}
+  BlockWrite(F,H,SizeOf(H),Actual); E:=IOResult;
+  OK:=(E=0) and (Actual=SizeOf(H));
+  if OK then begin BlockWrite(F,Data,Size,Actual); E:=IOResult; OK:=(E=0) and (Actual=Size) end;
+  Close(F); E2:=IOResult;
+  {$I+}
+  if not OK or (E2<>0) then begin SetAIError(ErrIO,'Penulisan model tidak lengkap'); Exit end;
+  SaveRaw:=True
+end;
+function LoadRaw(FileName: TFileName; Kind,Size: Word; var Data): Boolean;
+var F: File; H,Expected: THeader; Actual: Word;
+    E,E2,I: Integer; P: Pointer; OK,Match: Boolean; Length: LongInt;
+begin
+  LoadRaw:=False; ClearAIError; P:=nil;
+  Assign(F,FileName); {$I-} Reset(F,1); E:=IOResult; {$I+}
+  if E<>0 then begin SetAIError(ErrIO,'Berkas model tidak terbuka'); Exit end;
+  MakeHeader(Kind,Size,Expected); OK:=False;
+  repeat
+    {$I-} BlockRead(F,H,SizeOf(H),Actual); E:=IOResult;
+    Length:=FileSize(F); E2:=IOResult; {$I+}
+    if (E<>0) or (E2<>0) or (Actual<>SizeOf(H)) then begin
+      SetAIError(ErrFormat,'Header model terpotong'); Break
+    end;
+    Match:=True;
+    for I:=1 to 8 do if H.Magic[I]<>Expected.Magic[I] then Match:=False;
+    if not Match or (H.Version<>Expected.Version) or (H.Kind<>Kind) or
+       (H.Bytes<>Size) or (H.RealBytes<>Expected.RealBytes) or
+       (H.IntBytes<>Expected.IntBytes) or (H.BoolBytes<>Expected.BoolBytes) or
+       (H.LittleEndian<>Expected.LittleEndian) or
+       (H.CompilerFamily<>Expected.CompilerFamily) or (H.Layout<>Expected.Layout) or
+       (Length<>LongInt(Size)+SizeOf(H)) then begin
+      SetAIError(ErrFormat,'Jenis, versi, ABI atau panjang model tidak cocok'); Break
+    end;
+    if not NewBuffer(Size,P) then Break;
+    {$I-} BlockRead(F,P^,Size,Actual); E:=IOResult; {$I+}
+    if (E<>0) or (Actual<>Size) then begin SetAIError(ErrFormat,'Isi model terpotong'); Break end;
+    if SumBytes(P^,Size)<>H.Checksum then begin SetAIError(ErrFormat,'Checksum model tidak cocok'); Break end;
+    OK:=True
+  until True;
+  {$I-} Close(F); E2:=IOResult; {$I+}
+  if OK and (E2<>0) then begin SetAIError(ErrIO,'Gagal menutup model'); OK:=False end;
+  if OK then Move(P^,Data,Size);
+  if P<>nil then FreeMem(P,Size);
+  LoadRaw:=OK
+end;
+function GoodLinear(var M: TLinearModel): Boolean;
+begin
+  ClearAIError; GoodLinear:=False;
+  if not M.Fitted then begin SetAIError(ErrModel,'Linear belum dilatih'); Exit end;
+  if not CheckVector(M.Coeff,M.Features) then Exit;
+  if not ValidNumber(M.Intercept) then begin SetAIError(ErrModel,'Intercept tidak valid'); Exit end;
+  GoodLinear:=True
+end;
+function GoodKMeans(var M: TKMeansModel): Boolean;
+var I: Integer;
+begin
+  ClearAIError; GoodKMeans:=False;
+  if not M.Fitted or (M.K<1) or (M.K>MaxClusters) or
+     (M.Features<1) or (M.Features>MaxFeatures) or
+     (M.Iterations<1) or (M.Iterations>MaxSamples) or
+     (M.Inertia<>M.Inertia) or (M.Inertia<0) or (M.Inertia>1E30) then begin
+    SetAIError(ErrModel,'Model K-means tidak valid'); Exit
+  end;
+  for I:=1 to M.K do if not CheckVector(M.Centers[I],M.Features) then Exit;
+  GoodKMeans:=True
+end;
+function GoodScaler(var M: TScaler): Boolean;
+var J: Integer;
+begin
+  ClearAIError; GoodScaler:=False;
+  if not M.Fitted or (M.Features<1) or (M.Features>MaxFeatures) or
+     ((M.Kind<>ScaleMinMax) and (M.Kind<>ScaleStandard)) then begin
+    SetAIError(ErrModel,'Scaler tidak valid'); Exit
+  end;
+  if not CheckVector(M.Offset,M.Features) then Exit;
+  for J:=1 to M.Features do if (M.Divisor[J]<>M.Divisor[J]) or
+    (M.Divisor[J]<AIEpsilon) or (M.Divisor[J]>2*AIInputLimit) then begin
+    SetAIError(ErrModel,'Divisor scaler tidak valid'); Exit
+  end;
+  GoodScaler:=True
+end;
+function GoodImputer(var M: TImputer): Boolean;
+begin
+  ClearAIError; GoodImputer:=False;
+  if not M.Fitted then begin SetAIError(ErrModel,'Imputer belum dilatih'); Exit end;
+  GoodImputer:=CheckVector(M.Means,M.Features)
+end;
+
+function SaveLinear(FileName: TFileName; var M: TLinearModel): Boolean;
+begin
+  SaveLinear:=False;
+  if not GoodLinear(M) then Exit;
+  SaveLinear:=SaveRaw(FileName,1,SizeOf(M),M)
+end;
+function LoadLinear(FileName: TFileName; var M: TLinearModel): Boolean;
+var Temp: TLinearModel;
+begin
+  LoadLinear:=False;
+  if not LoadRaw(FileName,1,SizeOf(Temp),Temp) then Exit;
+  if not GoodLinear(Temp) then Exit;
+  M:=Temp; LoadLinear:=True
+end;
+
+function SaveKMeans(FileName: TFileName; var M: TKMeansModel): Boolean;
+begin
+  SaveKMeans:=False;
+  if not GoodKMeans(M) then Exit;
+  SaveKMeans:=SaveRaw(FileName,2,SizeOf(M),M)
+end;
+function LoadKMeans(FileName: TFileName; var M: TKMeansModel): Boolean;
+var Temp: TKMeansModel;
+begin
+  LoadKMeans:=False;
+  if not LoadRaw(FileName,2,SizeOf(Temp),Temp) then Exit;
+  if not GoodKMeans(Temp) then Exit;
+  M:=Temp; LoadKMeans:=True
+end;
+
+function SaveScaler(FileName: TFileName; var M: TScaler): Boolean;
+begin
+  SaveScaler:=False;
+  if not GoodScaler(M) then Exit;
+  SaveScaler:=SaveRaw(FileName,3,SizeOf(M),M)
+end;
+function LoadScaler(FileName: TFileName; var M: TScaler): Boolean;
+var Temp: TScaler;
+begin
+  LoadScaler:=False;
+  if not LoadRaw(FileName,3,SizeOf(Temp),Temp) then Exit;
+  if not GoodScaler(Temp) then Exit;
+  M:=Temp; LoadScaler:=True
+end;
+
+function SaveImputer(FileName: TFileName; var M: TImputer): Boolean;
+begin
+  SaveImputer:=False;
+  if not GoodImputer(M) then Exit;
+  SaveImputer:=SaveRaw(FileName,4,SizeOf(M),M)
+end;
+function LoadImputer(FileName: TFileName; var M: TImputer): Boolean;
+var Temp: TImputer;
+begin
+  LoadImputer:=False;
+  if not LoadRaw(FileName,4,SizeOf(Temp),Temp) then Exit;
+  if not GoodImputer(Temp) then Exit;
+  M:=Temp; LoadImputer:=True
+end;
+
+function SaveLogistic(FileName: TFileName; var M: TLogisticModel): Boolean;
+begin
+  SaveLogistic:=False;
+  if not CheckLogistic(M) then Exit;
+  SaveLogistic:=SaveRaw(FileName,5,SizeOf(M),M)
+end;
+function LoadLogistic(FileName: TFileName; var M: TLogisticModel): Boolean;
+var Temp: TLogisticModel;
+begin
+  LoadLogistic:=False;
+  if not LoadRaw(FileName,5,SizeOf(Temp),Temp) then Exit;
+  if not CheckLogistic(Temp) then Exit;
+  M:=Temp; LoadLogistic:=True
+end;
+
+function SavePerceptron(FileName: TFileName; var M: TPerceptronModel): Boolean;
+begin
+  SavePerceptron:=False;
+  if not CheckPerceptron(M) then Exit;
+  SavePerceptron:=SaveRaw(FileName,6,SizeOf(M),M)
+end;
+function LoadPerceptron(FileName: TFileName; var M: TPerceptronModel): Boolean;
+var Temp: TPerceptronModel;
+begin
+  LoadPerceptron:=False;
+  if not LoadRaw(FileName,6,SizeOf(Temp),Temp) then Exit;
+  if not CheckPerceptron(Temp) then Exit;
+  M:=Temp; LoadPerceptron:=True
+end;
+
+function SaveNeural(FileName: TFileName; var M: TNeuralModel): Boolean;
+begin
+  SaveNeural:=False;
+  if not CheckNeural(M) then Exit;
+  SaveNeural:=SaveRaw(FileName,7,SizeOf(M),M)
+end;
+function LoadNeural(FileName: TFileName; var M: TNeuralModel): Boolean;
+var Temp: TNeuralModel;
+begin
+  LoadNeural:=False;
+  if not LoadRaw(FileName,7,SizeOf(Temp),Temp) then Exit;
+  if not CheckNeural(Temp) then Exit;
+  M:=Temp; LoadNeural:=True
+end;
+
+function SaveBayes(FileName: TFileName; var M: TBayesModel): Boolean;
+begin
+  SaveBayes:=False;
+  if not CheckBayes(M) then Exit;
+  SaveBayes:=SaveRaw(FileName,8,SizeOf(M),M)
+end;
+function LoadBayes(FileName: TFileName; var M: TBayesModel): Boolean;
+var Temp: TBayesModel;
+begin
+  LoadBayes:=False;
+  if not LoadRaw(FileName,8,SizeOf(Temp),Temp) then Exit;
+  if not CheckBayes(Temp) then Exit;
+  M:=Temp; LoadBayes:=True
+end;
+
+function SaveTree(FileName: TFileName; var M: TTreeModel): Boolean;
+begin
+  SaveTree:=False;
+  if not CheckTree(M) then Exit;
+  SaveTree:=SaveRaw(FileName,9,SizeOf(M),M)
+end;
+function LoadTree(FileName: TFileName; var M: TTreeModel): Boolean;
+var Temp: TTreeModel;
+begin
+  LoadTree:=False;
+  if not LoadRaw(FileName,9,SizeOf(Temp),Temp) then Exit;
+  if not CheckTree(Temp) then Exit;
+  M:=Temp; LoadTree:=True
+end;
+
+function SaveVocabulary(FileName: TFileName; var M: TTextModel): Boolean;
+begin
+  SaveVocabulary:=False;
+  if not CheckTextModel(M) then Exit;
+  SaveVocabulary:=SaveRaw(FileName,10,SizeOf(M),M)
+end;
+function LoadVocabulary(FileName: TFileName; var M: TTextModel): Boolean;
+var Temp: TTextModel;
+begin
+  LoadVocabulary:=False;
+  if not LoadRaw(FileName,10,SizeOf(Temp),Temp) then Exit;
+  if not CheckTextModel(Temp) then Exit;
+  M:=Temp; LoadVocabulary:=True
+end;
+
+function SaveRules(FileName: TFileName; var M: TRuleSet): Boolean;
+begin
+  SaveRules:=False;
+  if not CheckRules(M) then Exit;
+  SaveRules:=SaveRaw(FileName,11,SizeOf(M),M)
+end;
+function LoadRules(FileName: TFileName; var M: TRuleSet): Boolean;
+var Temp: TRuleSet;
+begin
+  LoadRules:=False;
+  if not LoadRaw(FileName,11,SizeOf(Temp),Temp) then Exit;
+  if not CheckRules(Temp) then Exit;
+  M:=Temp; LoadRules:=True
+end;
+
+function SaveFacts(FileName: TFileName; var M: TFacts): Boolean;
+begin
+  SaveFacts:=False;
+  if not CheckFacts(M) then Exit;
+  SaveFacts:=SaveRaw(FileName,12,SizeOf(M),M)
+end;
+function LoadFacts(FileName: TFileName; var M: TFacts): Boolean;
+var Temp: TFacts;
+begin
+  LoadFacts:=False;
+  if not LoadRaw(FileName,12,SizeOf(Temp),Temp) then Exit;
+  if not CheckFacts(Temp) then Exit;
+  M:=Temp; LoadFacts:=True
+end;
+
+function SaveGrid(FileName: TFileName; var M: TGrid): Boolean;
+begin
+  SaveGrid:=False;
+  if not CheckGrid(M) then Exit;
+  SaveGrid:=SaveRaw(FileName,13,SizeOf(M),M)
+end;
+function LoadGrid(FileName: TFileName; var M: TGrid): Boolean;
+var Temp: TGrid;
+begin
+  LoadGrid:=False;
+  if not LoadRaw(FileName,13,SizeOf(Temp),Temp) then Exit;
+  if not CheckGrid(Temp) then Exit;
+  M:=Temp; LoadGrid:=True
+end;
+
+function SaveFuzzy(FileName: TFileName; var M: TFuzzySystem): Boolean;
+begin
+  SaveFuzzy:=False;
+  if not CheckFuzzy(M) then Exit;
+  SaveFuzzy:=SaveRaw(FileName,14,SizeOf(M),M)
+end;
+function LoadFuzzy(FileName: TFileName; var M: TFuzzySystem): Boolean;
+var Temp: TFuzzySystem;
+begin
+  LoadFuzzy:=False;
+  if not LoadRaw(FileName,14,SizeOf(Temp),Temp) then Exit;
+  if not CheckFuzzy(Temp) then Exit;
+  M:=Temp; LoadFuzzy:=True
+end;
+
+function SaveQ(FileName: TFileName; var M: TQModel): Boolean;
+begin
+  SaveQ:=False;
+  if not CheckQ(M) then Exit;
+  SaveQ:=SaveRaw(FileName,15,SizeOf(M),M)
+end;
+function LoadQ(FileName: TFileName; var M: TQModel): Boolean;
+var Temp: TQModel;
+begin
+  LoadQ:=False;
+  if not LoadRaw(FileName,15,SizeOf(Temp),Temp) then Exit;
+  if not CheckQ(Temp) then Exit;
+  M:=Temp; LoadQ:=True
+end;
+
+function GoodStoredData(var D: TDataSet): Boolean;
+var J: Integer;
+begin
+  GoodStoredData:=False;
+  if not CheckData(D,False) then Exit;
+  if Length(D.TargetName)>31 then begin
+    SetAIError(ErrFormat,'Panjang nama target tidak valid'); Exit
+  end;
+  for J:=1 to D.Features do if Length(D.Names[J])>31 then begin
+    SetAIError(ErrFormat,'Panjang nama fitur tidak valid'); Exit
+  end;
+  GoodStoredData:=True
+end;
+function SaveKNN(FileName: TFileName; var M: TKNNModel): Boolean;
+var P: Pointer; Store: PKNNStore; Temp: TKNNModel; OK: Boolean;
+begin
+  ClearAIError; SaveKNN:=False;
+  if not M.Fitted or (M.Data=nil) then begin SetAIError(ErrModel,'KNN belum dilatih'); Exit end;
+  if not GoodStoredData(M.Data^) then Exit;
+  if not FitKNN(M.Data^,M.K,Temp) then Exit;
+  if (Temp.Count<>M.Count) or (Temp.Features<>M.Features) or
+     (Temp.TargetKind<>M.TargetKind) then begin SetAIError(ErrModel,'Metadata KNN berubah'); Exit end;
+  if not NewBuffer(SizeOf(TKNNStore),P) then Exit;
+  Store:=P; FillChar(Store^,SizeOf(TKNNStore),0);
+  Store^.K:=M.K; Store^.Data:=M.Data^;
+  OK:=SaveRaw(FileName,16,SizeOf(TKNNStore),Store^);
+  FreeMem(P,SizeOf(TKNNStore)); SaveKNN:=OK
+end;
+function LoadKNN(FileName: TFileName; var Storage: TDataSet;
+  var M: TKNNModel): Boolean;
+var P: Pointer; Store: PKNNStore; Temp: TKNNModel; OK: Boolean;
+begin
+  ClearAIError; LoadKNN:=False;
+  if not NewBuffer(SizeOf(TKNNStore),P) then Exit;
+  Store:=P;
+  OK:=LoadRaw(FileName,16,SizeOf(TKNNStore),Store^);
+  if OK then OK:=GoodStoredData(Store^.Data);
+  if OK then OK:=FitKNN(Store^.Data,Store^.K,Temp);
+  if OK then begin
+    Storage:=Store^.Data; Temp.Data:=@Storage; M:=Temp
+  end;
+  FreeMem(P,SizeOf(TKNNStore)); LoadKNN:=OK
+end;
+end.
+
+======================================================================
+AINNET.PAS
+======================================================================
+
+unit AINNet;
+interface
+uses AITypes,AIOptim;
+const MaxHidden=8;
+type
+  TNeuralModel = record
+    Fitted: Boolean;
+    Features,Hidden: Integer;
+    InputW: array[1..MaxHidden] of TVector;
+    HiddenBias,OutputW: TVector;
+    OutputBias: TFloat;
+  end;
+function CheckNeural(var M: TNeuralModel): Boolean;
+function FitNeural(var D: TDataSet; Hidden: Integer;
+  var Config: TTrainConfig; var M: TNeuralModel; var Info: TTrainInfo): Boolean;
+function PredictNeural(var M: TNeuralModel; var X: TVector;
+  var Probability: TFloat; var LabelValue: Integer): Boolean;
+implementation
+uses AIMath;
+function CheckNeural(var M: TNeuralModel): Boolean;
+var H: Integer;
+begin
+  ClearAIError; CheckNeural:=False;
+  if not M.Fitted or (M.Features<1) or (M.Features>MaxFeatures) or
+     (M.Hidden<1) or (M.Hidden>MaxHidden) then begin
+    SetAIError(ErrModel,'Jaringan belum dilatih atau dimensi tidak valid'); Exit
+  end;
+  for H:=1 to M.Hidden do if not CheckVector(M.InputW[H],M.Features) then Exit;
+  if not CheckVector(M.HiddenBias,M.Hidden) then Exit;
+  if not CheckVector(M.OutputW,M.Hidden) then Exit;
+  if not ValidNumber(M.OutputBias) then begin SetAIError(ErrModel,'Bias output tidak valid'); Exit end;
+  CheckNeural:=True
+end;
+function Forward(var M: TNeuralModel; var X,A: TVector;
+  var Z,P: TFloat): Boolean;
+var H,J: Integer; S: TFloat;
+begin
+  Forward:=False;
+  for H:=1 to M.Hidden do begin
+    S:=M.HiddenBias[H];
+    for J:=1 to M.Features do S:=S+M.InputW[H,J]*X[J];
+    if not ValidNumber(S) then begin SetAIError(ErrValue,'Aktivasi hidden melampaui batas'); Exit end;
+    A[H]:=Sigmoid(S)
+  end;
+  Z:=M.OutputBias;
+  for H:=1 to M.Hidden do Z:=Z+M.OutputW[H]*A[H];
+  if not ValidNumber(Z) then begin SetAIError(ErrValue,'Aktivasi output melampaui batas'); Exit end;
+  P:=Sigmoid(Z); Forward:=True
+end;
+function FitNeural(var D: TDataSet; Hidden: Integer;
+  var Config: TTrainConfig; var M: TNeuralModel; var Info: TTrainInfo): Boolean;
+var V: TNeuralModel; A,Delta: TVector; Order: TIndexList;
+    I,J,H,R,Epoch,Reason: Integer;
+    Z,P,E,G,Loss,Range: TFloat; Stop: TStopState; Done: Boolean;
+begin
+  FillChar(M,SizeOf(M),0); FillChar(V,SizeOf(V),0);
+  InitTraining(Info,Stop); FitNeural:=False;
+  if not CheckBinaryData(D) then Exit;
+  if not CheckTraining(Config) then Exit;
+  if (Hidden<1) or (Hidden>MaxHidden) then begin
+    SetAIError(ErrSize,'Hidden harus 1..8'); Exit
+  end;
+  M.Features:=D.Features; M.Hidden:=Hidden; AISetSeed(Config.Seed);
+  Range:=6; Range:=Sqrt(Range/(D.Features+Hidden));
+  for H:=1 to Hidden do for J:=1 to D.Features do
+    M.InputW[H,J]:=(2*AIRandom-1)*Range;
+  Range:=6; Range:=Sqrt(Range/(Hidden+1));
+  for H:=1 to Hidden do M.OutputW[H]:=(2*AIRandom-1)*Range;
+  Epoch:=0;
+  repeat
+    Inc(Epoch); ShuffleRows(D.Count,Order);
+    for I:=1 to D.Count do begin
+      R:=Order[I];
+      if not Forward(M,D.X[R],A,Z,P) then Exit;
+      E:=P-D.Labels[R];
+      { Hitung delta dengan bobot output LAMA sebelum pembaruan apa pun. }
+      for H:=1 to Hidden do Delta[H]:=E*M.OutputW[H]*A[H]*(1-A[H]);
+      for H:=1 to Hidden do begin
+        G:=E*A[H]+Config.L2*M.OutputW[H];
+        if not SGDStep(M.OutputW[H],V.OutputW[H],G,Config.Rate,Config.Momentum,Config.Clip) then Exit;
+        for J:=1 to D.Features do begin
+          G:=Delta[H]*D.X[R,J]+Config.L2*M.InputW[H,J];
+          if not SGDStep(M.InputW[H,J],V.InputW[H,J],G,Config.Rate,Config.Momentum,Config.Clip) then Exit
+        end;
+        if not SGDStep(M.HiddenBias[H],V.HiddenBias[H],Delta[H],Config.Rate,Config.Momentum,Config.Clip) then Exit
+      end;
+      if not SGDStep(M.OutputBias,V.OutputBias,E,Config.Rate,Config.Momentum,Config.Clip) then Exit
+    end;
+    Loss:=0;
+    for I:=1 to D.Count do begin
+      if not Forward(M,D.X[I],A,Z,P) then Exit;
+      E:=BinaryLoss(Z,D.Labels[I]); if AIErrorCode<>0 then Exit;
+      Loss:=Loss+E/D.Count
+    end;
+    for H:=1 to Hidden do begin
+      Loss:=Loss+0.5*Config.L2*Sqr(M.OutputW[H]);
+      for J:=1 to D.Features do Loss:=Loss+0.5*Config.L2*Sqr(M.InputW[H,J])
+    end;
+    if not ValidNumber(Loss) then begin SetAIError(ErrValue,'Loss jaringan melampaui batas'); Exit end;
+    Done:=ShouldStop(Config,Stop,Loss,Reason);
+    RecordLoss(Info,Epoch,Config.MaxEpochs,Loss,Done or (Epoch=Config.MaxEpochs))
+  until Done or (Epoch>=Config.MaxEpochs);
+  if Reason=0 then Reason:=StopLimit;
+  Info.StopReason:=Reason; Info.Converged:=Reason=StopGoal;
+  M.Fitted:=True; FitNeural:=True
+end;
+function PredictNeural(var M: TNeuralModel; var X: TVector;
+  var Probability: TFloat; var LabelValue: Integer): Boolean;
+var A: TVector; Z: TFloat;
+begin
+  PredictNeural:=False; Probability:=0; LabelValue:=-1;
+  if not CheckNeural(M) then Exit;
+  if not CheckVector(X,M.Features) then Exit;
+  if not Forward(M,X,A,Z,Probability) then Exit;
+  LabelValue:=Ord(Probability>=0.5); PredictNeural:=True
+end;
+end.
+
+======================================================================
+AIOPTIM.PAS
+======================================================================
+
+unit AIOptim;
+interface
+uses AITypes;
+const StopGoal=1; StopPlateau=2; StopLimit=3;
+type
+  TTrainConfig = record
+    MaxEpochs, Patience: Integer;
+    Rate, Momentum, L2, Clip, GoalLoss, MinDelta: TFloat;
+    Seed: LongInt;
+  end;
+  TTrainInfo = record
+    Epochs, StopReason, HistoryCount: Integer;
+    Converged: Boolean;
+    FinalLoss: TFloat;
+    History: TSeries;
+    HistoryEpoch: TIndexList;
+  end;
+  TStopState = record Best: TFloat; Stale: Integer end;
+procedure DefaultTraining(var C: TTrainConfig);
+function CheckTraining(var C: TTrainConfig): Boolean;
+function CheckBinaryData(var D: TDataSet): Boolean;
+function SGDStep(var Value, Velocity: TFloat; Gradient, Rate,
+  Momentum, Clip: TFloat): Boolean;
+function VectorStep(var Values,Velocity,Gradient: TVector;
+  N: Integer; Rate,Momentum,Clip: TFloat): Boolean;
+function BinaryLoss(Logit: TFloat; Target: Integer): TFloat;
+procedure InitTraining(var Info: TTrainInfo; var Stop: TStopState);
+procedure RecordLoss(var Info: TTrainInfo; Epoch,MaxEpochs: Integer;
+  Loss: TFloat; Force: Boolean);
+function ShouldStop(var C: TTrainConfig; var S: TStopState;
+  Loss: TFloat; var Reason: Integer): Boolean;
+procedure ShuffleRows(N: Integer; var Order: TIndexList);
+implementation
+uses AIMath;
+procedure DefaultTraining(var C: TTrainConfig);
+begin
+  C.MaxEpochs:=2000; C.Patience:=300; C.Rate:=0.1;
+  C.Momentum:=0; C.L2:=0; C.Clip:=5; C.GoalLoss:=0.01;
+  C.MinDelta:=1E-8; C.Seed:=42
+end;
+function CheckTraining(var C: TTrainConfig): Boolean;
+begin
+  ClearAIError; CheckTraining:=False;
+  if (C.MaxEpochs<1) or (C.MaxEpochs>10000) or
+     (C.Patience<1) or (C.Patience>10000) then begin
+    SetAIError(ErrSize,'Epoch/patience harus 1..10000'); Exit
+  end;
+  if not ValidNumber(C.Rate) or not ValidNumber(C.Momentum) or
+     not ValidNumber(C.L2) or not ValidNumber(C.Clip) or
+     not ValidNumber(C.GoalLoss) or not ValidNumber(C.MinDelta) then begin
+    SetAIError(ErrValue,'Konfigurasi pelatihan bukan angka valid'); Exit
+  end;
+  if (C.Rate<=0) or (C.Rate>10) or (C.Momentum<0) or
+     (C.Momentum>=1) or (C.L2<0) or (C.L2>100) or
+     (C.Clip<=0) or (C.Clip>1E6) or (C.GoalLoss<0) or
+     (C.MinDelta<0) then begin
+    SetAIError(ErrValue,'Parameter pelatihan di luar batas'); Exit
+  end;
+  CheckTraining:=True
+end;
+function CheckBinaryData(var D: TDataSet): Boolean;
+var I,J: Integer;
+begin
+  CheckBinaryData:=False;
+  if not CheckData(D,False) then Exit;
+  if D.TargetKind<>TargetClass then begin
+    SetAIError(ErrValue,'Pelatihan ini memerlukan target kelas 0/1'); Exit
+  end;
+  for I:=1 to D.Count do begin
+    if (D.Labels[I]<>0) and (D.Labels[I]<>1) then begin
+      SetAIError(ErrValue,'Label harus 0 atau 1'); Exit
+    end;
+    for J:=1 to D.Features do if Abs(D.X[I,J])>1E4 then begin
+      SetAIError(ErrValue,'Skalakan fitur latih ke magnitudo <=1E4'); Exit
+    end
+  end;
+  CheckBinaryData:=True
+end;
+function SGDStep(var Value, Velocity: TFloat; Gradient, Rate,
+  Momentum, Clip: TFloat): Boolean;
+var V,W: TFloat;
+begin
+  ClearAIError; SGDStep:=False;
+  if not ValidNumber(Value) or not ValidNumber(Velocity) or
+     not ValidNumber(Gradient) or not ValidNumber(Rate) or
+     not ValidNumber(Momentum) or not ValidNumber(Clip) then begin
+    SetAIError(ErrValue,'Argumen SGD bukan angka valid'); Exit
+  end;
+  if (Rate<=0) or (Rate>10) or (Momentum<0) or (Momentum>=1) or
+     (Clip<=0) or (Clip>1E6) then begin
+    SetAIError(ErrValue,'Rate, momentum atau clip tidak valid'); Exit
+  end;
+  if Gradient>Clip then Gradient:=Clip;
+  if Gradient < -Clip then Gradient:=-Clip;
+  V:=Momentum*Velocity+Gradient; W:=Value-Rate*V;
+  if not ValidNumber(V) or not ValidNumber(W) then begin
+    SetAIError(ErrValue,'Langkah SGD melampaui batas numerik'); Exit
+  end;
+  Velocity:=V; Value:=W; SGDStep:=True
+end;
+function VectorStep(var Values,Velocity,Gradient: TVector;
+  N: Integer; Rate,Momentum,Clip: TFloat): Boolean;
+var V,W: TVector; J: Integer;
+begin
+  VectorStep:=False;
+  if not CheckVector(Values,N) then Exit;
+  if not CheckVector(Velocity,N) then Exit;
+  if not CheckVector(Gradient,N) then Exit;
+  W:=Values; V:=Velocity;
+  for J:=1 to N do
+    if not SGDStep(W[J],V[J],Gradient[J],Rate,Momentum,Clip) then Exit;
+  Values:=W; Velocity:=V; VectorStep:=True
+end;
+function BinaryLoss(Logit: TFloat; Target: Integer): TFloat;
+var T: TFloat;
+begin
+  ClearAIError; BinaryLoss:=0;
+  if not ValidNumber(Logit) or ((Target<>0) and (Target<>1)) then begin
+    SetAIError(ErrValue,'Logit atau target loss tidak valid'); Exit
+  end;
+  T:=Abs(Logit);
+  if T>80 then T:=0 else T:=Ln(1+Exp(-T));
+  if Logit>=0 then BinaryLoss:=Logit*(1-Target)+T
+  else BinaryLoss:=-Logit*Target+T
+end;
+procedure InitTraining(var Info: TTrainInfo; var Stop: TStopState);
+begin
+  FillChar(Info,SizeOf(Info),0); Stop.Best:=1E30; Stop.Stale:=0
+end;
+procedure RecordLoss(var Info: TTrainInfo; Epoch,MaxEpochs: Integer;
+  Loss: TFloat; Force: Boolean);
+var Stride,P: Integer;
+begin
+  Info.Epochs:=Epoch; Info.FinalLoss:=Loss;
+  Stride:=(MaxEpochs+MaxSamples-1) div MaxSamples;
+  if Stride<1 then Stride:=1;
+  if Force or (Epoch=1) or (Epoch mod Stride=0) then begin
+    P:=Info.HistoryCount;
+    if P>0 then if Info.HistoryEpoch[P]=Epoch then begin
+      Info.History[P]:=Loss; Exit
+    end;
+    if P<MaxSamples then Inc(P);
+    Info.History[P]:=Loss; Info.HistoryEpoch[P]:=Epoch;
+    Info.HistoryCount:=P
+  end
+end;
+function ShouldStop(var C: TTrainConfig; var S: TStopState;
+  Loss: TFloat; var Reason: Integer): Boolean;
+begin
+  Reason:=0; ShouldStop:=True;
+  if Loss<=C.GoalLoss then begin Reason:=StopGoal; Exit end;
+  if Loss < S.Best-C.MinDelta then begin S.Best:=Loss; S.Stale:=0 end
+  else Inc(S.Stale);
+  if S.Stale>=C.Patience then begin Reason:=StopPlateau; Exit end;
+  ShouldStop:=False
+end;
+procedure ShuffleRows(N: Integer; var Order: TIndexList);
+var I,J,T: Integer;
+begin
+  ClearAIError;
+  if (N<1) or (N>MaxSamples) then begin
+    SetAIError(ErrSize,'ShuffleRows memerlukan 1..200 baris'); Exit
+  end;
+  for I:=1 to N do Order[I]:=I;
+  for I:=N downto 2 do begin
+    J:=AIRandomInt(I)+1; T:=Order[I]; Order[I]:=Order[J]; Order[J]:=T
+  end
+end;
+end.
+
+======================================================================
+AIPLOT.PAS
+======================================================================
+
+unit AIPlot;
+{ BGI pada Turbo Pascal. SVG lintas platform tanpa dependensi tambahan. }
+{$IFNDEF FPC}
+  {$IFNDEF ODIN}
+    {$DEFINE TPAIBGI}
+  {$ENDIF}
+{$ENDIF}
+interface
+uses AITypes;
+function PlotOpen(BGIPath: TFileName): Boolean;
+procedure PlotClose;
+function PlotScatter(var X,Y: TSeries; N: Integer;
+  var Groups: TLabels; Title: string): Boolean;
+function PlotCurve(var Y: TSeries; N: Integer; Title: string): Boolean;
+function PlotRegression(var X,Y: TSeries; N: Integer;
+  Intercept,Slope: TFloat; Title: string): Boolean;
+function SaveScatterSVG(FileName: TFileName; var X,Y: TSeries;
+  N: Integer; var Groups: TLabels; Title: string): Boolean;
+function SaveCurveSVG(FileName: TFileName; var Y: TSeries;
+  N: Integer; Title: string): Boolean;
+function SaveRegressionSVG(FileName: TFileName; var X,Y: TSeries;
+  N: Integer; Intercept,Slope: TFloat; Title: string): Boolean;
+implementation
+{$IFDEF TPAIBGI}
+uses Graph;
+{$ENDIF}
+var Opened: Boolean;
+type
+  TBounds = record XLo,XHi,YLo,YHi: TFloat end;
+function Bounds(var X,Y: TSeries; N: Integer; var B: TBounds): Boolean;
+var I: Integer;
+begin
+  ClearAIError; Bounds := False;
+  if (N < 1) or (N > MaxSamples) then begin
+    SetAIError(ErrSize,'Plot memerlukan 1..200 titik'); Exit
+  end;
+  for I := 1 to N do
+    if not ValidNumber(X[I]) or not ValidNumber(Y[I]) then begin
+      SetAIError(ErrValue,'Koordinat plot tidak valid'); Exit
+    end;
+  B.XLo := X[1]; B.XHi := X[1]; B.YLo := Y[1]; B.YHi := Y[1];
+  for I := 2 to N do begin
+    if X[I] < B.XLo then B.XLo := X[I];
+    if X[I] > B.XHi then B.XHi := X[I];
+    if Y[I] < B.YLo then B.YLo := Y[I];
+    if Y[I] > B.YHi then B.YHi := Y[I]
+  end;
+  Bounds := True
+end;
+procedure PadBounds(var B: TBounds);
+var DX,DY: TFloat;
+begin
+  DX := (B.XHi-B.XLo)*0.08; DY := (B.YHi-B.YLo)*0.08;
+  if DX < AIEpsilon then DX := 1;
+  if DY < AIEpsilon then DY := 1;
+  B.XLo := B.XLo-DX; B.XHi := B.XHi+DX;
+  B.YLo := B.YLo-DY; B.YHi := B.YHi+DY
+end;
+function PixelX(X: TFloat; var B: TBounds; Width: Integer): Integer;
+begin PixelX := 80+Round((X-B.XLo)/(B.XHi-B.XLo)*(Width-110)) end;
+function PixelY(Y: TFloat; var B: TBounds; Height: Integer): Integer;
+begin PixelY := Height-65-Round((Y-B.YLo)/(B.YHi-B.YLo)*(Height-120)) end;
+function Num(X: TFloat): string;
+var S: string[40];
+begin
+  if (Abs(X) >= 100000) or ((X <> 0) and (Abs(X) < 0.001)) then Str(X:12,S)
+  else Str(X:0:3,S);
+  Num := S
+end;
+function GroupColor(Group: Integer): Integer;
+var C: Integer;
+begin
+  C := Group mod 10; if C < 0 then C := C+10;
+  case C of
+    0: GroupColor := 9;
+    1: GroupColor := 12;
+    2: GroupColor := 10;
+    3: GroupColor := 14;
+    4: GroupColor := 13;
+    5: GroupColor := 11;
+    6: GroupColor := 1;
+    7: GroupColor := 4;
+    8: GroupColor := 2;
+    9: GroupColor := 5
+  end
+end;
+function SVGColor(Group: Integer): string;
+var C: Integer;
+begin
+  C := Group mod 10; if C < 0 then C := C+10;
+  case C of
+    0: SVGColor := '#2563eb';
+    1: SVGColor := '#dc2626';
+    2: SVGColor := '#15803d';
+    3: SVGColor := '#a16207';
+    4: SVGColor := '#9333ea';
+    5: SVGColor := '#0891b2';
+    6: SVGColor := '#1e3a8a';
+    7: SVGColor := '#7f1d1d';
+    8: SVGColor := '#14532d';
+    9: SVGColor := '#701a75'
+  end
+end;
+function PlotOpen(BGIPath: TFileName): Boolean;
+{$IFDEF TPAIBGI}
+var Driver,Mode,E: Integer;
+{$ENDIF}
+begin
+  ClearAIError; PlotOpen := False;
+  if Opened then begin PlotOpen := True; Exit end;
+  {$IFDEF TPAIBGI}
+  Driver := Detect; InitGraph(Driver,Mode,BGIPath); E := GraphResult;
+  if E <> grOk then begin
+    SetAIError(ErrGraphics,'BGI gagal: '+GraphErrorMsg(E)); Exit
+  end;
+  Opened := True; PlotOpen := True
+  {$ELSE}
+  SetAIError(ErrGraphics,'Build ini memakai ekspor SVG; BGI untuk Turbo Pascal')
+  {$ENDIF}
+end;
+procedure PlotClose;
+begin
+  {$IFDEF TPAIBGI}
+  if Opened then CloseGraph;
+  {$ENDIF}
+  Opened := False
+end;
+{$IFDEF TPAIBGI}
+procedure DrawAxes(var B: TBounds; Title: string);
+var W,H,I,P: Integer; X,Y: TFloat;
+begin
+  W := GetMaxX; H := GetMaxY; ClearDevice; SetColor(White);
+  OutTextXY(80,15,Copy(Title,1,65));
+  Rectangle(80,55,W-30,H-65);
+  for I := 0 to 4 do begin
+    X := B.XLo+(B.XHi-B.XLo)*I/4;
+    Y := B.YLo+(B.YHi-B.YLo)*I/4;
+    P := PixelX(X,B,W); Line(P,H-65,P,H-60);
+    OutTextXY(P-20,H-45,Num(X));
+    P := PixelY(Y,B,H); Line(75,P,80,P);
+    OutTextXY(2,P,Num(Y))
+  end;
+  OutTextXY(W-35,H-25,'X'); OutTextXY(5,35,'Y')
+end;
+{$ENDIF}
+function ScreenPlot(var X,Y: TSeries; N: Integer; var Groups: TLabels;
+  Title: string; Join,Regression: Boolean; Intercept,Slope: TFloat): Boolean;
+var B: TBounds; X1,X2,Y1,Y2: TFloat;
+{$IFDEF TPAIBGI}
+    I,PX,PY,W,H: Integer;
+{$ENDIF}
+begin
+  ScreenPlot := False;
+  if not Bounds(X,Y,N,B) then Exit;
+  if not Opened then begin
+    SetAIError(ErrGraphics,'Panggil PlotOpen terlebih dahulu'); Exit
+  end;
+  X1 := B.XLo; X2 := B.XHi; Y1 := 0; Y2 := 0;
+  if Regression then begin
+    if not ValidNumber(Intercept) or not ValidNumber(Slope) then begin
+      SetAIError(ErrValue,'Parameter garis regresi tidak valid'); Exit
+    end;
+    Y1 := Intercept+Slope*B.XLo; Y2 := Intercept+Slope*B.XHi;
+    if not ValidNumber(Y1) or not ValidNumber(Y2) then begin
+      SetAIError(ErrValue,'Garis regresi melampaui batas angka'); Exit
+    end;
+    if Y1 < B.YLo then B.YLo := Y1;
+    if Y1 > B.YHi then B.YHi := Y1;
+    if Y2 < B.YLo then B.YLo := Y2;
+    if Y2 > B.YHi then B.YHi := Y2
+  end;
+  PadBounds(B);
+  {$IFDEF TPAIBGI}
+  W := GetMaxX; H := GetMaxY; DrawAxes(B,Title);
+  for I := 1 to N do begin
+    SetColor(GroupColor(Groups[I]));
+    PX := PixelX(X[I],B,W); PY := PixelY(Y[I],B,H);
+    if Join and (I > 1) then
+      Line(PixelX(X[I-1],B,W),PixelY(Y[I-1],B,H),PX,PY);
+    Circle(PX,PY,3)
+  end;
+  if Regression then begin
+    SetColor(LightRed);
+    Line(PixelX(X1,B,W),PixelY(Y1,B,H),
+         PixelX(X2,B,W),PixelY(Y2,B,H))
+  end;
+  ScreenPlot := True
+  {$ELSE}
+  SetAIError(ErrGraphics,'BGI tidak tersedia pada build ini')
+  {$ENDIF}
+end;
+function PlotScatter(var X,Y: TSeries; N: Integer;
+  var Groups: TLabels; Title: string): Boolean;
+begin PlotScatter := ScreenPlot(X,Y,N,Groups,Title,False,False,0,0) end;
+function PlotCurve(var Y: TSeries; N: Integer; Title: string): Boolean;
+var X: TSeries; G: TLabels; I: Integer;
+begin
+  ClearAIError; PlotCurve := False;
+  if (N < 1) or (N > MaxSamples) then begin
+    SetAIError(ErrSize,'Panjang kurva tidak valid'); Exit
+  end;
+  FillChar(G,SizeOf(G),0); for I := 1 to N do X[I] := I;
+  PlotCurve := ScreenPlot(X,Y,N,G,Title,True,False,0,0)
+end;
+function PlotRegression(var X,Y: TSeries; N: Integer;
+  Intercept,Slope: TFloat; Title: string): Boolean;
+var G: TLabels;
+begin
+  FillChar(G,SizeOf(G),0);
+  PlotRegression := ScreenPlot(X,Y,N,G,Title,False,True,Intercept,Slope)
+end;
+{$I-}
+procedure WriteEscaped(var F: Text; S: string);
+var I: Integer;
+begin
+  for I := 1 to Length(S) do case S[I] of
+    '&': Write(F,'&amp;'); '<': Write(F,'&lt;');
+    '>': Write(F,'&gt;'); '"': Write(F,'&quot;');
+    else if Ord(S[I]) >= 32 then Write(F,S[I])
+  end
+end;
+{$I+}
+function ExportSVG(FileName: TFileName; var X,Y: TSeries; N: Integer;
+  var Groups: TLabels; Title: string; Join,Regression: Boolean;
+  Intercept,Slope: TFloat): Boolean;
+var F: Text; B: TBounds; I,E,CloseErr,PX,PY: Integer;
+    VX,VY,X1,X2,Y1,Y2: TFloat;
+begin
+  ExportSVG := False;
+  if not Bounds(X,Y,N,B) then Exit;
+  X1 := B.XLo; X2 := B.XHi; Y1 := 0; Y2 := 0;
+  if Regression then begin
+    if not ValidNumber(Intercept) or not ValidNumber(Slope) then begin
+      SetAIError(ErrValue,'Parameter garis regresi tidak valid'); Exit
+    end;
+    Y1 := Intercept+Slope*X1; Y2 := Intercept+Slope*X2;
+    if not ValidNumber(Y1) or not ValidNumber(Y2) then begin
+      SetAIError(ErrValue,'Garis regresi melampaui batas angka'); Exit
+    end;
+    if Y1 < B.YLo then B.YLo := Y1;
+    if Y1 > B.YHi then B.YHi := Y1;
+    if Y2 < B.YLo then B.YLo := Y2;
+    if Y2 > B.YHi then B.YHi := Y2
+  end;
+  PadBounds(B); Assign(F,FileName);
+  {$I-} Rewrite(F); E := IOResult; {$I+}
+  if E <> 0 then begin SetAIError(ErrIO,'Berkas SVG gagal dibuat'); Exit end;
+  {$I-}
+  WriteLn(F,'<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">');
+  WriteLn(F,'<rect width="800" height="500" fill="#f8fafc"/>');
+  WriteLn(F,'<g font-family="sans-serif" fill="#0f172a" font-size="12">');
+  Write(F,'<text x="80" y="30" font-size="18">'); WriteEscaped(F,Title);
+  WriteLn(F,'</text>');
+  WriteLn(F,'<rect x="80" y="55" width="690" height="380" fill="white" stroke="#94a3b8"/>');
+  for I := 0 to 4 do begin
+    VX := B.XLo+(B.XHi-B.XLo)*I/4;
+    VY := B.YLo+(B.YHi-B.YLo)*I/4;
+    PX := PixelX(VX,B,800); PY := PixelY(VY,B,500);
+    WriteLn(F,'<text x="',PX,'" y="458" text-anchor="middle">',Num(VX),'</text>');
+    WriteLn(F,'<text x="72" y="',PY+4,'" text-anchor="end">',Num(VY),'</text>')
+  end;
+  if Join then begin
+    Write(F,'<polyline fill="none" stroke="#2563eb" stroke-width="2" points="');
+    for I := 1 to N do Write(F,PixelX(X[I],B,800),',',PixelY(Y[I],B,500),' ');
+    WriteLn(F,'"/>')
+  end;
+  for I := 1 to N do
+    WriteLn(F,'<circle cx="',PixelX(X[I],B,800),'" cy="',PixelY(Y[I],B,500),
+      '" r="4" fill="',SVGColor(Groups[I]),'"/>');
+  if Regression then
+    WriteLn(F,'<line x1="',PixelX(X1,B,800),'" y1="',PixelY(Y1,B,500),
+      '" x2="',PixelX(X2,B,800),'" y2="',PixelY(Y2,B,500),
+      '" stroke="#dc2626" stroke-width="2"/>');
+  WriteLn(F,'<text x="760" y="485">X</text><text x="20" y="45">Y</text>');
+  WriteLn(F,'<text x="80" y="485">OTP-AI 2.0 | Warna mengikuti kode kelompok modulo 10</text>');
+  WriteLn(F,'</g></svg>');
+  E := IOResult; Close(F); CloseErr := IOResult;
+  {$I+}
+  if (E <> 0) or (CloseErr <> 0) then begin
+    SetAIError(ErrIO,'Gagal menulis SVG'); Exit
+  end;
+  ExportSVG := True
+end;
+function SaveScatterSVG(FileName: TFileName; var X,Y: TSeries;
+  N: Integer; var Groups: TLabels; Title: string): Boolean;
+begin
+  SaveScatterSVG := ExportSVG(FileName,X,Y,N,Groups,Title,False,False,0,0)
+end;
+function SaveCurveSVG(FileName: TFileName; var Y: TSeries;
+  N: Integer; Title: string): Boolean;
+var X: TSeries; G: TLabels; I: Integer;
+begin
+  ClearAIError; SaveCurveSVG := False;
+  if (N < 1) or (N > MaxSamples) then begin
+    SetAIError(ErrSize,'Panjang kurva tidak valid'); Exit
+  end;
+  FillChar(G,SizeOf(G),0); for I := 1 to N do X[I] := I;
+  SaveCurveSVG := ExportSVG(FileName,X,Y,N,G,Title,True,False,0,0)
+end;
+function SaveRegressionSVG(FileName: TFileName; var X,Y: TSeries;
+  N: Integer; Intercept,Slope: TFloat; Title: string): Boolean;
+var G: TLabels;
+begin
+  FillChar(G,SizeOf(G),0);
+  SaveRegressionSVG := ExportSVG(FileName,X,Y,N,G,Title,False,True,Intercept,Slope)
+end;
+begin Opened := False end.
+
+======================================================================
+AIREWARD.PAS
+======================================================================
+
+unit AIReward;
+interface
+uses AITypes,AISearch;
+const MaxQStates=MaxGridCells; MaxQActions=4;
+type
+  TQModel = record
+    Ready: Boolean;
+    States,Actions: Integer;
+    Alpha,Gamma,Epsilon: TFloat;
+    Q: array[1..MaxQStates,1..MaxQActions] of TFloat;
+  end;
+  TQTrainInfo = record
+    Episodes,Successes,HistoryCount: Integer;
+    TotalSteps: LongInt;
+    LastReturn: TFloat;
+    Returns: TSeries;
+    HistoryEpisode: TIndexList;
+  end;
+function InitQ(States,Actions: Integer; Alpha,Gamma,Epsilon: TFloat;
+  var M: TQModel): Boolean;
+function CheckQ(var M: TQModel): Boolean;
+function ChooseAction(var M: TQModel; State: Integer; Explore: Boolean;
+  var Action: Integer): Boolean;
+function UpdateQ(var M: TQModel; State,Action,NextState: Integer;
+  Reward: TFloat; Terminal: Boolean): Boolean;
+function DecayEpsilon(var M: TQModel; Factor,Minimum: TFloat): Boolean;
+function GridStep(var G: TGrid; State,Action,Goal: Integer;
+  var NextState: Integer; var Reward: TFloat; var Terminal: Boolean): Boolean;
+function TrainGridQ(var M: TQModel; var G: TGrid; Start,Goal,
+  Episodes,MaxSteps: Integer; Seed: LongInt; var Info: TQTrainInfo): Boolean;
+function GreedyGridPath(var M: TQModel; var G: TGrid; Start,Goal: Integer;
+  var Result: TSearchResult): Boolean;
+implementation
+uses AIMath;
+function QShape(var M: TQModel): Boolean;
+begin
+  ClearAIError; QShape:=False;
+  if not M.Ready or (M.States<1) or (M.States>MaxQStates) or
+     (M.Actions<1) or (M.Actions>MaxQActions) or
+     not ValidNumber(M.Alpha) or not ValidNumber(M.Gamma) or
+     not ValidNumber(M.Epsilon) or (M.Alpha<=0) or (M.Alpha>1) or
+     (M.Gamma<0) or (M.Gamma>1) or (M.Epsilon<0) or (M.Epsilon>1) then begin
+    SetAIError(ErrModel,'Konfigurasi Q-table tidak valid'); Exit
+  end;
+  QShape:=True
+end;
+function CheckQ(var M: TQModel): Boolean;
+var S,A: Integer;
+begin
+  CheckQ:=False;
+  if not QShape(M) then Exit;
+  for S:=1 to M.States do for A:=1 to M.Actions do
+    if not ValidNumber(M.Q[S,A]) then begin SetAIError(ErrModel,'Nilai Q tidak valid'); Exit end;
+  CheckQ:=True
+end;
+function InitQ(States,Actions: Integer; Alpha,Gamma,Epsilon: TFloat;
+  var M: TQModel): Boolean;
+begin
+  FillChar(M,SizeOf(M),0); M.States:=States; M.Actions:=Actions;
+  M.Alpha:=Alpha; M.Gamma:=Gamma; M.Epsilon:=Epsilon; M.Ready:=True;
+  InitQ:=CheckQ(M); if AIErrorCode<>0 then M.Ready:=False
+end;
+function GoodRow(var M: TQModel; State: Integer): Boolean;
+var A: Integer;
+begin
+  GoodRow:=False;
+  if (State<1) or (State>M.States) then begin SetAIError(ErrSize,'State di luar Q-table'); Exit end;
+  for A:=1 to M.Actions do if not ValidNumber(M.Q[State,A]) then begin
+    SetAIError(ErrModel,'Nilai pada baris Q tidak valid'); Exit
+  end;
+  GoodRow:=True
+end;
+function ChooseAction(var M: TQModel; State: Integer; Explore: Boolean;
+  var Action: Integer): Boolean;
+var A: Integer;
+begin
+  ChooseAction:=False; Action:=0;
+  if not QShape(M) then Exit;
+  if not GoodRow(M,State) then Exit;
+  if Explore then if AIRandom<M.Epsilon then begin
+    Action:=AIRandomInt(M.Actions)+1; ChooseAction:=True; Exit
+  end;
+  Action:=1;
+  for A:=2 to M.Actions do if M.Q[State,A]>M.Q[State,Action] then Action:=A;
+  ChooseAction:=True
+end;
+function UpdateQ(var M: TQModel; State,Action,NextState: Integer;
+  Reward: TFloat; Terminal: Boolean): Boolean;
+var A: Integer; Best,Target,Value: TFloat;
+begin
+  UpdateQ:=False;
+  if not QShape(M) then Exit;
+  if not GoodRow(M,State) then Exit;
+  if (Action<1) or (Action>M.Actions) or not ValidNumber(Reward) then begin
+    SetAIError(ErrValue,'Aksi/reward tidak valid'); Exit
+  end;
+  Best:=0;
+  if not Terminal then begin
+    if not GoodRow(M,NextState) then Exit;
+    Best:=M.Q[NextState,1];
+    for A:=2 to M.Actions do if M.Q[NextState,A]>Best then Best:=M.Q[NextState,A]
+  end;
+  Target:=Reward+M.Gamma*Best;
+  Value:=M.Q[State,Action]+M.Alpha*(Target-M.Q[State,Action]);
+  if not ValidNumber(Value) then begin SetAIError(ErrValue,'Hasil pembaruan Q melampaui batas'); Exit end;
+  M.Q[State,Action]:=Value; UpdateQ:=True
+end;
+function DecayEpsilon(var M: TQModel; Factor,Minimum: TFloat): Boolean;
+begin
+  DecayEpsilon:=False;
+  if not QShape(M) then Exit;
+  if not ValidNumber(Factor) or not ValidNumber(Minimum) or
+     (Factor<0) or (Factor>1) or (Minimum<0) or (Minimum>M.Epsilon) then begin
+    SetAIError(ErrValue,'Decay/floor epsilon tidak valid'); Exit
+  end;
+  M.Epsilon:=M.Epsilon*Factor; if M.Epsilon<Minimum then M.Epsilon:=Minimum;
+  DecayEpsilon:=True
+end;
+function GridStep(var G: TGrid; State,Action,Goal: Integer;
+  var NextState: Integer; var Reward: TFloat; var Terminal: Boolean): Boolean;
+var R,C: Integer;
+begin
+  NextState:=State; Reward:=0; Terminal:=False; GridStep:=False;
+  if not CellPosition(G,Goal,R,C) then Exit;
+  if G.Blocked[R,C] then begin SetAIError(ErrValue,'Goal berada pada dinding'); Exit end;
+  if not GridNeighbor(G,State,Action,NextState) then Exit;
+  if State=Goal then begin NextState:=Goal; Terminal:=True; GridStep:=True; Exit end;
+  if NextState=State then Reward:=-2 else Reward:=-1;
+  Terminal:=NextState=Goal; if Terminal then Reward:=10;
+  GridStep:=True
+end;
+function Compatible(var M: TQModel; var G: TGrid; Start,Goal: Integer): Boolean;
+var Next: Integer; Reward: TFloat; Terminal: Boolean;
+begin
+  Compatible:=False;
+  if not CheckQ(M) then Exit;
+  if not CheckGrid(G) then Exit;
+  if (M.States<>G.Rows*G.Cols) or (M.Actions<>4) then begin
+    SetAIError(ErrSize,'Q-table tidak sesuai grid'); Exit
+  end;
+  if not GridStep(G,Start,1,Goal,Next,Reward,Terminal) then Exit;
+  Compatible:=True
+end;
+function TrainGridQ(var M: TQModel; var G: TGrid; Start,Goal,
+  Episodes,MaxSteps: Integer; Seed: LongInt; var Info: TQTrainInfo): Boolean;
+var Ep,Step,State,Next,Action,Stride,P: Integer;
+    Reward,Return: TFloat; Terminal: Boolean;
+begin
+  FillChar(Info,SizeOf(Info),0); TrainGridQ:=False;
+  if not Compatible(M,G,Start,Goal) then Exit;
+  if (Episodes<1) or (Episodes>10000) or (MaxSteps<1) or (MaxSteps>2000) then begin
+    SetAIError(ErrSize,'Episode 1..10000 dan langkah 1..2000 diperlukan'); Exit
+  end;
+  AISetSeed(Seed); Stride:=(Episodes+MaxSamples-1) div MaxSamples;
+  for Ep:=1 to Episodes do begin
+    State:=Start; Return:=0; Terminal:=Start=Goal; Step:=0;
+    while not Terminal and (Step<MaxSteps) do begin
+      if not ChooseAction(M,State,True,Action) then Exit;
+      if not GridStep(G,State,Action,Goal,Next,Reward,Terminal) then Exit;
+      if not UpdateQ(M,State,Action,Next,Reward,Terminal) then Exit;
+      Return:=Return+Reward; State:=Next; Inc(Step); Inc(Info.TotalSteps)
+    end;
+    if Terminal then Inc(Info.Successes);
+    if (Ep=1) or (Ep mod Stride=0) or (Ep=Episodes) then begin
+      P:=Info.HistoryCount; if P<MaxSamples then Inc(P);
+      Info.Returns[P]:=Return; Info.HistoryEpisode[P]:=Ep; Info.HistoryCount:=P
+    end;
+    Info.LastReturn:=Return; Info.Episodes:=Ep
+  end;
+  TrainGridQ:=True
+end;
+function GreedyGridPath(var M: TQModel; var G: TGrid; Start,Goal: Integer;
+  var Result: TSearchResult): Boolean;
+var Seen: array[1..MaxQStates] of Boolean;
+    State,Next,Action: Integer; Reward: TFloat; Terminal: Boolean;
+begin
+  FillChar(Result,SizeOf(Result),0); GreedyGridPath:=False;
+  if not Compatible(M,G,Start,Goal) then Exit;
+  FillChar(Seen,SizeOf(Seen),0); State:=Start;
+  repeat
+    if Seen[State] then Break;
+    Seen[State]:=True; Inc(Result.Count); Result.Cells[Result.Count]:=State;
+    if State=Goal then begin Result.Found:=True; Break end;
+    if not ChooseAction(M,State,False,Action) then Exit;
+    if not GridStep(G,State,Action,Goal,Next,Reward,Terminal) then Exit;
+    State:=Next; Inc(Result.Expanded)
+  until Result.Count=MaxGridCells;
+  if Result.Found then Result.Cost:=Result.Count-1;
+  GreedyGridPath:=True
+end;
+end.
+
+======================================================================
+AIRULE.PAS
+======================================================================
+
+unit AIRule;
+interface
+uses AITypes;
+const MaxFacts=32; MaxRules=32; MaxPremises=4;
+      FactUnknown=-1; FactFalse=0; FactTrue=1;
+type
+  TFacts = record
+    Count: Integer;
+    Names: array[1..MaxFacts] of TName;
+    Values: array[1..MaxFacts] of Integer;
+    SourceRule: array[1..MaxFacts] of Integer;
+  end;
+  TPremises = array[1..MaxPremises] of Integer;
+  TRule = record
+    Name: TName;
+    Count: Integer;
+    FactIDs,Expected: TPremises;
+    Conclusion,Value: Integer;
+  end;
+  TRuleSet = record
+    FactCount,Count: Integer;
+    Rules: array[1..MaxRules] of TRule;
+  end;
+procedure InitFacts(var F: TFacts);
+function CheckFacts(var F: TFacts): Boolean;
+procedure ResetDerivedFacts(var F: TFacts);
+function AddFact(var F: TFacts; Name: TName; Value: Integer;
+  var ID: Integer): Boolean;
+function SetFact(var F: TFacts; ID,Value: Integer): Boolean;
+procedure InitRules(FactCount: Integer; var R: TRuleSet);
+function CheckRules(var R: TRuleSet): Boolean;
+function AddRule(var R: TRuleSet; var Rule: TRule): Boolean;
+function Infer(var R: TRuleSet; var F: TFacts; var Trace: TIndexList;
+  var TraceCount: Integer): Boolean;
+procedure ExplainFact(var R: TRuleSet; var F: TFacts; ID: Integer);
+implementation
+procedure InitFacts(var F: TFacts);
+var I: Integer;
+begin
+  ClearAIError; FillChar(F,SizeOf(F),0);
+  for I:=1 to MaxFacts do F.Values[I]:=FactUnknown
+end;
+function CheckFacts(var F: TFacts): Boolean;
+var I,J: Integer;
+begin
+  ClearAIError; CheckFacts:=False;
+  if (F.Count<0) or (F.Count>MaxFacts) then begin SetAIError(ErrSize,'Jumlah fakta tidak valid'); Exit end;
+  for I:=1 to F.Count do begin
+    if (Length(F.Names[I])>31) or (F.Names[I]='') or (F.Values[I]<-1) or (F.Values[I]>1) or
+       (F.SourceRule[I]<0) or (F.SourceRule[I]>MaxRules) then begin
+      SetAIError(ErrValue,'Isi fakta tidak valid'); Exit
+    end;
+    for J:=1 to I-1 do if F.Names[I]=F.Names[J] then begin
+      SetAIError(ErrValue,'Nama fakta duplikat'); Exit
+    end
+  end;
+  CheckFacts:=True
+end;
+procedure ResetDerivedFacts(var F: TFacts);
+var I: Integer;
+begin
+  if not CheckFacts(F) then Exit;
+  for I:=1 to F.Count do if F.SourceRule[I]<>0 then begin
+    F.Values[I]:=FactUnknown; F.SourceRule[I]:=0
+  end
+end;
+function AddFact(var F: TFacts; Name: TName; Value: Integer;
+  var ID: Integer): Boolean;
+var I: Integer;
+begin
+  ID:=0; AddFact:=False;
+  if not CheckFacts(F) then Exit;
+  if (Name='') or (Value<-1) or (Value>1) then begin SetAIError(ErrValue,'Nama/nilai fakta tidak valid'); Exit end;
+  for I:=1 to F.Count do if F.Names[I]=Name then begin
+    SetAIError(ErrValue,'Fakta sudah terdaftar'); Exit
+  end;
+  if F.Count=MaxFacts then begin SetAIError(ErrSize,'Fakta penuh'); Exit end;
+  Inc(F.Count); ID:=F.Count; F.Names[ID]:=Name; F.Values[ID]:=Value;
+  F.SourceRule[ID]:=0; AddFact:=True
+end;
+function SetFact(var F: TFacts; ID,Value: Integer): Boolean;
+begin
+  SetFact:=False;
+  if not CheckFacts(F) then Exit;
+  if (ID<1) or (ID>F.Count) or (Value<-1) or (Value>1) then begin
+    SetAIError(ErrValue,'ID/nilai fakta tidak valid'); Exit
+  end;
+  ResetDerivedFacts(F);
+  F.Values[ID]:=Value; F.SourceRule[ID]:=0; SetFact:=True
+end;
+procedure InitRules(FactCount: Integer; var R: TRuleSet);
+begin ClearAIError; FillChar(R,SizeOf(R),0); R.FactCount:=FactCount end;
+function GoodRule(var Rule: TRule; FactCount: Integer): Boolean;
+var I: Integer;
+begin
+  GoodRule:=False;
+  if (Length(Rule.Name)>31) or (Rule.Count<0) or (Rule.Count>MaxPremises) or
+     (Rule.Conclusion<1) or (Rule.Conclusion>FactCount) or
+     (Rule.Value<0) or (Rule.Value>1) then begin
+    SetAIError(ErrValue,'Kesimpulan/ukuran aturan tidak valid'); Exit
+  end;
+  for I:=1 to Rule.Count do if (Rule.FactIDs[I]<1) or
+    (Rule.FactIDs[I]>FactCount) or (Rule.Expected[I]<0) or
+    (Rule.Expected[I]>1) then begin
+    SetAIError(ErrValue,'Premis aturan tidak valid'); Exit
+  end;
+  GoodRule:=True
+end;
+function CheckRules(var R: TRuleSet): Boolean;
+var I: Integer;
+begin
+  ClearAIError; CheckRules:=False;
+  if (R.Count<0) or (R.Count>MaxRules) or
+     (R.FactCount<1) or (R.FactCount>MaxFacts) then begin
+    SetAIError(ErrSize,'Ukuran basis aturan tidak valid'); Exit
+  end;
+  for I:=1 to R.Count do if not GoodRule(R.Rules[I],R.FactCount) then Exit;
+  CheckRules:=True
+end;
+function AddRule(var R: TRuleSet; var Rule: TRule): Boolean;
+begin
+  AddRule:=False;
+  if not CheckRules(R) then Exit;
+  if not GoodRule(Rule,R.FactCount) then Exit;
+  if R.Count=MaxRules then begin SetAIError(ErrSize,'Basis aturan penuh'); Exit end;
+  Inc(R.Count); R.Rules[R.Count]:=Rule; AddRule:=True
+end;
+function Infer(var R: TRuleSet; var F: TFacts; var Trace: TIndexList;
+  var TraceCount: Integer): Boolean;
+var Work: TFacts; LocalTrace: TIndexList; I,J,K,N: Integer;
+    Match,Changed: Boolean;
+begin
+  Infer:=False; TraceCount:=0;
+  if not CheckRules(R) then Exit;
+  if not CheckFacts(F) then Exit;
+  if F.Count<>R.FactCount then begin SetAIError(ErrSize,'Jumlah fakta dan aturan berbeda'); Exit end;
+  Work:=F; N:=0;
+  repeat
+    Changed:=False;
+    for I:=1 to R.Count do begin
+      Match:=True;
+      for J:=1 to R.Rules[I].Count do
+        if Work.Values[R.Rules[I].FactIDs[J]]<>R.Rules[I].Expected[J] then Match:=False;
+      if Match then begin
+        K:=R.Rules[I].Conclusion;
+        if Work.Values[K]=FactUnknown then begin
+          Work.Values[K]:=R.Rules[I].Value; Work.SourceRule[K]:=I;
+          Inc(N); LocalTrace[N]:=I; Changed:=True
+        end else if Work.Values[K]<>R.Rules[I].Value then begin
+          SetAIError(ErrValue,'Konflik kesimpulan aturan; fakta tidak diubah'); Exit
+        end
+      end
+    end
+  until not Changed;
+  F:=Work; TraceCount:=N;
+  for I:=1 to N do Trace[I]:=LocalTrace[I];
+  Infer:=True
+end;
+procedure ExplainFact(var R: TRuleSet; var F: TFacts; ID: Integer);
+var Seen: array[1..MaxFacts] of Boolean;
+  procedure PrintProof(K,Depth: Integer);
+  var I,RuleID: Integer;
+  begin
+    for I:=1 to Depth do Write('  ');
+    Write(F.Names[K],' = ',F.Values[K]);
+    if Seen[K] then begin WriteLn(' (sudah ditampilkan)'); Exit end;
+    Seen[K]:=True; RuleID:=F.SourceRule[K];
+    if RuleID=0 then begin WriteLn(' (fakta awal/unknown)'); Exit end;
+    if RuleID>R.Count then begin WriteLn(' (sumber tidak valid)'); Exit end;
+    WriteLn(' <= aturan ',RuleID,': ',R.Rules[RuleID].Name);
+    for I:=1 to R.Rules[RuleID].Count do PrintProof(R.Rules[RuleID].FactIDs[I],Depth+1)
+  end;
+begin
+  if not CheckRules(R) then Exit;
+  if not CheckFacts(F) then Exit;
+  if (F.Count<>R.FactCount) or (ID<1) or (ID>F.Count) then begin
+    SetAIError(ErrSize,'Fakta penjelasan tidak valid'); Exit
+  end;
+  FillChar(Seen,SizeOf(Seen),0); PrintProof(ID,0)
+end;
+end.
+
+======================================================================
+AISEARCH.PAS
+======================================================================
+
+unit AISearch;
+interface
+uses AITypes;
+const MaxGridSide=16; MaxGridCells=256;
+      SearchBFS=1; SearchDFS=2; SearchAStar=3;
+type
+  TGrid = record
+    Rows,Cols: Integer;
+    Blocked: array[1..MaxGridSide,1..MaxGridSide] of Boolean;
+  end;
+  TGridPath = array[1..MaxGridCells] of Integer;
+  TSearchResult = record
+    Found: Boolean;
+    Count,Cost,Expanded: Integer;
+    Cells: TGridPath;
+  end;
+function InitGrid(Rows,Cols: Integer; var G: TGrid): Boolean;
+function CheckGrid(var G: TGrid): Boolean;
+function CellID(var G: TGrid; Row,Col: Integer): Integer;
+function CellPosition(var G: TGrid; ID: Integer; var Row,Col: Integer): Boolean;
+function SetWall(var G: TGrid; Row,Col: Integer; Blocked: Boolean): Boolean;
+function GridNeighbor(var G: TGrid; State,Action: Integer;
+  var NextState: Integer): Boolean;
+function SearchGrid(var G: TGrid; Start,Goal,Method: Integer;
+  var Result: TSearchResult): Boolean;
+procedure PrintGrid(var G: TGrid; var Result: TSearchResult; Start,Goal: Integer);
+implementation
+function CheckGrid(var G: TGrid): Boolean;
+begin
+  ClearAIError; CheckGrid:=False;
+  if (G.Rows<1) or (G.Rows>MaxGridSide) or (G.Cols<1) or
+     (G.Cols>MaxGridSide) then begin SetAIError(ErrSize,'Grid harus 1..16 x 1..16'); Exit end;
+  CheckGrid:=True
+end;
+function InitGrid(Rows,Cols: Integer; var G: TGrid): Boolean;
+begin
+  FillChar(G,SizeOf(G),0); G.Rows:=Rows; G.Cols:=Cols; InitGrid:=CheckGrid(G)
+end;
+function CellID(var G: TGrid; Row,Col: Integer): Integer;
+begin
+  CellID:=0;
+  if not CheckGrid(G) then Exit;
+  if (Row<1) or (Row>G.Rows) or (Col<1) or (Col>G.Cols) then begin
+    SetAIError(ErrSize,'Posisi di luar grid'); Exit
+  end;
+  CellID:=(Row-1)*G.Cols+Col
+end;
+function CellPosition(var G: TGrid; ID: Integer; var Row,Col: Integer): Boolean;
+begin
+  Row:=0; Col:=0; CellPosition:=False;
+  if not CheckGrid(G) then Exit;
+  if (ID<1) or (ID>G.Rows*G.Cols) then begin SetAIError(ErrSize,'ID sel di luar grid'); Exit end;
+  Row:=(ID-1) div G.Cols+1; Col:=(ID-1) mod G.Cols+1; CellPosition:=True
+end;
+function SetWall(var G: TGrid; Row,Col: Integer; Blocked: Boolean): Boolean;
+begin
+  SetWall:=False;
+  if CellID(G,Row,Col)=0 then Exit;
+  G.Blocked[Row,Col]:=Blocked; SetWall:=True
+end;
+function GridNeighbor(var G: TGrid; State,Action: Integer;
+  var NextState: Integer): Boolean;
+var R,C: Integer;
+begin
+  NextState:=State; GridNeighbor:=False;
+  if not CellPosition(G,State,R,C) then Exit;
+  if G.Blocked[R,C] then begin SetAIError(ErrValue,'State berada pada dinding'); Exit end;
+  case Action of
+    1: Dec(R); 2: Inc(C); 3: Inc(R); 4: Dec(C);
+    else begin SetAIError(ErrValue,'Aksi harus 1=atas,2=kanan,3=bawah,4=kiri'); Exit end
+  end;
+  if (R>=1) and (R<=G.Rows) and (C>=1) and (C<=G.Cols) then
+    if not G.Blocked[R,C] then NextState:=(R-1)*G.Cols+C;
+  GridNeighbor:=True
+end;
+function SearchGrid(var G: TGrid; Start,Goal,Method: Integer;
+  var Result: TSearchResult): Boolean;
+var Parent,Dist,Queue: TGridPath;
+    State: array[1..MaxGridCells] of Byte;
+    N,I,R,C,GR,GC,Head,Tail,Current,Next,A,BestF,F,T: Integer;
+begin
+  FillChar(Result,SizeOf(Result),0); SearchGrid:=False;
+  if not CellPosition(G,Start,R,C) then Exit;
+  if G.Blocked[R,C] then begin SetAIError(ErrValue,'Start berada pada dinding'); Exit end;
+  if not CellPosition(G,Goal,GR,GC) then Exit;
+  if G.Blocked[GR,GC] then begin SetAIError(ErrValue,'Goal berada pada dinding'); Exit end;
+  if (Method<SearchBFS) or (Method>SearchAStar) then begin SetAIError(ErrValue,'Metode search tidak dikenal'); Exit end;
+  N:=G.Rows*G.Cols; FillChar(Parent,SizeOf(Parent),0);
+  FillChar(Dist,SizeOf(Dist),0); FillChar(State,SizeOf(State),0);
+  Head:=1; Tail:=1; Queue[1]:=Start; State[Start]:=1;
+  repeat
+    Current:=0;
+    if Method=SearchAStar then begin
+      BestF:=32767;
+      for I:=1 to N do if State[I]=1 then begin
+        R:=(I-1) div G.Cols+1; C:=(I-1) mod G.Cols+1;
+        F:=Dist[I]+Abs(R-GR)+Abs(C-GC);
+        if F<BestF then begin BestF:=F; Current:=I end
+      end
+    end else if Method=SearchBFS then begin
+      if Head<=Tail then begin Current:=Queue[Head]; Inc(Head) end
+    end else if Tail>0 then begin Current:=Queue[Tail]; Dec(Tail) end;
+    if Current=0 then Break;
+    State[Current]:=2; Inc(Result.Expanded);
+    if Current=Goal then begin
+      Result.Found:=True; Result.Cost:=Dist[Goal]; I:=Goal;
+      while I<>0 do begin Inc(Result.Count); Result.Cells[Result.Count]:=I; I:=Parent[I] end;
+      for I:=1 to Result.Count div 2 do begin
+        T:=Result.Cells[I]; Result.Cells[I]:=Result.Cells[Result.Count-I+1];
+        Result.Cells[Result.Count-I+1]:=T
+      end;
+      Break
+    end;
+    for A:=1 to 4 do begin
+      if not GridNeighbor(G,Current,A,Next) then Exit;
+      if Next<>Current then begin
+        if State[Next]=0 then begin
+          Parent[Next]:=Current; Dist[Next]:=Dist[Current]+1; State[Next]:=1;
+          if Method<>SearchAStar then begin Inc(Tail); Queue[Tail]:=Next end
+        end else if (Method=SearchAStar) and (State[Next]=1) and
+                    (Dist[Current]+1<Dist[Next]) then begin
+          Parent[Next]:=Current; Dist[Next]:=Dist[Current]+1
+        end
+      end
+    end
+  until False;
+  SearchGrid:=True
+end;
+procedure PrintGrid(var G: TGrid; var Result: TSearchResult; Start,Goal: Integer);
+var R,C,I,ID: Integer; Ch: Char;
+begin
+  if not CheckGrid(G) then Exit;
+  if (Result.Count<0) or (Result.Count>MaxGridCells) then begin SetAIError(ErrSize,'Panjang rute tidak valid'); Exit end;
+  for R:=1 to G.Rows do begin
+    for C:=1 to G.Cols do begin
+      ID:=(R-1)*G.Cols+C; Ch:='.';
+      if G.Blocked[R,C] then Ch:='#';
+      for I:=1 to Result.Count do if Result.Cells[I]=ID then Ch:='*';
+      if ID=Start then Ch:='S'; if ID=Goal then Ch:='G';
+      Write(Ch,' ')
+    end;
+    WriteLn
+  end
+end;
+end.
+
+======================================================================
+AISPLIT.PAS
+======================================================================
+
+unit AISplit;
+interface
+uses AITypes;
+function MakeOrder(N: Integer; Shuffle: Boolean; Seed: LongInt;
+  var Order: TIndexList): Boolean;
+function TakeRows(var Source: TDataSet; var Order: TIndexList;
+  First, Count: Integer; var Dest: TDataSet): Boolean;
+function TrainTestSplit(var Source, TrainData, TestData: TDataSet;
+  TestFraction: TFloat; Shuffle: Boolean; Seed: LongInt): Boolean;
+function MakeFolds(N, Folds: Integer; Shuffle: Boolean; Seed: LongInt;
+  var FoldOfRow: TIndexList): Boolean;
+function FoldSplit(var Source: TDataSet; var FoldOfRow: TIndexList;
+  Folds, TestFold: Integer; var TrainData, TestData: TDataSet): Boolean;
+implementation
+uses AIMath,AIData;
+function MakeOrder(N: Integer; Shuffle: Boolean; Seed: LongInt;
+  var Order: TIndexList): Boolean;
+var I,J,T: Integer;
+begin
+  ClearAIError; MakeOrder := False; FillChar(Order,SizeOf(Order),0);
+  if (N < 1) or (N > MaxSamples) then begin
+    SetAIError(ErrSize,'Jumlah indeks harus 1..200'); Exit
+  end;
+  for I := 1 to N do Order[I] := I;
+  if Shuffle then begin
+    AISetSeed(Seed);
+    for I := N downto 2 do begin
+      J := AIRandomInt(I)+1;
+      T := Order[I]; Order[I] := Order[J]; Order[J] := T
+    end
+  end;
+  MakeOrder := True
+end;
+function TakeRows(var Source: TDataSet; var Order: TIndexList;
+  First, Count: Integer; var Dest: TDataSet): Boolean;
+var I,R: Integer;
+begin
+  TakeRows := False;
+  if not CheckData(Source,True) then Exit;
+  if @Source = @Dest then begin
+    SetAIError(ErrValue,'Dataset sumber dan tujuan harus terpisah'); Exit
+  end;
+  if (First < 1) or (Count < 1) or (Count > MaxSamples) then begin
+    SetAIError(ErrSize,'Rentang indeks tidak valid'); Exit
+  end;
+  if LongInt(First)+Count-1 > MaxSamples then begin
+    SetAIError(ErrSize,'Rentang indeks melewati kapasitas'); Exit
+  end;
+  for I := First to First+Count-1 do
+    if (Order[I] < 1) or (Order[I] > Source.Count) then begin
+      SetAIError(ErrSize,'Indeks baris di luar dataset'); Exit
+    end;
+  InitData(Dest,Source.Features,Source.TargetKind);
+  Dest.Count := Count; Dest.Names := Source.Names;
+  Dest.TargetName := Source.TargetName;
+  for I := 1 to Count do begin
+    R := Order[First+I-1]; CopyRow(Source,R,Dest,I)
+  end;
+  TakeRows := True
+end;
+function Separate(var Source,TrainData,TestData: TDataSet): Boolean;
+begin
+  Separate := False;
+  if (@Source = @TrainData) or (@Source = @TestData) or
+     (@TrainData = @TestData) then begin
+    SetAIError(ErrValue,'Split memerlukan tiga dataset terpisah'); Exit
+  end;
+  Separate := True
+end;
+function TrainTestSplit(var Source, TrainData, TestData: TDataSet;
+  TestFraction: TFloat; Shuffle: Boolean; Seed: LongInt): Boolean;
+var Order: TIndexList; NTest,NTrain: Integer;
+begin
+  TrainTestSplit := False;
+  if not CheckData(Source,True) then Exit;
+  if not Separate(Source,TrainData,TestData) then Exit;
+  if not ValidNumber(TestFraction) or (TestFraction <= 0) or
+     (TestFraction >= 1) or (Source.Count < 2) then begin
+    SetAIError(ErrValue,'Split perlu >=2 baris dan fraksi antara 0 dan 1'); Exit
+  end;
+  NTest := Trunc(Source.Count*TestFraction+0.5);
+  if NTest < 1 then NTest := 1;
+  if NTest >= Source.Count then NTest := Source.Count-1;
+  NTrain := Source.Count-NTest;
+  if not MakeOrder(Source.Count,Shuffle,Seed,Order) then Exit;
+  if not TakeRows(Source,Order,1,NTrain,TrainData) then Exit;
+  if not TakeRows(Source,Order,NTrain+1,NTest,TestData) then Exit;
+  TrainTestSplit := True
+end;
+function MakeFolds(N, Folds: Integer; Shuffle: Boolean; Seed: LongInt;
+  var FoldOfRow: TIndexList): Boolean;
+var Order: TIndexList; I: Integer;
+begin
+  ClearAIError; MakeFolds := False; FillChar(FoldOfRow,SizeOf(FoldOfRow),0);
+  if (Folds < 2) or (Folds > N) then begin
+    SetAIError(ErrSize,'Jumlah fold harus antara 2 dan jumlah baris'); Exit
+  end;
+  if not MakeOrder(N,Shuffle,Seed,Order) then Exit;
+  for I := 1 to N do FoldOfRow[Order[I]] := (I-1) mod Folds+1;
+  MakeFolds := True
+end;
+function FoldSplit(var Source: TDataSet; var FoldOfRow: TIndexList;
+  Folds, TestFold: Integer; var TrainData, TestData: TDataSet): Boolean;
+var I,NTest: Integer;
+begin
+  FoldSplit := False;
+  if not CheckData(Source,True) then Exit;
+  if not Separate(Source,TrainData,TestData) then Exit;
+  if (Folds < 2) or (Folds > Source.Count) or
+     (TestFold < 1) or (TestFold > Folds) then begin
+    SetAIError(ErrSize,'Nomor fold tidak valid'); Exit
+  end;
+  NTest := 0;
+  for I := 1 to Source.Count do begin
+    if (FoldOfRow[I] < 1) or (FoldOfRow[I] > Folds) then begin
+      SetAIError(ErrValue,'Pemetaan fold tidak valid'); Exit
+    end;
+    if FoldOfRow[I] = TestFold then Inc(NTest)
+  end;
+  if (NTest = 0) or (NTest = Source.Count) then begin
+    SetAIError(ErrSize,'Fold menghasilkan data latih/uji kosong'); Exit
+  end;
+  InitData(TrainData,Source.Features,Source.TargetKind);
+  InitData(TestData,Source.Features,Source.TargetKind);
+  TrainData.Names := Source.Names; TestData.Names := Source.Names;
+  TrainData.TargetName := Source.TargetName;
+  TestData.TargetName := Source.TargetName;
+  for I := 1 to Source.Count do
+    if FoldOfRow[I] = TestFold then begin
+      Inc(TestData.Count); CopyRow(Source,I,TestData,TestData.Count)
+    end else begin
+      Inc(TrainData.Count); CopyRow(Source,I,TrainData,TrainData.Count)
+    end;
+  FoldSplit := True
+end;
+end.
+
+======================================================================
+AISTATS.PAS
+======================================================================
+
+unit AIStats;
+interface
+uses AITypes;
+function Mean(var A: TSeries; N: Integer; var Value: TFloat): Boolean;
+function Median(var A: TSeries; N: Integer; var Value: TFloat): Boolean;
+function Variance(var A: TSeries; N: Integer; Sample: Boolean;
+  var Value: TFloat): Boolean;
+function StdDev(var A: TSeries; N: Integer; Sample: Boolean;
+  var Value: TFloat): Boolean;
+function MinMax(var A: TSeries; N: Integer;
+  var Minimum, Maximum: TFloat): Boolean;
+function Correlation(var A,B: TSeries; N: Integer;
+  var Value: TFloat): Boolean;
+
+function RegressionMetrics(var Actual,Predicted: TSeries; N: Integer;
+  var Metrics: TRegMetrics): Boolean;
+function ConfusionMatrix(var Actual,Predicted: TLabels;
+  N,Classes: Integer; var Matrix: TConfusion): Boolean;
+function ClassificationMetrics(var Matrix: TConfusion;
+  var Metrics: TClassMetrics): Boolean;
+procedure PrintConfusion(var Matrix: TConfusion);
+implementation
+function GoodSeries(var A: TSeries; N: Integer): Boolean;
+var I: Integer;
+begin
+  ClearAIError; GoodSeries := False;
+  if (N < 1) or (N > MaxSamples) then begin
+    SetAIError(ErrSize, 'Panjang seri harus 1..200'); Exit
+  end;
+  for I := 1 to N do if not ValidNumber(A[I]) then begin
+    SetAIError(ErrValue, 'Angka seri tidak valid'); Exit
+  end;
+  GoodSeries := True
+end;
+function Mean(var A: TSeries; N: Integer; var Value: TFloat): Boolean;
+var I: Integer;
+begin
+  Value := 0; Mean := False;
+  if not GoodSeries(A,N) then Exit;
+  for I := 1 to N do Value := Value+(A[I]-Value)/I;
+  Mean := True
+end;
+function Median(var A: TSeries; N: Integer; var Value: TFloat): Boolean;
+var I,J: Integer; T: TSeries; V: TFloat;
+begin
+  Value := 0; Median := False;
+  if not GoodSeries(A,N) then Exit;
+  T := A;
+  for I := 2 to N do begin
+    V := T[I]; J := I-1;
+    while J >= 1 do begin
+      if T[J] <= V then Break;
+      T[J+1] := T[J]; Dec(J)
+    end;
+    T[J+1] := V
+  end;
+  if Odd(N) then Value := T[(N+1) div 2]
+  else Value := (T[N div 2]+T[N div 2+1])/2;
+  Median := True
+end;
+function Variance(var A: TSeries; N: Integer; Sample: Boolean;
+  var Value: TFloat): Boolean;
+var I,Den: Integer; Avg,Delta,Sum: TFloat;
+begin
+  Value := 0; Variance := False;
+  if not GoodSeries(A,N) then Exit;
+  if Sample and (N < 2) then begin
+    SetAIError(ErrSize, 'Varians sampel memerlukan minimal 2 angka'); Exit
+  end;
+  Avg := 0; Sum := 0;
+  for I := 1 to N do begin
+    Delta := A[I]-Avg; Avg := Avg+Delta/I;
+    Sum := Sum+Delta*(A[I]-Avg)
+  end;
+  Den := N; if Sample then Dec(Den);
+  Value := Sum/Den;
+  if Value < 0 then Value := 0;
+  Variance := True
+end;
+function StdDev(var A: TSeries; N: Integer; Sample: Boolean;
+  var Value: TFloat): Boolean;
+begin
+  StdDev := False;
+  if not Variance(A,N,Sample,Value) then Exit;
+  Value := Sqrt(Value); StdDev := True
+end;
+function MinMax(var A: TSeries; N: Integer;
+  var Minimum, Maximum: TFloat): Boolean;
+var I: Integer;
+begin
+  Minimum := 0; Maximum := 0; MinMax := False;
+  if not GoodSeries(A,N) then Exit;
+  Minimum := A[1]; Maximum := A[1];
+  for I := 2 to N do begin
+    if A[I] < Minimum then Minimum := A[I];
+    if A[I] > Maximum then Maximum := A[I]
+  end;
+  MinMax := True
+end;
+function Correlation(var A,B: TSeries; N: Integer;
+  var Value: TFloat): Boolean;
+var I: Integer; MA,MB,DA,DB,SA,SB,SAB: TFloat;
+begin
+  Value := 0; Correlation := False;
+  if not GoodSeries(A,N) then Exit;
+  if not GoodSeries(B,N) then Exit;
+  if N < 2 then begin SetAIError(ErrSize,'Korelasi perlu 2 angka'); Exit end;
+  MA := 0; MB := 0; SA := 0; SB := 0; SAB := 0;
+  for I := 1 to N do begin
+    DA := A[I]-MA; DB := B[I]-MB;
+    MA := MA+DA/I; MB := MB+DB/I;
+    SA := SA+DA*(A[I]-MA); SB := SB+DB*(B[I]-MB);
+    SAB := SAB+DA*(B[I]-MB)
+  end;
+  if (SA <= 0) or (SB <= 0) then begin
+    SetAIError(ErrValue, 'Korelasi tidak terdefinisi untuk seri konstan'); Exit
+  end;
+  { Dua akar terpisah menghindari SA*SB yang bisa overflow Real48. }
+  Value := (SAB/Sqrt(SA))/Sqrt(SB);
+  if Value > 1 then Value := 1;
+  if Value < -1 then Value := -1;
+  Correlation := True
+end;
+
+function RegressionMetrics(var Actual,Predicted: TSeries; N: Integer;
+  var Metrics: TRegMetrics): Boolean;
+var I: Integer; Avg,Error,SSE,SST: TFloat;
+begin
+  ClearAIError; FillChar(Metrics,SizeOf(Metrics),0);
+  RegressionMetrics := False;
+  if (N < 1) or (N > MaxSamples) then begin
+    SetAIError(ErrSize,'Evaluasi perlu 1..200 baris'); Exit
+  end;
+  Avg := 0;
+  for I := 1 to N do begin
+    if not ValidNumber(Actual[I]) or not ValidNumber(Predicted[I]) then begin
+      SetAIError(ErrValue,'Data evaluasi tidak valid'); Exit
+    end;
+    Avg := Avg+(Actual[I]-Avg)/I
+  end;
+  SSE := 0; SST := 0;
+  for I := 1 to N do begin
+    Error := Actual[I]-Predicted[I];
+    Metrics.MAE := Metrics.MAE+Abs(Error);
+    SSE := SSE+Error*Error; SST := SST+Sqr(Actual[I]-Avg)
+  end;
+  Metrics.MAE := Metrics.MAE/N; Metrics.MSE := SSE/N;
+  Metrics.RMSE := Sqrt(Metrics.MSE);
+  Metrics.R2Defined := (N >= 2) and (SST > 0);
+  if Metrics.R2Defined then begin
+    { Hindari overflow rasio pada target yang hampir konstan. }
+    if SST < 1 then
+      if SSE > 1.0E30*SST then Metrics.R2Defined := False;
+    if Metrics.R2Defined then Metrics.R2 := 1-SSE/SST
+  end;
+  RegressionMetrics := True
+end;
+function ConfusionMatrix(var Actual,Predicted: TLabels;
+  N,Classes: Integer; var Matrix: TConfusion): Boolean;
+var I: Integer;
+begin
+  ClearAIError; FillChar(Matrix,SizeOf(Matrix),0); ConfusionMatrix := False;
+  if (N < 1) or (N > MaxSamples) or
+     (Classes < 1) or (Classes > MaxClasses) then begin
+    SetAIError(ErrSize,'Ukuran confusion matrix tidak valid'); Exit
+  end;
+  for I := 1 to N do
+    if (Actual[I] < 0) or (Actual[I] >= Classes) or
+       (Predicted[I] < 0) or (Predicted[I] >= Classes) then begin
+      SetAIError(ErrValue,'Label di luar rentang kelas evaluasi'); Exit
+    end;
+  Matrix.Classes := Classes; Matrix.Total := N;
+  for I := 1 to N do Inc(Matrix.Cells[Actual[I],Predicted[I]]);
+  ConfusionMatrix := True
+end;
+function ClassificationMetrics(var Matrix: TConfusion;
+  var Metrics: TClassMetrics): Boolean;
+var I,J,RowSum,ColSum,Correct: Integer; Total: LongInt; Den: TFloat;
+begin
+  ClearAIError; FillChar(Metrics,SizeOf(Metrics),0);
+  ClassificationMetrics := False;
+  if (Matrix.Classes < 1) or (Matrix.Classes > MaxClasses) or
+     (Matrix.Total < 1) or (Matrix.Total > MaxSamples) then begin
+    SetAIError(ErrSize,'Confusion matrix kosong/tidak valid'); Exit
+  end;
+  Total := 0;
+  for I := 0 to Matrix.Classes-1 do for J := 0 to Matrix.Classes-1 do begin
+    if (Matrix.Cells[I,J] < 0) or (Matrix.Cells[I,J] > MaxSamples) then begin
+      SetAIError(ErrValue,'Frekuensi confusion matrix tidak valid'); Exit
+    end;
+    Total := Total+Matrix.Cells[I,J]
+  end;
+  if Total <> Matrix.Total then begin
+    SetAIError(ErrValue,'Total confusion matrix tidak cocok'); Exit
+  end;
+  Correct := 0;
+  for I := 0 to Matrix.Classes-1 do begin
+    RowSum := 0; ColSum := 0;
+    for J := 0 to Matrix.Classes-1 do begin
+      RowSum := RowSum+Matrix.Cells[I,J];
+      ColSum := ColSum+Matrix.Cells[J,I]
+    end;
+    Inc(Correct,Matrix.Cells[I,I]); Metrics.Support[I] := RowSum;
+    if ColSum > 0 then Metrics.Precision[I] := Matrix.Cells[I,I]/ColSum;
+    if RowSum > 0 then Metrics.Recall[I] := Matrix.Cells[I,I]/RowSum;
+    Den := Metrics.Precision[I]+Metrics.Recall[I];
+    if Den > 0 then Metrics.F1[I] :=
+      2*Metrics.Precision[I]*Metrics.Recall[I]/Den;
+    Metrics.MacroPrecision := Metrics.MacroPrecision+Metrics.Precision[I];
+    Metrics.MacroRecall := Metrics.MacroRecall+Metrics.Recall[I];
+    Metrics.MacroF1 := Metrics.MacroF1+Metrics.F1[I]
+  end;
+  Metrics.Accuracy := Correct/Matrix.Total;
+  Metrics.MacroPrecision := Metrics.MacroPrecision/Matrix.Classes;
+  Metrics.MacroRecall := Metrics.MacroRecall/Matrix.Classes;
+  Metrics.MacroF1 := Metrics.MacroF1/Matrix.Classes;
+  ClassificationMetrics := True
+end;
+procedure PrintConfusion(var Matrix: TConfusion);
+var I,J: Integer; M: TClassMetrics;
+begin
+  if not ClassificationMetrics(Matrix,M) then begin WriteLn(AIError); Exit end;
+  WriteLn('Baris = aktual; kolom = prediksi');
+  Write('    ');
+  for J := 0 to Matrix.Classes-1 do Write(J:5); WriteLn;
+  for I := 0 to Matrix.Classes-1 do begin
+    Write(I:3,' ');
+    for J := 0 to Matrix.Classes-1 do Write(Matrix.Cells[I,J]:5);
+    WriteLn
+  end
+end;
+end.
+
+======================================================================
+AITEXT.PAS
+======================================================================
+
+unit AIText;
+{$B-}
+interface
+uses AITypes;
+const MaxDocuments=32; MaxTokens=64; MaxCandidates=128;
+type
+  TWord = string[31];
+  TTokens = record Count: Integer; Words: array[1..MaxTokens] of TWord end;
+  TCorpus = record
+    Count: Integer;
+    Docs: array[1..MaxDocuments] of string;
+    Labels: array[1..MaxDocuments] of Integer;
+  end;
+  TTextModel = record
+    Fitted,UseIDF,Normalize: Boolean;
+    Count,Documents: Integer;
+    Terms: array[1..MaxFeatures] of TWord;
+    IDF: TVector;
+  end;
+function Tokenize(S: string; var Tokens: TTokens): Boolean;
+function LoadCorpus(FileName: TFileName; var Corpus: TCorpus): Boolean;
+function CheckTextModel(var M: TTextModel): Boolean;
+function FitText(var Corpus: TCorpus; Limit,MinDocumentFreq: Integer;
+  UseIDF,Normalize: Boolean; var M: TTextModel): Boolean;
+function Vectorize(var M: TTextModel; S: string; var V: TVector): Boolean;
+function VectorizeCorpus(var M: TTextModel; var Corpus: TCorpus;
+  var D: TDataSet): Boolean;
+implementation
+function IsWord(C: Char): Boolean;
+begin IsWord:=((C>='a') and (C<='z')) or ((C>='A') and (C<='Z')) or ((C>='0') and (C<='9')) end;
+function Tokenize(S: string; var Tokens: TTokens): Boolean;
+var I: Integer; C: Char; W: TWord;
+  function Push: Boolean;
+  begin
+    Push:=False;
+    if W<>'' then begin
+      if Tokens.Count=MaxTokens then begin SetAIError(ErrSize,'Dokumen melebihi 64 token'); Exit end;
+      Inc(Tokens.Count); Tokens.Words[Tokens.Count]:=W; W:=''
+    end;
+    Push:=True
+  end;
+begin
+  ClearAIError; FillChar(Tokens,SizeOf(Tokens),0); Tokenize:=False; W:='';
+  for I:=1 to Length(S) do begin
+    C:=S[I];
+    if Ord(C)>127 then begin SetAIError(ErrFormat,'Tokenizer hanya mendukung teks ASCII'); Exit end;
+    if IsWord(C) then begin
+      if (C>='A') and (C<='Z') then C:=Chr(Ord(C)+32);
+      if Length(W)=31 then begin SetAIError(ErrSize,'Token melebihi 31 karakter'); Exit end;
+      W:=W+C
+    end else if not Push then Exit
+  end;
+  if not Push then Exit;
+  Tokenize:=True
+end;
+function LoadCorpus(FileName: TFileName; var Corpus: TCorpus): Boolean;
+var F: Text; S: string; C: Char; E,N: Integer; OK,TooLong: Boolean;
+begin
+  ClearAIError; FillChar(Corpus,SizeOf(Corpus),0); LoadCorpus:=False;
+  Assign(F,FileName); {$I-} Reset(F); E:=IOResult; {$I+}
+  if E<>0 then begin SetAIError(ErrIO,'Berkas corpus tidak terbuka'); Exit end;
+  OK:=True;
+  while not Eof(F) do begin
+    S:=''; TooLong:=False;
+    {$I-}
+    while not Eoln(F) do begin
+      Read(F,C);
+      if Length(S)<255 then S:=S+C else TooLong:=True
+    end;
+    ReadLn(F); E:=IOResult;
+    {$I+}
+    if (E<>0) or TooLong then begin SetAIError(ErrFormat,'Baris corpus terlalu panjang atau gagal dibaca'); OK:=False; Break end;
+    if S<>'' then begin
+      if (Length(S)<3) or (S[1]<'0') or (S[1]>'9') or (S[2]<>#9) then begin
+        SetAIError(ErrFormat,'Format corpus: satu digit kelas, TAB, teks'); OK:=False; Break
+      end;
+      if Corpus.Count=MaxDocuments then begin SetAIError(ErrSize,'Corpus melebihi 32 dokumen'); OK:=False; Break end;
+      Inc(Corpus.Count); N:=Corpus.Count;
+      Corpus.Labels[N]:=Ord(S[1])-Ord('0'); Corpus.Docs[N]:=Copy(S,3,253)
+    end
+  end;
+  {$I-} Close(F); E:=IOResult; {$I+}
+  if E<>0 then begin SetAIError(ErrIO,'Gagal menutup corpus'); OK:=False end;
+  if OK and (Corpus.Count=0) then begin SetAIError(ErrSize,'Corpus kosong'); OK:=False end;
+  if not OK then begin Corpus.Count:=0; Exit end;
+  LoadCorpus:=True
+end;
+function CheckTextModel(var M: TTextModel): Boolean;
+var I,J: Integer; T: TTokens;
+begin
+  ClearAIError; CheckTextModel:=False;
+  if not M.Fitted or (M.Count<1) or (M.Count>MaxFeatures) or
+     (M.Documents<1) or (M.Documents>MaxDocuments) then begin
+    SetAIError(ErrModel,'Vocabulary tidak valid'); Exit
+  end;
+  for I:=1 to M.Count do begin
+    if Length(M.Terms[I])>31 then begin SetAIError(ErrModel,'Panjang istilah tidak valid'); Exit end;
+    if not Tokenize(M.Terms[I],T) then Exit;
+    if (T.Count<>1) or (T.Words[1]<>M.Terms[I]) or
+       not ValidNumber(M.IDF[I]) or (M.IDF[I]<1) or (M.IDF[I]>5) then begin
+      SetAIError(ErrModel,'Istilah atau IDF tidak valid'); Exit
+    end;
+    for J:=1 to I-1 do if M.Terms[J]=M.Terms[I] then begin
+      SetAIError(ErrModel,'Vocabulary duplikat'); Exit
+    end
+  end;
+  CheckTextModel:=True
+end;
+function FitText(var Corpus: TCorpus; Limit,MinDocumentFreq: Integer;
+  UseIDF,Normalize: Boolean; var M: TTextModel): Boolean;
+var Words: array[1..MaxCandidates] of TWord;
+    DF,LastDoc: array[1..MaxCandidates] of Integer;
+    Used: array[1..MaxCandidates] of Boolean;
+    T: TTokens; N,I,J,K,Index,Best: Integer; Ratio: TFloat;
+begin
+  FillChar(M,SizeOf(M),0); FitText:=False; ClearAIError;
+  if (Corpus.Count<1) or (Corpus.Count>MaxDocuments) or
+     (Limit<1) or (Limit>MaxFeatures) or
+     (MinDocumentFreq<1) or (MinDocumentFreq>Corpus.Count) then begin
+    SetAIError(ErrSize,'Ukuran corpus/vocabulary/min-df tidak valid'); Exit
+  end;
+  N:=0; FillChar(DF,SizeOf(DF),0); FillChar(LastDoc,SizeOf(LastDoc),0);
+  FillChar(Used,SizeOf(Used),0);
+  for I:=1 to Corpus.Count do begin
+    if not Tokenize(Corpus.Docs[I],T) then Exit;
+    for J:=1 to T.Count do begin
+      Index:=0;
+      for K:=1 to N do if Words[K]=T.Words[J] then begin Index:=K; Break end;
+      if Index=0 then begin
+        if N=MaxCandidates then begin SetAIError(ErrSize,'Corpus melebihi 128 kata unik'); Exit end;
+        Inc(N); Index:=N; Words[Index]:=T.Words[J]
+      end;
+      if LastDoc[Index]<>I then begin Inc(DF[Index]); LastDoc[Index]:=I end
+    end
+  end;
+  for J:=1 to Limit do begin
+    Best:=0;
+    for K:=1 to N do if not Used[K] and (DF[K]>=MinDocumentFreq) then begin
+      if Best=0 then Best:=K
+      else if (DF[K]>DF[Best]) or ((DF[K]=DF[Best]) and (Words[K]<Words[Best])) then Best:=K
+    end;
+    if Best=0 then Break;
+    Used[Best]:=True; Inc(M.Count); M.Terms[M.Count]:=Words[Best];
+    Ratio:=Corpus.Count+1; Ratio:=Ratio/(DF[Best]+1);
+    M.IDF[M.Count]:=Ln(Ratio)+1
+  end;
+  if M.Count=0 then begin SetAIError(ErrValue,'Tidak ada kata yang memenuhi min-df'); Exit end;
+  M.UseIDF:=UseIDF; M.Normalize:=Normalize; M.Documents:=Corpus.Count;
+  M.Fitted:=True; FitText:=True
+end;
+function Vectorize(var M: TTextModel; S: string; var V: TVector): Boolean;
+var T: TTokens; I,J: Integer; Norm: TFloat;
+begin
+  FillChar(V,SizeOf(V),0); Vectorize:=False;
+  if not CheckTextModel(M) then Exit;
+  if not Tokenize(S,T) then Exit;
+  for I:=1 to T.Count do for J:=1 to M.Count do
+    if T.Words[I]=M.Terms[J] then V[J]:=V[J]+1;
+  Norm:=0;
+  for J:=1 to M.Count do begin
+    if M.UseIDF then V[J]:=V[J]*M.IDF[J]; Norm:=Norm+Sqr(V[J])
+  end;
+  if M.Normalize and (Norm>0) then begin
+    Norm:=Sqrt(Norm); for J:=1 to M.Count do V[J]:=V[J]/Norm
+  end;
+  Vectorize:=True
+end;
+function VectorizeCorpus(var M: TTextModel; var Corpus: TCorpus;
+  var D: TDataSet): Boolean;
+var I,J: Integer;
+begin
+  VectorizeCorpus:=False; InitData(D,0,TargetClass);
+  if not CheckTextModel(M) then Exit;
+  if (Corpus.Count<1) or (Corpus.Count>MaxDocuments) then begin
+    SetAIError(ErrSize,'Corpus kosong atau terlalu besar'); Exit
+  end;
+  for I:=1 to Corpus.Count do if (Corpus.Labels[I]<0) or (Corpus.Labels[I]>=MaxClasses) then begin
+    SetAIError(ErrValue,'Label corpus harus 0..9'); Exit
+  end;
+  D.Features:=M.Count;
+  for J:=1 to M.Count do D.Names[J]:=M.Terms[J];
+  for I:=1 to Corpus.Count do begin
+    if not Vectorize(M,Corpus.Docs[I],D.X[I]) then begin D.Count:=0; Exit end;
+    D.Labels[I]:=Corpus.Labels[I]
+  end;
+  D.Count:=Corpus.Count; VectorizeCorpus:=True
+end;
+end.
+
+======================================================================
+AITREE.PAS
+======================================================================
+
+unit AITree;
+interface
+uses AITypes;
+const MaxTreeNodes=63; MaxTreeDepth=8;
+type
+  TTreeNode = record
+    Feature,LeftChild,RightChild,LabelValue,Samples: Integer;
+    Threshold,Gain: TFloat;
+    Counts: array[0..MaxClasses-1] of Integer;
+  end;
+  TTreeModel = record
+    Fitted,Truncated: Boolean;
+    Features,Classes,NodeCount: Integer;
+    Nodes: array[1..MaxTreeNodes] of TTreeNode;
+  end;
+function CheckTree(var M: TTreeModel): Boolean;
+function FitTree(var D: TDataSet; DepthLimit,MinLeaf: Integer;
+  MinGain: TFloat; var M: TTreeModel): Boolean;
+function PredictTree(var M: TTreeModel; var X: TVector;
+  var LabelValue: Integer): Boolean;
+function TraceTree(var M: TTreeModel; var X: TVector;
+  var Path: TIndexList; var Length,LabelValue: Integer): Boolean;
+implementation
+type TCounts=array[0..MaxClasses-1] of Integer;
+function Entropy(var Counts: TCounts; N: Integer): TFloat;
+var C: Integer; P,H: TFloat;
+begin
+  H:=0;
+  if N>0 then for C:=0 to MaxClasses-1 do if Counts[C]>0 then begin
+    P:=Counts[C]/N; H:=H-P*Ln(P)/Ln(2)
+  end;
+  Entropy:=H
+end;
+function CheckTree(var M: TTreeModel): Boolean;
+var Parents: array[1..MaxTreeNodes] of Integer;
+    I,C,N,L,R: Integer;
+begin
+  ClearAIError; CheckTree:=False;
+  if not M.Fitted or (M.Features<1) or (M.Features>MaxFeatures) or
+     (M.Classes<1) or (M.Classes>MaxClasses) or
+     (M.NodeCount<1) or (M.NodeCount>MaxTreeNodes) then begin
+    SetAIError(ErrModel,'Dimensi pohon tidak valid'); Exit
+  end;
+  FillChar(Parents,SizeOf(Parents),0);
+  for I:=1 to M.NodeCount do begin
+    with M.Nodes[I] do begin
+      if (Samples<1) or (Samples>MaxSamples) or
+         (LabelValue<0) or (LabelValue>=M.Classes) or
+         not ValidNumber(Threshold) or not ValidNumber(Gain) or
+         (Gain<0) or (Feature<0) or (Feature>M.Features) then begin
+        SetAIError(ErrModel,'Isi node pohon tidak valid'); Exit
+      end;
+      N:=0;
+      for C:=0 to M.Classes-1 do begin
+        if (Counts[C]<0) or (Counts[C]>MaxSamples) then begin
+          SetAIError(ErrModel,'Hitungan node tidak valid'); Exit
+        end;
+        Inc(N,Counts[C])
+      end;
+      if N<>Samples then begin SetAIError(ErrModel,'Total node tidak cocok'); Exit end;
+      if Feature=0 then begin
+        if (LeftChild<>0) or (RightChild<>0) then begin
+          SetAIError(ErrModel,'Daun tidak boleh memiliki anak'); Exit
+        end
+      end else begin
+        L:=LeftChild; R:=RightChild;
+        if (L<=I) or (R<=I) or (L>M.NodeCount) or (R>M.NodeCount) or (L=R) then begin
+          SetAIError(ErrModel,'Anak pohon tidak valid atau membentuk siklus'); Exit
+        end;
+        Inc(Parents[L]); Inc(Parents[R]);
+        if M.Nodes[L].Samples+M.Nodes[R].Samples<>Samples then begin
+          SetAIError(ErrModel,'Jumlah sampel anak tidak cocok'); Exit
+        end
+      end
+    end
+  end;
+  for I:=2 to M.NodeCount do if Parents[I]<>1 then begin
+    SetAIError(ErrModel,'Node terputus atau dipakai dua induk'); Exit
+  end;
+  CheckTree:=True
+end;
+function FitTree(var D: TDataSet; DepthLimit,MinLeaf: Integer;
+  MinGain: TFloat; var M: TTreeModel): Boolean;
+var Rows: TIndexList; I: Integer;
+  procedure Build(Node,Lo,Hi,Depth: Integer);
+  var Counts,LC,RC: TCounts;
+      I,J,K,C,N,NL,NR,BestF,A,B,T,L,R: Integer;
+      H,G,BestG,Threshold,BestT,V,NextV: TFloat;
+      HasNext: Boolean;
+  begin
+    FillChar(Counts,SizeOf(Counts),0); N:=Hi-Lo+1;
+    for I:=Lo to Hi do Inc(Counts[D.Labels[Rows[I]]]);
+    C:=0;
+    for I:=1 to MaxClasses-1 do if Counts[I]>Counts[C] then C:=I;
+    M.Nodes[Node].LabelValue:=C; M.Nodes[Node].Samples:=N;
+    for I:=0 to MaxClasses-1 do M.Nodes[Node].Counts[I]:=Counts[I];
+    H:=Entropy(Counts,N);
+    if (H<=0) or (Depth>=DepthLimit) or (N<2*MinLeaf) then Exit;
+    if M.NodeCount+2>MaxTreeNodes then begin M.Truncated:=True; Exit end;
+    BestG:=-1; BestF:=0; BestT:=0;
+    for J:=1 to D.Features do for I:=Lo to Hi do begin
+      V:=D.X[Rows[I],J]; HasNext:=False; NextV:=0;
+      for K:=Lo to Hi do if D.X[Rows[K],J]>V then
+        if not HasNext or (D.X[Rows[K],J]<NextV) then begin
+          NextV:=D.X[Rows[K],J]; HasNext:=True
+        end;
+      if HasNext then begin
+        Threshold:=V+(NextV-V)/2;
+        FillChar(LC,SizeOf(LC),0); FillChar(RC,SizeOf(RC),0); NL:=0; NR:=0;
+        for K:=Lo to Hi do begin
+          C:=D.Labels[Rows[K]];
+          if D.X[Rows[K],J]<=Threshold then begin Inc(LC[C]); Inc(NL) end
+          else begin Inc(RC[C]); Inc(NR) end
+        end;
+        if (NL>=MinLeaf) and (NR>=MinLeaf) then begin
+          G:=H-NL/N*Entropy(LC,NL)-NR/N*Entropy(RC,NR);
+          if G<0 then G:=0;
+          if (G>BestG+1E-12) or
+             ((Abs(G-BestG)<=1E-12) and (J=BestF) and (Threshold<BestT)) then begin
+            BestG:=G; BestF:=J; BestT:=Threshold
+          end
+        end
+      end
+    end;
+    if (BestF=0) or (BestG<MinGain) then Exit;
+    A:=Lo; B:=Hi;
+    while A<=B do
+      if D.X[Rows[A],BestF]<=BestT then Inc(A)
+      else begin T:=Rows[A]; Rows[A]:=Rows[B]; Rows[B]:=T; Dec(B) end;
+    L:=M.NodeCount+1; R:=M.NodeCount+2; M.NodeCount:=R;
+    with M.Nodes[Node] do begin
+      Feature:=BestF; Threshold:=BestT; Gain:=BestG; LeftChild:=L; RightChild:=R
+    end;
+    Build(L,Lo,B,Depth+1); Build(R,A,Hi,Depth+1)
+  end;
+begin
+  FillChar(M,SizeOf(M),0); FitTree:=False;
+  if not CheckData(D,False) then Exit;
+  if D.TargetKind<>TargetClass then begin SetAIError(ErrValue,'Tree memerlukan kelas'); Exit end;
+  if (DepthLimit<0) or (DepthLimit>MaxTreeDepth) or
+     (MinLeaf<1) or (MinLeaf>MaxSamples) or not ValidNumber(MinGain) or (MinGain<0) then begin
+    SetAIError(ErrValue,'Depth 0..8, min-leaf 1..200, min-gain >=0'); Exit
+  end;
+  M.Features:=D.Features; M.NodeCount:=1;
+  for I:=1 to D.Count do begin
+    Rows[I]:=I;
+    if D.Labels[I]+1>M.Classes then M.Classes:=D.Labels[I]+1
+  end;
+  Build(1,1,D.Count,0); M.Fitted:=True;
+  if not CheckTree(M) then begin M.Fitted:=False; Exit end;
+  FitTree:=True
+end;
+function TraceTree(var M: TTreeModel; var X: TVector;
+  var Path: TIndexList; var Length,LabelValue: Integer): Boolean;
+var Node: Integer;
+begin
+  Length:=0; LabelValue:=-1; TraceTree:=False;
+  if not CheckTree(M) then Exit;
+  if not CheckVector(X,M.Features) then Exit;
+  Node:=1;
+  repeat
+    Inc(Length); Path[Length]:=Node;
+    if M.Nodes[Node].Feature=0 then begin
+      LabelValue:=M.Nodes[Node].LabelValue; Break
+    end;
+    if X[M.Nodes[Node].Feature]<=M.Nodes[Node].Threshold then Node:=M.Nodes[Node].LeftChild
+    else Node:=M.Nodes[Node].RightChild
+  until False;
+  TraceTree:=True
+end;
+function PredictTree(var M: TTreeModel; var X: TVector;
+  var LabelValue: Integer): Boolean;
+var Path: TIndexList; N: Integer;
+begin PredictTree:=TraceTree(M,X,Path,N,LabelValue) end;
+end.
+
+======================================================================
+AITYPES.PAS
+======================================================================
+
+unit AITypes;
+{ OTP-AI 2.0 - tipe bersama. Indeks data dimulai dari 1. }
+interface
+const
+  MaxSamples = 200;
+  MaxFeatures = 8;
+  MaxClasses = 10;
+  MaxClusters = 8;
+  MaxMatrix = 16;
+  MaxCategories = 16;
+  AIInputLimit = 1.0E12;
+  AIEpsilon = 1.0E-10;
+  TargetNone = 0;
+  TargetReal = 1;
+  TargetClass = 2;
+  ScaleMinMax = 1;
+  ScaleStandard = 2;
+  ErrNone = 0;
+  ErrSize = 1;
+  ErrValue = 2;
+  ErrMissing = 3;
+  ErrIO = 4;
+  ErrFormat = 5;
+  ErrModel = 6;
+  ErrSingular = 7;
+  ErrMemory = 8;
+  ErrGraphics = 9;
+type
+  TFloat = Real;
+  TErrorText = string[127];
+  TFileName = string[127];
+  TName = string[31];
+  TVector = array[1..MaxFeatures] of TFloat;
+  TSeries = array[1..MaxSamples] of TFloat;
+  TLabels = array[1..MaxSamples] of Integer;
+  TIndexList = array[1..MaxSamples] of Integer;
+  TFeatureNames = array[1..MaxFeatures] of TName;
+  TDataSet = record
+    Count, Features, TargetKind: Integer;
+    X: array[1..MaxSamples] of TVector;
+    Y: TSeries;
+    Labels: TLabels;
+    Missing: array[1..MaxSamples,1..MaxFeatures] of Boolean;
+    Names: TFeatureNames;
+    TargetName: TName;
+  end;
+  PDataSet = ^TDataSet;
+  TMatrix = record
+    Rows, Cols: Integer;
+    V: array[1..MaxMatrix,1..MaxMatrix] of TFloat;
+  end;
+  TScaler = record
+    Fitted: Boolean;
+    Features, Kind: Integer;
+    Offset, Divisor: TVector;
+  end;
+  TImputer = record
+    Fitted: Boolean;
+    Features: Integer;
+    Means: TVector;
+  end;
+  TCategoryMap = record
+    Count: Integer;
+    Names: array[1..MaxCategories] of TName;
+  end;
+  TLinearModel = record
+    Fitted: Boolean;
+    Features: Integer;
+    Intercept: TFloat;
+    Coeff: TVector;
+  end;
+  TKNNModel = record
+    Fitted: Boolean;
+    K, TargetKind, Features, Count: Integer;
+    { Data tetap dimiliki pemanggil, bukan salinan. }
+    Data: PDataSet;
+  end;
+  TKMeansModel = record
+    Fitted, Converged: Boolean;
+    K, Features, Iterations: Integer;
+    Centers: array[1..MaxClusters] of TVector;
+    Inertia: TFloat;
+  end;
+  TRegMetrics = record
+    MAE, MSE, RMSE, R2: TFloat;
+    R2Defined: Boolean;
+  end;
+  TConfusion = record
+    Classes, Total: Integer;
+    Cells: array[0..MaxClasses-1,0..MaxClasses-1] of Integer;
+  end;
+  TClassMetrics = record
+    Accuracy, MacroPrecision, MacroRecall, MacroF1: TFloat;
+    Precision, Recall, F1: array[0..MaxClasses-1] of TFloat;
+    Support: array[0..MaxClasses-1] of Integer;
+  end;
+var
+  AIErrorCode: Integer;
+  AIError: TErrorText;
+procedure ClearAIError;
+procedure SetAIError(Code: Integer; Msg: TErrorText);
+function ValidNumber(X: TFloat): Boolean;
+procedure InitData(var D: TDataSet; Features, TargetKind: Integer);
+function NewData(var D: PDataSet): Boolean;
+procedure FreeData(var D: PDataSet);
+function CheckData(var D: TDataSet; AllowMissing: Boolean): Boolean;
+function CheckVector(var V: TVector; N: Integer): Boolean;
+implementation
+procedure ClearAIError;
+begin AIErrorCode := ErrNone; AIError := '' end;
+procedure SetAIError(Code: Integer; Msg: TErrorText);
+begin AIErrorCode := Code; AIError := Msg end;
+function ValidNumber(X: TFloat): Boolean;
+begin ValidNumber := (X = X) and (Abs(X) <= AIInputLimit) end;
+procedure InitData(var D: TDataSet; Features, TargetKind: Integer);
+var J: Integer; S: string[8];
+begin
+  FillChar(D, SizeOf(D), 0);
+  D.Features := Features; D.TargetKind := TargetKind;
+  for J := 1 to MaxFeatures do begin
+    Str(J, S); D.Names[J] := 'X' + S
+  end;
+  D.TargetName := 'TARGET'
+end;
+function NewData(var D: PDataSet): Boolean;
+{$IFDEF FPC}
+var OldNil: Boolean;
+{$ENDIF}
+begin
+  ClearAIError; D := nil; NewData := False;
+  {$IFNDEF FPC}
+    {$IFNDEF ODIN}
+  if MaxAvail < SizeOf(TDataSet) then begin
+    SetAIError(ErrMemory, 'Heap tidak cukup untuk dataset'); Exit
+  end;
+    {$ENDIF}
+  {$ENDIF}
+  {$IFDEF FPC}
+  OldNil := ReturnNilIfGrowHeapFails; ReturnNilIfGrowHeapFails := True;
+  {$ENDIF}
+  New(D);
+  {$IFDEF FPC}
+  ReturnNilIfGrowHeapFails := OldNil;
+  {$ENDIF}
+  if D = nil then begin
+    SetAIError(ErrMemory, 'Alokasi dataset gagal'); Exit
+  end;
+  InitData(D^, 0, TargetNone); NewData := True
+end;
+procedure FreeData(var D: PDataSet);
+begin if D <> nil then begin Dispose(D); D := nil end end;
+function CheckData(var D: TDataSet; AllowMissing: Boolean): Boolean;
+var I,J: Integer;
+begin
+  ClearAIError; CheckData := False;
+  if (D.Count < 1) or (D.Count > MaxSamples) or
+     (D.Features < 1) or (D.Features > MaxFeatures) then begin
+    SetAIError(ErrSize, 'Ukuran dataset tidak valid'); Exit
+  end;
+  if (D.TargetKind < TargetNone) or (D.TargetKind > TargetClass) then begin
+    SetAIError(ErrValue, 'Jenis target tidak valid'); Exit
+  end;
+  for I := 1 to D.Count do begin
+    for J := 1 to D.Features do begin
+      if D.Missing[I,J] then begin
+        if not AllowMissing then begin
+          SetAIError(ErrMissing, 'Fitur kosong, lakukan imputasi'); Exit
+        end
+      end else if not ValidNumber(D.X[I,J]) then begin
+        SetAIError(ErrValue, 'Fitur melampaui batas angka'); Exit
+      end
+    end;
+    if D.TargetKind = TargetReal then
+      if not ValidNumber(D.Y[I]) then begin
+        SetAIError(ErrValue, 'Target numerik tidak valid'); Exit
+      end;
+    if D.TargetKind = TargetClass then
+      if (D.Labels[I] < 0) or (D.Labels[I] >= MaxClasses) then begin
+        SetAIError(ErrValue, 'Label harus 0 sampai 9'); Exit
+      end
+  end;
+  CheckData := True
+end;
+function CheckVector(var V: TVector; N: Integer): Boolean;
+var J: Integer;
+begin
+  ClearAIError; CheckVector := False;
+  if (N < 1) or (N > MaxFeatures) then begin
+    SetAIError(ErrSize, 'Panjang vektor tidak valid'); Exit
+  end;
+  for J := 1 to N do if not ValidNumber(V[J]) then begin
+    SetAIError(ErrValue, 'Nilai vektor tidak valid'); Exit
+  end;
+  CheckVector := True
+end;
+begin ClearAIError end.
+

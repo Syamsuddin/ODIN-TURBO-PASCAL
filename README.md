@@ -131,6 +131,23 @@ Debugger terpadu bergaya Turbo Pascal (macOS, Linux, dan Windows), tanpa LLDB at
 > [!NOTE]
 > Rilis 1.0.0 memakai konsol LLDB di User screen. Sejak 2.0.0-alpha.1 debugger terpadu menggantikannya, sejak 2.1.0-alpha.1 debugger ini juga tersedia di Apple Silicon dan Linux, dan sejak 2.2.0 di Windows.
 
+### OTP-AI: unit machine learning
+
+Folder [`otp-AI/`](otp-AI/) berisi pustaka **AI dan machine learning murni Pascal** untuk Odin Turbo Pascal, tanpa dependensi luar. Pustakanya terdiri dari 19 unit yang dikelompokkan menurut fungsi seperti modul Python, sehingga cukup beberapa `uses` untuk satu program:
+
+| Kelompok | Unit |
+|---|---|
+| Fondasi | `AITYPES`, `AIMATH` (vektor, jarak, matriks), `AISTATS` (statistik dan metrik), `AIDATA` (dataset dan preprocessing), `AISPLIT` (train/test, k-fold) |
+| Model | `AILINEAR` (regresi linear, regresi logistik, perceptron), `AIKNN`, `AIKMEANS`, `AINNET`, `AIBAYES`, `AITREE`, `AIRULE`, `AIFUZZY`, `AITEXT` |
+| Pelatihan dan pendukung | `AIOPTIM`, `AIREWARD` (Q-learning), `AISEARCH` (A*, BFS, DFS), `AIMODEL` (simpan dan muat model), `AIPLOT` (grafik SVG) |
+
+- 20 program contoh di `otp-AI/EXAMPLES/` (regresi, KNN, K-Means, cross-validation, jaringan saraf, Naive Bayes, pohon keputusan, logika fuzzy, Q-learning, dan lainnya), serta tes `TESTALL` dan `TESTADV`.
+- Validasi input dilakukan di setiap unit: parameter tidak valid mengembalikan kode galat tanpa merusak data.
+- Buku tutorial berwarna penuh [`otp-AI/PANDUAN_OTP_AI.pdf`](otp-AI/PANDUAN_OTP_AI.pdf) (60 halaman, ditulis Syams Ideris, GPL v3) membahas tiap unit dan contoh: peran unit, tujuan, parameter, hasil yang diharapkan, dan posisinya dalam pembelajaran machine learning.
+- Cara memakai: salin folder `otp-AI/UNITS` ke unit path (**Options › Directories**), lalu tulis `uses AIMATH, AIDATA, AILINEAR;`. Panduan lengkap ada di [`otp-AI/README.TXT`](otp-AI/README.TXT).
+
+Seluruh contoh dikompilasi dan dijalankan dengan `odinpc` 2.5.0 di macOS x86_64 (`TESTALL` 139 pernyataan uji, `TESTADV` 148). Platform lain belum diuji untuk pustaka ini.
+
 ### Metrik: Ukur dan Periksa
 
 Bahan analisis dan penilaian kode, misalnya untuk lomba pemrograman (backend Odin; lihat **Help › Metrik: Ukur dan Periksa**):
@@ -375,6 +392,7 @@ Semua listing di buku dicetak langsung dari `examples/`, dan semua keluaran prog
 | Dokumen | Isi |
 |---|---|
 | [`docs/Belajar_Pemrograman_Bahasa_Pascal.pdf`](docs/Belajar_Pemrograman_Bahasa_Pascal.pdf) | Buku tutorial Pascal berwarna penuh (menu **Help › Buku**) |
+| [`otp-AI/PANDUAN_OTP_AI.pdf`](otp-AI/PANDUAN_OTP_AI.pdf) | Buku panduan unit AI/machine learning OTP-AI |
 | [`docs/HELP.txt`](docs/HELP.txt) | Panduan penggunaan IDE (juga di menu **Help**) |
 | [`docs/PASCAL.txt`](docs/PASCAL.txt) | Referensi Pascal ringkas |
 | [`docs/SHORTCUTS.txt`](docs/SHORTCUTS.txt) | Daftar lengkap pintasan keyboard |
@@ -445,6 +463,7 @@ ODIN-TURBO-PASCAL/
 ├── rtl/                     Runtime library (Pascal): System, Crt, Dos, Strings, Printer, Objects
 │   └── vision/              Odin Vision: semua unit Turbo Vision TP7 dan spesifikasinya (SPEC.md)
 ├── examples/                Tutorial Pascal pemula: 89 program dan satu unit dalam 20 bab
+├── otp-AI/                  Pustaka AI/machine learning Pascal: 19 unit, 20 contoh, tes, buku PDF
 ├── docs/                    Panduan, referensi Pascal, pintasan, kompatibilitas
 ├── tests/                   Tes Python (fungsional, compiler, debugger, GUI, Odin Vision) dan
 │   └── pascal/              korpus Pascal dengan ekspektasi tersimpan serta snapshot Crt dan Odin Vision

@@ -1,0 +1,571 @@
+LAPORAN PENGUJIAN OTP-AI 2.0.0
+Hak cipta (c) 2026 Syams Ideris. Lisensi GNU GPL versi 3.0 atau yang lebih baru.
+Catatan baseline di bawah berasal dari paket 24 unit sebelum konsolidasi.
+
+Free Pascal 3.2.2, Linux x86_64, mode TP (-Mtp).
+Build: -B -Cr -Co -Ci -Ct; 24 unit, 20 contoh berjalan.
+ABI aktual: Real 8 byte, Integer 2 byte, Boolean 1 byte.
+Koreksi dokumentasi v1: Integer FPC mode TP adalah 2 byte, bukan 4 byte.
+Baseline 24 unit: TESTALL 135 assertion; TESTADV 148 assertion.
+REFTEST: 36 pembanding NumPy; REFADV: 14 pembanding. Semua lulus.
+Need() adalah pemeriksaan prasyarat fatal dan tidak dihitung sebagai assertion.
+Shell build benar-benar dijalankan. BAT DOS/Windows ditinjau statis saja.
+TP7 Borland, 16-bit DOS, dan driver BGI belum diuji langsung.
+FPC -Mtp tidak membuktikan seluruh perilaku TP7, ABI atau batas segmen DOS.
+Tidak ada pengujian beban dataset besar karena kapasitas sengaja kecil.
+
+TESTADV mencakup training XOR/AND, optimizer, posterior, teks, pohon,
+penalaran aturan/konflik, pencarian, fuzzy, Q-learning, 16 keluarga model,
+checksum/header/ABI salah, truncation, trailing bytes dan load nonmutasi.
+REFADV memeriksa gradien logistik, satu epoch backprop beserta bobot/bias/loss,
+posterior Bayes, TF-IDF, centroid Mamdani dan pembaruan Bellman/terminal.
+Toleransi numerik REFADV: atol=rtol=2E-7; output Pascal 14 desimal.
+Berkas model binary hasil tes tidak didistribusikan karena terikat ABI.
+SVG keluaran diperiksa XML dan dirender untuk tinjauan visual.
+
+VALIDASI TERKINI SETELAH KONSOLIDASI DAN PERBAIKAN BATAS MATRIKS
+
+Odin Turbo Pascal 2.5.0, macOS x86_64:
+19 unit dan seluruh 20 contoh terkompilasi.
+TESTALL: 139 lulus; TESTADV: 148 lulus. Total 287 assertion, 0 gagal.
+
+Free Pascal 3.2.2, macOS x86_64:
+20 contoh dan 4 program tes terkompilasi dengan -Mtp -B -Cr -Co -Ci -Ct -Cn.
+Link dan eksekusi tidak dilakukan: linker host melaporkan "library 'c' not found".
+Hasil Linux dan NumPy di bagian awal adalah catatan baseline 24 unit sebelum
+konsolidasi, bukan hasil uji pasca-konsolidasi.
+
+
+LOG TESTALL
+
+OTP-AI TESTALL
+PASS Dataset satu blok < 60000 byte
+PASS Euclidean 3-4-5
+PASS Dot product
+PASS Manhattan
+PASS Tolak vektor kosong
+PASS Sigmoid nol
+PASS Sigmoid negatif ekstrem
+PASS Sigmoid positif ekstrem
+PASS Log nol ditolak
+PASS Akar negatif ditolak
+PASS Eksponen besar ditolak
+PASS Log satu
+PASS Exp nol
+PASS Akar sembilan
+PASS Pangkat negatif
+PASS Nol pangkat negatif ditolak
+PASS Overflow pangkat ditolak
+PASS PRNG Park-Miller
+PASS Seed negatif tetap valid
+PASS Acak satu kemungkinan
+PASS Acak batas nol tidak crash
+PASS Acak nol memberi error
+PASS Matriks kali 1,1
+PASS Matriks kali 2,2
+PASS Transpose in-place
+PASS Nilai transpose
+PASS Tambah dimensi salah
+PASS Skala in-place
+PASS Pengurangan matriks
+PASS Tambah in-place
+PASS Matriks melampaui kapasitas
+PASS Tambah menolak hasil di atas 1E12
+PASS Kurang menolak hasil di atas 1E12
+PASS Skala menolak hasil di atas 1E12
+PASS Kali menolak hasil di atas 1E12
+PASS Mean
+PASS Median ganjil
+PASS Median genap
+PASS Varians populasi
+PASS Varians sampel
+PASS Simpangan baku
+PASS Min max
+PASS Korelasi positif
+PASS Korelasi negatif
+PASS Korelasi konstan tak terdefinisi
+PASS Varians sampel satu angka ditolak
+PASS Header CSV dengan koma
+PASS Escape kutip CSV
+PASS Kolom kosong ditandai
+PASS Angka dalam kutip
+PASS Roundtrip header CSV
+PASS Roundtrip nilai kosong CSV
+PASS Tolak kolom tidak konsisten
+PASS CSV gagal mengosongkan hasil
+PASS Tolak eksponen CSV ekstrem
+PASS Tolak target kosong
+PASS Tolak label pecahan
+PASS Tolak label negatif
+PASS Tolak kutip terbuka
+PASS Tolak teks fitur
+PASS Roundtrip angka kecil
+PASS CSV berkas hilang
+PASS CSV folder tujuan hilang
+PASS Tolak baris >255 karakter
+PASS Tolak 201 baris
+PASS CSV tanpa header dan tanpa target
+PASS GetColumn
+PASS SelectColumns
+PASS FilterRange
+PASS Filter kosong tetap sukses
+PASS Filter alias ditolak
+PASS Scaler menolak missing
+PASS Imputer mean hanya nilai terisi
+PASS Imputer mengganti nilai
+PASS Fitur konstan menjadi nol
+PASS Inverse scaler
+PASS Mean setelah standardisasi
+PASS Varians standar populasi
+PASS Minmax data baru boleh di luar 0..1
+PASS Transform tidak melatih ulang scaler
+PASS Imputer kolom seluruhnya kosong ditolak
+PASS Kategori nol
+PASS Kategori satu
+PASS Kategori duplikat tidak ditambah
+PASS Kategori baru ditolak saat transform
+PASS One hot
+PASS One hot kode salah
+PASS Proporsi split
+PASS Split disjoint dan seluruh baris terpakai
+PASS Seed yang sama menghasilkan urutan sama
+PASS Split alias ditolak
+PASS Fraksi split satu ditolak
+PASS K-fold setiap baris diuji tepat satu kali
+PASS OLS intercept
+PASS OLS slope
+PASS OLS prediksi data baru
+PASS OLS RMSE
+PASS OLS berganda intercept
+PASS OLS berganda koefisien 1
+PASS OLS berganda koefisien 2
+PASS OLS kolinear ditolak
+PASS Model gagal tidak ditandai fitted
+PASS Ridge menangani kolinear
+PASS KNN klasifikasi
+PASS KNN seri suara memilih kelas terkecil
+PASS KNN K terlalu besar
+PASS KNN regresi mean tetangga
+PASS KNN mendeteksi dimensi data berubah
+PASS K-means konvergen
+PASS K-means inertia diketahui
+PASS K-means partisi
+PASS K-means fit dan predict inertia konsisten
+PASS K-means label cocok pusat akhir
+PASS K-means history tidak meningkat
+PASS K-means batas iterasi dilaporkan
+PASS K melebihi titik unik ditolak
+PASS K-means satu pusat titik identik
+PASS MAE
+PASS MSE
+PASS R2
+PASS R2 target konstan tidak terdefinisi
+PASS Accuracy
+PASS Precision
+PASS Recall
+PASS F1
+PASS Macro F1
+PASS Kelas kosong bernilai nol dalam macro
+PASS Label negatif evaluasi ditolak
+PASS CSV kapasitas maksimum
+PASS CSV nilai terakhir kapasitas maksimum
+PASS CSV menolak header hasil >255 karakter
+PASS CSV menolak angka terlalu kecil untuk format
+PASS CopyRow menolak indeks nol
+PASS Header CSV >31 karakter ditolak
+PASS CSV presisi fraksi berlebih ditolak
+PASS Plot menolak data kosong
+PASS Plot mendeteksi kegagalan berkas
+PASS Plot BGI perlu dibuka
+PASS FreeData mengosongkan pointer
+TOTAL PASS=139 FAIL=0
+
+LOG TESTADV
+
+OTP-AI 2.0 TESTADV
+PASS Training menolak rate nol
+PASS Training menolak momentum satu
+PASS Training menolak epoch nol
+PASS SGD satu langkah
+PASS Momentum memakai velocity sebelumnya
+PASS Gradient clipping
+PASS SGD menolak rate negatif
+PASS SGD gagal tidak memutasi nilai
+PASS Vector SGD komponen pertama
+PASS Vector SGD komponen kedua
+PASS BCE logit nol
+PASS BCE positif ekstrem stabil
+PASS BCE negatif ekstrem stabil
+PASS BCE target invalid
+PASS Early stop perbaikan pertama
+PASS Early stop belum mencapai patience
+PASS Early stop plateau
+PASS Logistic fitted
+PASS Logistic loss turun
+PASS Logistic klasifikasi data terpisah
+PASS Logistic threshold invalid
+PASS Logistic menolak kelas nonbiner
+PASS Logistic gagal tidak fitted
+PASS Roundtrip logistic
+PASS Perceptron AND konvergen
+PASS Perceptron tabel AND benar
+PASS Roundtrip perceptron
+PASS Perceptron XOR tidak konvergen
+PASS Perceptron XOR masih memiliki kesalahan
+PASS Perceptron epoch invalid
+PASS Neural XOR konvergen
+PASS Neural XOR mencapai goal loss
+PASS Neural empat keluaran XOR benar
+PASS History training dibatasi
+PASS History mencakup epoch terakhir
+PASS Roundtrip neural
+PASS Neural menolak hidden berlebih
+PASS Gaussian mean kelas
+PASS Gaussian varians populasi
+PASS Gaussian prediksi
+PASS Gaussian kelas tak teramati peluang nol
+PASS Posterior Bayes berjumlah satu
+PASS Roundtrip Gaussian
+PASS Gaussian floor nol ditolak
+PASS Multinomial Laplace smoothing
+PASS Multinomial posterior diketahui
+PASS Roundtrip multinomial
+PASS Multinomial fitur negatif ditolak
+PASS Multinomial alpha nol ditolak
+PASS Pohon XOR tujuh node
+PASS Pohon XOR benar saat min-gain nol
+PASS Trace pohon dari akar
+PASS Roundtrip tree
+PASS Pohon menolak siklus
+PASS Depth nol menghasilkan satu daun
+PASS Greedy tree berhenti saat gain awal nol
+PASS MinLeaf mencegah pemisahan
+PASS Depth berlebih ditolak
+PASS Tokenizer lowercase dan tanda baca
+PASS Token terlalu panjang ditolak
+PASS Tokenizer non ASCII ditolak
+PASS Tokenizer teks tanpa kata
+PASS Tokenizer terlalu banyak token ditolak
+PASS Vocabulary urut DF dan alfabet
+PASS IDF smoothing
+PASS TF-IDF count dikali IDF
+PASS Kata baru diabaikan tanpa mengubah vocabulary
+PASS Transform tidak memperbesar vocabulary
+PASS TF-IDF normalisasi L2
+PASS Roundtrip vocabulary
+PASS Corpus menjadi dataset
+PASS Vocabulary lebih dari 8 ditolak
+PASS Vocabulary kosong karena min-df ditolak
+PASS Pembaca corpus TSV
+PASS Corpus berkas hilang
+PASS Forward chain lintas dua putaran
+PASS Urutan trace firing
+PASS Provenance fakta
+PASS Roundtrip rules
+PASS Roundtrip facts
+PASS Perubahan fakta mereset kesimpulan turunan
+PASS Unknown tidak memenuhi premis true
+PASS Konflik aturan ditolak
+PASS Konflik tidak memutasi fakta
+PASS Siklus tanpa fakta pemicu berhenti
+PASS Fakta duplikat ditolak
+PASS BFS rute terpendek
+PASS A-star cocok BFS
+PASS DFS menemukan rute
+PASS Rute berawal dan berakhir benar
+PASS Rute hanya bergerak empat arah tanpa menembus dinding
+PASS Start sama dengan goal
+PASS Grid terputus memberi Found false
+PASS Goal dinding ditolak
+PASS Start di luar grid ditolak
+PASS Ukuran grid berlebih ditolak
+PASS Roundtrip grid
+PASS BFS kapasitas maksimum 256 sel
+PASS Membership naik
+PASS Membership turun
+PASS Membership puncak
+PASS Membership luar dukungan
+PASS Left shoulder tanpa pembagian nol
+PASS Right shoulder tanpa pembagian nol
+PASS Segitiga degenerat ditolak
+PASS Centroid low shoulder
+PASS Centroid high shoulder
+PASS Centroid simetris
+PASS Roundtrip fuzzy
+PASS Fuzzy input di luar universe ditolak
+PASS Fuzzy segmen nol ditolak
+PASS Fuzzy tanpa rule aktif ditolak
+PASS Q update Bellman
+PASS Terminal tidak bootstrap
+PASS Q argmax
+PASS Q tie memilih aksi terkecil
+PASS Epsilon exploration selalu menghasilkan aksi valid
+PASS Epsilon decay
+PASS Epsilon floor
+PASS Q state nol ditolak
+PASS Q aksi berlebih ditolak
+PASS Benturan grid self-loop dan penalti
+PASS Goal terminal dengan reward
+PASS Goal absorbing
+PASS Q-learning menemukan rute
+PASS Q-learning contoh mencapai rute terpendek
+PASS Q-learning episode berhasil
+PASS Q history mencakup episode terakhir
+PASS Roundtrip Q-table
+PASS Greedy policy belum belajar berhenti saat siklus
+PASS Q kapasitas berlebih ditolak
+PASS Roundtrip linear v1
+PASS Roundtrip scaler v1
+PASS Roundtrip imputer v1
+PASS KNN loader mengikat pointer ke storage pemanggil
+PASS Roundtrip KNN dan dataset v1
+PASS Roundtrip K-means v1
+PASS Jarak K-means roundtrip
+PASS Loader menolak jenis model berbeda
+PASS Loader menolak checksum rusak
+PASS Load gagal tidak memutasi model
+PASS Loader menolak magic salah
+PASS Loader menolak ABI berbeda
+PASS Loader menolak trailing bytes
+PASS Loader menolak header terpotong
+PASS Loader berkas hilang
+PASS Saver folder hilang
+PASS Saver menolak model belum terlatih
+TOTAL ADV PASS=148 FAIL=0
+
+LOG REFTEST
+
+PASS NumPy seed=0, ridge=0.0, 6 pemeriksaan
+PASS NumPy seed=1, ridge=0.25, 6 pemeriksaan
+PASS NumPy seed=2, ridge=0.0, 6 pemeriksaan
+PASS NumPy seed=3, ridge=0.25, 6 pemeriksaan
+PASS NumPy seed=4, ridge=0.0, 6 pemeriksaan
+PASS NumPy seed=5, ridge=0.25, 6 pemeriksaan
+TOTAL NUMPY PASS=36 FAIL=0
+
+LOG REFADV
+
+ABI 8 2 1
+PASS Logistic batch gradient
+PASS Logistic bias
+PASS Logistic BCE
+PASS Neural backprop input weights
+PASS Neural backprop hidden bias
+PASS Neural backprop output weights
+PASS Neural backprop output bias
+PASS Neural BCE after epoch
+PASS Gaussian log posterior
+PASS Multinomial smoothed posterior
+PASS TF-IDF smoothed L2 vector
+PASS Mamdani centroid quadrature
+PASS Q-learning Bellman step
+PASS Q-learning terminal step
+TOTAL NUMPY ADV PASS=14 FAIL=0
+
+LOG ALL_EXAMPLES
+
+RUN BASIC
+OTP-AI - matematika, matriks dan statistik
+Jarak (1,2)-(4,6): 5.0000
+Dot product: 16.0000
+Sigmoid(0): 0.5000
+A * I:
+    1.00    2.00
+    3.00    4.00
+Mean 1..5: 3.0000
+Median: 3.0000
+Varians sampel: 2.5000
+Korelasi: 1.0000
+
+RUN BAYDEMO
+Baris = aktual; kolom = prediksi
+        0    1    2
+  0     6    0    0
+  1     0    5    0
+  2     0    0    3
+Gaussian NB accuracy=1.0000
+
+RUN CROSSVAL
+Fold 1: accuracy=1.0000
+Fold 2: accuracy=1.0000
+Fold 3: accuracy=1.0000
+Fold 4: accuracy=1.0000
+Fold 5: accuracy=1.0000
+Accuracy gabungan = 1.0000
+Fold acak biasa. Pembagian ini tidak memakai stratifikasi.
+
+RUN DATAPREP
+Baris: 12  Fitur: 2  Jenis target: 1
+JAM: terisi=11 kosong=1 mean=6.727 sd=3.519 min=1.000 max=12.000
+LATIHAN: terisi=10 kosong=2 mean=8.000 sd=3.464 min=2.000 max=13.000
+Baris latih dengan fitur 1 antara -1 dan 1: 5
+BIRU = 1; one-hot = 0,1
+Hasil: PREPTRN.CSV dan PREPTST.CSV
+
+RUN FUZDEMO
+Suhu=28, kelembapan=70 => kecepatan kipas=69.807
+Aturan 1 firing=0.0000
+Aturan 2 firing=0.0000
+Aturan 3 firing=0.0000
+Aturan 4 firing=0.0000
+Aturan 5 firing=0.2000
+Aturan 6 firing=0.2000
+Aturan 7 firing=0.0000
+Aturan 8 firing=0.2000
+Aturan 9 firing=0.4000
+
+RUN KMEANS
+Iterasi=2 Konvergen=TRUE
+Inertia=0.995495
+Pusat 1: -1.2624, -0.7002
+Pusat 2: 0.0902, 1.4003
+Pusat 3: 1.1722, -0.7002
+Grafik: CLUSTER.SVG dan INERTIA.SVG
+
+RUN KNNDEMO
+Baris = aktual; kolom = prediksi
+        0    1    2
+  0     6    0    0
+  1     0    5    0
+  2     0    0    3
+Accuracy=1.0000 Macro-F1=1.0000
+Grafik: KNN.SVG. Dataset bunga sintetis, bukan Iris.
+
+RUN LOGDEMO
+Baris = aktual; kolom = prediksi
+        0    1
+  0     6    0
+  1     0    4
+Epoch=549 loss=0.009997 stop=1 accuracy=1.0000
+
+RUN MODELIO
+Linear sebelum=70.012013 sesudah=70.012013
+KNN sebelum=69.666667 sesudah=69.666667
+TPM hanya untuk ABI/compiler yang sama. Dataset KNN ikut tersimpan.
+
+RUN NNDEMO
+Jaringan 2-4-1: epoch=341 loss=0.009989
+0 0 => P=0.002294 kelas=0
+0 1 => P=0.990226 kelas=1
+1 0 => P=0.992267 kelas=1
+1 1 => P=0.019874 kelas=0
+Model: XOR.TPM. Grafik: NNLOSS.SVG.
+
+RUN OPTDEMO
+Minimum fungsi f(w)=(w-3)^2. Gradien=2*(w-3).
+Langkah  10 w=2.789542 loss=0.04429270
+Langkah  20 w=2.998551 loss=0.00000210
+Langkah  30 w=2.999991 loss=0.00000000
+Langkah  40 w=3.000000 loss=0.00000000
+Langkah  50 w=3.000000 loss=0.00000000
+Langkah  60 w=3.000000 loss=0.00000000
+Langkah  70 w=3.000000 loss=0.00000000
+Langkah  80 w=3.000000 loss=0.00000000
+Langkah  90 w=3.000000 loss=0.00000000
+Langkah 100 w=3.000000 loss=0.00000000
+
+RUN PATHDEMO
+Metode 1: found=TRUE cost=10 expanded=31
+S * # . . . 
+. * # . . . 
+. * # . . . 
+. * * * * * 
+. . # . . * 
+. . . . . G 
+
+Metode 2: found=TRUE cost=10 expanded=11
+S . # . . . 
+* . # . . . 
+* . # . . . 
+* . . . . . 
+* . # . . . 
+* * * * * G 
+
+Metode 3: found=TRUE cost=10 expanded=23
+S * # . . . 
+. * # . . . 
+. * # . . . 
+. * * * * * 
+. . # . . * 
+. . . . . G 
+
+
+RUN PERDEMO
+AND: epoch=8 konvergen=TRUE
+0 0 => 0
+0 1 => 0
+1 0 => 0
+1 1 => 1
+XOR: konvergen=FALSE error=0.5000
+Perceptron tunggal tidak memisahkan XOR secara linear.
+
+RUN PLOTDEMO
+PLOT.SVG sudah dibuat.
+BGI khusus build Turbo Pascal. Buka SVG di peramban.
+
+RUN QDEMO
+Episode=1500 sukses=1500 langkah=12071
+Rute greedy: found=TRUE cost=6
+S * * * 
+. # . * 
+. # . * 
+. . . G 
+
+RUN REGDEMO
+Data sintetis jam belajar dan nilai. Bukan hubungan sebab akibat.
+Latih=22 Uji=8
+Y = 40.6310 + 5.9181 * X
+MAE=1.5959 RMSE=1.7477
+R2=0.9773
+Prediksi untuk X=5: 70.2217
+Grafik: REGRESI.SVG
+
+RUN REGMULT
+Identifikasi persamaan sintetis Y = 5 + 2*X1 - 3*X2
+Intercept=5.000000
+Koefisien 1=2.000000
+Koefisien 2=-3.000000
+RMSE latih=0.00000000
+Demo ini memeriksa persamaan, bukan evaluasi generalisasi.
+
+RUN RULEDEMO
+Aturan aktif=2
+kelas_daring_siap = 1 <= aturan 1: kelas_daring
+  perangkat_siap = 1 <= aturan 2: perangkat
+    listrik_tersedia = 1 (fakta awal/unknown)
+  internet_tersedia = 1 (fakta awal/unknown)
+
+RUN TEXTDEMO
+Vocabulary dilatih hanya dari corpus latih:
+ 1 bagus idf=1.8109
+ 2 buruk idf=1.8109
+ 3 cepat idf=1.8109
+ 4 gagal idf=1.8109
+ 5 kecewa idf=1.8109
+ 6 lambat idf=1.8109
+ 7 puas idf=1.8109
+ 8 ramah idf=1.8109
+bagus ramah => 0 P=0.8056
+cepat puas => 0 P=0.8056
+buruk kecewa => 1 P=0.8056
+lambat gagal => 1 P=0.8056
+Accuracy uji=1.0000
+
+RUN TREEDEMO
+Pohon XOR, min-gain=0. Node=7
+Input 0,0 => 0
+  node 1 X1 <= 0.500
+  node 2 X2 <= 0.500
+  node 4 daun kelas 0
+Input 0,1 => 1
+  node 1 X1 <= 0.500
+  node 2 X2 <= 0.500
+  node 5 daun kelas 1
+Input 1,0 => 1
+  node 1 X1 <= 0.500
+  node 3 X2 <= 0.500
+  node 6 daun kelas 1
+Input 1,1 => 0
+  node 1 X1 <= 0.500
+  node 3 X2 <= 0.500
+  node 7 daun kelas 0

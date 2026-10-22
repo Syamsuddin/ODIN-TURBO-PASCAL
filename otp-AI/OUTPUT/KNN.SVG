@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+<rect width="800" height="500" fill="#f8fafc"/>
+<g font-family="sans-serif" fill="#0f172a" font-size="12">
+<text x="80" y="30" font-size="18">KNN - prediksi data uji</text>
+<rect x="80" y="55" width="690" height="380" fill="white" stroke="#94a3b8"/>
+<text x="80" y="458" text-anchor="middle">-1.664</text>
+<text x="72" y="439" text-anchor="end">-1.701</text>
+<text x="252" y="458" text-anchor="middle">-0.922</text>
+<text x="72" y="344" text-anchor="end">-0.920</text>
+<text x="425" y="458" text-anchor="middle">-0.180</text>
+<text x="72" y="249" text-anchor="end">-0.139</text>
+<text x="598" y="458" text-anchor="middle">0.563</text>
+<text x="72" y="154" text-anchor="end">0.642</text>
+<text x="770" y="458" text-anchor="middle">1.305</text>
+<text x="72" y="59" text-anchor="end">1.423</text>
+<circle cx="128" cy="409" r="4" fill="#2563eb"/>
+<circle cx="412" cy="258" r="4" fill="#dc2626"/>
+<circle cx="421" cy="237" r="4" fill="#dc2626"/>
+<circle cx="145" cy="404" r="4" fill="#2563eb"/>
+<circle cx="179" cy="393" r="4" fill="#2563eb"/>
+<circle cx="697" cy="108" r="4" fill="#15803d"/>
+<circle cx="455" cy="227" r="4" fill="#dc2626"/>
+<circle cx="722" cy="81" r="4" fill="#15803d"/>
+<circle cx="128" cy="409" r="4" fill="#2563eb"/>
+<circle cx="412" cy="258" r="4" fill="#dc2626"/>
+<circle cx="170" cy="377" r="4" fill="#2563eb"/>
+<circle cx="722" cy="81" r="4" fill="#15803d"/>
+<circle cx="438" cy="232" r="4" fill="#dc2626"/>
+<circle cx="128" cy="409" r="4" fill="#2563eb"/>
+<text x="760" y="485">X</text><text x="20" y="45">Y</text>
+<text x="80" y="485">OTP-AI 2.0 | Warna mengikuti kode kelompok modulo 10</text>
+</g></svg>

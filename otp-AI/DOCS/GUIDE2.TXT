@@ -1,0 +1,234 @@
+PANDUAN LANJUTAN UNIT AI OTP-AI 2.0
+
+Hak cipta (c) 2026 Syams Ideris. Lisensi GNU GPL versi 3.0 atau yang lebih baru.
+
+PANDUAN PEMAKAIAN UMUM
+
+Gunakan interface di API.TXT sebagai daftar parameter resmi. Semua contoh
+lengkap ada di EXAMPLES. Program harus dijalankan dari folder utama otp-AI.
+Fungsi utama mengembalikan Boolean. Jika False, baca AIErrorCode dan AIError;
+jangan memakai keluaran operasi yang gagal. Fitted/Ready menyatakan kesiapan
+model, bukan ukuran akurasi atau bukti telah konvergen.
+
+TDataSet tetap memakai NewData/FreeData. Jangan menyalin dataset besar ke
+stack. Label biner harus 0/1, sedangkan Bayes dan pohon menerima label 0..9.
+Tangani missing value terlebih dahulu. Untuk optimizer, skalakan fitur dengan
+AIData. Fit scaler/imputer/vocabulary hanya pada data latih; terapkan parameter
+yang sama ke data uji dan data produksi.
+
+13. AIOPTIM - OPTIMISASI
+
+DefaultTraining mengisi seluruh konfigurasi. Ubah hanya parameter yang perlu.
+MaxEpochs/Patience: 1..10000; Rate: (0,10]; Momentum: [0,1); L2: [0,100].
+Clip: (0,1E6], GoalLoss/MinDelta nonnegatif. Seed untuk reproduksibilitas.
+SGDStep melakukan:
+  g = clamp(gradient, -Clip, Clip)
+  velocity = Momentum*velocity - Rate*g
+  value = value + velocity
+VectorStep menggunakan aturan sama untuk setiap komponen, dengan validasi
+sebelum menyimpan seluruh perubahan. Clipping per komponen, bukan norm global.
+L2 diterapkan oleh model, bukan oleh SGDStep. Bias tidak dikenai L2.
+BinaryLoss menerima logit, bukan probabilitas, agar BCE stabil.
+
+StopGoal=1: loss mencapai GoalLoss.
+StopPlateau=2: perbaikan tidak melebihi MinDelta selama Patience epoch.
+StopLimit=3: batas epoch tercapai.
+Info.Converged hanya True untuk StopGoal pada logistic/MLP. Bobot akhir tetap
+tersedia pada plateau/limit; tidak ada restore-best-weights otomatis.
+Info.History memiliki maksimum 200 sampel. Gunakan HistoryEpoch sebagai
+sumbu X karena history tidak selalu berisi setiap epoch. FinalLoss adalah
+loss model sesudah pembaruan pada epoch terakhir.
+InitTraining/RecordLoss/ShouldStop adalah helper untuk loop terkontrol;
+pemanggil harus memvalidasi konfigurasi dan urutan epoch sendiri.
+Contoh: OPTDEMO.PAS, LOGDEMO.PAS, NNDEMO.PAS.
+
+14. AILINEAR - REGRESI LOGISTIK
+
+FitLogistic memakai full-batch gradient descent, sigmoid dan BCE rata-rata,
+ditambah 0.5*L2*jumlah(w^2). Bobot/bias mulai nol. Fitur latih |x|<=10000.
+PredictLogistic menghasilkan probabilitas kelas 1 dan label dari threshold
+(0,1), biasanya 0.5. LogisticData menerapkan prediksi ke satu dataset.
+Seed tidak mengubah hasil batch logistic karena tidak memakai pengacakan.
+LOGDEMO memperagakan split 75/25, fit scaler pada train, fit classifier,
+confusion matrix, accuracy, dan ekspor LOGLOSS.SVG.
+Padanan konsep Python: sklearn.linear_model.LogisticRegression; solver dan
+konvensi regularisasi di sini tidak identik dengan scikit-learn.
+
+15. AILINEAR - PERCEPTRON
+
+FitPerceptron memakai pengacakan baris setiap epoch dan pembaruan online
+berdasarkan kesalahan kelas. Score adalah margin linear, bukan probabilitas.
+Info.FinalLoss berisi fraksi kesalahan, bukan BCE. Converged berarti tidak
+ada salah klasifikasi pada data latih dalam evaluasi akhir epoch.
+PERDEMO memperlihatkan AND yang terpisah linear dan XOR yang tidak dapat
+diselesaikan oleh satu perceptron. Tidak konvergen pada XOR adalah hasil
+pembelajaran yang diharapkan, bukan kegagalan fungsi.
+Padanan konsep: sklearn.linear_model.Perceptron.
+
+16. AINNET - JARINGAN SARAF
+
+FitNeural(D, Hidden, Config, Model, Info) mendukung 1..8 neuron hidden,
+1..8 fitur input, satu output biner, sigmoid pada kedua lapisan.
+Inisialisasi Xavier uniform; SGD online dengan shuffle, BCE, momentum, L2,
+dan clipping. Delta hidden dihitung dari bobot output sebelum pembaruan.
+Tidak ada autodiff, mini-batch, dropout, CNN, RNN atau transformer.
+NNDEMO melatih XOR dengan 4 hidden, rate 0.5, momentum 0.5, seed 42 dan
+maksimum 6000 epoch. Ia mencetak empat prediksi, menyimpan XOR.TPM, dan
+menulis NNLOSS.SVG. Prediksi dari loaded model memakai PredictNeural.
+Loss di contoh adalah loss latih; empat baris XOR bukan evaluasi generalisasi.
+Padanan konsep: MLPClassifier atau jaringan Dense kecil Keras/PyTorch.
+
+17. AIBAYES - NAIVE BAYES
+
+FitGaussian: fitur real dengan asumsi kondisional Gaussian per kelas.
+Varians populasi dihitung dengan Welford, lalu dibatasi VarianceFloor absolut
+(1E-8..1E6). Ini berbeda dengan var_smoothing relatif pada sklearn.
+FitMultinomial: fitur nonnegatif (count atau bobot TF-IDF), smoothing Alpha
+(1E-8..1E6). Negatif ditolak. Fitur latih dibatasi magnitudo 1E6.
+PredictBayes menghitung skor log dan normalisasi softmax stabil. Prob[c]
+memakai indeks label sebenarnya, 0..9; kelas tak teramati bernilai nol.
+Tie memilih label terkecil. Probabilitas bukan jaminan kalibrasi.
+Contoh BAYDEMO untuk Gaussian dan TEXTDEMO untuk multinomial.
+Padanan konsep: GaussianNB dan MultinomialNB.
+
+18. AITREE - POHON KEPUTUSAN
+
+FitTree(D, DepthLimit, MinLeaf, MinGain, Model) membangun pohon numerik
+biner dengan Shannon entropy/information gain. Root berkedalaman nol.
+Threshold berasal dari midpoint dua nilai berurutan yang berbeda.
+DepthLimit 0..8; MinLeaf minimal 1; kapasitas 63 node.
+Feature=0 pada node menandakan daun. Leaf memilih kelas mayoritas; seri
+memilih label terkecil. Kapasitas habis menghasilkan daun dan Truncated=True.
+MinGain=0 mengizinkan split gain nol. XOR memerlukannya sebelum split
+berikutnya memberi informasi. MinGain positif dapat menghentikan XOR di akar.
+TraceTree mengembalikan indeks node dari akar hingga daun.
+Tidak ada pruning, fitur kategori langsung, regression tree atau forest.
+Contoh TREEDEMO. Padanan konsep: DecisionTreeClassifier(criterion='entropy').
+
+19. AITEXT - TEKS DAN TF-IDF
+
+Tokenize menerima ASCII, mengubah A-Z menjadi a-z, mempertahankan digit,
+dan menggunakan tanda baca sebagai pemisah. Tidak ada stemming, stopword,
+Unicode, n-gram, embedding atau deteksi bahasa.
+Batas: 64 token/dokumen; token 31 karakter; 32 dokumen; 128 kata unik.
+FitText memilih maksimum 8 kata berdasarkan document frequency tertinggi,
+lalu alfabet untuk seri. MinDocumentFreq menghapus kata yang terlalu jarang.
+IDF = ln((1 + jumlah_dokumen)/(1 + document_frequency)) + 1.
+TF adalah jumlah kemunculan kata. UseIDF=False menghasilkan bag-of-words.
+Normalize=True membagi vektor dengan norm L2 jika norm tidak nol.
+Kata di luar vocabulary diabaikan; teks seluruhnya asing menghasilkan nol.
+Transform tidak memperluas vocabulary. FitText hanya pada corpus latih.
+
+LoadCorpus menerima TSV tanpa header:
+  digit_label<TAB>teks ASCII
+Satu label 0..9, diikuti TAB sebenarnya, lalu teks; baris maksimum 255 byte
+termasuk label/TAB. Jangan menuliskan karakter literal '<TAB>'.
+TEXTTRN.TSV dan TEXTEST.TSV merupakan fixture siap pakai. VectorizeCorpus
+mengubah corpus menjadi TDataSet TargetClass untuk classifier numerik.
+Padanan konsep: CountVectorizer / TfidfVectorizer dalam ukuran sangat kecil.
+
+20. AIMODEL - PENYIMPANAN
+
+Tersedia Save/Load untuk Linear, KMeans, Scaler, Imputer, Logistic,
+Perceptron, Neural, Bayes, Tree, Vocabulary, Rules, Facts, Grid, Fuzzy,
+Q dan KNN. Nama fungsi lengkap ada di API.TXT.
+
+.TPM memakai raw record binary dan packed header: magic TPAIMDL2, versi
+format, kind, ukuran record, ukuran tipe, endianness, compiler-family,
+layout-id, dan checksum rolling. Ini snapshot lokal untuk ABI yang sama,
+bukan format pertukaran lintas compiler/arsitektur. Header mendeteksi banyak
+ketidakcocokan, tetapi bukan bukti bahwa semua opsi compiler identik.
+Versi paket 2.0 memakai versi format binary 1; keduanya berbeda tujuan.
+
+Load memvalidasi header, panjang tepat, checksum dan isi model. Kegagalan
+load mempertahankan model tujuan lama. Checksum mendeteksi kerusakan biasa,
+bukan autentikasi atau perlindungan terhadap pemalsuan.
+Save menimpa file tujuan langsung; bukan atomic replacement. Gunakan nama
+file baru jika model lama harus dipertahankan.
+
+KNN menyimpan dataset dan K, bukan alamat pointer. LoadKNN memerlukan
+Storage milik pemanggil, lalu mengikat Model.Data ke Storage tersebut.
+Storage harus tetap hidup dan tidak diubah selama model digunakan.
+Save scaler/imputer/vocabulary terpisah bersama model terkait agar urutan
+fitur dan preprocessing tetap konsisten. Tidak ada pipeline otomatis.
+Contoh MODELIO, NNDEMO, TEXTDEMO, QDEMO.
+
+21. AIRULE - SISTEM ATURAN
+
+Fakta: -1 unknown, 0 false, 1 true. Unknown tidak memenuhi premis false.
+Maksimum 32 fakta, 32 aturan, empat premis per aturan. Premis digabung AND;
+setiap aturan memiliki satu kesimpulan bernilai 0/1. Aturan tanpa premis
+boleh dipakai sebagai fakta default. Nama maksimum 31 karakter.
+InitFacts/AddFact membuat kamus fakta; InitRules memakai jumlah fakta tetap.
+Infer melakukan forward chaining sampai tidak ada penambahan fakta.
+Trace berisi aturan yang menghasilkan fakta baru; SourceRule menyimpan
+asal kesimpulan. Konflik mengembalikan False tanpa mengubah fakta pemanggil.
+SetFact mereset semua fakta turunan sebelum mengubah fakta eksplisit.
+Jika aturan berubah, panggil ResetDerivedFacts sebelum Infer berikutnya.
+Siklus tanpa pemicu berhenti. ExplainFact menampilkan pohon alasan secara rekursif, dengan penanda
+untuk fakta yang sudah ditampilkan. Contoh RULEDEMO.
+Unit ini penalaran simbolik berbasis aturan, tidak belajar parameter.
+
+22. AISEARCH - PENCARIAN JALUR
+
+Grid maksimum 16 x 16; CellID = (baris-1)*Cols + kolom, indeks mulai 1.
+Aksi: 1 atas, 2 kanan, 3 bawah, 4 kiri; langkah berbiaya satu.
+SearchBFS=1, SearchDFS=2, SearchAStar=3. A-star memakai Manhattan.
+BFS/A-star menemukan lintasan terpendek pada grid ini; DFS tidak menjaminnya.
+Count adalah jumlah sel rute, Cost jumlah langkah = Count-1 jika ditemukan.
+Start=Goal memberi satu sel dan biaya nol. Input invalid/dinding => False.
+Grid valid yang terputus => True tetapi Result.Found=False.
+GridNeighbor menghasilkan state yang sama jika arah menabrak batas/dinding.
+PrintGrid mencetak tampilan teks untuk terminal DOS. Contoh PATHDEMO.
+Pencarian jalur ini tidak melatih model dari data.
+
+23. AIFUZZY - INFERENSI MAMDANI
+
+Dua input, masing-masing tiga himpunan segitiga; tiga himpunan output;
+maximum sembilan aturan. A<=B<=C dan A<C; A=B atau B=C adalah shoulder.
+Firing = min(mu1,mu2) * Weight. Implikasi min, agregasi max.
+Defuzzifikasi centroid memakai integrasi trapezoidal 10..400 segmen.
+Input di luar universe atau tidak ada rule aktif mengembalikan False.
+DefaultFuzzy memetakan suhu 0..40 dan kelembapan 0..100 ke kipas 0..100.
+FUZDEMO menulis hasil numerik, firing setiap aturan dan FUZZY.SVG.
+Ubah membership/rules untuk eksperimen, kemudian panggil CheckFuzzy.
+Tidak ada pelatihan aturan otomatis atau ANFIS. Padanan konsep: skfuzzy.
+
+24. AIREWARD - REINFORCEMENT LEARNING
+
+InitQ membuat tabel maksimum 256 state x 4 aksi. Alpha adalah learning rate,
+Gamma faktor diskonto, Epsilon peluang eksplorasi uniform.
+ChooseAction memakai epsilon-greedy atau greedy; seri memilih aksi terkecil.
+UpdateQ menerapkan:
+  Q(s,a) <- Q(s,a) + Alpha*(reward + Gamma*max Q(s',.) - Q(s,a))
+Jika terminal, bootstrap nol dan NextState diabaikan (boleh nol).
+DecayEpsilon opsional, tidak dijalankan otomatis oleh TrainGridQ.
+
+GridStep: langkah valid -1, benturan -2, mencapai goal +10.
+Goal absorbing: state tetap, terminal True, reward 0.
+TrainGridQ menerima 1..10000 episode, 1..2000 langkah maksimum per episode.
+Tabel yang sudah ada dilanjutkan, tidak direset. Seed mengatur pengacakan.
+Kegagalan mencapai goal dalam batas langkah mengakhiri episode.
+Info.TotalSteps bertipe LongInt; history disampel maksimum 200 episode.
+GreedyGridPath menghentikan rute jika ada siklus. Found=False dapat berarti
+agen belum belajar, bukan grid pasti tidak memiliki jalan.
+QDEMO melatih grid 4x4, menampilkan rute, menyimpan QTABLE.TPM/GRID.TPM,
+dan QRETURN.SVG. Keberhasilan satu seed bukan jaminan konvergensi umum.
+
+URUTAN LATIHAN LANJUTAN
+
+1. OPTDEMO: ubah learning rate, momentum, clipping; catat perubahan loss.
+2. PERDEMO: bandingkan AND dengan XOR dan gambar batas linear.
+3. LOGDEMO: ubah threshold dan bandingkan confusion matrix.
+4. NNDEMO: ubah hidden 1/2/4/8 dan seed; bandingkan epoch dan loss.
+5. BAYDEMO/TREEDEMO: bandingkan asumsi probabilistik dengan split fitur.
+6. TEXTDEMO: periksa vocabulary, kata asing, count vs TF-IDF.
+7. MODELIO: simpan/muat dan bandingkan prediksi sebelum/sesudah.
+8. RULEDEMO: tambah fakta, aturan dan konflik; baca provenance.
+9. PATHDEMO: bandingkan Cost dan Expanded BFS/DFS/A-star.
+10. FUZDEMO: ubah membership lalu amati keluaran kipas.
+11. QDEMO: ubah epsilon/reward dan bandingkan dengan BFS sebagai patokan.
+
+Untuk latihan evaluasi nyata, pisahkan data uji dan hindari memilih parameter
+berdasarkan data uji berulang kali. Contoh kecil membantu memahami algoritma,
+bukan pengganti library Python untuk dataset besar atau model modern.
