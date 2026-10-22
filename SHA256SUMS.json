@@ -539,6 +539,8 @@
   "tests/pascal/dos/WINDOS_ALL.PAS": "bb3ec8230fcb02bcfa6bf9ec989bf99080188979c45c25e7e346351043c75eab",
   "tests/pascal/dos/WINDOS_ALL.code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
   "tests/pascal/dos/WINDOS_ALL.out": "9e4841e5657d15b32b8ebd53730bc626eaa0b88d375b61d2396213d2eab7dbf7",
+  "tests/pascal/dos/WINDOS_ALL.windows.code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+  "tests/pascal/dos/WINDOS_ALL.windows.out": "8c01da877982944f231dcd5caa4252ea64d46ddf77a0e0a8a8a73b445239740e",
   "tests/pascal/errors/ASSIGN_FOR.PAS": "f8df7f03315ef349badc0ba9cb44a4facc5f88353cb28a62f9de2b611f48e3ee",
   "tests/pascal/errors/ASSIGN_FOR.err": "b87f2f34ca625d6a57f880b438b1fbc0e0324e7e0983a1042f2a9ecf2767a0e5",
   "tests/pascal/errors/BAD_CHAR.PAS": "ad813b45c7cca757999026a04d7cc70b0156f38ec787943b6c0a95e084536721",
