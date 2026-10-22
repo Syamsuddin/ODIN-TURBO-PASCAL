@@ -194,7 +194,10 @@ begin
   Need(PredictLinearData(Reg,D^,P));
   Need(RegressionMetrics(D^.Y,P,D^.Count,RM)); Near(RM.RMSE,0,1E-6,'OLS RMSE');
   {$IFDEF FPC} S := 'DATA/MULTIREG.CSV';
-  {$ELSE} S := 'DATA\MULTIREG.CSV'; {$ENDIF}
+  {$ELSE}
+    {$IFDEF UNIX} S := 'DATA/MULTIREG.CSV';
+    {$ELSE} S := 'DATA\MULTIREG.CSV'; {$ENDIF}
+  {$ENDIF}
   Need(LoadCSV(S,True,TargetReal,D^)); Need(FitLinear(D^,0,Reg));
   Near(Reg.Intercept,5,1E-6,'OLS berganda intercept');
   Near(Reg.Coeff[1],2,1E-6,'OLS berganda koefisien 1');

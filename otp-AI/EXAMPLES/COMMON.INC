@@ -8,5 +8,8 @@ end;
 function DataPath(Name: TFileName): TFileName;
 begin
   {$IFDEF FPC} DataPath := 'DATA/'+Name;
-  {$ELSE} DataPath := 'DATA\'+Name; {$ENDIF}
+  {$ELSE}
+    {$IFDEF UNIX} DataPath := 'DATA/'+Name;
+    {$ELSE} DataPath := 'DATA\'+Name; {$ENDIF}
+  {$ENDIF}
 end;
