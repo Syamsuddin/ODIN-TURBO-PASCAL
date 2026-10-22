@@ -1,4 +1,4 @@
-KOMPATIBILITAS DAN CAKUPAN VERSI 2.7.0
+KOMPATIBILITAS DAN CAKUPAN VERSI 2.8.0
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Implementasi baru dengan penampilan terinspirasi IDE Turbo Pascal era DOS.
@@ -21,6 +21,8 @@ Windows 10 1809+ x86_64           Compiler Odin diuji (runner CI), installer
                                   belum diuji di PC Windows sungguhan
 Signing / notarization Apple      Belum tersedia
 Graph (BGI) di memori             Diuji piksel demi piksel (tests/pascal/graph)
+Graph (jendela grafik IDE)        Diuji di macOS Intel (tes GUI dan soket); jendela
+                                  belum dicoba di Windows dan Linux fisik
 Graph (tampilan terminal)         Diuji di macOS Intel lewat PTY; hanya pratinjau
                                   kasar (setengah blok), bukan piksel sebenarnya
 Math, SysUtils, WinDos, Overlay   Diuji (korpus tests/pascal); belum di Apple
@@ -147,17 +149,25 @@ Graph          Tersedia: antarmuka BGI TP7 (InitGraph, Line, Circle, Arc,
                  InstallUserDriver hanya mencatat, dan semua font memakai font
                  bitmap 8 x 8 yang diskalakan menurut CharSize. TextWidth dan
                  TextHeight bukan ukuran font stroke aslinya.
-               - Tampilan di terminal hanyalah pratinjau kasar: tiap sel
-                 memuat dua subpiksel dengan 16 warna CRT (sekitar 80 x 50
-                 titik di 80 x 25) dan gambar diskalakan dengan perbandingan
+               - Di IDE, program yang memakai Graph membuka jendela grafik
+                 dengan piksel sebenarnya: framebuffer dikirim lewat soket
+                 TCP 127.0.0.1 (ODIN_GRAPH_PORT, dijaga token
+                 ODIN_GRAPH_TOKEN) hanya untuk baris yang berubah, dan tombol
+                 yang diketik di jendela diteruskan ke ReadKey. Jendelanya
+                 tetap dengan gambar terakhir bila program selesai tanpa
+                 CloseGraph, dan hilang saat CloseGraph. Setelan graph_window
+                 = false di settings.json mematikannya.
+               - Tanpa jendela (terminal biasa, atau program yang dijalankan di
+                 luar IDE), tampilannya pratinjau kasar: tiap sel memuat dua
+                 subpiksel dengan 16 warna CRT (sekitar 80 x 50 titik di
+                 80 x 25) dan gambar diskalakan dengan perbandingan
                  lebar-tinggi yang benar. Teks BGI ditampilkan sebagai
-                 karakter asli; teks vertikal dan teks di atas gambar yang
-                 sudah tertimpa tampil sebagai blok. Layar digambar ulang
-                 ketika program menunggu lewat Crt (ReadKey, KeyPressed,
-                 Delay), tiap 0,1 detik saat menggambar, dan saat program
-                 selesai. Program yang menggambar lalu selesai tanpa
-                 CloseGraph meninggalkan gambar terakhir di layar.
-               - Keluaran yang dialihkan ke berkas tidak menampilkan apa-apa.
+                 karakter asli; teks vertikal dan teks yang sudah tertimpa
+                 tampil sebagai blok. Layar digambar ulang ketika program
+                 menunggu lewat Crt (ReadKey, KeyPressed, Delay), tiap 0,1
+                 detik saat menggambar, dan saat program selesai.
+               - Keluaran yang dialihkan ke berkas tanpa jendela tidak
+                 menampilkan apa-apa.
                - SetRGBPalette dipetakan ke warna CRT terdekat di layar; nilai
                  0..63 dianggap DAC VGA, yang lebih besar dianggap 8 bit.
                - Galat GraphResult sama dengan BGI; pesan GraphErrorMsg dalam

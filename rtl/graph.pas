@@ -16,6 +16,13 @@
   Delay), sambil menggambar tiap 0,1 detik, dan saat program selesai. Bila
   keluaran bukan terminal (dialihkan ke berkas), tidak ada yang ditampilkan.
 
+  Di IDE, program dijalankan dengan ODIN_GRAPH_PORT dan ODIN_GRAPH_TOKEN: unit
+  ini menyambung ke port itu di 127.0.0.1 dan mengirim isi framebuffer
+  (hanya baris yang berubah, dengan run-length) supaya IDE menampilkan piksel
+  sebenarnya di jendela grafik. Pratinjau terminal dimatikan selama jendela itu
+  ada, dan pengiriman yang gagal mengembalikannya. Protokolnya dijelaskan di
+  odin/graphics.py; kedua sisi harus diubah bersama.
+
   Yang berbeda dari BGI Borland: tidak ada berkas driver (*.BGI) atau font
   (*.CHR), jadi PathToDriver diabaikan dan RegisterBGIdriver hanya
   mencatat; semua font memakai font bitmap 8x8, diskalakan menurut
@@ -302,6 +309,34 @@ implementation
 uses
   Crt, Dos;
 
+{ ---- soket ke jendela grafik IDE ---------------------------------------------------- }
+
+type
+  TSockAddrIn = record
+{$IFDEF DARWIN}
+    Len, Family: Byte;
+{$ELSE}
+    Family: Word;
+{$ENDIF}
+    Port: Word;
+    Addr: LongWord;
+    Zero: array[0..7] of Byte;
+  end;
+
+{$IFDEF WINDOWS}
+function WSAStartup(Version: Word; Data: Pointer): LongInt; external 'ws2_32' name 'WSAStartup';
+function w_socket(Family, Kind, Protocol: LongInt): Int64; external 'ws2_32' name 'socket';
+function w_connect(S: Int64; Addr: Pointer; Len: LongInt): LongInt; external 'ws2_32' name 'connect';
+function w_send(S: Int64; Buf: Pointer; Len, Flags: LongInt): LongInt; external 'ws2_32' name 'send';
+function c_getenv(Name: PChar): PChar; cdecl; external 'c' name 'getenv';
+{$ELSE}
+function c_socket(Domain, Kind, Protocol: LongInt): LongInt; cdecl; external 'c' name 'socket';
+function c_connect(Fd: LongInt; Addr: Pointer; Len: LongInt): LongInt; cdecl; external 'c' name 'connect';
+function c_write(Fd: LongInt; Buf: Pointer; Count: Int64): Int64; cdecl; external 'c' name 'write';
+function c_signal(Sig: LongInt; Handler: Pointer): Pointer; cdecl; external 'c' name 'signal';
+function c_getenv(Name: PChar): PChar; cdecl; external 'c' name 'getenv';
+{$ENDIF}
+
 const
   MaxPixels = 786432;     { 1024 x 768 }
   MaxPages = 4;
@@ -309,8 +344,20 @@ const
   MaxScreenCells = 65025;
   MaxTexts = 200;
   MaxTextLen = 80;
+  GfxBufSize = 2097152;
+  { Jenis pesan ke IDE (odin/graphics.py). }
+  GfxHello = 1;
+  GfxMode = 2;
+  GfxPalette = 3;
+  GfxFrame = 4;
+  GfxHide = 5;
+  GfxClose = 6;
+  PortVar: array[0..15] of Char = 'ODIN_GRAPH_PORT'#0;
+  TokenVar: array[0..16] of Char = 'ODIN_GRAPH_TOKEN'#0;
 
 type
+  TBigBuf = array[0..GfxBufSize - 1] of Byte;
+  PBigBuf = ^TBigBuf;
   { Satu teks mendatar yang sudah digambar: PX/PY adalah satu piksel penanda tiap
     karakter, untuk memeriksa teksnya masih ada di framebuffer. }
   TTextRec = record
@@ -515,6 +562,17 @@ var
   SubY0, SubY1: array[0..509] of Integer;
   ImgOX, ImgOY, ImgW, ImgH: Integer;
   DPW, DPH: Double;         { piksel per subpiksel, lebar dan tinggi }
+
+  { Jendela grafik IDE }
+  GfxOn: Boolean;           { mengirim ke jendela IDE saat ini }
+  GfxConn: Boolean;         { soketnya terbuka }
+  GfxTried: Boolean;
+  GfxSock: Int64;
+  GfxBuf: PBigBuf;
+  GfxSent: PPix;            { isi terakhir yang dikirim }
+  GfxSentSize: LongInt;
+  GfxPalSent: Boolean;
+  GfxPal: array[0..255] of TRGB;
 
   { Teks BGI yang ditampilkan sebagai karakter terminal (lapisan teks). }
   Texts: array[0..MaxTexts - 1] of TTextRec;
@@ -1053,6 +1111,200 @@ begin
     GetBkColor := 0;
 end;
 
+{ ---- jendela grafik IDE ---------------------------------------------------------------- }
+
+function GfxWrite(P: Pointer; N: LongInt): Boolean;
+var
+  Done: LongInt;
+  R: Int64;
+begin
+  Done := 0;
+  GfxWrite := True;
+  while Done < N do
+  begin
+{$IFDEF WINDOWS}
+    R := w_send(GfxSock, Pointer(Int64(P) + Done), N - Done, 0);
+{$ELSE}
+    R := c_write(GfxSock, Pointer(Int64(P) + Done), N - Done);
+{$ENDIF}
+    if R <= 0 then
+    begin
+      GfxWrite := False;
+      Exit;
+    end;
+    Done := Done + R;
+  end;
+end;
+
+{ Mengirim pesan Kind yang isinya (N byte) sudah ada di GfxBuf mulai byte 5. }
+procedure GfxMsg(Kind: Byte; N: LongInt);
+begin
+  if not GfxOn then
+    Exit;
+  GfxBuf^[0] := Kind;
+  Move(N, GfxBuf^[1], 4);
+  if not GfxWrite(@GfxBuf^[0], N + 5) then
+  begin
+    GfxOn := False;
+    GfxConn := False;
+  end;
+end;
+
+procedure GfxConnect;
+var
+  Addr: TSockAddrIn;
+  PortText, TokenText: PChar;
+  Port, I, N: LongInt;
+{$IFDEF WINDOWS}
+  WsaData: array[0..511] of Byte;
+{$ENDIF}
+begin
+  GfxTried := True;
+  PortText := c_getenv(@PortVar);
+  TokenText := c_getenv(@TokenVar);
+  if (PortText = nil) or (TokenText = nil) then
+    Exit;
+  Port := 0;
+  I := 0;
+  while (PortText[I] >= '0') and (PortText[I] <= '9') do
+  begin
+    Port := Port * 10 + Ord(PortText[I]) - Ord('0');
+    Inc(I);
+  end;
+  if (I = 0) or (Port < 1) or (Port > 65535) then
+    Exit;
+  FillChar(Addr, SizeOf(Addr), 0);
+{$IFDEF DARWIN}
+  Addr.Len := SizeOf(Addr);
+{$ENDIF}
+  Addr.Family := 2;
+  Addr.Port := ((Port and $FF) shl 8) or ((Port shr 8) and $FF);
+  Addr.Addr := $0100007F;
+{$IFDEF WINDOWS}
+  if WSAStartup($0202, @WsaData) <> 0 then
+    Exit;
+  GfxSock := w_socket(2, 1, 6);
+  if (GfxSock = -1) or (w_connect(GfxSock, @Addr, SizeOf(Addr)) <> 0) then
+    Exit;
+{$ELSE}
+  GfxSock := c_socket(2, 1, 0);
+  if (GfxSock < 0) or (c_connect(GfxSock, @Addr, SizeOf(Addr)) <> 0) then
+    Exit;
+  { Jendela yang ditutup tidak boleh mematikan program lewat SIGPIPE. }
+  c_signal(13, Pointer(1));
+{$ENDIF}
+  GetMem(GfxBuf, SizeOf(TBigBuf));
+  GfxConn := True;
+  GfxOn := True;
+  N := 0;
+  while TokenText[N] <> #0 do
+  begin
+    GfxBuf^[5 + N] := Ord(TokenText[N]);
+    Inc(N);
+  end;
+  GfxMsg(GfxHello, N);
+end;
+
+procedure GfxSendMode;
+var
+  V: Word;
+begin
+  if not GfxOn then
+    Exit;
+  V := XRes;
+  Move(V, GfxBuf^[5], 2);
+  V := YRes;
+  Move(V, GfxBuf^[7], 2);
+  V := AspX;
+  Move(V, GfxBuf^[9], 2);
+  V := NumColors;
+  Move(V, GfxBuf^[11], 2);
+  GfxMsg(GfxMode, 8);
+  if GfxSent <> nil then
+    FreeMem(GfxSent, GfxSentSize);
+  GfxSentSize := XRes * YRes;
+  GetMem(GfxSent, GfxSentSize);
+  FillChar(GfxSent^, GfxSentSize, 0);
+  FillChar(GfxPal, SizeOf(GfxPal), 0);
+  GfxPalSent := False;
+end;
+
+{ Mengirim palet bila berubah, lalu baris-baris halaman visual yang berubah. }
+procedure GfxSendFrame;
+var
+  I, Y, X, At, Rows, Start, Run: LongInt;
+  Page: PPix;
+  Row, Old: LongInt;
+  Changed: Boolean;
+  V: Word;
+  B, Last: Byte;
+begin
+  Page := Pages[VisualPage];
+  if (Page = nil) or (GfxSent = nil) then
+    Exit;
+  Changed := not GfxPalSent;
+  if not Changed then
+    for I := 0 to NumColors - 1 do
+      if (Pal[I].R <> GfxPal[I].R) or (Pal[I].G <> GfxPal[I].G) or (Pal[I].B <> GfxPal[I].B) then
+        Changed := True;
+  if Changed then
+  begin
+    V := NumColors;
+    Move(V, GfxBuf^[5], 2);
+    for I := 0 to NumColors - 1 do
+    begin
+      GfxBuf^[7 + I * 3] := Pal[I].R;
+      GfxBuf^[8 + I * 3] := Pal[I].G;
+      GfxBuf^[9 + I * 3] := Pal[I].B;
+      GfxPal[I] := Pal[I];
+    end;
+    GfxPalSent := True;
+    GfxMsg(GfxPalette, 2 + NumColors * 3);
+  end;
+  At := 7;
+  Rows := 0;
+  for Y := 0 to YRes - 1 do
+  begin
+    Row := Y * XRes;
+    Changed := False;
+    for X := 0 to XRes - 1 do
+      if Page^[Row + X] <> GfxSent^[Row + X] then
+      begin
+        Changed := True;
+        Break;
+      end;
+    if not Changed then
+      Continue;
+    { Run-length: (panjang 1..255, nilai). }
+    Start := At + 4;
+    X := 0;
+    while X < XRes do
+    begin
+      Last := Page^[Row + X];
+      Run := 1;
+      while (X + Run < XRes) and (Run < 255) and (Page^[Row + X + Run] = Last) do
+        Inc(Run);
+      GfxBuf^[Start] := Run;
+      GfxBuf^[Start + 1] := Last;
+      Inc(Start, 2);
+      Inc(X, Run);
+    end;
+    V := Y;
+    Move(V, GfxBuf^[At], 2);
+    V := Start - At - 4;
+    Move(V, GfxBuf^[At + 2], 2);
+    At := Start;
+    Move(Page^[Row], GfxSent^[Row], XRes);
+    Inc(Rows);
+  end;
+  if Rows > 0 then
+  begin
+    V := Rows;
+    Move(V, GfxBuf^[5], 2);
+    GfxMsg(GfxFrame, At - 5);
+  end;
+end;
+
 { ---- tampilan di terminal ------------------------------------------------------------ }
 
 { Waktu dalam perseratus detik sejak tengah malam. }
@@ -1161,6 +1413,13 @@ begin
   SubColor := TermCol[Best];
 end;
 
+{ Sesudah ClrScr semua sel kosong berlatar hitam, sama dengan sel sebuah
+  subpiksel hitam. }
+procedure ClearScreenCells;
+begin
+  FillChar(Shown, SizeOf(Shown), 0);
+end;
+
 { Menyusun lapisan teks halaman Page: karakter tiap teks ditaruh di sel
   terminal, satu karakter per sel (lebih dari satu sel bila hurufnya lebar),
   dan sel-sel teks tidak digambar sebagai blok. Teks yang pikselnya sudah
@@ -1236,7 +1495,24 @@ var
 begin
   Dirty := False;
   LastRender := Ticks;
-  if (not Active) or InText or (not Display) then
+  if (not Active) or InText then
+    Exit;
+  if GfxOn then
+  begin
+    GfxSendFrame;
+    if GfxOn then
+      Exit;
+    { Jendela hilang: kembali ke pratinjau terminal. }
+    Display := CrtOutputIsTty;
+    if Display then
+    begin
+      SetupDisplay;
+      ClearScreenCells;
+      ClrScr;
+      CursorOff;
+    end;
+  end;
+  if not Display then
     Exit;
   Page := Pages[VisualPage];
   if Page = nil then
@@ -1347,7 +1623,7 @@ var
 begin
   Dirty := True;
   Inc(TouchCount);
-  if (TouchCount and 255 = 0) and Display and Active and not InText then
+  if (TouchCount and 255 = 0) and (Display or GfxOn) and Active and not InText then
   begin
     Elapsed := Ticks - LastRender;
     if Elapsed < 0 then
@@ -1355,13 +1631,6 @@ begin
     if Elapsed >= 10 then
       Render;
   end;
-end;
-
-{ Sesudah ClrScr semua sel kosong berlatar hitam, sama dengan sel sebuah
-  subpiksel hitam. }
-procedure ClearScreenCells;
-begin
-  FillChar(Shown, SizeOf(Shown), 0);
 end;
 
 procedure ShowTextScreen;
@@ -1377,14 +1646,17 @@ end;
 procedure GraphExit;
 begin
   ExitProc := OldExitProc;
-  if Active and Display and not InText then
+  if Active and (Display or GfxOn) and not InText then
   begin
     if Dirty then
       Render;
     { Gambar terakhir tetap terlihat; kursor kembali di baris bawah. }
-    TextAttr := LightGray;
-    GotoXY(1, Rows);
-    CursorOn;
+    if Display then
+    begin
+      TextAttr := LightGray;
+      GotoXY(1, Rows);
+      CursorOn;
+    end;
   end;
 end;
 
@@ -1477,7 +1749,12 @@ begin
   Active := True;
   InText := False;
   ResetState;
-  Display := CrtOutputIsTty;
+  if GfxConn then
+    GfxOn := True
+  else if not GfxTried then
+    GfxConnect;
+  GfxSendMode;
+  Display := CrtOutputIsTty and not GfxOn;
   if Display then
   begin
     SetupDisplay;
@@ -1485,13 +1762,13 @@ begin
     TextAttr := LightGray;
     ClrScr;
     CursorOff;
-    if not HooksSet then
-    begin
-      CrtIdleHook := IdleHook;
-      OldExitProc := ExitProc;
-      ExitProc := @GraphExit;
-      HooksSet := True;
-    end;
+  end;
+  if (Display or GfxOn) and not HooksSet then
+  begin
+    CrtIdleHook := IdleHook;
+    OldExitProc := ExitProc;
+    ExitProc := @GraphExit;
+    HooksSet := True;
   end;
   Dirty := True;
   LastRender := Ticks;
@@ -1531,6 +1808,11 @@ begin
   end;
   if not InText then
     ShowTextScreen;
+  if GfxOn then
+  begin
+    GfxMsg(GfxClose, 0);
+    GfxOn := False;
+  end;
   FreePages;
   Pix := nil;
   Active := False;
@@ -1545,6 +1827,7 @@ begin
   if not InText then
   begin
     InText := True;
+    GfxMsg(GfxHide, 0);
     ShowTextScreen;
   end;
 end;

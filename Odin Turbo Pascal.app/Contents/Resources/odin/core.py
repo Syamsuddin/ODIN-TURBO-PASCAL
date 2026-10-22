@@ -186,6 +186,7 @@ DEFAULTS = {
     "overflow_checks": True,
     "unit_paths": [], "include_paths": [], "arguments": "",
     "recent": [], "geometry": "1120x740", "main_file": "",
+    "graph_window": True,
 }
 
 

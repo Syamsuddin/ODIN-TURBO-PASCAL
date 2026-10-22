@@ -1,5 +1,5 @@
 ODIN TURBO PASCAL
-Panduan penggunaan 2.7.0
+Panduan penggunaan 2.8.0
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 MEMBUAT PROGRAM PERTAMA
@@ -41,6 +41,19 @@ File > Examples - AI berisi 20 contoh pustaka AI/machine learning OTP-AI
 (regresi, KNN, K-Means, jaringan saraf, Q-learning, dan lainnya), lengkap dengan
 topiknya. Unit AI-nya langsung bisa dipanggil dengan uses, misalnya
 uses AIMATH, AILINEAR;. Contoh dibuka sebagai templat: Save menjadi Save as.
+
+File > Examples - Graph berisi 14 contoh unit Graph: garis dan gaya garis,
+bentuk dasar, warna dan palet, isian, grafik batang, diagram pai, grafik
+fungsi, animasi dua halaman, sprite dengan GetImage/PutImage, Mandelbrot, jam
+analog, menggambar dengan tombol panah, dan teks. Saat dijalankan, program yang
+memakai Graph membuka JENDELA GRAFIK sendiri yang menampilkan piksel
+sebenarnya (640 x 480 untuk VGAHi), dan tombol yang diketik di jendela itu
+diteruskan ke program (ReadKey). Jendelanya tetap terbuka dengan gambar
+terakhir sesudah program selesai tanpa CloseGraph, dan hilang saat program
+memanggil CloseGraph atau menjalankan program lain. Menutup jendela tidak
+menghentikan program; pakai Run > Stop. Bila setelan graph_window di
+settings.json diubah menjadi false, gambar hanya tampil sebagai pratinjau
+kasar di User screen. Contoh dibuka sebagai templat: Save menjadi Save as.
 
 Program Bab 17 dan Bab 20 membuat berkas data, misalnya catatan.txt atau
 kontak.dat, di folder kerja program, yaitu folder berkas .pas-nya. Nama

@@ -14,6 +14,7 @@ half-block preview: colors, centering, the text layer, and what stays on the scr
 New or changed expectations: `python3 tests/test_graph.py --bless`, then read the diff against what BGI
 does. On macOS and Linux the display tests need a PTY (run them outside the Claude Code sandbox)."""
 import os
+import queue
 import re
 import subprocess
 import sys
@@ -26,9 +27,11 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from odin.console import Process, Screen  # noqa: E402
+from odin.graphics import GraphChannel  # noqa: E402
 from odin.core import executable_name, locate_toolchain, odin_supported  # noqa: E402
 
 GRAPH_DIR = ROOT / "tests" / "pascal" / "graph"
+EXAMPLES_DIR = ROOT / "examples-graph"
 HAS_ODIN = bool(locate_toolchain() and odin_supported())
 NEEDS_ODIN = "Needs odinpc (cargo build in toolchain/) on a host it supports (core.ODIN_HOSTS)"
 ESCAPES = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
@@ -62,6 +65,113 @@ class GraphProgramTests(unittest.TestCase):
                 with self.subTest(program=source.name):
                     expected = source.with_suffix(".expect").read_text(encoding="utf-8")
                     self.assertEqual(program_output(source, Path(tmp)), expected)
+
+
+@unittest.skipUnless(HAS_ODIN, NEEDS_ODIN)
+class GraphExampleTests(unittest.TestCase):
+    """Every program of examples-graph/ compiles and ends by itself when its input ends (the keys they wait
+    for are read as end of file)."""
+
+    def test_examples_compile_and_run(self):
+        sources = sorted(EXAMPLES_DIR.glob("grafik_*.pas"))
+        self.assertEqual(len(sources), 14)
+        with tempfile.TemporaryDirectory(prefix="odin-graph-examples-") as tmp:
+            for source in sources:
+                with self.subTest(example=source.name):
+                    exe = Path(tmp) / executable_name(source.stem)
+                    ok, message = compile_program(source, exe)
+                    self.assertTrue(ok, message)
+                    run = subprocess.run([str(exe)], input=b"", capture_output=True, cwd=tmp, timeout=60)
+                    self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+
+
+@unittest.skipUnless(HAS_ODIN, NEEDS_ODIN)
+class GraphChannelTests(unittest.TestCase):
+    """The program side of the graphics window (rtl/graph.pas) against odin.graphics.GraphChannel."""
+
+    PROGRAM = """program Kanal;
+uses Crt, Graph;
+var gd, gm: Integer;
+begin
+  gd := VGA; gm := VGAHi;
+  InitGraph(gd, gm, '');
+  SetFillStyle(SolidFill, Red);
+  Bar(10, 20, 109, 59);
+  SetRGBPalette(9, 63, 0, 0);
+  PutPixel(300, 300, LightBlue);
+  SetColor(White);
+  Line(0, 479, 639, 479);
+  ReadKey;
+  RestoreCrtMode;
+  ReadKey;
+  SetGraphMode(GetGraphMode);
+  Bar(0, 0, 9, 9);
+  ReadKey;
+  CloseGraph;
+end.
+"""
+
+    def test_frames_palette_and_mode_changes_arrive(self):
+        with tempfile.TemporaryDirectory(prefix="odin-graph-channel-") as tmp:
+            source = Path(tmp) / "kanal.pas"
+            source.write_text(self.PROGRAM)
+            exe = Path(tmp) / executable_name("kanal")
+            ok, message = compile_program(source, exe)
+            self.assertTrue(ok, message)
+            events = queue.Queue()
+            channel = GraphChannel(lambda kind, value: events.put(kind))
+            env = dict(os.environ, **channel.env())
+            process = subprocess.Popen([str(exe)], env=env, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, cwd=tmp)
+            try:
+                def wait(condition, timeout=8.0):
+                    deadline = time.monotonic() + timeout
+                    while time.monotonic() < deadline:
+                        if condition():
+                            return True
+                        time.sleep(0.02)
+                    return False
+
+                self.assertTrue(wait(lambda: channel.version >= 3 and channel.pixels[300 * 640 + 300] == 9))
+                self.assertEqual((channel.width, channel.height, channel.asp), (640, 480, 10000))
+                self.assertEqual(channel.pixels[30 * 640 + 50], 4)          # DOS red in the bar
+                self.assertEqual(channel.pixels[479 * 640 + 639], 15)       # the line to the corner
+                self.assertEqual(channel.palette[9], (255, 0, 0))           # SetRGBPalette(9, 63, 0, 0)
+                self.assertEqual(channel.palette[4], (170, 0, 0))
+                self.assertTrue(channel.visible)
+                visible, width, height, asp, data = channel.snapshot()
+                self.assertTrue(data.startswith(b"\x89PNG"))
+                process.stdin.write(b"x")                                   # ReadKey; then RestoreCrtMode
+                process.stdin.flush()
+                self.assertTrue(wait(lambda: not channel.visible), "RestoreCrtMode menyembunyikan jendela")
+                process.stdin.write(b"x")                                   # SetGraphMode shows a blank picture again
+                process.stdin.flush()
+                self.assertTrue(wait(lambda: channel.visible and channel.pixels[0] == 15))
+                self.assertEqual(channel.pixels[300 * 640 + 300], 0)        # the mode change cleared the screen
+                process.stdin.write(b"x")                                   # CloseGraph
+                process.stdin.flush()
+                self.assertTrue(wait(lambda: channel.graphics_closed))
+                process.wait(8)
+                self.assertTrue(wait(lambda: channel.finished))
+            finally:
+                if process.poll() is None:
+                    process.kill()
+                process.stdin.close()
+                process.wait()
+                channel.close()
+
+    def test_wrong_token_is_ignored(self):
+        import socket
+        import struct
+        channel = GraphChannel(lambda kind, value: None)
+        try:
+            with socket.create_connection(("127.0.0.1", channel.port)) as connection:
+                connection.sendall(struct.pack("<BI", 1, 4) + b"nope")
+                connection.sendall(struct.pack("<BI", 2, 8) + struct.pack("<HHHH", 640, 480, 10000, 16))
+                time.sleep(0.3)
+            self.assertEqual(channel.width, 0)
+            self.assertFalse(channel.connected)
+        finally:
+            channel.close()
 
 
 class Screens:

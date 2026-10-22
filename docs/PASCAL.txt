@@ -26,13 +26,20 @@ DAFTAR ISI
   UNIT STRINGS
   UNIT OBJECTS
   UNIT GRAPH
-  UNIT WINDOS
-  UNIT MATH
-  UNIT SYSUTILS
-  UNIT OVERLAY
-  ODIN VISION
-  PERINTAH IDE
-  CONTOH RINGKAS
+Grafik gaya BGI Turbo Pascal. uses Graph;. Gambar disimpan di framebuffer di
+memori, satu byte per piksel, dengan resolusi mode yang dipilih (VGAHi = 640 x
+480). GetPixel, GetImage, dan PutImage memakai piksel sebenarnya. Di IDE,
+program membuka jendela grafik yang menampilkan piksel sebenarnya, dan tombol
+yang diketik di jendela itu sampai ke ReadKey. Di terminal biasa, atau bila
+setelan graph_window di settings.json dimatikan, gambar tampil sebagai
+pratinjau kasar dengan karakter setengah blok (sekitar 80 x 50 titik di layar
+80 x 25, 16 warna CRT) dengan perbandingan lebar-tinggi yang benar; teks BGI
+(OutText, OutTextXY) di situ ditampilkan sebagai karakter asli supaya terbaca,
+dan layar digambar ulang saat program menunggu lewat Crt (ReadKey, KeyPressed,
+Delay), tiap 0,1 detik sambil menggambar, dan saat program selesai. Bila
+keluaran dialihkan ke berkas dan tidak ada jendela, tidak ada yang
+ditampilkan. Pakai Crt (ReadKey) untuk menahan gambar. Contoh: File > Examples
+- Graph.
 
 KATA CADANGAN
 Kata cadangan tidak boleh dipakai sebagai nama variabel, konstanta, tipe, atau

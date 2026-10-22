@@ -21,7 +21,7 @@ class DebugSession:
     for every event of the debugger. Call update(event) on the thread that handles events: it
     keeps state ("starting", "running", "stopped", "exited") and the stop location."""
 
-    def __init__(self, toolchain, executable, debug_info, arguments, cwd, emit):
+    def __init__(self, toolchain, executable, debug_info, arguments, cwd, emit, env=None):
         common = ["--exe", str(executable), "--odbg", str(debug_info)]
         tail = ["--cwd", str(cwd), "--", *arguments]
         self._socket = None
@@ -32,7 +32,7 @@ class DebugSession:
                 server.settimeout(15)
                 port = server.getsockname()[1]
                 argv = [str(toolchain), "debug", *common, "--ide", f"127.0.0.1:{port}", *tail]
-                self.process = Process(argv, cwd, emit)
+                self.process = Process(argv, cwd, emit, env=env or None)
                 try:
                     self._socket, _ = server.accept()
                 except OSError:
@@ -48,7 +48,7 @@ class DebugSession:
             event_read, event_write = os.pipe()
             argv = [str(toolchain), "debug", *common, "--ide-fds", f"{command_read},{event_write}", *tail]
             try:
-                self.process = Process(argv, cwd, emit, pass_fds=(command_read, event_write))
+                self.process = Process(argv, cwd, emit, pass_fds=(command_read, event_write), env=env or None)
             except BaseException:
                 for fd in (command_write, event_read):
                     os.close(fd)

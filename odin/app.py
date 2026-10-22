@@ -27,10 +27,18 @@ from .core import (PACKAGE_ROOT, BuildResult, Diagnostic, Document, Settings, at
                    library_unit_paths, locate_toolchain, lock_instance, odin_supported, runtime_error_location,
                    split_arguments, unlock_instance)
 from .debugger import DebugSession
+from .graphics import GraphChannel
+from .graphwindow import GraphWindow
 from .terminal import Process, Screen, TerminalView
 from .windows import BLACK, BLUE, CYAN, GRAY, WHITE, Editor, LocalsWindow, StackWindow, WatchWindow
 
 ASSETS = Path(__file__).resolve().parent.parent
+# File > Examples - Graph: the programs in examples-graph/ and what each one shows.
+GRAPH_EXAMPLE_TOPICS = {
+    "01": "Program grafik pertama", "02": "Garis, gaya garis, titik kini", "03": "Bentuk dasar", "04": "Warna dan palet",
+    "05": "Isian, pola, FloodFill", "06": "Grafik batang", "07": "Diagram pai", "08": "Grafik fungsi matematika",
+    "09": "Animasi dua halaman", "10": "GetImage dan PutImage (sprite)", "11": "Himpunan Mandelbrot", "12": "Jam analog",
+    "13": "Menggambar dengan tombol panah", "14": "Teks di layar grafik"}
 AI_EXAMPLE_TOPICS = {
     "BASIC": "Matematika, matriks, statistik", "DATAPREP": "Praproses data CSV", "REGDEMO": "Regresi linear",
     "REGMULT": "Regresi linear berganda", "KNNDEMO": "K-Nearest Neighbors", "KMEANS": "K-Means clustering",
@@ -79,6 +87,8 @@ class App:
         self.last_metrics = None       # the report the Metrik window shows last
         self.console_window = None
         self.console = None
+        self.graph_channel = None     # the Graph window of the running program (odin/graphics.py)
+        self.graph_window = None
         self.last_build = None
         self.search_term = ""
         self.closed = False
@@ -221,7 +231,7 @@ class App:
     def create_menus(self):
         self.menu("File", [("New",self.new,"Ctrl+N"),("Open...",self.open_file,"F3"),("Save",self.save,"F2"),
                           ("Save as...",lambda:self.save(as_new=True),""),("Save all",self.save_all,""),
-                          ("-",None,""),("Recent files...",self.recent,""),("Examples...",self.examples,""),("Examples - AI...",self.examples_ai,""),
+                          ("-",None,""),("Recent files...",self.recent,""),("Examples...",self.examples,""),("Examples - AI...",self.examples_ai,""),("Examples - Graph...",self.examples_graph,""),
                           ("Change directory...",self.change_directory,""),("-",None,""),("Exit",self.quit,"Alt+X")])
         self.menu("Edit", [("Undo",lambda:self.edit("undo"),"Alt+Backspace"),("Redo",lambda:self.edit("redo"),"Ctrl+Y"),
                           ("-",None,""),("Cut",lambda:self.edit("cut"),"Shift+Del"),("Copy",lambda:self.edit("copy"),"Ctrl+Ins"),
@@ -522,6 +532,15 @@ class App:
             return
         self.choose("Examples - AI",items,self.open_file)
 
+    def examples_graph(self):
+        """Graph samples (examples-graph/), each labelled with its topic; they open the graphics window when run."""
+        folder=ASSETS/"examples-graph"
+        items=[(f"{p.name:<36}{GRAPH_EXAMPLE_TOPICS.get(p.stem.split('_')[1],'')}".rstrip(),p) for p in sorted(folder.glob("grafik_*.pas"))] if folder.is_dir() else []
+        if not items:
+            messagebox.showinfo("Examples - Graph","Contoh grafik tidak ditemukan (folder examples-graph).",parent=self.root)
+            return
+        self.choose("Examples - Graph",items,self.open_file)
+
     def change_directory(self):
         path=filedialog.askdirectory(parent=self.root,title="Working directory")
         if path:os.chdir(path)
@@ -666,10 +685,15 @@ class App:
                 if self.console:
                     self.console.feed(value)
                     render=True
+            elif kind=="gfx":
+                self.show_graph(value)
+            elif kind=="gfx_closed":
+                self.graph_closed(value)
             elif kind=="debug":
                 self.debug_event(value)
             elif kind=="exit":
                 code=self.process_finished(value)
+                if self.graph_window and self.graph_window.winfo_exists():self.graph_window.finished()
                 if self.console:
                     self.console.feed(f"\r\n\r\n[Process finished, exit code {code}]\r\n")
                     render=True
@@ -687,6 +711,7 @@ class App:
         self.console.screen=Screen()
         self.console.render()
         emit=lambda k,v:self.messages.put((k,v))
+        graph_env=self.open_graph_channel(emit)
         self.last_runtime_error=None
         self.clear_error_marks()
         try:
@@ -696,7 +721,7 @@ class App:
                     return
                 self.debug_start_mode=action
                 self.debug_requests.clear()
-                self.debugger=DebugSession(locate_toolchain(),result.executable,result.debug_info,arguments,result.source.parent,emit)
+                self.debugger=DebugSession(locate_toolchain(),result.executable,result.debug_info,arguments,result.source.parent,emit,env=graph_env)
                 self.process=self.debugger.process
                 self.update_status("Debugging ...")
             else:
@@ -705,9 +730,38 @@ class App:
                 report.unlink(missing_ok=True)
                 self.error_report=(result.debug_info,report) if result.debug_info else None
                 self.process=Process([str(result.executable),*arguments],result.source.parent,emit,
-                                     env={"ODIN_ERROR_FILE":str(report)} if result.debug_info else None)
+                                     env={**graph_env,**({"ODIN_ERROR_FILE":str(report)} if result.debug_info else {})} or None)
             self.console.focus_set()
         except OSError as error:messagebox.showerror("Run",str(error),parent=self.root)
+
+    def open_graph_channel(self,emit):
+        """A new channel for the Graph window of the program about to start; returns the environment that
+        tells the program where to connect (empty when the setting graph_window is off)."""
+        if self.graph_channel:self.graph_channel.close()
+        self.graph_channel=None
+        if self.graph_window and self.graph_window.winfo_exists():self.graph_window.destroy()
+        self.graph_window=None
+        if not self.settings["graph_window"]:return {}
+        try:self.graph_channel=GraphChannel(emit)
+        except OSError:return {}
+        return self.graph_channel.env()
+
+    def show_graph(self,channel):
+        if channel is not self.graph_channel:return
+        snapshot=channel.snapshot()
+        if not snapshot:return
+        visible,width,height,asp,data=snapshot
+        if not (self.graph_window and self.graph_window.winfo_exists()):
+            if not visible:return
+            self.graph_window=GraphWindow(self.root,self.send_input)
+        self.graph_window.show(visible,width,height,asp,data)
+
+    def graph_closed(self,channel):
+        """CloseGraph, or the program ended: the window of a program that ended stays (like Turbo Pascal's last
+        picture); CloseGraph removes it."""
+        if channel is not self.graph_channel:return
+        if not channel.graphics_closed:return
+        if self.graph_window and self.graph_window.winfo_exists():self.graph_window.withdraw()
 
     def process_finished(self,code):
         """The program (or odinpc debug) ended; returns the program's exit code."""

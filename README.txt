@@ -1,4 +1,4 @@
-ODIN TURBO PASCAL 2.7.0
+ODIN TURBO PASCAL 2.8.0
 Paket aplikasi desktop untuk Mac Intel dan Apple Silicon; berjalan dari source di Linux
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
@@ -160,7 +160,9 @@ Lihat docs/COMPATIBILITY.txt untuk rincian.
 
 PENGUJIAN
 
-Rilis 2.7.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1): 139 tes
+Rilis 2.8.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1): 144 tes
+Python (termasuk jendela grafik Graph dengan piksel sebenarnya) dan seluruh tes
+Rust. Rilis 2.7.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1): 139 tes
 Python (termasuk tampilan Graph lewat PTY) dan seluruh tes Rust. Korpus Math,
 SysUtils, WinDos, dan Overlay serta program uji Graph juga lulus di VM
 Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu). Rilis 2.4.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,

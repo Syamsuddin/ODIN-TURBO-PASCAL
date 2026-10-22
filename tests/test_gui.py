@@ -97,6 +97,19 @@ class GuiTests(unittest.TestCase):
         self.assertTrue(self.widgets(dialog,tk.Scrollbar))
         dialog.destroy()
 
+    def test_examples_graph_dialog_lists_the_graph_samples(self):
+        file_menu=self.app.menus["File"][1]
+        labels=[file_menu.entrycget(i,"label") for i in range(file_menu.index("end")+1) if file_menu.type(i)=="command"]
+        self.assertIn("Examples - Graph...",labels)
+        self.app.examples_graph()
+        self.root.update()
+        dialog=self.toplevels()[-1]
+        listbox=self.widgets(dialog,tk.Listbox)[0]
+        items=listbox.get(0,"end")
+        self.assertEqual(len(items),14)
+        self.assertTrue(items[0].startswith("grafik_01_halo_grafik.pas"))
+        self.assertIn("Jam analog",items[11])
+
     def test_examples_ai_dialog_lists_the_otp_ai_samples(self):
         file_menu=self.app.menus["File"][1]
         labels=[file_menu.entrycget(i,"label") for i in range(file_menu.index("end")+1) if file_menu.type(i)=="command"]
@@ -140,6 +153,34 @@ class GuiTests(unittest.TestCase):
             self.app.help_html()
         if sys.platform=="win32":startfile.assert_called_once_with(page)
         else:self.assertEqual(popen.call_args.args[0][1],str(page))
+
+    @unittest.skipUnless(locate_toolchain() and odin_supported() and sys.platform!="win32","Needs odinpc and a POSIX PTY")
+    def test_graph_program_opens_a_window_with_the_real_pixels(self):
+        from odin.core import build
+        source=self.path/"gwin.pas"
+        source.write_text("program GWin;\nuses Crt, Graph;\nvar gd, gm: Integer;\nbegin\n  gd := VGA; gm := VGAHi;\n"
+                          "  InitGraph(gd, gm, '');\n  SetFillStyle(SolidFill, Red);\n  Bar(10, 20, 109, 59);\n"
+                          "  PutPixel(300, 300, LightGreen);\n  ReadKey;\n  CloseGraph;\nend.\n")
+        self.app.last_build=build(source,self.settings,cache=self.path/"build")
+        self.assertTrue(self.app.last_build.success,self.app.last_build.diagnostics)
+        self.app.start_process()
+        deadline=time.monotonic()+10
+        while time.monotonic()<deadline and not (self.app.graph_window and self.app.graph_window.image):
+            self.root.update()
+            time.sleep(0.05)
+        window=self.app.graph_window
+        self.assertIsNotNone(window,"jendela grafik tidak muncul")
+        self.assertEqual((window.image.width(),window.image.height()),(640,480))
+        self.assertEqual(window.image.get(50,40),(170,0,0))       # inside the red bar, DOS red
+        self.assertEqual(window.image.get(300,300),(85,255,85))   # the single light green pixel
+        self.assertEqual(window.image.get(5,5),(0,0,0))
+        self.app.send_input(b"x")                                 # ReadKey, then CloseGraph removes the window
+        deadline=time.monotonic()+10
+        while time.monotonic()<deadline and window.state()!="withdrawn":
+            self.root.update()
+            time.sleep(0.05)
+        self.assertEqual(window.state(),"withdrawn")
+        self.app.stop()
 
     def test_f1_opens_the_html_help_at_the_word_under_the_cursor(self):
         editor=self.app.new()

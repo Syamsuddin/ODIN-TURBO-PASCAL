@@ -6,6 +6,18 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-10-23
+
+### Ditambahkan
+
+- **Jendela grafik sungguhan**: program yang memakai Graph kini membuka jendela Tk (`odin/graphwindow.py`) yang menampilkan piksel sebenarnya, bukan lagi hanya pratinjau setengah blok di User screen. IDE membuka soket TCP di 127.0.0.1 (`odin/graphics.py`), memberi program `ODIN_GRAPH_PORT` dan `ODIN_GRAPH_TOKEN`, dan `rtl/graph.pas` mengirim framebuffer dengan run-length hanya untuk baris yang berubah, bersama palet (jadi `SetRGBPalette` tampil dengan warna sebenarnya) dan perubahan mode. Tombol yang diketik di jendela diteruskan ke program lewat input User screen, jadi `ReadKey` bekerja. Jendela tetap dengan gambar terakhir bila program selesai tanpa `CloseGraph`, dan hilang saat `CloseGraph`, `RestoreCrtMode` menyembunyikannya, dan jendela yang ditutup tidak mematikan program. Tanpa IDE (terminal biasa) atau dengan setelan `graph_window` = false, Graph tetap memakai pratinjau terminal.
+- **File › Examples - Graph...**: 14 contoh di `examples-graph/` (`grafik_01_halo_grafik.pas` sampai `grafik_14_teks_dan_font.pas`): garis dan gaya garis, bentuk dasar, warna dan palet berputar, pola isian dan `FloodFill`, grafik batang, diagram pai, grafik fungsi, animasi dua halaman, sprite `GetImage`/`PutImage` dengan XOR, Mandelbrot, jam analog, menggambar dengan tombol panah, dan teks. Ikut dalam bundel macOS dan paket Windows.
+- Tes: `GraphChannelTests` (protokol soket dan token), `GraphExampleTests` (keempat belas contoh dikompilasi dan berakhir sendiri), tes GUI jendela grafik dengan piksel sebenarnya, dan daftar File › Examples - Graph.
+
+### Pengujian
+
+- Diuji di macOS Intel: 144 tes Python dan seluruh tes Rust (korpus dalam tiga mode build). Jendela grafik dan kode soketnya baru dicoba di macOS Intel (tes GUI dengan jendela Tk sungguhan dan tes protokol); versi Windows (`ws2_32`) belum dijalankan di Windows.
+
 ## [2.7.0] - 2026-10-23
 
 ### Ditambahkan
@@ -374,7 +386,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.7.0...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.8.0...HEAD
+[2.8.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.4.0...v2.5.0
