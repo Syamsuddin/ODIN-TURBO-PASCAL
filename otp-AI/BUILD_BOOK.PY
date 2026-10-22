@@ -604,7 +604,7 @@ def make_book() -> None:
 
     # Getting started.
     book.new_page("MULAI", "Cara menggunakan buku")
-    book.paragraph("Siapkan compiler Odin Turbo Pascal dari proyek ini. Buka satu program .PAS, tambahkan folder otp-AI/UNITS ke Unit search paths dan otp-AI/EXAMPLES ke Include search paths. Jalankan program dengan working directory otp-AI agar berkas DATA dan OUTPUT dapat ditemukan.", size=10.8, gap=9)
+    book.paragraph("Siapkan compiler Odin Turbo Pascal dari proyek ini. Buka satu program .PAS dari otp-AI/EXAMPLES, lalu tekan Ctrl+F9. Sembilan belas unit OTP-AI sudah terpasang di IDE, jadi klausa uses AIMATH, AIDATA, AILINEAR; langsung dikenali seperti uses Crt; tanpa mengisi Options > Directories. Contoh membaca berkas DATA dari folder induk secara otomatis, dan berkas hasil ditulis di folder program.", size=10.8, gap=9)
     book.paragraph("Kompilasi dari terminal:", size=10.5, bold=True, color=TEAL, gap=5)
     book.callout("Perintah Odin",
                  "mkdir -p BIN && odinpc build EXAMPLES/BASIC.PAS --out BIN/BASIC --unit-path UNITS --include-path EXAMPLES --rtl /path/ke/Odin_Turbo_Pascal/rtl",

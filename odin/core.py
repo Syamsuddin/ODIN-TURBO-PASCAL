@@ -270,6 +270,13 @@ def locate_toolchain() -> str | None:
     return None
 
 
+def library_unit_paths() -> list[Path]:
+    """Bundled unit libraries (OTP-AI) found by `uses` without any Options > Directories entry.
+    They come after the user's unit paths, so a user's own unit with the same name wins."""
+    path = PACKAGE_ROOT / "otp-AI" / "UNITS"
+    return [path] if path.is_dir() else []
+
+
 SEVERITY = {"fatal": "Fatal", "error": "Error", "warning": "Warning", "note": "Note", "hint": "Hint"}
 
 
@@ -305,6 +312,8 @@ def build(source: Path, settings: Settings, rebuild=False, cache: Path | None = 
         for p in settings[key]:
             if p:
                 command += [flag, str(Path(p).expanduser().resolve())]
+    for path in library_unit_paths():
+        command += ["--unit-path", str(path)]
     try:
         # wrap (a sandbox, for example) changes how odinpc is started, not the command shown to the user.
         result = subprocess.run(wrap(command) if wrap else command, cwd=source.parent, stdout=subprocess.PIPE,

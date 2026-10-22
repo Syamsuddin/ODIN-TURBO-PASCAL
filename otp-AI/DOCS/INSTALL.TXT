@@ -63,10 +63,15 @@ C. ODIN TURBO PASCAL DI PROYEK INI
 
 1. Buka project otp-AI di Odin Turbo Pascal dan buka salah satu program di
    EXAMPLES, misalnya BASIC.PAS.
-2. Buka Options > Directories. Tambahkan folder UNITS pada Unit search paths
-   dan folder EXAMPLES pada Include search paths. Gunakan satu path per baris.
-3. Jalankan program dengan direktori kerja folder utama otp-AI agar berkas DATA
-   dan OUTPUT dapat ditemukan.
+2. Tidak ada pengaturan unit path: 19 unit OTP-AI sudah terpasang di folder
+   otp-AI/UNITS milik IDE, sehingga "uses AIMATH, AIDATA, AILINEAR;" langsung
+   dikenali seperti "uses Crt;". Unit buatan Anda di Options > Directories
+   didahulukan bila namanya sama. (Hanya bila memakai paket ini dari folder
+   lain, tambahkan UNITS pada Unit search paths.)
+3. IDE menjalankan program di folder source-nya. Contoh di EXAMPLES membaca
+   data dari ..\DATA secara otomatis; berkas hasil (SVG, TPM, CSV) ditulis di
+   folder yang sama dengan programnya. Untuk TESTALL dan TESTADV, jalankan dari
+   folder utama otp-AI.
 4. Pilih Compile > Build, lalu Run.
 5. Contoh paket sudah menggunakan unit canonical. Source dari paket lama
    perlu memetakan AIMatrix ke AIMath, AIPrep ke AIData, AIMetric ke AIStats,

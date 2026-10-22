@@ -29,10 +29,15 @@ Contoh Free Pascal:
   ./BIN/QDEMO
 
 ODIN TURBO PASCAL
-Pada IDE Odin Turbo Pascal, buka Options > Directories dan tambahkan folder
-UNITS ke Unit search paths serta EXAMPLES ke Include search paths. Jalankan
-program dengan direktori kerja otp-AI. AIPLOT mendukung ekspor SVG; backend
-BGI layar khusus Turbo Pascal tidak tersedia di Odin.
+Di IDE Odin Turbo Pascal 2.5.0 atau lebih baru, 19 unit OTP-AI sudah terpasang
+di folder otp-AI/UNITS milik IDE dan langsung bisa dipanggil seperti Crt, tanpa
+pengaturan: tulis "uses AIMATH, AIDATA, AILINEAR;" di editor lalu Ctrl+F9. Unit
+Anda sendiri dengan nama sama di unit path Options > Directories didahulukan.
+Untuk compiler lain, atau memakai paket ini dari folder terpisah, tambahkan
+folder UNITS ke Unit search paths. Contoh memakai COMMON.INC yang dicari di
+folder contoh itu sendiri. Jalankan program dengan direktori kerja otp-AI agar
+folder DATA terbaca. AIPLOT mendukung ekspor SVG; backend BGI layar khusus
+Turbo Pascal tidak tersedia di Odin.
 
 ISI PAKET
 UNITS     : 19 unit .PAS, masing-masing nama file DOS 8.3.

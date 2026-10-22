@@ -144,7 +144,7 @@ Folder [`otp-AI/`](otp-AI/) berisi pustaka **AI dan machine learning murni Pasca
 - 20 program contoh di `otp-AI/EXAMPLES/` (regresi, KNN, K-Means, cross-validation, jaringan saraf, Naive Bayes, pohon keputusan, logika fuzzy, Q-learning, dan lainnya), serta tes `TESTALL` dan `TESTADV`.
 - Validasi input dilakukan di setiap unit: parameter tidak valid mengembalikan kode galat tanpa merusak data.
 - Buku tutorial berwarna penuh [`otp-AI/PANDUAN_OTP_AI.pdf`](otp-AI/PANDUAN_OTP_AI.pdf) (60 halaman, ditulis Syams Ideris, GPL v3) membahas tiap unit dan contoh: peran unit, tujuan, parameter, hasil yang diharapkan, dan posisinya dalam pembelajaran machine learning.
-- Cara memakai: salin folder `otp-AI/UNITS` ke unit path (**Options › Directories**), lalu tulis `uses AIMATH, AIDATA, AILINEAR;`. Panduan lengkap ada di [`otp-AI/README.TXT`](otp-AI/README.TXT).
+- Cara memakai: 19 unit sudah terpasang di IDE dan langsung dipanggil seperti `Crt`, tanpa pengaturan unit path: tulis `uses AIMATH, AIDATA, AILINEAR;` lalu `Ctrl+F9`. Panduan lengkap ada di [`otp-AI/README.TXT`](otp-AI/README.TXT).
 
 Seluruh contoh dikompilasi dan dijalankan dengan `odinpc` 2.5.0 di macOS x86_64 (`TESTALL` 139 pernyataan uji, `TESTADV` 148). Platform lain belum diuji untuk pustaka ini.
 

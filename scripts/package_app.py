@@ -69,6 +69,8 @@ for folder in ("odin", "examples", "docs", "assets"):
 # for this Mac (cargo build --release in toolchain/). odinpc is the only
 # compiler, so a bundle without it is refused.
 shutil.copytree(ROOT / "rtl", resources / "rtl")
+# OTP-AI: unit AI/machine learning yang langsung bisa dipanggil dengan uses (core.library_unit_paths).
+shutil.copytree(ROOT / "otp-AI" / "UNITS", resources / "otp-AI" / "UNITS", ignore=ignore)
 odinpc = ROOT / "toolchain" / "target" / "universal" / "odinpc"
 if not odinpc.is_file():
     odinpc = ROOT / "toolchain" / "target" / "release" / "odinpc"

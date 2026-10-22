@@ -5,11 +5,26 @@ begin
   end
 end;
 
-function DataPath(Name: TFileName): TFileName;
+function FileExists(Name: TFileName): Boolean;
+var F: Text;
 begin
-  {$IFDEF FPC} DataPath := 'DATA/'+Name;
+  Assign(F,Name);
+  {$I-} Reset(F); {$I+}
+  if IOResult=0 then begin Close(F); FileExists:=True end
+  else FileExists:=False
+end;
+
+{ Mencari DATA di folder kerja (otp-AI), lalu di folder induk bila program
+  dijalankan dari EXAMPLES, seperti yang dilakukan IDE. }
+function DataPath(Name: TFileName): TFileName;
+var Sep: string; P: TFileName;
+begin
+  {$IFDEF FPC} Sep := '/';
   {$ELSE}
-    {$IFDEF UNIX} DataPath := 'DATA/'+Name;
-    {$ELSE} DataPath := 'DATA\'+Name; {$ENDIF}
+    {$IFDEF UNIX} Sep := '/';
+    {$ELSE} Sep := '\'; {$ENDIF}
   {$ENDIF}
+  P := 'DATA'+Sep+Name;
+  if not FileExists(P) then P := '..'+Sep+'DATA'+Sep+Name;
+  DataPath := P
 end;

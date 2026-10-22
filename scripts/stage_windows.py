@@ -86,6 +86,8 @@ def stage(target):
     target.mkdir(parents=True)
     for folder in FOLDERS:
         shutil.copytree(ROOT / folder, target / folder, ignore=ignore)
+    # OTP-AI: unit AI/machine learning yang langsung bisa dipanggil dengan uses.
+    shutil.copytree(ROOT / "otp-AI" / "UNITS", target / "otp-AI" / "UNITS", ignore=ignore)
     for name in FILES:
         shutil.copy2(ROOT / name, target / name)
     shutil.copy2(ROOT / "scripts" / "launcher_windows.pyw", target / "OdinTurboPascal.pyw")

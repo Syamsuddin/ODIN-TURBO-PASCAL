@@ -465,6 +465,16 @@ class CompilerTests(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
         return result.stdout
 
+    def test_otp_ai_units_are_found_by_uses(self):
+        units=sorted(p.stem for p in (ROOT/"otp-AI"/"UNITS").glob("*.PAS"))
+        self.assertEqual(len(units),19)
+        source=self.root/"AIUSES.pas"
+        source.write_text("program AIUses;\nuses Crt, "+", ".join(units)+";\nbegin WriteLn('uses OK') end.\n",encoding="utf-8")
+        r=build(source,self.settings,cache=self.root/"build")
+        self.assertTrue(r.success,r.output)
+        result=subprocess.run([str(r.executable)],capture_output=True,text=True,timeout=20,cwd=self.root)
+        self.assertIn("uses OK",result.stdout)
+
     def test_every_example_compiles_and_runs(self):
         # The tutorial: 89 programs bab01_01..bab20_03 and the unit matematika.pas (Bab 19).
         paths=sorted(p for p in (ROOT/"examples").iterdir() if p.suffix.lower()==".pas")

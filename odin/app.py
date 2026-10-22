@@ -24,7 +24,7 @@ from tkinter import font as tkfont
 from . import __author__, __copyright__, __version_tag__
 from . import metrics as metrics_report
 from .core import (PACKAGE_ROOT, BuildResult, Diagnostic, Document, Settings, atomic_write, build, data_dir, join_command,
-                   locate_toolchain, lock_instance, odin_supported, runtime_error_location,
+                   library_unit_paths, locate_toolchain, lock_instance, odin_supported, runtime_error_location,
                    split_arguments, unlock_instance)
 from .debugger import DebugSession
 from .terminal import Process, Screen, TerminalView
@@ -727,7 +727,7 @@ class App:
         if not odinpc or not odin_supported():
             messagebox.showinfo("Metrik","Ukur dan Periksa memerlukan toolchain Odin (odinpc) untuk komputer ini.",parent=self.root)
             return None
-        units=[Path(p).expanduser().resolve() for p in self.settings["unit_paths"] if p]
+        units=[Path(p).expanduser().resolve() for p in self.settings["unit_paths"] if p]+library_unit_paths()
         return metrics_report.Toolchain(odinpc,PACKAGE_ROOT/"rtl",units)
 
     def metrics_source(self):
