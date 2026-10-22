@@ -48,6 +48,9 @@ var
   TextAttr: Byte;
   WindMin: Word;
   WindMax: Word;
+  { Dipanggil sebelum Crt menunggu (ReadKey, KeyPressed, Delay): unit Graph
+    memakainya untuk menggambar ulang layar. nil bila tidak dipakai. }
+  CrtIdleHook: TProcedure;
 
 procedure AssignCrt(var F: Text);
 function KeyPressed: Boolean;
@@ -69,6 +72,14 @@ procedure NormVideo;
 procedure Delay(MS: Word);
 procedure Sound(Hz: Word);
 procedure NoSound;
+
+{ Tambahan Odin (bukan bagian Crt TP7; CursorOn/CursorOff ada di Crt Free Pascal) }
+procedure CursorOn;
+procedure CursorOff;
+function CrtScreenWidth: Integer;
+function CrtScreenHeight: Integer;
+function CrtOutputIsTty: Boolean;
+procedure CrtPutText(X, Y: Integer; const S: String; Attr: Byte);
 
 implementation
 
@@ -676,9 +687,16 @@ begin
     PushBack(C);
 end;
 
+procedure Idle;
+begin
+  if CrtIdleHook <> nil then
+    CrtIdleHook;
+end;
+
 function KeyPressed: Boolean;
 begin
   Sync;
+  Idle;
   KeyPressed := HasPending or ByteReady(0);
 end;
 
@@ -688,6 +706,7 @@ var
   Code: Byte;
 begin
   Sync;
+  Idle;
   if HasPending then
   begin
     HasPending := False;
@@ -1051,6 +1070,7 @@ end;
 procedure Delay(MS: Word);
 begin
   Sync;
+  Idle;
   WinSleep(MS);
 end;
 {$ELSE}
@@ -1059,6 +1079,7 @@ var
   T: TTimeSpec;
 begin
   Sync;
+  Idle;
   T.Sec := MS div 1000;
   T.NSec := Int64(MS mod 1000) * 1000000;
   while (c_nanosleep(T, @T) <> 0) and (c_errno^ = EINTR) do;
@@ -1072,6 +1093,86 @@ end;
 
 procedure NoSound;
 begin
+end;
+
+{ ---- tambahan Odin ------------------------------------------------------------ }
+
+procedure CursorOn;
+begin
+  if not OutTty then
+    Exit;
+  Emit(#27);
+  EmitStr('[?25h');
+  FlushOut;
+end;
+
+procedure CursorOff;
+begin
+  if not OutTty then
+    Exit;
+  Emit(#27);
+  EmitStr('[?25l');
+  FlushOut;
+end;
+
+function CrtScreenWidth: Integer;
+begin
+  CrtScreenWidth := Cols;
+end;
+
+function CrtScreenHeight: Integer;
+begin
+  CrtScreenHeight := Rows;
+end;
+
+function CrtOutputIsTty: Boolean;
+begin
+  CrtOutputIsTty := OutTty;
+end;
+
+{ Menulis S mulai sel (X, Y), 0-based, dengan atribut Attr: satu sel untuk tiap
+  karakter UTF-8. Tidak ada pembungkusan baris atau scroll dan kursor Crt tidak
+  berpindah, jadi sel kanan bawah pun bisa ditulis. Graph memakainya untuk
+  karakter blok (setengah blok) yang bukan ASCII. }
+procedure CrtPutText(X, Y: Integer; const S: String; Attr: Byte);
+var
+  I, K, Len: Integer;
+  C: Char;
+begin
+  if (Y < 0) or (Y >= Rows) then
+    Exit;
+  I := 1;
+  while I <= Length(S) do
+  begin
+    C := S[I];
+    Len := 1;
+    if C >= #$F0 then
+      Len := 4
+    else if C >= #$E0 then
+      Len := 3
+    else if C >= #$C0 then
+      Len := 2;
+    if (X >= 0) and (X < Cols) then
+    begin
+      if Len = 1 then
+        Cells[Y, X] := Ord(C) or (Word(Attr) shl 8)
+      else
+        Cells[Y, X] := Ord('?') or (Word(Attr) shl 8);
+      MoveTo(X, Y);
+      SetAttr(Attr);
+      for K := 0 to Len - 1 do
+        if I + K <= Length(S) then
+          Emit(S[I + K]);
+      if X + 1 >= Cols then
+        TermX := -1
+      else
+        TermX := X + 1;
+    end;
+    Inc(I, Len);
+    Inc(X);
+  end;
+  MoveTo(CurX, CurY);
+  FlushOut;
 end;
 
 { ---- start and end ------------------------------------------------------------ }

@@ -1,4 +1,4 @@
-KOMPATIBILITAS DAN CAKUPAN VERSI 2.6.0
+KOMPATIBILITAS DAN CAKUPAN VERSI 2.7.0
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Implementasi baru dengan penampilan terinspirasi IDE Turbo Pascal era DOS.
@@ -20,7 +20,11 @@ Linux x86_64 / arm64              Compiler Odin diuji (VM dan runner CI), dari s
 Windows 10 1809+ x86_64           Compiler Odin diuji (runner CI), installer
                                   belum diuji di PC Windows sungguhan
 Signing / notarization Apple      Belum tersedia
-BGI/Graph DOS                     Tidak diimplementasikan
+Graph (BGI) di memori             Diuji piksel demi piksel (tests/pascal/graph)
+Graph (tampilan terminal)         Diuji di macOS Intel lewat PTY; hanya pratinjau
+                                  kasar (setengah blok), bukan piksel sebenarnya
+Math, SysUtils, WinDos, Overlay   Diuji (korpus tests/pascal); belum di Apple
+                                  Silicon, Linux, dan Windows fisik
 Interrupt/port/mem DOS            Tidak diemulasi
 Project manager                   Tidak tersedia
 Terminal truecolor/Unicode lebar  Tidak tersedia
@@ -66,10 +70,10 @@ Di arm64, prosesor tidak menghentikan program saat operasi real gagal.
 Kode hasil kompilasi membaca bendera FPSR sesudah operasi real dan
 menghasilkan runtime error 207, 200, atau 205 seperti di x86-64.
 
-Unit Odin: System, Crt, Dos, Strings, Printer, Objects, dan Odin Vision
-(Turbo Vision milik Odin): Drivers, Memory, HistList, Views, Menus, Validate,
-Dialogs, App, MsgBox, StdDlg, Editors, Outline, ColorSel, TextView. Tipe
-object TP7 didukung.
+Unit Odin: System, Crt, Dos, WinDos, Strings, Printer, Objects, Graph,
+Overlay, Math, SysUtils, dan Odin Vision (Turbo Vision milik Odin): Drivers,
+Memory, HistList, Views, Menus, Validate, Dialogs, App, MsgBox, StdDlg,
+Editors, Outline, ColorSel, TextView. Tipe object TP7 didukung.
 Ekspektasi uji dibuat dengan Free Pascal 3.2.2 sebagai pembanding sampai
 2.3.0; perbedaan yang disengaja dicatat di tests/pascal/DEVIATIONS.md.
 
@@ -124,9 +128,59 @@ Printer        Tersedia. Lst diteruskan ke /usr/bin/lpr (printer default
                macOS), lpr di Linux, atau notepad /p di Windows.
 Turbo Vision   Tersedia sebagai Odin Vision (lihat di atas), termasuk ColorSel
                dan TextView.
-Graph, Graph3  Tidak tersedia (BGI).
-Overlay        Tidak tersedia. Hapus uses Overlay dan pemanggilan OvrInit.
-WinDos         Tidak tersedia. Gunakan Dos dan Strings.
+WinDos         Tersedia. Dos dengan PChar (FindFirst, FileSplit, FileExpand,
+               GetCurDir, GetArgStr, GetEnvVar, ...), diteruskan ke Dos. Tanpa
+               Intr, MsDos, TRegisters, GetIntVec, dan SetIntVec. Batas
+               fsPathName, fsDirectory, fsFileName, dan fsExtension di sini
+               259 dan 255 (bukan 79, 67, 8, 4), TSearchRec.Name menampung
+               255 karakter, dan DiskFree/DiskSize mengembalikan Int64.
+Graph          Tersedia: antarmuka BGI TP7 (InitGraph, Line, Circle, Arc,
+               Ellipse, PieSlice, Bar, Bar3D, FillPoly, FloodFill, pola
+               isian, gaya garis, palet, OutText, GetImage/PutImage, viewport,
+               halaman). Semua mode driver CGA, MCGA, EGA, EGA64, EGAMono,
+               IBM8514, HercMono, ATT400, VGA, dan PC3270 dikenali dengan
+               resolusi aslinya. Gambar disimpan di framebuffer di memori
+               (satu byte per piksel); GetPixel, GetImage, dan PutImage
+               memberi hasil piksel demi piksel. Perbedaan dengan BGI Borland:
+               - Tidak ada berkas driver (.BGI) dan font (.CHR): parameter
+                 Dir InitGraph diabaikan, RegisterBGIdriver dan
+                 InstallUserDriver hanya mencatat, dan semua font memakai font
+                 bitmap 8 x 8 yang diskalakan menurut CharSize. TextWidth dan
+                 TextHeight bukan ukuran font stroke aslinya.
+               - Tampilan di terminal hanyalah pratinjau kasar: tiap sel
+                 memuat dua subpiksel dengan 16 warna CRT (sekitar 80 x 50
+                 titik di 80 x 25) dan gambar diskalakan dengan perbandingan
+                 lebar-tinggi yang benar. Teks BGI ditampilkan sebagai
+                 karakter asli; teks vertikal dan teks di atas gambar yang
+                 sudah tertimpa tampil sebagai blok. Layar digambar ulang
+                 ketika program menunggu lewat Crt (ReadKey, KeyPressed,
+                 Delay), tiap 0,1 detik saat menggambar, dan saat program
+                 selesai. Program yang menggambar lalu selesai tanpa
+                 CloseGraph meninggalkan gambar terakhir di layar.
+               - Keluaran yang dialihkan ke berkas tidak menampilkan apa-apa.
+               - SetRGBPalette dipetakan ke warna CRT terdekat di layar; nilai
+                 0..63 dianggap DAC VGA, yang lebih besar dianggap 8 bit.
+               - Galat GraphResult sama dengan BGI; pesan GraphErrorMsg dalam
+                 bahasa Inggris.
+               Pakai Crt (ReadKey) untuk menahan gambar sebelum CloseGraph.
+Overlay        Tersedia sebagai antarmuka saja: semua kode ada di memori, jadi
+               OvrInit selalu berhasil, OvrInitEMS melapor ovrNoEMSDriver,
+               dan pengaturan buffer hanya dicatat. Direktif {$O ...}
+               diabaikan.
+Math           Bukan unit TP7 tetapi umum di Free Pascal/Delphi: trigonometri
+               dan hiperbolik, Power, IntPower, Log10, Log2, Ceil, Floor,
+               RoundTo, Min/Max, statistik larik, fungsi keuangan. Tidak ada
+               overload: Min/Max hanya Int64 (MinF/MaxF untuk Real), begitu
+               juga InRange, EnsureRange, CompareValue (akhiran F), dan
+               SumInt untuk Integer. Galat domain = runtime error 207.
+SysUtils       Bukan unit TP7. Subset kecil: IntToStr, IntToHex, StrToInt,
+               StrToFloat, FloatToStr, FloatToStrF, FormatFloat, UpperCase,
+               Trim, StringReplace, nama berkas, FileExists dan sejenisnya,
+               TDateTime (EncodeDate, FormatDateTime, ...), Sleep. Tidak ada
+               kelas, exception (galat konversi = runtime error 106; pakai
+               TryStrToInt atau StrToIntDef), Format (butuh array of const),
+               parameter bawaan, maupun overload.
+Graph3, Turbo3 Tidak tersedia.
 Turbo3         Tidak tersedia.
 
 Fitur era DOS yang tidak dapat dikompilasi di sistem 64-bit: Mem/MemW/MemL,

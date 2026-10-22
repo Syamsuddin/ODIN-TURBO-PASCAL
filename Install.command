@@ -20,7 +20,7 @@ if [ "$(/usr/sbin/sysctl -in hw.optional.arm64 2>/dev/null || true)" = "1" ]; th
   fi
 fi
 case "$ODIN_ARCH" in arm64|x86_64) ;; *) printf 'Arsitektur tidak didukung.\n'; exit 1;; esac
-printf '\nODIN TURBO PASCAL 2.6.0\nDibuat oleh Syams Ideris\nPemasang macOS %s\nLisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris\n\n' "$ODIN_ARCH"
+printf '\nODIN TURBO PASCAL 2.7.0\nDibuat oleh Syams Ideris\nPemasang macOS %s\nLisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris\n\n' "$ODIN_ARCH"
 printf 'Lokasi aplikasi: ~/Applications/Odin Turbo Pascal.app\n'
 printf 'Dependensi: Python 3.10+ dengan Tk. Compiler Pascal (odinpc) sudah ada di aplikasi.\n'
 printf 'Berkas Pascal pribadi tidak dihapus atau diganti.\n\n'

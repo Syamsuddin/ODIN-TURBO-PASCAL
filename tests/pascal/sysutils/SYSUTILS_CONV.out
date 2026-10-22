@@ -1,0 +1,27 @@
+IntToStr: 0 -42 123456789012
+IntToHex: FF 00FF 0 1000 FFFFFFFFFFFFFFFF
+StrToInt: 123 -45 255
+StrToIntDef: 7 8 9 12
+TryStrToInt: TRUE 77 FALSE FALSE
+StrToInt64: 9876543210 -1 TRUE -5
+StrToFloat: 3.250 -0.50 1000.0
+StrToFloatDef: 1.50 TRUE 2.5 FALSE
+FloatToStr: 1234.5 0.1 -2.5 0 100
+FloatToStr: 1E20 1E-5 0.0001 0.333333333333333
+FloatToStr: 123456789012345 1E15 1.5E-7
+FloatToStrF: 1234.57 1,234,567.89 -1,235
+FloatToStrF: 1.2345E+03 1.23E-004 $1,234.50 1.23E3
+FormatFloat: 3.14 1,234,567.89 2.5 05 25.6%
+FormatFloat: (3.50) 1.23E+04 Rp 1,500,000 0.00 005.3
+BoolToStr: True False -1 0
+StrToBool: TRUE FALSE TRUE TRUE
+Case: ABC XYZ 123 abc xyz
+Trim: [hi there] [x ] [ x] []
+StringOfChar: ***** |
+Compare: -1 1 0 1 0 TRUE FALSE
+StringReplace: a+b+c a+b-c A-X-C bbbbbb abc
+QuotedStr: 'it''s' ''
+CharInSet: TRUE FALSE
+LineEnding: TRUE
+Format desimal: .,
+Pemisah Indonesia: 1234,5 1.234.567,89 2.5

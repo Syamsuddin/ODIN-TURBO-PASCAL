@@ -25,6 +25,11 @@ DAFTAR ISI
   UNIT DOS
   UNIT STRINGS
   UNIT OBJECTS
+  UNIT GRAPH
+  UNIT WINDOS
+  UNIT MATH
+  UNIT SYSUTILS
+  UNIT OVERLAY
   ODIN VISION
   PERINTAH IDE
   CONTOH RINGKAS
@@ -481,6 +486,19 @@ CheckBreak, CheckEOF          Variabel Boolean: Ctrl-C menghentikan program;
                               Ctrl-Z dianggap akhir berkas.
 AssignCrt(F)                  Mengarahkan berkas teks F ke layar Crt.
 DirectVideo, CheckSnow        Variabel kompatibilitas; tidak berefek.
+CursorOn, CursorOff           Menampilkan dan menyembunyikan kursor (nama
+                              yang sama dengan Crt Free Pascal).
+CrtScreenWidth                Jumlah kolom layar (tambahan Odin).
+CrtScreenHeight               Jumlah baris layar (tambahan Odin).
+CrtOutputIsTty                True bila keluaran adalah terminal (tambahan
+                              Odin).
+CrtPutText(X, Y, S, Atribut)  Menulis S (UTF-8) mulai sel X, Y (mulai dari
+                              0) dengan atribut, satu sel per karakter, tanpa
+                              scroll dan tanpa menggeser kursor (tambahan
+                              Odin; dipakai Graph).
+CrtIdleHook                   Prosedur yang dipanggil sebelum Crt menunggu
+                              (ReadKey, KeyPressed, Delay); nil bila tidak
+                              dipakai (tambahan Odin; dipakai Graph).
 Black, Blue, Green, Cyan      Konstanta warna 0, 1, 2, 3.
 Red, Magenta, Brown
                               Konstanta warna 4, 5, 6.
@@ -578,6 +596,318 @@ TStringCollection             Koleksi terurut string Pascal.
 TStrCollection                Koleksi terurut string berakhir nol (PChar).
 stOk, stError                 Nilai Status aliran: 0 baik, -1 galat. Konstanta
                               stXXX lain menjelaskan galat.
+
+UNIT GRAPH
+Grafik gaya BGI Turbo Pascal. uses Graph;. Gambar disimpan di framebuffer di
+memori, satu byte per piksel, dengan resolusi mode yang dipilih (VGAHi = 640 x
+480). GetPixel, GetImage, dan PutImage memakai piksel sebenarnya. Ke layar,
+gambar ditampilkan di terminal sebagai pratinjau kasar dengan karakter
+setengah blok (sekitar 80 x 50 titik di layar 80 x 25, 16 warna CRT), dengan
+perbandingan lebar-tinggi yang benar sehingga lingkaran tetap bulat. Teks BGI
+(OutText, OutTextXY) ditampilkan sebagai karakter asli supaya terbaca. Layar
+digambar ulang saat program menunggu lewat Crt (ReadKey, KeyPressed, Delay),
+tiap 0,1 detik sambil menggambar, dan saat program selesai. Bila keluaran
+dialihkan ke berkas, tidak ada yang ditampilkan. Pakai Crt (ReadKey) untuk
+menahan gambar.
+
+InitGraph(Drv, Mode, Dir)     Memulai mode grafik. Drv = Detect memilih VGA
+                              dan VGAHi. Dir diabaikan (tidak ada berkas
+                              .BGI). Bila gagal, GraphResult berisi kode galat
+                              dan Drv diisi kode itu.
+CloseGraph                    Mengakhiri mode grafik, membebaskan memori, dan
+                              membersihkan layar teks.
+DetectGraph(Drv, Mode)        Selalu memberi VGA dan VGAHi.
+GraphResult                   Kode galat operasi grafik terakhir (grOk = 0),
+                              lalu kembali ke 0.
+GraphErrorMsg(Kode)           Teks galat, bahasa Inggris seperti BGI.
+RestoreCrtMode                Kembali ke layar teks sementara. Gambar tetap di
+                              memori.
+SetGraphMode(Mode)            Masuk lagi ke mode grafik (layar dikosongkan).
+GetGraphMode, GetMaxMode      Mode sekarang dan mode tertinggi untuk driver
+                              itu.
+GetDriverName, GetModeName(M)
+                              Nama driver dan nama mode, mis. '640 x 480 VGA'.
+GetModeRange(Drv, Lo, Hi)     Rentang mode sebuah driver; -1 bila driver tidak
+                              dikenal.
+GetMaxX, GetMaxY, GetMaxColor
+                              Koordinat piksel terbesar dan nomor warna
+                              terbesar.
+GetX, GetY                    Posisi titik kini relatif ke viewport.
+GetAspectRatio(X, Y)          Perbandingan piksel (Xasp : Yasp), diubah dengan
+                              SetAspectRatio. Dipakai Circle, Arc, PieSlice,
+                              dan Bar3D.
+ClearDevice                   Mengosongkan halaman aktif dengan warna latar;
+                              titik kini ke 0,0.
+ClearViewPort                 Mengosongkan viewport; titik kini ke 0,0.
+SetViewPort(X1,Y1,X2,Y2,Klip)
+                              Membatasi gambar ke persegi panjang. Koordinat
+                              berikutnya relatif ke pojok kiri atasnya. Klip =
+                              ClipOn memotong gambar di tepinya.
+GetViewSettings(V)            Mengisi ViewPortType dengan viewport kini.
+SetActivePage, SetVisualPage  Halaman gambar untuk animasi: EGALo 4 halaman,
+                              EGAHi, VGALo, VGAMed, dan HercMono 2 halaman;
+                              mode lain 1.
+PutPixel(X, Y, W), GetPixel   Menulis dan membaca satu piksel.
+Line, LineTo, LineRel         Garis dengan gaya, ketebalan, dan mode tulis
+                              kini.
+MoveTo, MoveRel               Memindahkan titik kini tanpa menggambar.
+Rectangle(X1,Y1,X2,Y2)        Persegi panjang berupa garis.
+Bar(X1,Y1,X2,Y2)              Persegi panjang berisi pola isian kini, tanpa
+                              tepi.
+Bar3D(X1,Y1,X2,Y2,Dalam,Atas)
+                              Balok: muka depan berisi pola isian, sisi
+                              samping dan tutup (Atas = TopOn) berupa garis.
+Circle(X, Y, R)               Lingkaran; jari-jari vertikal mengikuti
+                              perbandingan piksel.
+Arc(X, Y, Awal, Akhir, R)     Busur; sudut dalam derajat berlawanan jarum jam
+                              dari arah jam 3.
+Ellipse(X,Y,Awal,Akhir,Rx,Ry)
+                              Busur elips.
+FillEllipse(X, Y, Rx, Ry)     Elips berisi pola isian, bertepi warna garis.
+PieSlice, Sector              Irisan lingkaran dan elips berisi pola isian
+                              dengan dua jari-jari sebagai tepi.
+GetArcCoords(A)               Titik pusat, awal, dan akhir busur terakhir.
+DrawPoly(N, Titik)            Garis patah lewat N titik (array of PointType).
+FillPoly(N, Titik)            Poligon tertutup berisi pola isian dan bertepi
+                              garis.
+FloodFill(X, Y, Batas)        Mengisi daerah yang terhubung sampai warna
+                              Batas.
+SetColor, GetColor            Warna gambar garis, busur, dan teks.
+SetBkColor, GetBkColor        Warna latar (isi entri palet 0).
+SetPalette, GetPalette        Palet 16 warna dalam kode EGA (0..63).
+                              SetAllPalette dan GetDefaultPalette
+                              melengkapinya.
+SetRGBPalette(N, R, G, B)     Mengubah satu entri palet. Warnanya dipetakan ke
+                              warna CRT terdekat di layar.
+SetLineStyle(Gaya,Pola,Tebal)
+                              SolidLn, DottedLn, CenterLn, DashedLn, atau
+                              UserBitLn dengan pola 16 bit; tebal NormWidth
+                              atau ThickWidth. GetLineSettings membacanya.
+SetFillStyle(Gaya, Warna)     Gaya isian bawaan EmptyFill sampai CloseDotFill.
+                              Bit 1 pola memakai Warna, bit 0 warna latar.
+                              Pola mengikuti koordinat layar.
+SetFillPattern(Pola, Warna)   Pola isian 8 x 8 buatan sendiri (UserFill).
+                              GetFillSettings dan GetFillPattern membacanya.
+SetWriteMode(Mode)            CopyPut atau XORPut untuk garis, persegi
+                              panjang, dan poligon.
+ImageSize(X1,Y1,X2,Y2)        Ukuran memori bitmap untuk GetImage, dalam byte.
+GetImage, PutImage            Menyalin sebuah daerah ke memori dan
+                              menempelkannya dengan CopyPut, XORPut, OrPut,
+                              AndPut, atau NotPut.
+OutText(S), OutTextXY(X,Y,S)  Menulis teks. OutText maju ke kanan bila teks
+                              mendatar rata kiri.
+SetTextStyle(F, Arah, Uk)     Font, HorizDir atau VertDir, dan ukuran 1..10.
+                              Semua font memakai font bitmap 8 x 8 yang
+                              diskalakan menurut Ukuran.
+SetTextJustify(Hor, Ver)      LeftText, CenterText, RightText dan BottomText,
+                              CenterText, TopText.
+SetUserCharSize(Mx,Dx,My,Dy)  Ukuran huruf pecahan untuk CharSize =
+                              UserCharSize.
+TextWidth(S), TextHeight(S)   Lebar dan tinggi teks dalam piksel.
+GraphDefaults                 Mengembalikan viewport, palet, warna, gaya, dan
+                              teks ke awal.
+Detect, CGA, MCGA, EGA        Nomor driver 0, 1, 2, 3. Juga EGA64 (4), EGAMono
+                              (5), IBM8514 (6), HercMono (7), ATT400 (8), VGA
+                              (9), PC3270 (10).
+VGALo, VGAMed, VGAHi          Mode VGA: 640 x 200, 640 x 350, 640 x 480, 16
+                              warna. Mode driver lain mengikuti BGI
+                              (CGAC0..CGAHi, EGALo, EGAHi, dan seterusnya)
+                              dengan resolusi aslinya.
+grOk, grNoInitGraph, ...      Kode galat 0, -1, ..., -18 (grInvalidMode = -10,
+                              grError = -11).
+
+Beda dengan BGI Borland: tidak ada berkas driver (.BGI) dan font (.CHR), jadi
+parameter Dir InitGraph diabaikan, RegisterBGIdriver dan InstallUserDriver
+hanya mencatat, dan font stroke (Triplex, Small, SansSerif, Gothic) digambar
+dengan font bitmap 8 x 8. Tidak ada mouse. Layar terminal hanyalah pratinjau;
+kalau butuh ketelitian per piksel, bacalah GetPixel. Contoh:
+tests/pascal/graph/.
+
+UNIT WINDOS
+Unit Dos gaya Borland Pascal untuk Windows yang memakai PChar. uses WinDos;.
+Semua rutin diteruskan ke unit Dos Odin; DosError milik WinDos ikut disetel.
+
+TSearchRec                    Hasil FindFirst/FindNext: Attr, Time, Size, dan
+                              Name (array[0..255] of Char). Sisanya internal.
+TDateTime                     Record Year, Month, Day, Hour, Min, Sec: Word
+                              (untuk PackTime dan UnpackTime; bukan tipe
+                              Double SysUtils).
+FindFirst(Path, Atr, F)       Mencari berkas; Path adalah PChar. DosError = 0
+                              bila ketemu.
+FindNext(F), FindClose(F)     Hasil berikutnya, dan menutup pencarian.
+FileSplit(P, Dir, Nama, Eks)  Memecah path ke PChar dan mengembalikan flag
+                              fcDirectory, fcFileName, fcExtension,
+                              fcWildcards.
+FileExpand(Tujuan, Nama)      Path lengkap ke Tujuan.
+FileSearch(Tuj, Nama, Daft)   Mencari Nama di daftar folder.
+GetCurDir, SetCurDir          Folder kerja.
+CreateDir, RemoveDir          Membuat dan menghapus folder.
+GetArgCount, GetArgStr        Jumlah dan isi argumen program.
+GetEnvVar(Nama)               Nilai variabel lingkungan sebagai PChar, atau
+                              nil.
+GetFAttr, SetFAttr, GetFTime  Atribut dan waktu berkas seperti di Dos.
+                              SetFTime, DiskFree, DiskSize, GetDate, GetTime,
+                              Exec, DosExitCode, dan lainnya juga ada.
+faReadOnly, faDirectory, ...  Atribut berkas faReadOnly, faHidden, faSysFile,
+                              faVolumeID, faDirectory, faArchive, faAnyFile.
+fsPathName, fsFileName, ...   Panjang maksimum komponen path (di sini 259 dan
+                              255, bukan 79 dan 8).
+
+Tidak ada Intr, MsDos, TRegisters, GetIntVec, dan SetIntVec (tidak ada
+interrupt DOS). DiskFree dan DiskSize mengembalikan Int64.
+
+UNIT MATH
+Bukan unit TP7; namanya mengikuti unit Math Free Pascal/Delphi. uses Math;.
+Bahasa Odin belum punya overload, jadi Min/Max dan beberapa lainnya hanya
+untuk satu tipe, dengan versi Real bernama lain (MinF, MaxF, InRangeF,
+EnsureRangeF, CompareValueF, SumInt untuk Integer). Galat domain (ArcSin di
+luar -1..1, Power(0, -1), ArcCosh(0.5)) menjadi runtime error 207 karena tidak
+ada exception.
+
+Tan, Cotan, Secant, Cosecant  Fungsi trigonometri, sudut dalam radian.
+ArcSin, ArcCos                Kebalikan Sin dan Cos.
+ArcTan2(Y, X)                 Sudut -Pi..Pi dari titik (X, Y), dengan kuadran
+                              yang benar.
+Hypot(X, Y)                   Akar X kuadrat ditambah Y kuadrat, tanpa
+                              overflow.
+SinCos(A, S, C)               Sin dan Cos sekaligus.
+DegToRad, RadToDeg            Derajat dan radian. Juga GradToRad, RadToGrad,
+                              DegToGrad, GradToDeg, CycleToRad, RadToCycle,
+                              CycleToDeg, DegToCycle.
+Sinh, Cosh, Tanh, Coth        Fungsi hiperbolik. Juga Sech dan Csch.
+ArcSinh, ArcCosh, ArcTanh     Kebalikannya.
+Power(Dasar, Pangkat)         Pangkat bilangan nyata; dasar negatif hanya
+                              dengan pangkat bulat.
+IntPower(Dasar, N)            Pangkat bulat (N bisa negatif).
+Log10, Log2, LogN(B, X)       Logaritma basis 10, 2, dan B.
+LnXP1(X)                      Ln(1 + X) yang teliti untuk X kecil.
+Ldexp(X, P), Frexp            X x 2^P, dan memecah menjadi mantisa 0,5..1 dan
+                              pangkat dua.
+Ceil(X), Floor(X)             Pembulatan ke atas dan ke bawah, hasil Int64.
+RoundTo(X, Digit)             Membulatkan: Digit negatif = angka di belakang
+                              koma, mis. RoundTo(1234.567, -2) = 1234.57.
+                              SimpleRoundTo membulatkan setengah menjauhi nol.
+Sign(X)                       -1, 0, atau 1; menerima bilangan bulat dan Real.
+Min, Max (Int64)              Terkecil dan terbesar dua bilangan bulat. MinF
+                              dan MaxF untuk Real.
+InRange, EnsureRange          Cek rentang dan membatasi nilai (Int64).
+                              InRangeF dan EnsureRangeF untuk Real.
+SameValue, IsZero             Perbandingan Real dengan toleransi (0 =
+                              toleransi bawaan).
+CompareValue, CompareValueF   -1, 0, 1 (LessThanValue, EqualsValue,
+                              GreaterThanValue).
+IsNan, IsInfinite             Pengujian nilai khusus IEEE. NaN, Infinity, dan
+                              NegInfinity adalah variabel.
+MinSingle, MaxDouble, ...     Konstanta batas tipe real.
+RandomRange(A, B)             Bilangan acak A..B-1. RandG(Rerata, Simpangan)
+                              berdistribusi normal.
+Sum, SumInt, SumOfSquares     Statistik larik terbuka: jumlah (array of
+                              Double, array of Integer) dan jumlah kuadrat.
+MinValue, MaxValue            Terkecil dan terbesar larik Double. MinIntValue
+                              dan MaxIntValue untuk Integer.
+Mean, Variance, StdDev        Rata-rata, varians dan simpangan baku sampel
+                              (dibagi n-1); larik satu elemen memberi 0.
+PopnVariance, PopnStdDev      Versi populasi (dibagi n). Juga TotalVariance,
+                              MeanAndStdDev, Norm, MomentSkewKurtosis.
+FutureValue, PresentValue     Nilai kini dan nilai mendatang dengan bunga Rate
+                              per periode, NPeriods periode, dan Payment.
+                              PaymentTime = ptEndOfPeriod atau
+                              ptStartOfPeriod.
+Payment, NumberOfPeriods      Besar angsuran dan jumlah periode. InterestRate
+                              mencari bunga per periode.
+
+UNIT SYSUTILS
+Bukan unit TP7; subset kecil SysUtils Free Pascal/Delphi. uses SysUtils;.
+Tidak ada kelas dan exception: galat konversi (StrToInt('x'), StrToDate salah)
+menjadi runtime error 106; pakai TryStrToInt, StrToIntDef, dan sejenisnya bila
+galat harus ditangani. Tidak ada Format (butuh array of const), parameter
+bawaan (tulis semua argumen, mis. BoolToStr(B, True), IncMonth(D, 1)), maupun
+overload. String tetap String 255 karakter.
+
+IntToStr(N), IntToHex(N, D)   Bilangan menjadi teks; IntToHex minimal D angka,
+                              Int64 negatif dalam 16 angka.
+StrToInt, StrToInt64          Teks menjadi bilangan (spasi di tepi dan $FF
+                              diterima); galat = runtime error 106.
+StrToIntDef(S, Awal)          Seperti StrToInt tetapi memberi Awal bila gagal.
+                              Juga StrToInt64Def, StrToFloatDef, StrToBoolDef.
+TryStrToInt(S, N)             True bila berhasil dan mengisi N (LongInt). Juga
+                              TryStrToInt64, TryStrToFloat, TryStrToDate,
+                              TryStrToTime.
+StrToFloat, FloatToStr        Teks dan bilangan real; FloatToStr memakai 15
+                              angka berarti dan E bila perlu (1E20, 1E-5).
+FloatToStrF(X, Format, P, D)  Format ffGeneral, ffExponent, ffFixed, ffNumber
+                              (pemisah ribuan), ffCurrency; P angka berarti, D
+                              angka desimal.
+FormatFloat(Pola, X)          Pola 0 # , . % dan teks di antara tanda kutip,
+                              E+00 untuk bentuk ilmiah, dan bagian
+                              positif;negatif;nol.
+BoolToStr(B, UseBool)         True/False atau -1/0. StrToBool membaca true,
+                              yes, y, t, false, no, n, f, atau angka.
+UpperCase, LowerCase          Huruf besar dan kecil (ASCII). AnsiUpperCase dan
+                              AnsiLowerCase sama.
+Trim, TrimLeft, TrimRight     Membuang spasi (dan karakter kontrol) di tepi.
+StringOfChar(C, N)            String berisi N kali C.
+CompareStr, CompareText       Hasil negatif, 0, atau positif; CompareText tak
+                              membedakan huruf besar-kecil. SameText: Boolean.
+StringReplace(S, L, B, Flag)  F = [rfReplaceAll, rfIgnoreCase].
+QuotedStr(S), CharInSet(C, H)
+                              String bertanda kutip tunggal; dan keanggotaan
+                              karakter dalam set.
+FileExists, DirectoryExists   Ada atau tidaknya berkas dan folder.
+DeleteFile, RenameFile        Menghapus dan mengganti nama berkas; hasil
+                              Boolean.
+CreateDir, RemoveDir          Membuat dan menghapus satu folder;
+                              ForceDirectories membuat seluruh jalurnya.
+GetCurrentDir, SetCurrentDir  Folder kerja.
+ExtractFileName(P)            Bagian nama berkas sebuah path.
+ExtractFilePath(P)            Bagian folder (dengan pemisah) sebuah path. Juga
+                              ExtractFileDir dan ExtractFileExt.
+ChangeFileExt(Nama, Eks)      Mengganti ekstensi; Eks kosong membuangnya.
+IncludeTrailingPathDelimiter  Menambah atau membuang pemisah folder di akhir
+                              path (ExcludeTrailingPathDelimiter).
+ExpandFileName(P)             Path lengkap.
+GetEnvironmentVariable(N)     Nilai variabel lingkungan.
+TDateTime                     Tipe Double: hari sejak 30-12-1899, pecahannya
+                              waktu. Now, Date, Time memberinya dari jam
+                              sistem.
+EncodeDate, EncodeTime        Menyusun tanggal dan waktu; nilai di luar
+                              jangkauan = runtime error 106. DecodeDate dan
+                              DecodeTime memecahnya.
+DayOfWeek(D)                  1 = Minggu ... 7 = Sabtu.
+IsLeapYear, DaysInAMonth      Tahun kabisat dan jumlah hari dalam bulan.
+IncMonth(D, N)                Menambah N bulan; hari dipotong ke akhir bulan.
+DateToStr, TimeToStr          Teks tanggal dan waktu menurut ShortDateFormat
+                              dan LongTimeFormat. DateTimeToStr menggabungkan
+                              keduanya.
+FormatDateTime(Pola, D)       yyyy yy mm m mmm mmmm dd d ddd dddd hh h nn n ss
+                              s zzz am/pm c t tt dan teks dalam tanda kutip.
+StrToDate, StrToTime          Membaca tanggal menurut urutan d/m/y di
+                              ShortDateFormat dan waktu hh:nn[:ss].
+                              StrToDateTime menggabungkan.
+ShortDateFormat               Variabel format tanggal (bawaan dd/mm/yyyy),
+                              dengan DateSeparator, TimeSeparator,
+                              LongTimeFormat, dan ShortTimeFormat.
+DecimalSeparator              Pemisah desimal, dan ThousandSeparator (bawaan .
+                              dan ,). ShortMonthNames, LongMonthNames,
+                              ShortDayNames, dan LongDayNames berbahasa
+                              Inggris dan bisa diganti.
+Sleep(Ms), GetTickCount64     Menunggu Ms milidetik, dan jam milidetik.
+                              GetTickCount mengembalikan 32 bit.
+
+UNIT OVERLAY
+Executable Odin memuat seluruh kodenya, jadi overlay tidak perlu dimuat. uses
+Overlay; hanya menyediakan antarmuka TP7 supaya program lama tetap bisa
+dikompilasi; direktif $O diabaikan.
+
+OvrInit(Nama)                 Selalu berhasil: OvrResult = ovrOk.
+OvrInitEMS                    OvrResult = ovrNoEMSDriver (tidak ada EMS).
+OvrSetBuf, OvrGetBuf          Mencatat dan membaca ukuran buffer overlay;
+                              tidak berefek.
+OvrSetRetry, OvrGetRetry      Mencatat dan membaca ukuran ruang coba ulang.
+OvrClearBuf                   Tidak berefek.
+OvrResult                     Hasil operasi terakhir: ovrOk, ovrError,
+                              ovrNotFound, ovrNoMemory, ovrIOError,
+                              ovrNoEMSDriver, ovrNoEMSMemory.
 
 ODIN VISION
 Turbo Vision milik Odin untuk membuat aplikasi teks berjendela, menu, dan
@@ -710,11 +1040,13 @@ GotoXY(10,5);                Posisi kolom 10, baris 5.
 Tombol := ReadKey;           Membaca tombol tanpa Enter.
 
 UNIT STANDAR
-Tersedia:        System (otomatis), Crt, Dos, Strings, Printer, Objects.
+Tersedia:        System (otomatis), Crt, Dos, WinDos, Strings, Printer,
+                 Objects, Graph, Overlay.
 Turbo Vision:    App, Drivers, Views, Menus, Dialogs, MsgBox, StdDlg, Memory,
                  HistList, Validate, Editors, Outline, ColorSel, TextView
                  (Odin Vision).
-Tidak tersedia:  Graph, Graph3, Turbo3, Overlay, WinDos.
+Tambahan Odin:   Math, SysUtils (subset unit Free Pascal/Delphi).
+Tidak tersedia:  Graph3, Turbo3.
 Printer mengirim Lst ke printer default macOS melalui lpr.
 Rincian dan perbedaan perilaku: docs/COMPATIBILITY.txt.
 

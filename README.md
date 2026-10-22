@@ -6,7 +6,7 @@
 
 **Layar biru Turbo Pascal yang Anda kenal, dengan compiler dan debugger yang menghasilkan program native.**
 
-[![Versi](https://img.shields.io/badge/rilis-2.6.0-0000aa?style=flat-square)](CHANGELOG.md)
+[![Versi](https://img.shields.io/badge/rilis-2.7.0-0000aa?style=flat-square)](CHANGELOG.md)
 [![CI](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml/badge.svg)](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml)
 [![Lisensi GPL v3](https://img.shields.io/badge/lisensi-GPL--3.0--or--later-ffff55?style=flat-square)](LICENSE)
 [![Offline](https://img.shields.io/badge/offline-tanpa%20telemetri-55ff55?style=flat-square)](#privasi-dan-lokasi-data)
@@ -22,7 +22,7 @@
 </div>
 
 > [!IMPORTANT]
-> **Rilis 2.4.0** menambahkan **Run › Ukur** (Shift+F9) dan **Run › Periksa...**: program diukur dengan build hitung langkah (langkah per pernyataan, puncak heap, memori global, kedalaman panggilan) yang angkanya sama di semua platform, lengkap dengan catatan struktur kode dan penilaian dengan paket soal, sebagai bahan analisis dan lomba pemrograman. IDE, toolchain Odin, debugger terpadu, dan Odin Vision berjalan di macOS (Intel dan Apple Silicon), Linux (x86_64 dan arm64), dan **Windows** (x86_64). Windows, Apple Silicon, dan Linux diuji di runner GitHub Actions, belum di perangkat fisik pengembang. Lihat [Riwayat Rilis](#riwayat-rilis) dan [Status Pengujian](#status-pengujian).
+> **Rilis 2.7.0** menambahkan unit **Graph** (antarmuka BGI TP7 lengkap, digambar di memori per piksel dan dipratinjau di terminal), **WinDos**, **Overlay**, serta **Math** dan **SysUtils** (subset unit Free Pascal/Delphi). IDE, toolchain Odin, debugger terpadu, dan Odin Vision berjalan di macOS (Intel dan Apple Silicon), Linux (x86_64 dan arm64), dan **Windows** (x86_64). Windows, Apple Silicon, dan Linux diuji di runner GitHub Actions, belum di perangkat fisik pengembang. Lihat [Riwayat Rilis](#riwayat-rilis) dan [Status Pengujian](#status-pengujian).
 
 ## Daftar Isi
 
@@ -193,7 +193,7 @@ Pemasang macOS dapat memasang Python dengan Tk melalui Homebrew, dan pemasang Wi
 
 **Pemasang satu berkas (offline).** Unduh `OdinTurboPascal-VERSI-macos-x86_64.pkg` (Mac Intel) dari halaman Releases, lalu buka. Paket memasang aplikasi di `~/Applications` tanpa kata sandi administrator dan membawa Python dengan Tk sendiri, jadi tidak ada yang diunduh dan tidak perlu Homebrew atau Xcode. Paket belum ditandatangani Apple: bila macOS menahannya, klik kanan paketnya, pilih **Open**, atau gunakan **System Settings › Privacy & Security › Open Anyway**. Dibangun oleh `python3 scripts/build_setup_mac.py` dan oleh CI. Diuji di Mac Intel pengembang (pasang, pemeriksaan kompilasi dengan jaringan diblokir, buka lewat LaunchServices); versi `arm64` hanya dibangun di CI, dan Mac bersih tanpa Python belum diuji.
 
-**Dari repositori (`Install.command`).** Pemasang ini memasang **rilis 2.6.0**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Satu-satunya dependensi adalah Python dengan Tk.
+**Dari repositori (`Install.command`).** Pemasang ini memasang **rilis 2.7.0**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Satu-satunya dependensi adalah Python dengan Tk.
 
 1. **Unduh** repositori ini (**Code › Download ZIP**), lalu ekstrak seluruhnya. Jangan menjalankan pemasang dari pratinjau ZIP.
 2. **Buka `Install.command`.** Pemasang berjalan di Terminal dan akan:
@@ -340,14 +340,18 @@ Diuji dengan korpus tes di Mac Intel, di VM Ubuntu 24.04 (x86_64, dan aarch64 le
 | `Printer` | ✅ `Lst` diteruskan ke `lpr` (di Windows: `notepad /p`). Pencetakan sungguhan belum diuji |
 | `Objects` | ✅ `TCollection`, `TSortedCollection`, `TStringCollection`, stream berkas/ber-buffer/memori, `RegisterType`, `Put`/`Get` |
 | Turbo Vision | ✅ Odin Vision (`rtl/vision/`): `App`, `Drivers`, `Views`, `Menus`, `Dialogs`, `MsgBox`, `StdDlg`, `Memory`, `HistList`, `Validate`, `Editors`, `Outline`, `ColorSel`, `TextView`. Diuji dengan snapshot layar (karakter dan warna). Warna palet dirancang sendiri |
-| `Graph`, `Graph3`, `Overlay`, `WinDos`, `Turbo3` | ❌ |
+| `WinDos` | ✅ `Dos` dengan `PChar` (`FindFirst`, `FileSplit`, `GetCurDir`, `GetEnvVar`, ...), diteruskan ke `Dos`. Tanpa `Intr`/`MsDos`/`TRegisters` |
+| `Graph` | ✅ Antarmuka BGI TP7 lengkap (garis, lingkaran, busur, isian, `FloodFill`, teks, `GetImage`/`PutImage`, palet, halaman, semua mode driver). Gambar disimpan di memori per piksel dan diuji piksel demi piksel; di terminal hanya pratinjau kasar dengan karakter setengah blok. Tanpa berkas `.BGI`/`.CHR` (font stroke diganti font bitmap 8 x 8) |
+| `Overlay` | ✅ Antarmuka saja: `OvrInit` selalu berhasil karena seluruh kode ada di memori |
+| `Math`, `SysUtils` | ✅ Tambahan Odin (bukan unit TP7): subset unit Free Pascal/Delphi tanpa kelas, exception, `Format`, parameter bawaan, dan overload |
+| `Graph3`, `Turbo3` | ❌ |
 
 Rincian dan perbedaan perilaku ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBILITY.txt) dan [`tests/pascal/DEVIATIONS.md`](tests/pascal/DEVIATIONS.md).
 
 ### Batasan
 
 - Odin adalah **implementasi baru** yang mengikuti antarmuka dan alur Turbo Pascal klasik. Odin bukan salinan Borland dan tidak menyertakan binary, logo, font, maupun berkas bantuan Borland.
-- Hasil kompilasi berupa program 64-bit untuk macOS, Linux, atau Windows, bukan EXE DOS 16-bit. Kode Graph/BGI, `Mem`/`Port`, interrupt DOS, assembler 16-bit, dan pointer berbasis segmen perlu di-porting.
+- Hasil kompilasi berupa program 64-bit untuk macOS, Linux, atau Windows, bukan EXE DOS 16-bit. Kode `Mem`/`Port`, interrupt DOS, assembler 16-bit, dan pointer berbasis segmen perlu di-porting.
 - `Real` berukuran 8 byte (TP: 6 byte), dan `Real48` tidak tersedia; berkas biner lama perlu dikonversi. `Round` membulatkan ke bilangan genap untuk nilai `.5`.
 - Compiler Odin:
   - menghasilkan program untuk macOS dan Linux (x86_64 dan arm64) serta Windows (x86_64); di sistem lain IDE bisa mengedit tetapi tidak mengompilasi;
@@ -361,6 +365,7 @@ Rincian dan perbedaan perilaku ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBIL
 
 | Lingkungan | Hasil |
 |---|---|
+| Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, Rust 1.99 (rilis 2.7.0) | 139 tes Python lulus (10 dilewati), termasuk tes tampilan Graph lewat PTY, dan seluruh tes Rust (korpus diferensial dalam tiga mode build). Korpus Math, SysUtils, WinDos, dan Overlay serta keenam program Graph juga lulus di VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu) dengan keluaran sama. Hasil CI rilis ini dicatat di halaman Releases |
 | Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, FPC 3.2.2, Rust 1.99 (rilis 2.4.0) | 119 tes Python lulus (6 dilewati), termasuk tes GUI dengan jendela Tk sungguhan, sesi debugger nyata, snapshot Odin Vision, dan **Run › Ukur**/**Periksa...**. 189 tes Rust juga lulus. Korpus diferensial 77 program (termasuk tipe `object` dan unit `Objects`) memberi keluaran dan kode keluar yang sama dengan FPC 3.2.2, dengan build biasa, build debug, dan build hitung langkah |
 | GitHub Actions: macOS 15 Apple Silicon, Ubuntu 24.04 x86_64 dan arm64, macOS 15 Intel (rilis 2.4.0) | Korpus diferensial berjalan native dan lulus; laporan langkah `tests/steps/` sama di semua target; tes Python dengan backend Odin (GUI, debugger, Odin Vision) lulus. Lihat [CI](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml) |
 | GitHub Actions: Windows Server 2025 x86_64, Python 3.12, FPC 3.2.2 i386-win32 (rilis 2.4.0) | Korpus diferensial 77 program (biasa, debug, dan hitung langkah) identik dengan FPC untuk Windows; laporan langkah sama dengan target lain; 119 tes Python lulus (2 tes khusus Unix dilewati), termasuk GUI, debugger, dan Odin Vision di ConPTY; pemeriksaan kompilasi dan penyalinan pemasang lulus |
@@ -489,7 +494,10 @@ ODIN-TURBO-PASCAL/
 
 | Versi | Ringkasan |
 |---|---|
-| **2.4.0** (terbaru) | Metrik untuk analisis dan lomba: `odinpc build --count-steps`, `odinpc metrics`, menu **Run › Ukur** (Shift+F9) dan **Run › Periksa...** dengan paket soal, serta laporan JSON `otp-metrics/1` |
+| **2.7.0** (terbaru) | Unit **Graph** (BGI TP7 lengkap: framebuffer di memori dengan pratinjau terminal), **WinDos**, **Overlay**, **Math**, dan **SysUtils** |
+| 2.6.0 | Komentar penjelasan di 20 contoh OTP-AI |
+| 2.5.0 | Bantuan HTML (`docs/help.html`, F1), referensi Pascal lengkap, unit Odin Vision `ColorSel` dan `TextView`, Setup Windows satu berkas, dan pustaka OTP-AI |
+| 2.4.0 | Metrik untuk analisis dan lomba: `odinpc build --count-steps`, `odinpc metrics`, menu **Run › Ukur** (Shift+F9) dan **Run › Periksa...** dengan paket soal, serta laporan JSON `otp-metrics/1` |
 | 2.3.0 | Buku tutorial PDF berwarna penuh (403 halaman, 20 bab) di menu **Help › Buku**, tutorial 90 contoh di **File › Examples**, dan warna sintaks **Turbo Biru Lembut**. Toolchain Odin tidak berubah |
 | 2.2.0 | IDE, toolchain Odin, debugger terpadu, dan Odin Vision di **Windows** (x86_64, Windows 10 1809 atau lebih baru), dengan pemasang `Install.cmd`. Mencakup dukungan Apple Silicon dan Linux dari 2.1.0-alpha.1; tidak ada rilis 2.1.0 terpisah |
 | 2.1.0-alpha.1 | Toolchain Odin, debugger terpadu, dan Odin Vision di **Apple Silicon** dan **Linux** (x86_64 dan arm64). Bundel macOS berisi `odinpc` universal |

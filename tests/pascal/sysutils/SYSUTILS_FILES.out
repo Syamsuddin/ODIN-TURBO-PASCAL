@@ -1,0 +1,18 @@
+ExtractFileName: [x.tar.gz] [abc] [] []
+ExtractFilePath: [/usr/lib/] []
+ExtractFileDir: [/usr/lib] [/] []
+ExtractFileExt: [.gz] [] [] [.hidden]
+ChangeFileExt: /a/b.exe /a.b/c.x file x.tar.zip
+Delimiter: /a/b / abc /a/b/
+GetCurrentDir tidak kosong: TRUE
+FileExists / DirectoryExists tidak ada: FALSE FALSE FALSE
+FileExists: TRUE DirectoryExists: FALSE
+RenameFile: TRUE FALSE TRUE FALSE
+DeleteFile: TRUE FALSE FALSE
+CreateDir: TRUE TRUE FALSE
+FileExists(direktori): FALSE
+ForceDirectories: TRUE TRUE TRUE
+SetCurrentDir: TRUE TRUE TRUE FALSE
+RemoveDir: TRUE TRUE TRUE TRUE FALSE
+ExpandFileName: TRUE x.txt
+GetEnvironmentVariable: TRUE

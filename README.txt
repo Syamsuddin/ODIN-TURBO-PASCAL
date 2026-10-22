@@ -1,4 +1,4 @@
-ODIN TURBO PASCAL 2.6.0
+ODIN TURBO PASCAL 2.7.0
 Paket aplikasi desktop untuk Mac Intel dan Apple Silicon; berjalan dari source di Linux
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
@@ -151,7 +151,7 @@ Odin merupakan implementasi baru yang mengikuti antarmuka dan alur klasik,
 bukan salinan identik setiap piksel, dialog, font, compiler, debugger, atau
 perilaku DOS. Tidak menyertakan perangkat lunak, logo, atau berkas Borland.
 Compiler Odin mengikuti bahasa Turbo Pascal 7. Hasil kompilasi berupa
-program native macOS, Linux, atau Windows, bukan EXE DOS 16-bit. Kode BGI/Graph, interrupt DOS,
+program native macOS, Linux, atau Windows, bukan EXE DOS 16-bit. Kode interrupt DOS,
 Port/Mem, assembler x86 16-bit, serta pointer berbasis segment memerlukan
 porting. Tidak ada emulator DOS di dalam paket ini.
 Free Pascal (backend alternatif sampai 2.3.0, beserta mode ObjFPC/Delphi)
@@ -160,7 +160,10 @@ Lihat docs/COMPATIBILITY.txt untuk rincian.
 
 PENGUJIAN
 
-Rilis 2.4.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
+Rilis 2.7.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1): 139 tes
+Python (termasuk tampilan Graph lewat PTY) dan seluruh tes Rust. Korpus Math,
+SysUtils, WinDos, dan Overlay serta program uji Graph juga lulus di VM
+Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu). Rilis 2.4.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1,
 Free Pascal 3.2.2): 119 tes Python (termasuk tes GUI dengan jendela Tk
 sungguhan) dan 189 tes Rust. Laporan langkah build hitung langkah sama di
 Mac Intel, VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu), dan kelima

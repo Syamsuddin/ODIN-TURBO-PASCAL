@@ -457,7 +457,7 @@ end.</code></pre>
 
 <section class="sec" id="s-unit">
 <h2 id="unit">Unit Pustaka</h2>
-<p>Unit yang tersedia: System, Crt, Dos, Strings, Printer, Objects, dan Odin Vision (termasuk ColorSel dan TextView). <strong>Tidak tersedia</strong>: Graph, Graph3, Turbo3, Overlay, WinDos.</p>
+<p>Unit yang tersedia: System, Crt, Dos, WinDos, Strings, Printer, Objects, Graph, Overlay, dan Odin Vision (termasuk ColorSel dan TextView), ditambah Math dan SysUtils (subset unit Free Pascal/Delphi, bukan unit TP7). <strong>Tidak tersedia</strong>: Graph3 dan Turbo3.</p>
 
 <h3 id="unit-crt">Crt</h3>
 <!--@pascal:UNIT CRT-->
@@ -467,6 +467,16 @@ end.</code></pre>
 <!--@pascal:UNIT STRINGS-->
 <h3 id="unit-objects">Objects</h3>
 <!--@pascal:UNIT OBJECTS-->
+<h3 id="unit-graph">Graph</h3>
+<!--@pascal:UNIT GRAPH-->
+<h3 id="unit-windos">WinDos</h3>
+<!--@pascal:UNIT WINDOS-->
+<h3 id="unit-math">Math</h3>
+<!--@pascal:UNIT MATH-->
+<h3 id="unit-sysutils">SysUtils</h3>
+<!--@pascal:UNIT SYSUTILS-->
+<h3 id="unit-overlay">Overlay</h3>
+<!--@pascal:UNIT OVERLAY-->
 <h3 id="odin-vision">Odin Vision</h3>
 <!--@pascal:ODIN VISION-->
 <pre><code>uses App;
@@ -504,7 +514,7 @@ end.</code></pre>
 <tr><td>LF/CRLF, UTF-8/BOM, CP437</td><td>Diuji round-trip</td></tr>
 <tr><td>Injeksi shell lewat argumen</td><td>Tidak ada: compile dan run tidak memakai shell</td></tr>
 <tr><td>Signing / notarization Apple</td><td>Belum tersedia</td></tr>
-<tr><td>BGI/Graph DOS</td><td>Tidak diimplementasikan</td></tr>
+<tr><td>BGI/Graph</td><td>Diimplementasikan di memori (tes piksel demi piksel); tampilan di terminal hanya pratinjau kasar. Driver dan font BGI asli (<code>.BGI</code>, <code>.CHR</code>) tidak ada</td></tr>
 <tr><td>Interrupt, port, mem DOS</td><td>Tidak diemulasi</td></tr>
 <tr><td>Terminal truecolor / Unicode lebar</td><td>Tidak tersedia</td></tr>
 <tr><td>Compiler dan runtime</td><td>Disertakan (<code>odinpc</code> dan runtime library Odin); Free Pascal, Xcode, dan LLDB tidak diperlukan</td></tr>
@@ -531,7 +541,11 @@ end.</code></pre>
 <tr><td>Objects</td><td>TStringCollection dan TBufStream diuji berjalan.</td></tr>
 <tr><td>Printer</td><td>Tersedia; <code>Lst</code> diteruskan ke printer default (<code>lpr</code> di macOS).</td></tr>
 <tr><td>Turbo Vision</td><td>Odin Vision: Drivers, Memory, HistList, Views, Menus, Validate, Dialogs, App, MsgBox, StdDlg, Editors, Outline, ColorSel, TextView.</td></tr>
-<tr><td>Graph, Graph3, Overlay, WinDos, Turbo3</td><td>Tidak tersedia. Hapus <code>uses Overlay</code> dan pemanggilan <code>OvrInit</code>; gunakan Dos dan Strings sebagai pengganti WinDos.</td></tr>
+<tr><td>WinDos</td><td>Tersedia: Dos dengan <code>PChar</code> (<code>FindFirst</code>, <code>FileSplit</code>, <code>GetCurDir</code>, ...), diteruskan ke Dos. Tanpa <code>Intr</code>, <code>MsDos</code>, dan <code>TRegisters</code>.</td></tr>
+<tr><td>Graph</td><td>Tersedia: antarmuka BGI lengkap (garis, lingkaran, busur, isian, <code>FloodFill</code>, teks, <code>GetImage</code>/<code>PutImage</code>, palet, halaman). Gambar disimpan di memori per piksel dan ditampilkan di terminal sebagai pratinjau kasar dengan karakter setengah blok; tanpa berkas driver (<code>.BGI</code>) dan font (<code>.CHR</code>), font stroke diganti font bitmap 8 x 8. Rinciannya di bagian Unit Pustaka.</td></tr>
+<tr><td>Overlay</td><td>Tersedia sebagai antarmuka saja: <code>OvrInit</code> selalu berhasil karena seluruh kode sudah ada di memori. Direktif <code>$O</code> diabaikan.</td></tr>
+<tr><td>Math, SysUtils</td><td>Tambahan Odin (bukan unit TP7): subset unit Free Pascal/Delphi tanpa kelas, exception, <code>Format</code>, parameter bawaan, dan overload.</td></tr>
+<tr><td>Graph3, Turbo3</td><td>Tidak tersedia.</td></tr>
 </table></div>
 
 <h3 id="fitur-dos">Fitur era DOS</h3>

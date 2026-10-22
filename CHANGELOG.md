@@ -6,6 +6,24 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-10-23
+
+### Ditambahkan
+
+- Unit **Graph** (`rtl/graph.pas`): antarmuka BGI Turbo Pascal 7 lengkap. Gambar disimpan di framebuffer di memori (satu byte per piksel, resolusi asli mode BGI), jadi `GetPixel`, `GetImage`, dan `PutImage` memberi hasil piksel demi piksel. `InitGraph` mengenal driver CGA, MCGA, EGA, EGA64, EGAMono, IBM8514, HercMono, ATT400, VGA, dan PC3270 dengan semua modenya; ada garis dengan gaya dan ketebalan, mode tulis XOR, `Rectangle`, `Bar`, `Bar3D`, `Circle`, `Arc`, `Ellipse`, `FillEllipse`, `PieSlice`, `Sector`, `DrawPoly`, `FillPoly`, `FloodFill`, 12 pola isian dan pola buatan sendiri, palet (`SetPalette`, `SetRGBPalette`, `SetBkColor`), viewport dengan klip, halaman aktif dan visual, `GetImage`/`PutImage` dengan lima operasi, dan teks (`OutText`, `OutTextXY`, `SetTextStyle`, `SetTextJustify`, `TextWidth`, `TextHeight`) dengan font bitmap 8 x 8. Tanpa berkas `.BGI` dan `.CHR`: font stroke diganti font bitmap yang diskalakan.
+- Tampilan Graph di terminal: pratinjau kasar dengan karakter setengah blok (dua subpiksel per sel, 16 warna CRT, sekitar 80 x 50 titik di layar 80 x 25), diskalakan dan ditaruh di tengah dengan perbandingan lebar-tinggi yang benar. Teks BGI ditampilkan sebagai karakter asli supaya terbaca. Layar digambar ulang saat program menunggu lewat Crt, tiap 0,1 detik saat menggambar, dan saat program selesai; gambar terakhir tetap di layar bila program selesai tanpa `CloseGraph`. Keluaran yang dialihkan ke berkas tidak menampilkan apa-apa.
+- Unit Crt: `CursorOn`, `CursorOff`, `CrtScreenWidth`, `CrtScreenHeight`, `CrtOutputIsTty`, `CrtPutText` (menulis sel UTF-8 tanpa scroll), dan `CrtIdleHook` (dipanggil sebelum `ReadKey`, `KeyPressed`, dan `Delay`), dipakai Graph.
+- Unit **WinDos** (`rtl/windos.pas`): `Dos` dengan `PChar`, diteruskan ke `Dos` (`FindFirst`/`FindNext`, `FileSplit`, `FileExpand`, `FileSearch`, `GetCurDir`, `SetCurDir`, `CreateDir`, `RemoveDir`, `GetArgStr`, `GetEnvVar`, `TSearchRec`, `fa*`, `fc*`, `fs*`).
+- Unit **Math** (`rtl/math.pas`): trigonometri dan hiperbolik, `Power`, `IntPower`, `Log10`, `Log2`, `LogN`, `Ceil`, `Floor`, `RoundTo`, `Min`/`Max` (Int64; `MinF`/`MaxF` untuk Real), `Sign`, `SameValue`, statistik larik (`Sum`, `Mean`, `StdDev`, `Variance`, `MomentSkewKurtosis`, ...), fungsi keuangan, dan nilai khusus IEEE. Galat domain menjadi runtime error 207.
+- Unit **SysUtils** (`rtl/sysutils.pas`): `IntToStr`, `IntToHex`, `StrToInt` dan variasi `Def`/`Try`, `StrToFloat`, `FloatToStr`, `FloatToStrF`, `FormatFloat`, `UpperCase`, `Trim`, `StringReplace`, rutin nama berkas dan direktori, `FileExists`, `DeleteFile`, `ForceDirectories`, `TDateTime` (`EncodeDate`, `DecodeDate`, `FormatDateTime`, `StrToDate`, `IncMonth`, ...), `Sleep`, `GetTickCount64`. Tanpa kelas, exception, `Format`, dan parameter bawaan (galat konversi menjadi runtime error 106).
+- Unit **Overlay** (`rtl/overlay.pas`): antarmuka overlay TP7; `OvrInit` selalu berhasil karena seluruh kode ada di memori. Direktif `{$O ...}` diabaikan.
+- Tes: `tests/pascal/graph/` (enam program yang mencetak framebuffer lewat `GetPixel`, ekspektasi `.expect`, dijalankan `tests/test_graph.py` bersama tiga tes tampilan lewat PTY), korpus untuk Math, SysUtils, WinDos, dan Overlay. `python3 tests/test_graph.py --bless` menulis ulang ekspektasi Graph.
+- Dokumen: bagian UNIT GRAPH, WINDOS, MATH, SYSUTILS, dan OVERLAY di `docs/PASCAL.txt` (dan bantuan HTML), serta `docs/COMPATIBILITY.txt`.
+
+### Pengujian
+
+- Diuji di macOS Intel: korpus (`cargo test -p odinpc`) dan suite Python. Korpus Math, SysUtils, WinDos, dan Overlay serta keenam program Graph juga dijalankan di VM Lima Ubuntu 24.04 (x86_64) dan di bawah qemu (aarch64) dengan keluaran yang sama. Unit baru dikompilasi untuk x86_64 Windows, tetapi belum dijalankan di Windows dan Apple Silicon fisik, dan tampilan Graph di terminal baru diuji di macOS Intel.
+
 ## [2.6.0] - 2026-10-22
 
 ### Ditambahkan
@@ -356,7 +374,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.6.0...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.3.0...v2.4.0

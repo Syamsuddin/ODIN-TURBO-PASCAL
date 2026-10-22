@@ -1,0 +1,40 @@
+Lingkaran jari-jari 100 di (300,200), mode VGAHi (piksel persegi)
+titik kanan: ya
+titik kiri: ya
+titik atas: ya
+titik bawah: ya
+pusat kosong: ya
+di luar kosong: ya
+jumlah piksel 600..900: ya
+Circle(x, y, 0) menggambar satu titik
+1 piksel, di tengah: 9
+Elips 80 x 30 di (300,200)
+kanan: ya
+kiri: ya
+atas: ya
+bawah: ya
+di luar atas: ya
+Busur 0..90 derajat: seperempat kanan atas
+pusat 300,200 awal 350,200 akhir 300,150
+titik awal: ya
+titik akhir: ya
+kiri bawah kosong: ya
+kanan atas ada: ya
+Busur 270..90 melewati 0 derajat: setengah kanan
+kanan ada: ya
+kiri kosong: ya
+Busur 90..180, GetArcCoords
+awal 300,100 akhir 200,200
+FillEllipse: isi memakai warna isian, tepi warna garis
+pusat 4 tepi kanan 9 tepi atas 9 dekat tepi 4
+luar kosong: ya
+PieSlice 0..90: pusat terisi, dua jari-jari menjadi tepi
+pusat 9 dalam 2 jari-jari 9,9
+kiri bawah kosong: ya
+Sector 0..360 elips 60 x 20 = elips penuh dengan jari-jari
+dalam 9 kanan 9
+Mode VGALo (640x200): piksel tinggi, jari-jari vertikal = 100 * 4400 / 10000
+kanan: ya
+atas, 44 piksel: ya
+bukan 45: ya
+aspek 1:1, atas 50 piksel: ya
