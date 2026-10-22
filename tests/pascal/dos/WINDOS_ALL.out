@@ -3,11 +3,9 @@ FileSplit: 2 [] [name] []
 FileSplit: 11 [] [*] [.pas]
 Konstanta: 1 2 4 8 16 32 63 1 2 4 8
 Batas nama: TRUE TRUE TRUE TRUE
-ditemukan ukuran 0 atribut-folder 0
-ditemukan ukuran 5 atribut-folder 0
 FindNext selesai: TRUE
-1: windos_a1.wdt
-2: windos_a2.wdt
+1: windos_a1.wdt ukuran 5
+2: windos_a2.wdt ukuran 0
 Tanpa hasil: TRUE
 GetFAttr: 0 folder=0
 GetFAttr tanpa berkas: TRUE

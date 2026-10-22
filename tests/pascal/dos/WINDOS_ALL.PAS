@@ -10,6 +10,7 @@ var
   SR: TSearchRec;
   F: Text;
   Names: array[1..8] of String;
+  Sizes: array[1..8] of LongInt;
   Count, I, J: Integer;
   T: String;
   Dt: TDateTime;
@@ -49,7 +50,9 @@ begin
   begin
     Inc(Count);
     Names[Count] := StrPas(SR.Name);
-    WriteLn('ditemukan ukuran ', SR.Size, ' atribut-folder ', SR.Attr and faDirectory);
+    Sizes[Count] := SR.Size;
+    if SR.Attr and faDirectory <> 0 then
+      WriteLn('bukan berkas: ', Names[Count]);
     FindNext(SR);
   end;
   FindClose(SR);
@@ -61,9 +64,12 @@ begin
         T := Names[I];
         Names[I] := Names[J];
         Names[J] := T;
+        P := Sizes[I];
+        Sizes[I] := Sizes[J];
+        Sizes[J] := P;
       end;
   for I := 1 to Count do
-    WriteLn(I, ': ', Names[I]);
+    WriteLn(I, ': ', Names[I], ' ukuran ', Sizes[I]);
   FindFirst('tidak_ada_*.zzz', faAnyFile, SR);
   WriteLn('Tanpa hasil: ', DosError <> 0);
   FindClose(SR);
