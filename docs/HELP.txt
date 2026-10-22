@@ -37,6 +37,11 @@ Bab 1-5 fondasi, Bab 6-8 alur kendali, Bab 9-10 prosedur dan rekursi,
 Bab 11-14 struktur data, Bab 15-16 pencarian dan pengurutan, Bab 17-20
 file, pointer, unit, dan proyek akhir.
 
+File > Examples - AI berisi 20 contoh pustaka AI/machine learning OTP-AI
+(regresi, KNN, K-Means, jaringan saraf, Q-learning, dan lainnya), lengkap dengan
+topiknya. Unit AI-nya langsung bisa dipanggil dengan uses, misalnya
+uses AIMATH, AILINEAR;. Contoh dibuka sebagai templat: Save menjadi Save as.
+
 Program Bab 17 dan Bab 20 membuat berkas data, misalnya catatan.txt atau
 kontak.dat, di folder kerja program, yaitu folder berkas .pas-nya. Nama
 berkas itu ditulis sebagai konstanta di awal program. Simpan dulu salinan

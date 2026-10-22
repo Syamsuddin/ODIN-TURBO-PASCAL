@@ -71,6 +71,8 @@ for folder in ("odin", "examples", "docs", "assets"):
 shutil.copytree(ROOT / "rtl", resources / "rtl")
 # OTP-AI: unit AI/machine learning yang langsung bisa dipanggil dengan uses (core.library_unit_paths).
 shutil.copytree(ROOT / "otp-AI" / "UNITS", resources / "otp-AI" / "UNITS", ignore=ignore)
+shutil.copytree(ROOT / "otp-AI" / "EXAMPLES", resources / "otp-AI" / "EXAMPLES", ignore=ignore)  # File > Examples - AI
+shutil.copytree(ROOT / "otp-AI" / "DATA", resources / "otp-AI" / "DATA", ignore=ignore)
 odinpc = ROOT / "toolchain" / "target" / "universal" / "odinpc"
 if not odinpc.is_file():
     odinpc = ROOT / "toolchain" / "target" / "release" / "odinpc"

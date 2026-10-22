@@ -9,6 +9,7 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 ### Ditambahkan
 
 - Pustaka **OTP-AI** (`otp-AI/`): 19 unit AI dan machine learning murni Pascal, 20 contoh, tes, dan buku panduan PDF. Unitnya terpasang di IDE dan langsung bisa dipanggil dengan `uses` seperti `Crt`, tanpa mengisi **Options › Directories** (`core.library_unit_paths`, ikut dalam bundel macOS dan paket Windows). Unit buatan pengguna di unit path didahulukan.
+- **File › Examples - AI...**: daftar 20 contoh OTP-AI dengan topiknya, dibuka sebagai templat seperti **File › Examples** (`otp-AI/EXAMPLES` dan `otp-AI/DATA` ikut dalam bundel).
 
 ## [2.5.0] - 2026-10-21
 

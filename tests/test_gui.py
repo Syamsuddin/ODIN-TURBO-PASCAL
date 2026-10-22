@@ -97,6 +97,25 @@ class GuiTests(unittest.TestCase):
         self.assertTrue(self.widgets(dialog,tk.Scrollbar))
         dialog.destroy()
 
+    def test_examples_ai_dialog_lists_the_otp_ai_samples(self):
+        file_menu=self.app.menus["File"][1]
+        labels=[file_menu.entrycget(i,"label") for i in range(file_menu.index("end")+1) if file_menu.type(i)=="command"]
+        self.assertIn("Examples - AI...",labels)
+        self.app.examples_ai()
+        self.root.update()
+        dialog=self.toplevels()[-1]
+        listbox=self.widgets(dialog,tk.Listbox)[0]
+        names=[item.split()[0] for item in listbox.get(0,"end")]
+        self.assertEqual(len(names),20)
+        self.assertEqual((names[0],names[-1]),("BASIC.PAS","TREEDEMO.PAS"))
+        self.assertNotIn("COMMON.INC",names)
+        self.assertIn("K-Means",listbox.get(names.index("KMEANS.PAS")))
+        dialog.destroy()
+        # A sample opens as a template: Save becomes Save as (it lives under ASSETS).
+        before=len(self.app.editors)
+        self.app.open_file(Path(__file__).resolve().parent.parent/"otp-AI"/"EXAMPLES"/"BASIC.PAS")
+        self.assertEqual(len(self.app.editors),before+1)
+
     def test_help_menu_opens_the_book(self):
         # Help > Buku sits above About and opens docs/Belajar_Pemrograman_Bahasa_Pascal.pdf in the system viewer.
         menu=self.app.menus["Help"][1]

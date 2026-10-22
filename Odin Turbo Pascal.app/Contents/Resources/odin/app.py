@@ -31,6 +31,13 @@ from .terminal import Process, Screen, TerminalView
 from .windows import BLACK, BLUE, CYAN, GRAY, WHITE, Editor, LocalsWindow, StackWindow, WatchWindow
 
 ASSETS = Path(__file__).resolve().parent.parent
+AI_EXAMPLE_TOPICS = {
+    "BASIC": "Matematika, matriks, statistik", "DATAPREP": "Praproses data CSV", "REGDEMO": "Regresi linear",
+    "REGMULT": "Regresi linear berganda", "KNNDEMO": "K-Nearest Neighbors", "KMEANS": "K-Means clustering",
+    "CROSSVAL": "Cross-validation", "LOGDEMO": "Regresi logistik", "PERDEMO": "Perceptron", "NNDEMO": "Jaringan saraf (XOR)",
+    "BAYDEMO": "Naive Bayes", "TEXTDEMO": "Klasifikasi teks", "TREEDEMO": "Pohon keputusan", "RULEDEMO": "Sistem aturan",
+    "PATHDEMO": "Pencarian jalur (BFS, DFS, A*)", "FUZDEMO": "Logika fuzzy", "QDEMO": "Q-learning",
+    "OPTDEMO": "Optimizer gradient descent", "MODELIO": "Simpan dan muat model", "PLOTDEMO": "Grafik SVG"}
 # Help > Buku opens this PDF in docs/.
 BOOK = "Belajar_Pemrograman_Bahasa_Pascal.pdf"
 # Help > Help in browser opens this page in docs/.
@@ -214,7 +221,7 @@ class App:
     def create_menus(self):
         self.menu("File", [("New",self.new,"Ctrl+N"),("Open...",self.open_file,"F3"),("Save",self.save,"F2"),
                           ("Save as...",lambda:self.save(as_new=True),""),("Save all",self.save_all,""),
-                          ("-",None,""),("Recent files...",self.recent,""),("Examples...",self.examples,""),
+                          ("-",None,""),("Recent files...",self.recent,""),("Examples...",self.examples,""),("Examples - AI...",self.examples_ai,""),
                           ("Change directory...",self.change_directory,""),("-",None,""),("Exit",self.quit,"Alt+X")])
         self.menu("Edit", [("Undo",lambda:self.edit("undo"),"Alt+Backspace"),("Redo",lambda:self.edit("redo"),"Ctrl+Y"),
                           ("-",None,""),("Cut",lambda:self.edit("cut"),"Shift+Del"),("Copy",lambda:self.edit("copy"),"Ctrl+Ins"),
@@ -506,6 +513,14 @@ class App:
     def recent(self):self.choose("Recent files",[(p,p) for p in self.settings["recent"]],self.open_file)
     def window_list(self):self.choose("Windows",[(w.list_label(),w) for w in self.windows],self.activate)
     def examples(self):self.choose("Examples",[(p.name,p) for p in sorted((ASSETS/"examples").iterdir()) if p.suffix.lower()==".pas"],self.open_file)
+    def examples_ai(self):
+        """OTP-AI samples (otp-AI/EXAMPLES), each labelled with its topic; COMMON.INC is only an include file."""
+        folder=ASSETS/"otp-AI"/"EXAMPLES"
+        items=[(f"{p.name:<14}{AI_EXAMPLE_TOPICS.get(p.stem.upper(),'')}".rstrip(),p) for p in sorted(folder.glob("*.PAS"))] if folder.is_dir() else []
+        if not items:
+            messagebox.showinfo("Examples - AI","Contoh OTP-AI tidak ditemukan (folder otp-AI/EXAMPLES).",parent=self.root)
+            return
+        self.choose("Examples - AI",items,self.open_file)
 
     def change_directory(self):
         path=filedialog.askdirectory(parent=self.root,title="Working directory")
