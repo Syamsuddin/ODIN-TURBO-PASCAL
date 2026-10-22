@@ -1,3 +1,6 @@
+{ Dipakai di hampir semua baris contoh OTP-AI: operasi unit AI mengembalikan
+  Boolean, dan Need menghentikan program dengan pesan jelas jika operasi itu
+  gagal, daripada melanjutkan dengan hasil yang tidak boleh dipakai. }
 procedure Need(OK: Boolean);
 begin
   if not OK then begin
@@ -5,6 +8,7 @@ begin
   end
 end;
 
+{ Dipakai DataPath di bawah untuk memeriksa folder mana yang berisi DATA. }
 function FileExists(Name: TFileName): Boolean;
 var F: Text;
 begin

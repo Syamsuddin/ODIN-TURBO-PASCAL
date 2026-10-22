@@ -6,10 +6,16 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-10-22
+
 ### Ditambahkan
 
 - Pustaka **OTP-AI** (`otp-AI/`): 19 unit AI dan machine learning murni Pascal, 20 contoh, tes, dan buku panduan PDF. Unitnya terpasang di IDE dan langsung bisa dipanggil dengan `uses` seperti `Crt`, tanpa mengisi **Options › Directories** (`core.library_unit_paths`, ikut dalam bundel macOS dan paket Windows). Unit buatan pengguna di unit path didahulukan.
 - **File › Examples - AI...**: daftar 20 contoh OTP-AI dengan topiknya, dibuka sebagai templat seperti **File › Examples** (`otp-AI/EXAMPLES` dan `otp-AI/DATA` ikut dalam bundel).
+
+### Diubah
+
+- Ke-20 contoh di `otp-AI/EXAMPLES/` kini punya komentar header yang menjelaskan tujuan latihan dan komentar baris penjelasan, sejalan dengan gaya contoh bawaan di `examples/`.
 
 ## [2.5.0] - 2026-10-21
 
@@ -350,7 +356,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.6.0...HEAD
+[2.6.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.2.0...v2.3.0
