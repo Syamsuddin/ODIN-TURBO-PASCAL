@@ -38,7 +38,7 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 ### Pengujian
 
 - Diuji di macOS Intel: seluruh tes Rust (korpus 97 program dalam tiga mode build, galat semantik, parser) dan 147 tes Python (10 dilewati), termasuk debugger dan tes GUI. Seluruh korpus juga lulus di VM Lima Ubuntu 24.04 untuk x86_64-linux dan aarch64-linux (qemu-user), dan korpus `classes` serta `objects` untuk x86_64-windows lulus di bawah Wine.
-- CI GitHub Actions: tes Rust (termasuk korpus) dan tes Python lulus di macOS Intel, macOS Apple Silicon, Ubuntu 24.04 x86_64, dan Ubuntu 24.04 arm64. Di Windows Server 2025, tes Rust, pemeriksaan pemasang, dan setup lulus; dari 129 tes Python hanya `test_crt_screen_matches_snapshot` (satu sel latar Crt) yang gagal, dan kegagalan yang sama muncul di `main` tanpa perubahan class. Mac Apple Silicon dan PC Windows fisik belum diuji langsung.
+- CI GitHub Actions: tes Rust (termasuk korpus) dan tes Python lulus di macOS Intel, macOS Apple Silicon, Ubuntu 24.04 x86_64, dan Ubuntu 24.04 arm64. Di Windows Server 2025, tes Rust, pemeriksaan pemasang, dan setup lulus; dari 132 tes Python hanya `test_crt_screen_matches_snapshot` (satu sel latar Crt) yang gagal, dan kegagalan yang sama muncul di `main` tanpa perubahan class. Mac Apple Silicon dan PC Windows fisik belum diuji langsung.
 
 ## [2.8.0] - 2026-10-23
 
