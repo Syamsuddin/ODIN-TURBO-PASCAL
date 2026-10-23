@@ -1196,6 +1196,6 @@
   "toolchain/crates/odinpc/tests/metrics.rs": "8d81aaa73a28c0654bffeab8d12fa55fd7e8a682ea38718d8750468f5e5ebb69",
   "toolchain/crates/odinpc/tests/semantic.rs": "5073dadc5338d0045d944cddafa454915decf74c418b1d3aaf9b1faf8ea65106",
   "toolchain/crates/odinpc/tests/steps.rs": "748e391bad98917598abc22c0de792878415d49a156eba0326239a19fe46e227",
-  "toolchain/odinpc.exe": "8e0f64fadbbef55d7d0fb9e4cd5367b5b55390812f2f8968978ad031a96c6915",
+  "toolchain/odinpc.exe": "46af3513c9ec49bfa8631066afcd7d3d0da2d92b14f40a40f9c353693e139b6a",
   "toolchain/rustfmt.toml": "8c8416e45116f631fc6dc17bd4d56c417bf9c637e96c2cda571cd9cf82a93e71"
 }
