@@ -702,14 +702,15 @@ class CompilerTests(unittest.TestCase):
     def test_crt_screen_matches_snapshot(self):
         # CRT_WINDOW.snap: Window, scrolling, InsLine/DelLine and colors cell by cell (text rows, then fg/bg
         # hex digits per cell). It was checked against Free Pascal 3.2.2 before that backend was removed;
-        # ODIN_BLESS=1 rewrites it after a reviewed change.
+        # ODIN_BLESS=1 rewrites it after a reviewed change. The Windows console has no blink, so there Crt
+        # brightens the background of blinking text instead (rtl/crt.pas SetAttr): CRT_WINDOW.windows.snap.
         r=build(ROOT/"tests"/"pascal"/"crt"/"CRT_WINDOW.PAS",self.settings,cache=self.root/"build")
         self.assertTrue(r.success,r.output)
         screen=self.screen_after_run(r.executable)
         lines=["|"+"".join(c[0] for c in row)+"|" for row in screen.grid]
         lines+=["".join(f"{c[1]:x}{c[2]:x}" for c in row) for row in screen.grid]
         lines.append(f"cursor {screen.x} {screen.y}")
-        path=ROOT/"tests"/"pascal"/"crt"/"CRT_WINDOW.snap"
+        path=ROOT/"tests"/"pascal"/"crt"/("CRT_WINDOW.windows.snap" if sys.platform=="win32" else "CRT_WINDOW.snap")
         if os.environ.get("ODIN_BLESS")=="1":
             path.write_text("\n".join(lines)+"\n",encoding="utf-8")
         want=path.read_text(encoding="utf-8").splitlines()

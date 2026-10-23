@@ -33,12 +33,13 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 ### Diperbaiki
 
 - CI Windows: setup Inno Setup dijalankan dengan `MSYS_NO_PATHCONV=1`. Git Bash mengubah `/VERYSILENT` dan flag lain menjadi path, sehingga setup menunggu wizard dan langkah itu (serta tes Python Windows sesudahnya) gagal sejak setup ditambahkan.
+- Tes `test_crt_screen_matches_snapshot` di Windows: konsol Windows tidak punya blink, jadi Crt di sana menerangkan latar teks yang berkedip (sengaja, seperti Crt FPC di Windows). Tes kini membandingkan dengan `tests/pascal/crt/CRT_WINDOW.windows.snap`, yang hanya berbeda di sel-sel itu.
 - Daftar isi `docs/PASCAL.txt` terpotong sesudah UNIT GRAPH oleh paragraf Graph yang salah tempat; paragraf itu kini menggantikan teks lama di bagian UNIT GRAPH.
 
 ### Pengujian
 
 - Diuji di macOS Intel: seluruh tes Rust (korpus 97 program dalam tiga mode build, galat semantik, parser) dan 147 tes Python (10 dilewati), termasuk debugger dan tes GUI. Seluruh korpus juga lulus di VM Lima Ubuntu 24.04 untuk x86_64-linux dan aarch64-linux (qemu-user), dan korpus `classes` serta `objects` untuk x86_64-windows lulus di bawah Wine.
-- CI GitHub Actions: tes Rust (termasuk korpus) dan tes Python lulus di macOS Intel, macOS Apple Silicon, Ubuntu 24.04 x86_64, dan Ubuntu 24.04 arm64. Di Windows Server 2025, tes Rust, pemeriksaan pemasang, dan setup lulus; dari 132 tes Python hanya `test_crt_screen_matches_snapshot` (satu sel latar Crt) yang gagal, dan kegagalan yang sama muncul di `main` tanpa perubahan class. Mac Apple Silicon dan PC Windows fisik belum diuji langsung.
+- CI GitHub Actions: tes Rust (termasuk korpus) dan tes Python lulus di macOS Intel, macOS Apple Silicon, Ubuntu 24.04 x86_64, dan Ubuntu 24.04 arm64. Di Windows Server 2025, tes Rust, pemeriksaan pemasang, dan setup lulus; dari 132 tes Python hanya `test_crt_screen_matches_snapshot` (latar teks berkedip di Crt) yang gagal; kegagalan yang sama muncul di `main` tanpa perubahan class, dan kini diperbaiki (lihat Diperbaiki). Mac Apple Silicon dan PC Windows fisik belum diuji langsung.
 
 ## [2.8.0] - 2026-10-23
 
