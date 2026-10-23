@@ -133,7 +133,9 @@ pub fn is_scalar(types: &TypeTable, ty: TypeId) -> bool {
         | Type::Real(_)
         | Type::Pointer(_)
         | Type::Procedural(_)
-        | Type::Nil => true,
+        | Type::Nil
+        | Type::Class(_)
+        | Type::ClassRef(_) => true,
         // Sets always live in memory, whatever their size.
         _ => false,
     }
@@ -304,6 +306,16 @@ pub enum Callee {
         vmt_offset: u64,
         slot: u32,
         check: bool,
+    },
+    /// A virtual method found through a VMT that is itself an argument:
+    /// argument `arg` (counted without a hidden result pointer) is the
+    /// VMT address, and the code address is its slot `slot`. Class methods
+    /// pass their class as `Self` (`arg` 0); a virtual constructor called
+    /// through a class reference gets the class as its VMT (`arg` 1).
+    VirtualClass {
+        routine: RoutineId,
+        arg: u32,
+        slot: u32,
     },
 }
 

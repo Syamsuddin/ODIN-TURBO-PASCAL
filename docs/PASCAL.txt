@@ -2,7 +2,9 @@ PASCAL - REFERENSI RINGKAS
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Referensi ini mencakup bahasa Pascal (kata cadangan, operator, tipe, rutin),
-unit standar yang ada di Odin, direktif compiler, kode galat, dan perintah IDE.
+perluasan OOP berbasis class, unit standar yang ada di Odin, direktif
+compiler, kode galat, dan perintah IDE. Bahasanya Turbo Pascal 7 secara
+bawaan, diperluas dengan class seperti Delphi dan Free Pascal.
 Rincian kompatibilitas dan batasan ada di COMPATIBILITY.txt.
 
 Tekan F1 di editor pada sebuah kata untuk langsung membuka topiknya di sini.
@@ -21,25 +23,21 @@ DAFTAR ISI
   KONTROL PROGRAM
   DIREKTIF COMPILER
   KODE RUNTIME ERROR
+  CLASS (PERLUASAN OOP)
   UNIT CRT
   UNIT DOS
   UNIT STRINGS
   UNIT OBJECTS
+  UNIT CLASSES
+  UNIT CONTNRS
   UNIT GRAPH
-Grafik gaya BGI Turbo Pascal. uses Graph;. Gambar disimpan di framebuffer di
-memori, satu byte per piksel, dengan resolusi mode yang dipilih (VGAHi = 640 x
-480). GetPixel, GetImage, dan PutImage memakai piksel sebenarnya. Di IDE,
-program membuka jendela grafik yang menampilkan piksel sebenarnya, dan tombol
-yang diketik di jendela itu sampai ke ReadKey. Di terminal biasa, atau bila
-setelan graph_window di settings.json dimatikan, gambar tampil sebagai
-pratinjau kasar dengan karakter setengah blok (sekitar 80 x 50 titik di layar
-80 x 25, 16 warna CRT) dengan perbandingan lebar-tinggi yang benar; teks BGI
-(OutText, OutTextXY) di situ ditampilkan sebagai karakter asli supaya terbaca,
-dan layar digambar ulang saat program menunggu lewat Crt (ReadKey, KeyPressed,
-Delay), tiap 0,1 detik sambil menggambar, dan saat program selesai. Bila
-keluaran dialihkan ke berkas dan tidak ada jendela, tidak ada yang
-ditampilkan. Pakai Crt (ReadKey) untuk menahan gambar. Contoh: File > Examples
-- Graph.
+  UNIT WINDOS
+  UNIT MATH
+  UNIT SYSUTILS
+  UNIT OVERLAY
+  ODIN VISION
+  PERINTAH IDE
+  CONTOH RINGKAS
 
 KATA CADANGAN
 Kata cadangan tidak boleh dipakai sebagai nama variabel, konstanta, tipe, atau
@@ -167,9 +165,9 @@ while                         Pengulangan yang menguji kondisi di awal: while
 with                          Mempersingkat akses field: with Siswa do Nama :=
                               'Budi'; (setara Siswa.Nama := 'Budi';).
 xor                           Operator OR eksklusif: Boolean atau bit demi bit.
-class, try, except            Kata tambahan Object Pascal (dialek yang lebih
-                              baru). finally, raise, out, property, dan
-                              threadvar juga dicadangkan. Tidak ada di Turbo
+try, except                   Kata tambahan Object Pascal (dialek yang lebih
+                              baru), belum didukung Odin. finally, raise, out,
+                              dan threadvar juga dicadangkan. Tidak ada di Turbo
                               Pascal 7; jangan dipakai sebagai nama.
 
 DIREKTIF STANDAR
@@ -189,11 +187,30 @@ forward                       Deklarasi maju: kepala rutin ditulis dulu,
                               langsung.
 interrupt                     Prosedur penangan interrupt DOS. Dapat
                               dikompilasi tetapi tidak berefek.
-private, public, protected    Pembatas akses anggota object. public (bawaan)
-                              terlihat di mana saja; private hanya di unit yang
-                              sama.
-virtual                       Metode object yang dapat ditimpa turunan dan
-                              dipilih saat program berjalan lewat tabel VMT.
+private, public, protected    Pembatas akses anggota object dan class. public
+                              (bawaan) terlihat di mana saja; private hanya di
+                              unit yang sama; protected juga di method
+                              turunan. published sama dengan public.
+strict                        strict private: hanya method class itu sendiri;
+                              strict protected: juga method turunannya.
+virtual                       Metode object atau class yang dapat ditimpa
+                              turunan dan dipilih saat program berjalan lewat
+                              tabel VMT. dynamic berarti sama.
+override                      Menimpa method virtual milik class induk; kepala
+                              method harus sama dengan milik induk.
+abstract                      Method virtual tanpa isi (virtual; abstract;).
+                              Turunan wajib meng-override-nya; memanggilnya
+                              langsung = runtime error 211.
+reintroduce                   Sengaja menyembunyikan method induk yang bernama
+                              sama, tanpa peringatan 1004.
+overload                      Beberapa method bernama sama dengan parameter
+                              berbeda; compiler memilih menurut argumen.
+class                         Tipe class: TKucing = class(TInduk) ... end;.
+                              Juga class var, class procedure, class function,
+                              dan class of. Lihat CLASS (PERLUASAN OOP).
+property                      Anggota class yang dibaca dan ditulis lewat field
+                              atau method: property Umur: Integer read FUmur
+                              write SetUmur;
 name, index, resident         Direktif pada deklarasi external dan pustaka.
                               Jarang dipakai.
 
@@ -453,7 +470,52 @@ Muncul sebagai 'Runtime error N at ...' dan menjadi kode keluar program.
 205                           Floating point overflow.
 206                           Floating point underflow.
 207                           Invalid floating point operation.
+210                           Object not initialized: method virtual object
+                              dipanggil sebelum constructor (butuh {$R+}).
+211                           Call to abstract method: method abstract
+                              dipanggil, padahal belum di-override.
 215                           Arithmetic overflow (butuh {$Q+}).
+216                           General protection fault, misalnya memakai
+                              rujukan class atau pointer yang nil.
+219                           Invalid typecast: Obj as TFoo, padahal Obj bukan
+                              TFoo.
+
+CLASS (PERLUASAN OOP)
+Class adalah tipe rujukan: variabelnya menyimpan alamat objek, objeknya dibuat
+dengan Create dan dibebaskan dengan Free. Class tanpa induk menurun dari
+TObject. Contoh: File > Examples - OOP.
+
+TFoo = class(TInduk)          Deklarasi class. TFoo = class; adalah deklarasi
+                              maju yang dilengkapi di bagian type yang sama.
+Create                        Constructor: Obj := TFoo.Create(...). Objek baru
+                              selalu berisi nol. Panggil inherited Create di
+                              constructor sendiri.
+Destroy                       Destructor: destructor Destroy; override;.
+                              Panggil inherited Destroy di akhir.
+Free                          Memanggil Destroy dan membebaskan memori; aman
+                              untuk rujukan nil.
+Self                          Objek yang sedang menjalankan method.
+inherited                     inherited Nama(...) memanggil versi induk;
+                              inherited; saja memanggil method yang sama milik
+                              induk dengan argumen yang sama.
+class var                     Satu variabel untuk semua objek class itu. Field
+                              sesudahnya ikut menjadi class var sampai bagian
+                              berikutnya.
+class function                Method milik class, dipanggil tanpa objek:
+                              TFoo.Jumlah. Self-nya adalah class itu.
+class of                      Tipe rujukan class: TFooClass = class of TFoo.
+                              C.Create membuat objek dari class yang disimpan
+                              di C; pakai constructor virtual.
+is, as                        Obj is TFoo memeriksa class objek; Obj as TFoo
+                              memakai Obj sebagai TFoo (runtime error 219 bila
+                              bukan).
+ClassName, ClassParent        Nama class objek atau class, dan class induknya.
+InheritsFrom(C)               True bila class ini C atau turunannya.
+InstanceSize                  Ukuran objek dalam byte. SizeOf(Obj) selalu 8
+                              (rujukan).
+ToString                      Method virtual TObject; bawaannya ClassName.
+default                       property Items[I: Integer]: T read ... ; default;
+                              membuat List[I] berarti List.Items[I].
 
 UNIT CRT
 Layar teks dan papan ketik. uses Crt;. Koordinat mulai dari 1,1 pada pojok
@@ -604,18 +666,48 @@ TStrCollection                Koleksi terurut string berakhir nol (PChar).
 stOk, stError                 Nilai Status aliran: 0 baik, -1 galat. Konstanta
                               stXXX lain menjelaskan galat.
 
+UNIT CLASSES
+Bukan unit TP7; subset Classes Free Pascal/Delphi yang ditulis dengan class.
+uses Classes;. Indeks di luar daftar = runtime error 201.
+
+TList                         Daftar pointer: Add, Insert, Delete, Remove,
+                              Extract, IndexOf, Exchange, Move, Pack, Clear,
+                              First, Last, Count, Capacity, Items[I]
+                              (default).
+Sort(Banding)                 TList.Sort dengan fungsi function(A, B:
+                              Pointer): Integer; negatif bila A di depan B.
+TStringList                   Daftar string: Add, Insert, Delete, Clear,
+                              IndexOf, Find, Sort, Exchange, Count, Strings[I]
+                              (default), Objects[I], AddObject, IndexOfObject.
+Sorted, CaseSensitive         TStringList.Sorted := True mengurutkan dan
+                              menjaga urutan; perbandingan bawaannya tidak
+                              membedakan huruf besar-kecil.
+LoadFromFile, SaveToFile      Membaca dan menulis TStringList sebagai berkas
+                              teks, satu string per baris.
+
+UNIT CONTNRS
+Bukan unit TP7. uses Contnrs;.
+
+TObjectList                   Daftar objek turunan TList. Bila OwnsObjects
+                              (bawaan True), objek ikut dibebaskan saat
+                              dihapus, diganti, atau saat daftar dibebaskan.
+                              Items[I] bertipe TObject: pakai is dan as.
+
 UNIT GRAPH
 Grafik gaya BGI Turbo Pascal. uses Graph;. Gambar disimpan di framebuffer di
 memori, satu byte per piksel, dengan resolusi mode yang dipilih (VGAHi = 640 x
-480). GetPixel, GetImage, dan PutImage memakai piksel sebenarnya. Ke layar,
-gambar ditampilkan di terminal sebagai pratinjau kasar dengan karakter
-setengah blok (sekitar 80 x 50 titik di layar 80 x 25, 16 warna CRT), dengan
-perbandingan lebar-tinggi yang benar sehingga lingkaran tetap bulat. Teks BGI
-(OutText, OutTextXY) ditampilkan sebagai karakter asli supaya terbaca. Layar
-digambar ulang saat program menunggu lewat Crt (ReadKey, KeyPressed, Delay),
-tiap 0,1 detik sambil menggambar, dan saat program selesai. Bila keluaran
-dialihkan ke berkas, tidak ada yang ditampilkan. Pakai Crt (ReadKey) untuk
-menahan gambar.
+480). GetPixel, GetImage, dan PutImage memakai piksel sebenarnya. Di IDE,
+program membuka jendela grafik yang menampilkan piksel sebenarnya, dan tombol
+yang diketik di jendela itu sampai ke ReadKey. Di terminal biasa, atau bila
+setelan graph_window di settings.json dimatikan, gambar tampil sebagai
+pratinjau kasar dengan karakter setengah blok (sekitar 80 x 50 titik di layar
+80 x 25, 16 warna CRT) dengan perbandingan lebar-tinggi yang benar; teks BGI
+(OutText, OutTextXY) di situ ditampilkan sebagai karakter asli supaya terbaca,
+dan layar digambar ulang saat program menunggu lewat Crt (ReadKey, KeyPressed,
+Delay), tiap 0,1 detik sambil menggambar, dan saat program selesai. Bila
+keluaran dialihkan ke berkas dan tidak ada jendela, tidak ada yang
+ditampilkan. Pakai Crt (ReadKey) untuk menahan gambar. Contoh: File > Examples
+- Graph.
 
 InitGraph(Drv, Mode, Dir)     Memulai mode grafik. Drv = Detect memilih VGA
                               dan VGAHi. Dir diabaikan (tidak ada berkas
@@ -900,6 +992,8 @@ DecimalSeparator              Pemisah desimal, dan ThousandSeparator (bawaan .
                               Inggris dan bisa diganti.
 Sleep(Ms), GetTickCount64     Menunggu Ms milidetik, dan jam milidetik.
                               GetTickCount mengembalikan 32 bit.
+FreeAndNil(Obj)               Membebaskan objek class dan mengisi variabelnya
+                              dengan nil.
 
 UNIT OVERLAY
 Executable Odin memuat seluruh kodenya, jadi overlay tidak perlu dimuat. uses
@@ -1033,6 +1127,24 @@ type
     Nilai: Integer;
   end;
 
+CLASS
+type
+  THewan = class
+    Nama: string;
+    constructor Create(const ANama: string);
+    function Suara: string; virtual;
+  end;
+  TKucing = class(THewan)
+    function Suara: string; override;
+  end;
+
+var H: THewan;
+begin
+  H := TKucing.Create('Belang');
+  WriteLn(H.Nama, ': ', H.Suara);
+  H.Free;
+end.
+
 INPUT DAN OUTPUT
 Write('Nama: '); ReadLn(Nama);
 WriteLn('Jumlah: ', Total);
@@ -1052,7 +1164,8 @@ Tersedia:        System (otomatis), Crt, Dos, WinDos, Strings, Printer,
 Turbo Vision:    App, Drivers, Views, Menus, Dialogs, MsgBox, StdDlg, Memory,
                  HistList, Validate, Editors, Outline, ColorSel, TextView
                  (Odin Vision).
-Tambahan Odin:   Math, SysUtils (subset unit Free Pascal/Delphi).
+Tambahan Odin:   Math, SysUtils, Classes, Contnrs (subset unit Free
+                 Pascal/Delphi).
 Tidak tersedia:  Graph3, Turbo3.
 Printer mengirim Lst ke printer default macOS melalui lpr.
 Rincian dan perbedaan perilaku: docs/COMPATIBILITY.txt.

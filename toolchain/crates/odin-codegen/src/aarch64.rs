@@ -361,7 +361,9 @@ impl<'g, 'p> Rg<'g, 'p> {
             | Type::Subrange { .. }
             | Type::Pointer(_)
             | Type::Procedural(_)
-            | Type::Nil => VClass::Int,
+            | Type::Nil
+            | Type::Class(_)
+            | Type::ClassRef(_) => VClass::Int,
             _ => VClass::Mem,
         }
     }
@@ -432,7 +434,8 @@ impl<'g, 'p> Rg<'g, 'p> {
     /// register), sign- or zero-extended to 64 bits.
     fn load_int(&mut self, r: Reg, m: Mem, ty: TypeId) {
         let t = self.types();
-        if matches!(t.get(ty), Type::Pointer(_) | Type::Procedural(_) | Type::Nil) {
+        if matches!(t.get(ty), Type::Pointer(_) | Type::Procedural(_) | Type::Nil | Type::Class(_) | Type::ClassRef(_))
+        {
             self.a.ldr(r, m);
             return;
         }
@@ -1304,7 +1307,9 @@ impl<'g, 'p> Rg<'g, 'p> {
         let ExprKind::Call { callee, args } = &e.kind else { unreachable!() };
         let t = self.types();
         let sig: &Signature = match callee {
-            Callee::Routine(id) | Callee::Virtual { routine: id, .. } => &self.routine_ref(*id).sig,
+            Callee::Routine(id) | Callee::Virtual { routine: id, .. } | Callee::VirtualClass { routine: id, .. } => {
+                &self.routine_ref(*id).sig
+            }
             Callee::Indirect(x) => match t.get(x.ty) {
                 Type::Procedural(s) => s,
                 _ => return err("internal: indirect call of a non-procedural value", e.span),
@@ -1463,6 +1468,16 @@ impl<'g, 'p> Rg<'g, 'p> {
                 }
                 let at = VMT_HEADER as i64 + 8 * *index as i64;
                 self.a.ldr(X9, Mem::base(X9, at));
+                self.a.blr(X9);
+            }
+            Callee::VirtualClass { arg, slot: index, .. } => {
+                // The argument is the VMT itself, already in its register.
+                let at_index = result_temp.is_some() as usize + *arg as usize;
+                let Some(&(vmt, _)) = int_regs.iter().find(|(_, i)| *i == at_index) else {
+                    return err("internal: VMT of a virtual call is not in a register", e.span);
+                };
+                let at = VMT_HEADER as i64 + 8 * *index as i64;
+                self.a.ldr(X9, Mem::base(vmt, at));
                 self.a.blr(X9);
             }
         }

@@ -249,6 +249,7 @@ impl<'a, M: Memory> Evaluator<'a, M> {
             Ty::Nil => Some(None),
             Ty::Id(id) => match self.ty_kind(*id) {
                 TypeKind::Pointer { target } => Some(*target),
+                TypeKind::Class { instance } => Some(Some(*instance)),
                 TypeKind::Procedural => Some(None),
                 _ => None,
             },
@@ -298,6 +299,7 @@ impl<'a, M: Memory> Evaluator<'a, M> {
                     TypeKind::String { max } => format!("string[{max}]"),
                     TypeKind::Pointer { target: None } => "Pointer".into(),
                     TypeKind::Pointer { target: Some(p) } => format!("^{}", self.type_name(&Ty::Id(*p))),
+                    TypeKind::Class { instance } => self.type_name(&Ty::Id(*instance)),
                     TypeKind::Array { index, elem, .. } => {
                         format!("array[{}] of {}", self.type_name(&Ty::Id(*index)), self.type_name(&Ty::Id(*elem)))
                     }
@@ -412,7 +414,8 @@ impl<'a, M: Memory> Evaluator<'a, M> {
         // A method's Self is a pointer to the object; show the object.
         if l.kind == LocalKind::Param
             && l.name == "Self"
-            && let TypeKind::Pointer { target: Some(object) } = self.ty_kind(l.ty)
+            && let TypeKind::Pointer { target: Some(object) } | TypeKind::Class { instance: object } =
+                self.ty_kind(l.ty)
         {
             let object = *object;
             let p = self.read_u64(addr)?;
@@ -563,7 +566,17 @@ impl<'a, M: Memory> Evaluator<'a, M> {
             };
             return found.ok_or_else(|| format!("Identifier tidak dikenal: {}.{}", unit.name, field.name));
         }
-        let v = self.eval(base)?;
+        let mut v = self.eval(base)?;
+        // A class instance is a pointer to its fields: `Obj.Field` follows it.
+        if let Some(Some(target)) = self.pointer_target(&v.ty)
+            && matches!(self.ty_kind(target), TypeKind::Record { .. })
+            && let Data::Ptr(addr) = v.data
+        {
+            if addr == 0 {
+                return Err("Pointer bernilai NIL".into());
+            }
+            v = self.load(addr, Ty::Id(target))?;
+        }
         let Ty::Id(id) = v.ty else { return Err("Record diharapkan".into()) };
         let TypeKind::Record { fields } = self.ty_kind(id) else {
             return Err("Record diharapkan".into());
@@ -902,6 +915,14 @@ impl<'a, M: Memory> Evaluator<'a, M> {
     }
 
     pub fn format(&mut self, v: &Val) -> EResult<String> {
+        // A class instance shows its fields.
+        if let (Data::Ptr(p), Ty::Id(id)) = (&v.data, &v.ty)
+            && *p != 0
+            && let TypeKind::Class { instance } = self.ty_kind(*id)
+        {
+            let object = self.load(*p, Ty::Id(*instance))?;
+            return self.format(&object);
+        }
         match &v.data {
             Data::Int(n) => Ok(self.ord_text(&v.ty, *n)),
             Data::Real(x) => Ok(real_text(*x)),

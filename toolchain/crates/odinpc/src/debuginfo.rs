@@ -112,6 +112,10 @@ pub fn describe(
                         .map(|f| FieldInfo { name: f.name.clone(), ty: f.ty.0, offset: f.offset })
                         .collect(),
                 },
+                // A class refers to its instance; a class reference is a
+                // VMT address.
+                Type::Class(instance) => TypeKind::Class { instance: instance.0 },
+                Type::ClassRef(_) => TypeKind::Pointer { target: None },
                 Type::Set { base, first_byte, .. } => TypeKind::Set { base: base.0, first_byte: *first_byte },
                 Type::File { elem, .. } => TypeKind::File { elem: elem.map(|e| e.0) },
                 Type::Procedural(_) => TypeKind::Procedural,

@@ -1,0 +1,23 @@
+build
+  create rect area 6.00
+  create rect area 16.00
+  create circle area 3.14
+rect with area 6.00
+a square: square with area 16.00
+circle with area 3.14 and radius 1.0
+total 25.142
+<TRect rect>
+<TSquare square>
+<TCircle circle>
+  hello from shape
+  hello from square
+  hello from shape
+free
+  destroy rect part
+  destroy rect
+  destroy rect part
+  destroy square
+  destroy circle
+  create rect area 1.00
+  destroy rect part
+  destroy square

@@ -192,10 +192,10 @@ aside.page a.active{color:var(--accent);border-color:var(--accent);font-weight:6
         <ul><li><a href="#menu-file">File</a></li><li><a href="#menu-edit">Edit</a></li><li><a href="#menu-search">Search</a></li><li><a href="#menu-run">Run</a></li><li><a href="#menu-compile">Compile</a></li><li><a href="#menu-debug">Debug</a></li><li><a href="#menu-options">Options</a></li><li><a href="#menu-window">Window</a></li><li><a href="#menu-help">Help</a></li></ul>
       </li>
       <li><a href="#bahasa"><span class="n">9</span>Referensi Bahasa Pascal</a>
-        <ul><li><a href="#struktur">Struktur program dan contoh</a></li><li><a href="#kata-cadangan">Kata cadangan</a></li><li><a href="#direktif-standar">Direktif standar</a></li><li><a href="#operator">Operator</a></li><li><a href="#tipe-data">Tipe data</a></li><li><a href="#konstanta">Konstanta bawaan</a></li><li><a href="#rutin-matematika">Rutin matematika</a></li><li><a href="#rutin-ordinal">Rutin ordinal</a></li><li><a href="#rutin-string">Rutin string</a></li><li><a href="#rutin-memori">Rutin memori dan pointer</a></li><li><a href="#rutin-berkas">Rutin berkas dan direktori</a></li><li><a href="#kontrol-program">Kontrol program</a></li><li><a href="#direktif-compiler">Direktif compiler</a></li><li><a href="#kode-error">Kode runtime error</a></li></ul>
+        <ul><li><a href="#struktur">Struktur program dan contoh</a></li><li><a href="#kata-cadangan">Kata cadangan</a></li><li><a href="#direktif-standar">Direktif standar</a></li><li><a href="#operator">Operator</a></li><li><a href="#tipe-data">Tipe data</a></li><li><a href="#konstanta">Konstanta bawaan</a></li><li><a href="#rutin-matematika">Rutin matematika</a></li><li><a href="#rutin-ordinal">Rutin ordinal</a></li><li><a href="#rutin-string">Rutin string</a></li><li><a href="#rutin-memori">Rutin memori dan pointer</a></li><li><a href="#rutin-berkas">Rutin berkas dan direktori</a></li><li><a href="#kontrol-program">Kontrol program</a></li><li><a href="#direktif-compiler">Direktif compiler</a></li><li><a href="#kode-error">Kode runtime error</a></li><li><a href="#class">Class (perluasan OOP)</a></li></ul>
       </li>
       <li><a href="#unit"><span class="n">10</span>Unit Pustaka</a>
-        <ul><li><a href="#unit-crt">Crt</a></li><li><a href="#unit-dos">Dos</a></li><li><a href="#unit-strings">Strings</a></li><li><a href="#unit-objects">Objects</a></li><li><a href="#unit-graph">Graph</a></li><li><a href="#unit-windos">WinDos</a></li><li><a href="#unit-math">Math</a></li><li><a href="#unit-sysutils">SysUtils</a></li><li><a href="#unit-overlay">Overlay</a></li><li><a href="#odin-vision">Odin Vision</a></li></ul>
+        <ul><li><a href="#unit-crt">Crt</a></li><li><a href="#unit-dos">Dos</a></li><li><a href="#unit-strings">Strings</a></li><li><a href="#unit-objects">Objects</a></li><li><a href="#unit-classes">Classes</a></li><li><a href="#unit-contnrs">Contnrs</a></li><li><a href="#unit-graph">Graph</a></li><li><a href="#unit-windos">WinDos</a></li><li><a href="#unit-math">Math</a></li><li><a href="#unit-sysutils">SysUtils</a></li><li><a href="#unit-overlay">Overlay</a></li><li><a href="#odin-vision">Odin Vision</a></li></ul>
       </li>
       <li><a href="#pintasan"><span class="n">11</span>Pintasan Keyboard</a>
         <ul><li><a href="#pintasan-fungsi">Tombol fungsi</a></li><li><a href="#pintasan-umum">Pintasan umum</a></li><li><a href="#pintasan-mac">Alternatif Mac</a></li><li><a href="#pintasan-user">Di User screen</a></li></ul>
@@ -320,6 +320,7 @@ end.</code></pre>
 <li><strong>Bab 15&ndash;16</strong>: pencarian dan pengurutan.</li>
 <li><strong>Bab 17&ndash;20</strong>: berkas, pointer, unit, dan proyek akhir.</li>
 </ul>
+<p><strong>File &gt; Examples - OOP</strong> berisi sembilan program pemrograman berorientasi objek dengan class, dari <code>oop_01_class_pertama.pas</code> sampai proyek <code>oop_09_proyek_toko.pas</code>: constructor dan destructor, enkapsulasi dan property, pewarisan, polimorfisme, class method dan <code>class of</code>, daftar objek dengan <code>is</code>/<code>as</code>, dan overload. Lihat <a href="#class">Class</a>.</p>
 <div class="callout warn"><b>Perhatian</b><p>Program Bab 17 dan Bab 20 membuat berkas data (misalnya <code>catatan.txt</code> atau <code>kontak.dat</code>) di folder berkas <code>.pas</code>-nya. Contoh bawaan berstatus templat, jadi simpan salinannya ke folder sendiri dengan <strong>File &gt; Save as</strong> supaya berkas data mudah dicari.</p></div>
 
 <h3 id="daftar-bab"><span class="n">3.2</span>Daftar bab dan program <a class="anchor" href="#daftar-bab" aria-label="Tautan">#</a></h3>
@@ -434,7 +435,7 @@ end.</code></pre>
 
 <h3 id="opsi-compiler"><span class="n">5.4</span>Options &gt; Compiler <a class="anchor" href="#opsi-compiler" aria-label="Tautan">#</a></h3>
 <ul>
-<li>Compiler Odin mengikuti bahasa Turbo Pascal 7; tidak ada pilihan mode lain.</li>
+<li>Compiler Odin mengikuti bahasa Turbo Pascal 7, diperluas dengan class (OOP gaya Delphi/Free Pascal). Tidak ada pilihan mode lain, dan perluasan itu tidak perlu diaktifkan.</li>
 <li><strong>Range checks</strong> dan <strong>overflow checks</strong> aktif secara bawaan.</li>
 <li>Informasi baris untuk runtime error selalu dibuat. <strong>Debug &gt; Start debugging</strong> membangun ulang dengan pengait debugger.</li>
 </ul>
@@ -532,6 +533,9 @@ end.</code></pre>
 <tr><td>Save all</td><td>&mdash;</td><td>Menyimpan semua editor yang berubah.</td></tr>
 <tr><td>Recent files...</td><td>&mdash;</td><td>Daftar berkas yang baru dibuka.</td></tr>
 <tr><td>Examples...</td><td>&mdash;</td><td>Tutorial dan contoh bawaan.</td></tr>
+<tr><td>Examples - AI...</td><td>&mdash;</td><td>Contoh pustaka AI/machine learning OTP-AI.</td></tr>
+<tr><td>Examples - Graph...</td><td>&mdash;</td><td>Contoh unit Graph yang membuka jendela grafik.</td></tr>
+<tr><td>Examples - OOP...</td><td>&mdash;</td><td>Contoh pemrograman berorientasi objek dengan class.</td></tr>
 <tr><td>Change directory...</td><td>&mdash;</td><td>Mengganti folder kerja dialog berkas.</td></tr>
 <tr><td>Exit</td><td><kbd>Alt+X</kbd></td><td>Keluar dari IDE.</td></tr>
 </table></div>
@@ -724,7 +728,7 @@ end.</code></pre>
 <tr id="k-while"><td><code>while</code></td><td>Pengulangan yang menguji kondisi di awal: while Kondisi do ... Badan bisa tidak jalan sama sekali.</td></tr>
 <tr id="k-with"><td><code>with</code></td><td>Mempersingkat akses field: with Siswa do Nama := 'Budi'; (setara Siswa.Nama := 'Budi';).</td></tr>
 <tr id="k-xor"><td><code>xor</code></td><td>Operator OR eksklusif: Boolean atau bit demi bit.</td></tr>
-<tr id="k-class"><td><code>class, try, except</code><span id="k-try"></span><span id="k-except"></span></td><td>Kata tambahan Object Pascal (dialek yang lebih baru). finally, raise, out, property, dan threadvar juga dicadangkan. Tidak ada di Turbo Pascal 7; jangan dipakai sebagai nama.</td></tr>
+<tr id="k-try"><td><code>try, except</code><span id="k-except"></span></td><td>Kata tambahan Object Pascal (dialek yang lebih baru), belum didukung Odin. finally, raise, out, dan threadvar juga dicadangkan. Tidak ada di Turbo Pascal 7; jangan dipakai sebagai nama.</td></tr>
 </table></div>
 <h3 id="direktif-standar"><span class="n">9.3</span>Direktif standar <a class="anchor" href="#direktif-standar" aria-label="Tautan">#</a></h3>
 <p>Kata berikut punya arti khusus hanya pada konteksnya dan bukan kata cadangan penuh, tetapi sebaiknya tidak dipakai sebagai nama.</p>
@@ -735,8 +739,15 @@ end.</code></pre>
 <tr id="k-far"><td><code>far, near</code><span id="k-near"></span></td><td>Model pemanggilan DOS 16-bit. Diterima dan diabaikan.</td></tr>
 <tr id="k-forward"><td><code>forward</code></td><td>Deklarasi maju: kepala rutin ditulis dulu, badannya menyusul. Dipakai untuk rekursi tidak langsung.</td></tr>
 <tr id="k-interrupt"><td><code>interrupt</code></td><td>Prosedur penangan interrupt DOS. Dapat dikompilasi tetapi tidak berefek.</td></tr>
-<tr id="k-private"><td><code>private, public, protected</code><span id="k-public"></span><span id="k-protected"></span></td><td>Pembatas akses anggota object. public (bawaan) terlihat di mana saja; private hanya di unit yang sama.</td></tr>
-<tr id="k-virtual"><td><code>virtual</code></td><td>Metode object yang dapat ditimpa turunan dan dipilih saat program berjalan lewat tabel VMT.</td></tr>
+<tr id="k-private"><td><code>private, public, protected</code><span id="k-public"></span><span id="k-protected"></span></td><td>Pembatas akses anggota object dan class. public (bawaan) terlihat di mana saja; private hanya di unit yang sama; protected juga di method turunan. published sama dengan public.</td></tr>
+<tr id="k-strict"><td><code>strict</code></td><td>strict private: hanya method class itu sendiri; strict protected: juga method turunannya.</td></tr>
+<tr id="k-virtual"><td><code>virtual</code></td><td>Metode object atau class yang dapat ditimpa turunan dan dipilih saat program berjalan lewat tabel VMT. dynamic berarti sama.</td></tr>
+<tr id="k-override"><td><code>override</code></td><td>Menimpa method virtual milik class induk; kepala method harus sama dengan milik induk.</td></tr>
+<tr id="k-abstract"><td><code>abstract</code></td><td>Method virtual tanpa isi (virtual; abstract;). Turunan wajib meng-override-nya; memanggilnya langsung = runtime error 211.</td></tr>
+<tr id="k-reintroduce"><td><code>reintroduce</code></td><td>Sengaja menyembunyikan method induk yang bernama sama, tanpa peringatan 1004.</td></tr>
+<tr id="k-overload"><td><code>overload</code></td><td>Beberapa method bernama sama dengan parameter berbeda; compiler memilih menurut argumen.</td></tr>
+<tr id="k-class"><td><code>class</code></td><td>Tipe class: TKucing = class(TInduk) ... end;. Juga class var, class procedure, class function, dan class of. Lihat CLASS (PERLUASAN OOP).</td></tr>
+<tr id="k-property"><td><code>property</code></td><td>Anggota class yang dibaca dan ditulis lewat field atau method: property Umur: Integer read FUmur write SetUmur;</td></tr>
 <tr id="k-name"><td><code>name, index, resident</code><span id="k-index"></span><span id="k-resident"></span></td><td>Direktif pada deklarasi external dan pustaka. Jarang dipakai.</td></tr>
 </table></div>
 <h3 id="operator"><span class="n">9.4</span>Operator <a class="anchor" href="#operator" aria-label="Tautan">#</a></h3>
@@ -932,13 +943,37 @@ end.</code></pre>
 <tr id="k-205"><td><code>205</code></td><td>Floating point overflow.</td></tr>
 <tr id="k-206"><td><code>206</code></td><td>Floating point underflow.</td></tr>
 <tr id="k-207"><td><code>207</code></td><td>Invalid floating point operation.</td></tr>
+<tr id="k-210"><td><code>210</code></td><td>Object not initialized: method virtual object dipanggil sebelum constructor (butuh {$R+}).</td></tr>
+<tr id="k-211"><td><code>211</code></td><td>Call to abstract method: method abstract dipanggil, padahal belum di-override.</td></tr>
 <tr id="k-215"><td><code>215</code></td><td>Arithmetic overflow (butuh {$Q+}).</td></tr>
+<tr id="k-216"><td><code>216</code></td><td>General protection fault, misalnya memakai rujukan class atau pointer yang nil.</td></tr>
+<tr id="k-219"><td><code>219</code></td><td>Invalid typecast: Obj as TFoo, padahal Obj bukan TFoo.</td></tr>
+</table></div>
+<h3 id="class"><span class="n">9.15</span>Class (perluasan OOP) <a class="anchor" href="#class" aria-label="Tautan">#</a></h3>
+<p>Turbo Pascal 7 adalah bahasa bawaannya. Di atasnya Odin menambah class seperti Delphi dan Free Pascal, tanpa direktif dan tanpa kata cadangan baru: program TP7 yang memakai kata <code>class</code>, <code>property</code>, <code>is</code>, atau <code>as</code> sebagai nama tetap dikompilasi. Belum termasuk: exception, interface, generic, <code>procedure of object</code>, dan <code>Result</code>.</p>
+<p>Class adalah tipe rujukan: variabelnya menyimpan alamat objek, objeknya dibuat dengan Create dan dibebaskan dengan Free. Class tanpa induk menurun dari TObject. Contoh: File &gt; Examples - OOP.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-tfoo"><td><code>TFoo = class(TInduk)</code><span id="k-tfoo-class"></span></td><td>Deklarasi class. TFoo = class; adalah deklarasi maju yang dilengkapi di bagian type yang sama.</td></tr>
+<tr id="k-create"><td><code>Create</code></td><td>Constructor: Obj := TFoo.Create(...). Objek baru selalu berisi nol. Panggil inherited Create di constructor sendiri.</td></tr>
+<tr id="k-destroy"><td><code>Destroy</code></td><td>Destructor: destructor Destroy; override;. Panggil inherited Destroy di akhir.</td></tr>
+<tr id="k-free"><td><code>Free</code></td><td>Memanggil Destroy dan membebaskan memori; aman untuk rujukan nil.</td></tr>
+<tr id="k-self"><td><code>Self</code></td><td>Objek yang sedang menjalankan method.</td></tr>
+<tr><td><code>inherited</code></td><td>inherited Nama(...) memanggil versi induk; inherited; saja memanggil method yang sama milik induk dengan argumen yang sama.</td></tr>
+<tr><td><code>class var</code><span id="k-class-var"></span></td><td>Satu variabel untuk semua objek class itu. Field sesudahnya ikut menjadi class var sampai bagian berikutnya.</td></tr>
+<tr><td><code>class function</code><span id="k-class-function"></span></td><td>Method milik class, dipanggil tanpa objek: TFoo.Jumlah. Self-nya adalah class itu.</td></tr>
+<tr><td><code>class of</code><span id="k-class-of"></span></td><td>Tipe rujukan class: TFooClass = class of TFoo. C.Create membuat objek dari class yang disimpan di C; pakai constructor virtual.</td></tr>
+<tr id="k-is"><td><code>is, as</code><span id="k-as"></span></td><td>Obj is TFoo memeriksa class objek; Obj as TFoo memakai Obj sebagai TFoo (runtime error 219 bila bukan).</td></tr>
+<tr id="k-classname"><td><code>ClassName, ClassParent</code><span id="k-classparent"></span></td><td>Nama class objek atau class, dan class induknya.</td></tr>
+<tr id="k-inheritsfrom"><td><code>InheritsFrom(C)</code></td><td>True bila class ini C atau turunannya.</td></tr>
+<tr id="k-instancesize"><td><code>InstanceSize</code></td><td>Ukuran objek dalam byte. SizeOf(Obj) selalu 8 (rujukan).</td></tr>
+<tr id="k-tostring"><td><code>ToString</code></td><td>Method virtual TObject; bawaannya ClassName.</td></tr>
+<tr id="k-default"><td><code>default</code></td><td>property Items[I: Integer]: T read ... ; default; membuat List[I] berarti List.Items[I].</td></tr>
 </table></div>
 </section>
 
 <section class="sec" id="s-unit">
 <h2 id="unit"><span class="n">10</span>Unit Pustaka <a class="anchor" href="#unit" aria-label="Tautan">#</a></h2>
-<p>Unit yang tersedia: System, Crt, Dos, WinDos, Strings, Printer, Objects, Graph, Overlay, dan Odin Vision (termasuk ColorSel dan TextView), ditambah Math dan SysUtils (subset unit Free Pascal/Delphi, bukan unit TP7). <strong>Tidak tersedia</strong>: Graph3 dan Turbo3.</p>
+<p>Unit yang tersedia: System, Crt, Dos, WinDos, Strings, Printer, Objects, Graph, Overlay, dan Odin Vision (termasuk ColorSel dan TextView), ditambah Math, SysUtils, Classes, dan Contnrs (subset unit Free Pascal/Delphi, bukan unit TP7). <strong>Tidak tersedia</strong>: Graph3 dan Turbo3.</p>
 
 <h3 id="unit-crt"><span class="n">10.1</span>Crt <a class="anchor" href="#unit-crt" aria-label="Tautan">#</a></h3>
 <p>Layar teks dan papan ketik. uses Crt;. Koordinat mulai dari 1,1 pada pojok kiri atas; layar 80 kolom x 25 baris.</p>
@@ -1042,8 +1077,22 @@ end.</code></pre>
 <tr id="k-tstrcollection"><td><code>TStrCollection</code></td><td>Koleksi terurut string berakhir nol (PChar).</td></tr>
 <tr id="k-stok"><td><code>stOk, stError</code><span id="k-sterror"></span></td><td>Nilai Status aliran: 0 baik, -1 galat. Konstanta stXXX lain menjelaskan galat.</td></tr>
 </table></div>
-<h3 id="unit-graph"><span class="n">10.5</span>Graph <a class="anchor" href="#unit-graph" aria-label="Tautan">#</a></h3>
-<p>Grafik gaya BGI Turbo Pascal. uses Graph;. Gambar disimpan di framebuffer di memori, satu byte per piksel, dengan resolusi mode yang dipilih (VGAHi = 640 x 480). GetPixel, GetImage, dan PutImage memakai piksel sebenarnya. Ke layar, gambar ditampilkan di terminal sebagai pratinjau kasar dengan karakter setengah blok (sekitar 80 x 50 titik di layar 80 x 25, 16 warna CRT), dengan perbandingan lebar-tinggi yang benar sehingga lingkaran tetap bulat. Teks BGI (OutText, OutTextXY) ditampilkan sebagai karakter asli supaya terbaca. Layar digambar ulang saat program menunggu lewat Crt (ReadKey, KeyPressed, Delay), tiap 0,1 detik sambil menggambar, dan saat program selesai. Bila keluaran dialihkan ke berkas, tidak ada yang ditampilkan. Pakai Crt (ReadKey) untuk menahan gambar.</p>
+<h3 id="unit-classes"><span class="n">10.5</span>Classes <a class="anchor" href="#unit-classes" aria-label="Tautan">#</a></h3>
+<p>Bukan unit TP7; subset Classes Free Pascal/Delphi yang ditulis dengan class. uses Classes;. Indeks di luar daftar = runtime error 201.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-tlist"><td><code>TList</code></td><td>Daftar pointer: Add, Insert, Delete, Remove, Extract, IndexOf, Exchange, Move, Pack, Clear, First, Last, Count, Capacity, Items[I] (default).</td></tr>
+<tr id="k-sort"><td><code>Sort(Banding)</code></td><td>TList.Sort dengan fungsi function(A, B: Pointer): Integer; negatif bila A di depan B.</td></tr>
+<tr id="k-tstringlist"><td><code>TStringList</code></td><td>Daftar string: Add, Insert, Delete, Clear, IndexOf, Find, Sort, Exchange, Count, Strings[I] (default), Objects[I], AddObject, IndexOfObject.</td></tr>
+<tr id="k-sorted"><td><code>Sorted, CaseSensitive</code><span id="k-casesensitive"></span></td><td>TStringList.Sorted := True mengurutkan dan menjaga urutan; perbandingan bawaannya tidak membedakan huruf besar-kecil.</td></tr>
+<tr id="k-loadfromfile"><td><code>LoadFromFile, SaveToFile</code><span id="k-savetofile"></span></td><td>Membaca dan menulis TStringList sebagai berkas teks, satu string per baris.</td></tr>
+</table></div>
+<h3 id="unit-contnrs"><span class="n">10.6</span>Contnrs <a class="anchor" href="#unit-contnrs" aria-label="Tautan">#</a></h3>
+<p>Bukan unit TP7. uses Contnrs;.</p>
+<div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
+<tr id="k-tobjectlist"><td><code>TObjectList</code></td><td>Daftar objek turunan TList. Bila OwnsObjects (bawaan True), objek ikut dibebaskan saat dihapus, diganti, atau saat daftar dibebaskan. Items[I] bertipe TObject: pakai is dan as.</td></tr>
+</table></div>
+<h3 id="unit-graph"><span class="n">10.7</span>Graph <a class="anchor" href="#unit-graph" aria-label="Tautan">#</a></h3>
+<p>Grafik gaya BGI Turbo Pascal. uses Graph;. Gambar disimpan di framebuffer di memori, satu byte per piksel, dengan resolusi mode yang dipilih (VGAHi = 640 x 480). GetPixel, GetImage, dan PutImage memakai piksel sebenarnya. Di IDE, program membuka jendela grafik yang menampilkan piksel sebenarnya, dan tombol yang diketik di jendela itu sampai ke ReadKey. Di terminal biasa, atau bila setelan graph_window di settings.json dimatikan, gambar tampil sebagai pratinjau kasar dengan karakter setengah blok (sekitar 80 x 50 titik di layar 80 x 25, 16 warna CRT) dengan perbandingan lebar-tinggi yang benar; teks BGI (OutText, OutTextXY) di situ ditampilkan sebagai karakter asli supaya terbaca, dan layar digambar ulang saat program menunggu lewat Crt (ReadKey, KeyPressed, Delay), tiap 0,1 detik sambil menggambar, dan saat program selesai. Bila keluaran dialihkan ke berkas dan tidak ada jendela, tidak ada yang ditampilkan. Pakai Crt (ReadKey) untuk menahan gambar. Contoh: File &gt; Examples - Graph.</p>
 <div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
 <tr id="k-initgraph"><td><code>InitGraph(Drv, Mode, Dir)</code></td><td>Memulai mode grafik. Drv = Detect memilih VGA dan VGAHi. Dir diabaikan (tidak ada berkas .BGI). Bila gagal, GraphResult berisi kode galat dan Drv diisi kode itu.</td></tr>
 <tr id="k-closegraph"><td><code>CloseGraph</code></td><td>Mengakhiri mode grafik, membebaskan memori, dan membersihkan layar teks.</td></tr>
@@ -1099,7 +1148,7 @@ end.</code></pre>
 <tr id="k-grok"><td><code>grOk, grNoInitGraph, ...</code><span id="k-grnoinitgraph"></span></td><td>Kode galat 0, -1, ..., -18 (grInvalidMode = -10, grError = -11).</td></tr>
 </table></div>
 <p>Beda dengan BGI Borland: tidak ada berkas driver (.BGI) dan font (.CHR), jadi parameter Dir InitGraph diabaikan, RegisterBGIdriver dan InstallUserDriver hanya mencatat, dan font stroke (Triplex, Small, SansSerif, Gothic) digambar dengan font bitmap 8 x 8. Tidak ada mouse. Layar terminal hanyalah pratinjau; kalau butuh ketelitian per piksel, bacalah GetPixel. Contoh: tests/pascal/graph/.</p>
-<h3 id="unit-windos"><span class="n">10.6</span>WinDos <a class="anchor" href="#unit-windos" aria-label="Tautan">#</a></h3>
+<h3 id="unit-windos"><span class="n">10.8</span>WinDos <a class="anchor" href="#unit-windos" aria-label="Tautan">#</a></h3>
 <p>Unit Dos gaya Borland Pascal untuk Windows yang memakai PChar. uses WinDos;. Semua rutin diteruskan ke unit Dos Odin; DosError milik WinDos ikut disetel.</p>
 <div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
 <tr id="k-tsearchrec"><td><code>TSearchRec</code></td><td>Hasil FindFirst/FindNext: Attr, Time, Size, dan Name (array[0..255] of Char). Sisanya internal.</td></tr>
@@ -1118,7 +1167,7 @@ end.</code></pre>
 <tr id="k-fspathname"><td><code>fsPathName, fsFileName, ...</code><span id="k-fsfilename"></span></td><td>Panjang maksimum komponen path (di sini 259 dan 255, bukan 79 dan 8).</td></tr>
 </table></div>
 <p>Tidak ada Intr, MsDos, TRegisters, GetIntVec, dan SetIntVec (tidak ada interrupt DOS). DiskFree dan DiskSize mengembalikan Int64.</p>
-<h3 id="unit-math"><span class="n">10.7</span>Math <a class="anchor" href="#unit-math" aria-label="Tautan">#</a></h3>
+<h3 id="unit-math"><span class="n">10.9</span>Math <a class="anchor" href="#unit-math" aria-label="Tautan">#</a></h3>
 <p>Bukan unit TP7; namanya mengikuti unit Math Free Pascal/Delphi. uses Math;. Bahasa Odin belum punya overload, jadi Min/Max dan beberapa lainnya hanya untuk satu tipe, dengan versi Real bernama lain (MinF, MaxF, InRangeF, EnsureRangeF, CompareValueF, SumInt untuk Integer). Galat domain (ArcSin di luar -1..1, Power(0, -1), ArcCosh(0.5)) menjadi runtime error 207 karena tidak ada exception.</p>
 <div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
 <tr id="k-tan"><td><code>Tan, Cotan, Secant, Cosecant</code><span id="k-cotan"></span><span id="k-secant"></span><span id="k-cosecant"></span></td><td>Fungsi trigonometri, sudut dalam radian.</td></tr>
@@ -1151,7 +1200,7 @@ end.</code></pre>
 <tr id="k-futurevalue"><td><code>FutureValue, PresentValue</code><span id="k-presentvalue"></span></td><td>Nilai kini dan nilai mendatang dengan bunga Rate per periode, NPeriods periode, dan Payment. PaymentTime = ptEndOfPeriod atau ptStartOfPeriod.</td></tr>
 <tr id="k-payment"><td><code>Payment, NumberOfPeriods</code><span id="k-numberofperiods"></span></td><td>Besar angsuran dan jumlah periode. InterestRate mencari bunga per periode.</td></tr>
 </table></div>
-<h3 id="unit-sysutils"><span class="n">10.8</span>SysUtils <a class="anchor" href="#unit-sysutils" aria-label="Tautan">#</a></h3>
+<h3 id="unit-sysutils"><span class="n">10.10</span>SysUtils <a class="anchor" href="#unit-sysutils" aria-label="Tautan">#</a></h3>
 <p>Bukan unit TP7; subset kecil SysUtils Free Pascal/Delphi. uses SysUtils;. Tidak ada kelas dan exception: galat konversi (StrToInt('x'), StrToDate salah) menjadi runtime error 106; pakai TryStrToInt, StrToIntDef, dan sejenisnya bila galat harus ditangani. Tidak ada Format (butuh array of const), parameter bawaan (tulis semua argumen, mis. BoolToStr(B, True), IncMonth(D, 1)), maupun overload. String tetap String 255 karakter.</p>
 <div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
 <tr id="k-inttostr"><td><code>IntToStr(N), IntToHex(N, D)</code><span id="k-inttohex"></span></td><td>Bilangan menjadi teks; IntToHex minimal D angka, Int64 negatif dalam 16 angka.</td></tr>
@@ -1189,8 +1238,9 @@ end.</code></pre>
 <tr id="k-shortdateformat"><td><code>ShortDateFormat</code></td><td>Variabel format tanggal (bawaan dd/mm/yyyy), dengan DateSeparator, TimeSeparator, LongTimeFormat, dan ShortTimeFormat.</td></tr>
 <tr id="k-decimalseparator"><td><code>DecimalSeparator</code></td><td>Pemisah desimal, dan ThousandSeparator (bawaan . dan ,). ShortMonthNames, LongMonthNames, ShortDayNames, dan LongDayNames berbahasa Inggris dan bisa diganti.</td></tr>
 <tr id="k-sleep"><td><code>Sleep(Ms), GetTickCount64</code><span id="k-gettickcount64"></span></td><td>Menunggu Ms milidetik, dan jam milidetik. GetTickCount mengembalikan 32 bit.</td></tr>
+<tr id="k-freeandnil"><td><code>FreeAndNil(Obj)</code></td><td>Membebaskan objek class dan mengisi variabelnya dengan nil.</td></tr>
 </table></div>
-<h3 id="unit-overlay"><span class="n">10.9</span>Overlay <a class="anchor" href="#unit-overlay" aria-label="Tautan">#</a></h3>
+<h3 id="unit-overlay"><span class="n">10.11</span>Overlay <a class="anchor" href="#unit-overlay" aria-label="Tautan">#</a></h3>
 <p>Executable Odin memuat seluruh kodenya, jadi overlay tidak perlu dimuat. uses Overlay; hanya menyediakan antarmuka TP7 supaya program lama tetap bisa dikompilasi; direktif $O diabaikan.</p>
 <div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
 <tr id="k-ovrinit"><td><code>OvrInit(Nama)</code></td><td>Selalu berhasil: OvrResult = ovrOk.</td></tr>
@@ -1200,7 +1250,7 @@ end.</code></pre>
 <tr id="k-ovrclearbuf"><td><code>OvrClearBuf</code></td><td>Tidak berefek.</td></tr>
 <tr id="k-ovrresult"><td><code>OvrResult</code></td><td>Hasil operasi terakhir: ovrOk, ovrError, ovrNotFound, ovrNoMemory, ovrIOError, ovrNoEMSDriver, ovrNoEMSMemory.</td></tr>
 </table></div>
-<h3 id="odin-vision"><span class="n">10.10</span>Odin Vision <a class="anchor" href="#odin-vision" aria-label="Tautan">#</a></h3>
+<h3 id="odin-vision"><span class="n">10.12</span>Odin Vision <a class="anchor" href="#odin-vision" aria-label="Tautan">#</a></h3>
 <p>Turbo Vision milik Odin untuk membuat aplikasi teks berjendela, menu, dan dialog. API mengikuti Turbo Vision TP7. Aplikasi keluar dengan Alt-X.</p>
 <div class="tw"><table class="ref"><tr><th>Nama</th><th>Keterangan</th></tr>
 <tr id="k-drivers"><td><code>Drivers</code></td><td>Event (TEvent), tombol (kbEnter, kbEsc, kbAltX, kbF1...), mouse, layar.</td></tr>
@@ -1300,7 +1350,8 @@ end.</code></pre>
 <div class="tw"><table class="wrap">
 <tr><th>Komponen</th><th>Status</th></tr>
 <tr><td>Editor dan operasi berkas</td><td>Diimplementasikan, diuji GUI Linux</td></tr>
-<tr><td>Compiler Odin (bahasa TP7)</td><td>Diimplementasikan, korpus 77 program</td></tr>
+<tr><td>Compiler Odin (bahasa TP7)</td><td>Diimplementasikan, korpus 97 program</td></tr>
+<tr><td>Perluasan OOP (class)</td><td>Diuji di Mac Intel (korpus <code>tests/pascal/classes</code>, debugger, contoh), VM Linux x86_64, aarch64 lewat qemu, dan Wine; belum di runner CI dan perangkat fisik Apple Silicon atau Windows</td></tr>
 <tr><td><code>ReadLn</code>, <code>WriteLn</code></td><td>Diuji melalui binary dan PTY</td></tr>
 <tr><td>Crt: warna, GotoXY, ClrScr, ReadKey</td><td>Diuji melalui program Crt nyata di Linux</td></tr>
 <tr><td>Unit Pascal</td><td>Diuji dengan unit <code>matematika</code> (Bab 19)</td></tr>
@@ -1317,9 +1368,9 @@ end.</code></pre>
 <div class="callout warn"><b>Batas klaim</b><p>Yang diuji: compiler Odin di Mac Intel (Darwin 24.6), VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu), serta runner GitHub Actions untuk macOS 15 Apple Silicon, Ubuntu x86_64 dan arm64, dan Windows Server 2025. <strong>Belum diuji langsung</strong>: Mac Apple Silicon fisik, PC Linux fisik, PC Windows fisik, installer di Apple Silicon dan Windows, Mac bersih tanpa Xcode Command Line Tools, LaunchServices/Gatekeeper, serta <kbd>Option</kbd> pada keyboard Mac sungguhan.</p></div>
 
 <h3 id="backend"><span class="n">12.3</span>Compiler <a class="anchor" href="#backend" aria-label="Tautan">#</a></h3>
-<p>Compiler adalah toolchain Odin: <code>odinpc</code> (Rust) dengan assembler, linker, debugger, dan runtime library sendiri. Target: x86_64-darwin, aarch64-darwin (Mach-O, dengan tanda tangan kode ad-hoc yang diwajibkan macOS di Apple Silicon), x86_64-linux dan aarch64-linux (ELF dinamis, glibc 2.34 atau lebih baru), x86_64-windows (PE32+). Sampai 2.3.0 Free Pascal bisa dipilih sebagai backend alternatif; backend itu, beserta mode ObjFPC/Delphi, sudah dicabut.</p>
+<p>Compiler adalah toolchain Odin: <code>odinpc</code> (Rust) dengan assembler, linker, debugger, dan runtime library sendiri. Target: x86_64-darwin, aarch64-darwin (Mach-O, dengan tanda tangan kode ad-hoc yang diwajibkan macOS di Apple Silicon), x86_64-linux dan aarch64-linux (ELF dinamis, glibc 2.34 atau lebih baru), x86_64-windows (PE32+). Sampai 2.3.0 Free Pascal bisa dipilih sebagai backend alternatif; backend itu, beserta mode ObjFPC/Delphi, sudah dicabut. Class kini dipahami <code>odinpc</code> sendiri tanpa mode khusus.</p>
 <ul>
-<li>Bahasanya Turbo Pascal 7 di platform 64-bit. Perbedaan CPU, ukuran pointer, ABI, sistem berkas, dan unit tetap berlaku.</li>
+<li>Bahasanya Turbo Pascal 7 di platform 64-bit, diperluas dengan class (lihat <a href="#class">Class</a>). Perbedaan CPU, ukuran pointer, ABI, sistem berkas, dan unit tetap berlaku.</li>
 <li>Di arm64, bendera FPSR diperiksa sesudah operasi real sehingga runtime error 207, 200, atau 205 muncul seperti di x86-64.</li>
 <li>Di Windows, berkas teks memakai CRLF, path memakai <code>\</code> dan huruf drive, dan <code>Printer</code> mencetak lewat <code>notepad /p</code>.</li>
 </ul>
@@ -1337,7 +1388,8 @@ end.</code></pre>
 <tr><td>WinDos</td><td>Tersedia: Dos dengan <code>PChar</code> (<code>FindFirst</code>, <code>FileSplit</code>, <code>GetCurDir</code>, ...), diteruskan ke Dos. Tanpa <code>Intr</code>, <code>MsDos</code>, dan <code>TRegisters</code>.</td></tr>
 <tr><td>Graph</td><td>Tersedia: antarmuka BGI lengkap (garis, lingkaran, busur, isian, <code>FloodFill</code>, teks, <code>GetImage</code>/<code>PutImage</code>, palet, halaman). Gambar disimpan di memori per piksel dan di IDE tampil di jendela grafik dengan piksel sebenarnya (di terminal biasa hanya pratinjau kasar dengan karakter setengah blok); tanpa berkas driver (<code>.BGI</code>) dan font (<code>.CHR</code>), font stroke diganti font bitmap 8 x 8. Rinciannya di bagian Unit Pustaka.</td></tr>
 <tr><td>Overlay</td><td>Tersedia sebagai antarmuka saja: <code>OvrInit</code> selalu berhasil karena seluruh kode sudah ada di memori. Direktif <code>$O</code> diabaikan.</td></tr>
-<tr><td>Math, SysUtils</td><td>Tambahan Odin (bukan unit TP7): subset unit Free Pascal/Delphi tanpa kelas, exception, <code>Format</code>, parameter bawaan, dan overload.</td></tr>
+<tr><td>Math, SysUtils</td><td>Tambahan Odin (bukan unit TP7): subset unit Free Pascal/Delphi tanpa exception, <code>Format</code>, parameter bawaan, dan overload rutin biasa.</td></tr>
+<tr><td>Classes, Contnrs</td><td>Tambahan Odin (bukan unit TP7), ditulis dengan class: <code>TList</code>, <code>TStringList</code>, dan <code>TObjectList</code>. Indeks di luar daftar menjadi runtime error 201.</td></tr>
 <tr><td>Graph3, Turbo3</td><td>Tidak tersedia.</td></tr>
 </table></div>
 
@@ -1388,6 +1440,7 @@ end.</code></pre>
 <tr><th>Istilah</th><th>Arti</th></tr>
 <tr><td>odinpc</td><td>Compiler Odin yang membangun program: compiler, assembler, linker, dan debugger dalam satu berkas.</td></tr>
 <tr><td>Build cache</td><td>Folder hasil kompilasi per program dan per pilihan compiler, terpisah dari folder sumber.</td></tr>
+<tr><td>Class</td><td>Tipe objek rujukan gaya Delphi/Free Pascal, perluasan Odin di atas TP7: objeknya dibuat dengan <code>Create</code> dan dibebaskan dengan <code>Free</code>.</td></tr>
 <tr><td>Odin Vision</td><td>Turbo Vision milik Odin, API-nya mengikuti Turbo Vision TP7.</td></tr>
 <tr><td>Primary file</td><td>Berkas utama yang selalu dikompilasi saat Run, apa pun editor yang aktif.</td></tr>
 <tr><td>PTY</td><td>Pseudo-terminal: saluran masukan/keluaran interaktif antara IDE dan program.</td></tr>

@@ -157,6 +157,15 @@ pub(crate) struct Analyzer<'m> {
     pub filerec_type: Option<TypeId>,
     /// Declared methods without a body yet: (routine, name span, module).
     pub missing_methods: Vec<(RoutineId, Span, Option<usize>)>,
+    /// `SYSTEM.TOBJECT`, the root class, once System declares it.
+    pub tobject: Option<TypeId>,
+    /// `class of T` types made for class names used as values, per class.
+    pub class_refs: HashMap<TypeId, TypeId>,
+    /// `TFoo = class;` declarations of the current type section still
+    /// waiting for their class: (class type, name key, span).
+    pub forward_classes: Vec<(TypeId, String, Span)>,
+    /// Upper-case names the type section being analysed declares.
+    pub section_types: std::collections::HashSet<String>,
 }
 
 impl<'m> Analyzer<'m> {
@@ -223,6 +232,10 @@ impl<'m> Analyzer<'m> {
             text_type: None,
             filerec_type: None,
             missing_methods: Vec::new(),
+            tobject: None,
+            class_refs: HashMap::new(),
+            forward_classes: Vec::new(),
+            section_types: Default::default(),
         }
     }
 
@@ -438,6 +451,11 @@ impl<'m> Analyzer<'m> {
         }
         if let Some(Sym::Type(t)) = self.units[0].interface.get("FILEREC") {
             self.filerec_type = Some(*t);
+        }
+        if let Some(Sym::Type(t)) = self.units[0].interface.get("TOBJECT")
+            && self.types.class_object(*t).is_some()
+        {
+            self.tobject = Some(*t);
         }
     }
 

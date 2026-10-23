@@ -211,7 +211,9 @@ impl Walk {
             }
             ExprKind::Call { callee, args } => {
                 match callee {
-                    Callee::Routine(id) | Callee::Virtual { routine: id, .. } => {
+                    Callee::Routine(id)
+                    | Callee::Virtual { routine: id, .. }
+                    | Callee::VirtualClass { routine: id, .. } => {
                         self.calls.insert(id.0);
                     }
                     Callee::Indirect(target) => self.expr(target),

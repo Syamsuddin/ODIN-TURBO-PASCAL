@@ -7,6 +7,7 @@ use odin_ir::*;
 use odin_syntax::{Switches, ast};
 
 use crate::expr::{Class, Resolved};
+use crate::object::PropRef;
 use crate::scope::Sym;
 use crate::{Analyzer, SResult, WithScope};
 
@@ -50,6 +51,10 @@ impl Analyzer<'_> {
         match &s.kind {
             ast::StmtKind::Empty => {}
             ast::StmtKind::Assign { target, value } => {
+                if let Some((p, index)) = self.property_target(target)? {
+                    out.extend(self.property_write(p, &index, value, span)?);
+                    return Ok(());
+                }
                 let t = self.assign_target(target)?;
                 let v = self.expr_expect(value, Some(t.ty))?;
                 if matches!(self.types.get(t.ty), Type::File { .. }) || Some(t.ty) == self.text_type {
@@ -145,6 +150,11 @@ impl Analyzer<'_> {
                 let pushed = records.len();
                 for r in records {
                     let rec = self.expr(r)?;
+                    // A class instance stands for the object it refers to.
+                    let rec = match self.types.get(rec.ty) {
+                        Type::Class(_) => self.class_instance(rec, r.span),
+                        _ => rec,
+                    };
                     if !matches!(self.types.get(rec.ty), Type::Record { .. } | Type::Object(_)) {
                         return self.error(code::RECORD_VAR_EXPECTED, r.span);
                     }
@@ -205,6 +215,67 @@ impl Analyzer<'_> {
         Ok(n)
     }
 
+    /// Whether a qualified name starts with a unit or type name
+    /// (`Crt.TextAttr`, `TFoo.Count`) rather than a value.
+    fn qualifier(&self, base: &ast::Expr) -> bool {
+        matches!(&base.kind, ast::ExprKind::Name(b)
+            if matches!(self.lookup(&b.key()), Some(Sym::Unit(_) | Sym::Type(_))))
+    }
+
+    /// An assignment to a property: the property and the indices of an
+    /// array property. `None` for every other target.
+    fn property_target(&mut self, e: &ast::Expr) -> SResult<Option<(PropRef, Vec<ast::Arg>)>> {
+        let args = |indices: &[ast::Expr]| -> Vec<ast::Arg> {
+            indices.iter().map(|i| ast::Arg { value: i.clone(), width: None, decimals: None }).collect()
+        };
+        match &e.kind {
+            ast::ExprKind::Name(id) => {
+                if self.method_result(&id.key(), id.span).is_some() {
+                    return Ok(None);
+                }
+                match self.resolve_name(id) {
+                    Ok(Resolved::Property(p)) => Ok(Some((*p, Vec::new()))),
+                    _ => Ok(None),
+                }
+            }
+            ast::ExprKind::Field { base, field } => {
+                if self.qualifier(base) {
+                    return Ok(None);
+                }
+                let b = self.lvalue_chain(base)?;
+                match self.member(b, field, e.span)? {
+                    Resolved::Property(p) => Ok(Some((*p, Vec::new()))),
+                    _ => Ok(None),
+                }
+            }
+            ast::ExprKind::Inherited(Some(_)) => match self.resolve(e) {
+                Ok(Resolved::Property(p)) => Ok(Some((*p, Vec::new()))),
+                _ => Ok(None),
+            },
+            ast::ExprKind::Index { base, indices } => {
+                let named = match &base.kind {
+                    ast::ExprKind::Field { base: bb, field } if !self.qualifier(bb) => {
+                        let b = self.lvalue_chain(bb)?;
+                        Some(self.member(b, field, base.span)?)
+                    }
+                    ast::ExprKind::Name(id) => self.resolve_name(id).ok(),
+                    ast::ExprKind::Inherited(Some(_)) => self.resolve(base).ok(),
+                    _ => None,
+                };
+                match named {
+                    Some(Resolved::Property(p)) if !p.prop.params.is_empty() => {
+                        return Ok(Some((*p, args(indices))));
+                    }
+                    Some(Resolved::Property(_)) => return Ok(None),
+                    _ => {}
+                }
+                let b = self.lvalue_chain(base)?;
+                Ok(self.default_property(&b, e.span).map(|p| (p, args(indices))))
+            }
+            _ => Ok(None),
+        }
+    }
+
     /// The target of `:=`; inside a function its own name denotes the
     /// result variable.
     fn assign_target(&mut self, e: &ast::Expr) -> SResult<Expr> {
@@ -255,11 +326,40 @@ impl Analyzer<'_> {
                 if unit_qualified {
                     return self.expr(e);
                 }
+                if self.qualifier(base) {
+                    return self.expr(e);
+                }
                 let b = self.lvalue_chain(base)?;
-                self.field_access(b, field, e.span)
+                match self.member(b, field, e.span)? {
+                    Resolved::Value(v) => Ok(v),
+                    Resolved::Property(p) => self.property_read(*p, &[], e.span),
+                    _ => self.error(code::FIELD_IDENT_EXPECTED, field.span),
+                }
             }
             ast::ExprKind::Index { base, indices } => {
+                let args: Vec<ast::Arg> =
+                    indices.iter().map(|i| ast::Arg { value: i.clone(), width: None, decimals: None }).collect();
+                if let ast::ExprKind::Field { base: bb, field } = &base.kind
+                    && !self.qualifier(bb)
+                {
+                    let b = self.lvalue_chain(bb)?;
+                    let v = match self.member(b, field, base.span)? {
+                        Resolved::Property(p) if !p.prop.params.is_empty() => {
+                            return self.property_read(*p, &args, e.span);
+                        }
+                        Resolved::Property(p) => self.property_read(*p, &[], base.span)?,
+                        Resolved::Value(v) => v,
+                        _ => return self.error(code::FIELD_IDENT_EXPECTED, field.span),
+                    };
+                    if let Some(p) = self.default_property(&v, e.span) {
+                        return self.property_read(p, &args, e.span);
+                    }
+                    return self.index(v, indices);
+                }
                 let b = self.lvalue_chain(base)?;
+                if let Some(p) = self.default_property(&b, e.span) {
+                    return self.property_read(p, &args, e.span);
+                }
                 self.index(b, indices)
             }
             ast::ExprKind::Deref(inner) => {
@@ -275,6 +375,11 @@ impl Analyzer<'_> {
             ast::ExprKind::Call { callee, args } => (callee, args),
             _ => (e, &[]),
         };
+        // A bare `inherited;`.
+        if let ast::ExprKind::Inherited(None) = &callee.kind {
+            out.extend(self.inherited_same(span)?);
+            return Ok(());
+        }
         // `Fail` inside a constructor.
         if let ast::ExprKind::Name(n) = &callee.kind
             && n.key() == "FAIL"
@@ -300,10 +405,7 @@ impl Analyzer<'_> {
                 let call = self.call_indirect(v, args, span, true)?;
                 out.push(stmt(StmtKind::Call(call), span));
             }
-            Resolved::Method(m) => {
-                let call = self.method_call(*m, args, span, true)?;
-                out.push(stmt(StmtKind::Call(call), span));
-            }
+            Resolved::Method(m) => out.extend(self.method_stmt(*m, args, span)?),
             _ => return self.error(code::ERROR_IN_STATEMENT, span),
         }
         Ok(())

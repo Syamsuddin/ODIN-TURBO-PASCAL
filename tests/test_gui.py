@@ -110,6 +110,20 @@ class GuiTests(unittest.TestCase):
         self.assertTrue(items[0].startswith("grafik_01_halo_grafik.pas"))
         self.assertIn("Jam analog",items[11])
 
+    def test_examples_oop_dialog_lists_the_class_samples(self):
+        file_menu=self.app.menus["File"][1]
+        labels=[file_menu.entrycget(i,"label") for i in range(file_menu.index("end")+1) if file_menu.type(i)=="command"]
+        self.assertIn("Examples - OOP...",labels)
+        self.app.examples_oop()
+        self.root.update()
+        dialog=self.toplevels()[-1]
+        listbox=self.widgets(dialog,tk.Listbox)[0]
+        items=listbox.get(0,"end")
+        self.assertEqual(len(items),9)
+        self.assertTrue(items[0].startswith("oop_01_class_pertama.pas"))
+        self.assertIn("Polimorfisme",items[4])
+        dialog.destroy()
+
     def test_examples_ai_dialog_lists_the_otp_ai_samples(self):
         file_menu=self.app.menus["File"][1]
         labels=[file_menu.entrycget(i,"label") for i in range(file_menu.index("end")+1) if file_menu.type(i)=="command"]

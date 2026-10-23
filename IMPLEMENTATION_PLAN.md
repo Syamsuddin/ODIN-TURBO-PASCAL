@@ -2,11 +2,11 @@
 
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
-Status: Tahap 0–7 dikerjakan di cabang `toolchain/tahap-0`, Tahap 8 di `platform/tahap-8`. Rencana disusun 15 Oktober 2026 dari kondisi repo pada commit `e7702a8`; ringkasan kemajuan ada di bagian 0.
+Status: Tahap 0–7 dikerjakan di cabang `toolchain/tahap-0`, Tahap 8 di `platform/tahap-8`. Tahap 10 (perluasan OOP: `class`) dikerjakan 23 Oktober 2026 di `platform/tahap-10`. Rencana disusun 15 Oktober 2026 dari kondisi repo pada commit `e7702a8`; ringkasan kemajuan ada di bagian 0.
 
 Rilis **2.0.0-alpha.1** (15 Oktober 2026) memuat Tahap 0–7 (gerbang G1–G7). **2.0.0-alpha.2** di hari yang sama menambahkan logo baru dari proyek OTP v2.0 dan README yang diperbarui. Rilis **2.0.0** (juga 15 Oktober 2026) dimajukan oleh pemilik proyek: isinya sama dengan 2.0.0-alpha.2, jadi backend Odin tetap hanya untuk Mac Intel. Tahap 8–9 (AArch64, Linux, dan pelepasan FPC) menjadi rilis 2.1.0.
 
-## 0. Status pelaksanaan (per 20 Oktober 2026)
+## 0. Status pelaksanaan (per 23 Oktober 2026)
 
 Angka G0–G7 diukur di Mac pengembang: Intel x86_64, macOS 15.7, FPC 3.2.2 sebagai pembanding. G8 juga diukur di VM Lima dan di runner GitHub Actions.
 
@@ -24,6 +24,7 @@ Angka G0–G7 diukur di Mac pengembang: Intel x86_64, macOS 15.7, FPC 3.2.2 seba
 | G8b | Lolos | Linker ELF (PIE dinamis, glibc). Korpus 77 program (biasa dan debug) dan 92 tes Python dengan backend Odin lulus di VM dan di runner Ubuntu 24.04 x86_64. |
 | G8c | Lolos (CI) | Encoder AArch64 (575 golden dari clang) dan codegen AArch64. Korpus lulus di aarch64 Linux (qemu dan runner Ubuntu arm64) dan native di runner macOS 15 Apple Silicon, bersama tes GUI, debugger, dan Odin Vision. Mac Apple Silicon fisik dan `Install.command` di sana belum diuji. |
 | G8d | Lolos (CI) | Konvensi Win64 di codegen, linker PE32+, RTL Windows (UCRT, Win32, konsol VT, vectored exception handler), `odinpc.exe`, debugger lewat TCP 127.0.0.1, IDE dengan User screen ConPTY (Ctrl-C lewat helper yang menempel ke pseudoconsole). Di runner Windows Server 2025: korpus 77 program (biasa dan debug) identik dengan FPC 3.2.2 untuk Windows (`oracle.yml`), 93 tes Python lulus (GUI, debugger, Odin Vision), dan pemeriksaan pemasang (`check_windows.py`, `stage_windows.py`) lulus. `Install.ps1` lengkap belum dijalankan di PC Windows sungguhan. |
+| G10 | Lolos di Mac Intel (23 Oktober 2026) | Bahasa TP7 diperluas dengan `class` (Tahap 10). Korpus `tests/pascal/classes/` (11 program dan unit `ZOO.PAS`) lolos dalam build biasa, `--debug`, dan `--count-steps`, bersama seluruh korpus lama; 10 kasus galat semantik `CLS_*`; tes parser untuk sintaks class dan untuk kata class yang tetap menjadi identifier di program TP7; `test_class_fields_and_self` di debugger; sembilan contoh `examples-oop/` dijalankan dan keluarannya diperiksa (`test_every_oop_example_compiles_and_runs`). Seluruh korpus juga lulus di VM Lima Ubuntu 24.04 untuk x86_64-linux dan untuk aarch64-linux lewat qemu-user; korpus `classes` dan `objects` untuk x86_64-windows lulus di bawah Wine. **Belum:** runner CI (perubahan ini belum di-push), Windows sungguhan, dan Mac Apple Silicon. |
 | G9 | Sebagian (20 Oktober 2026) | FPC dicabut dari IDE, pemasang, tes, dan CI: `build()` hanya memanggil `odinpc`; setting `compiler`, `mode`, `backend`, dan `debug_info` dihapus; `locate_compiler()`, `free_vision_dir()`, dan `parse_diagnostics()` dihapus; `Install.command` tidak lagi memasang FPC maupun Xcode CLT; `check_mac.py` dan `check_windows.py` memakai `odinpc` dari paket (bukan `odinpc selftest`); `scripts/oracle.py` diganti `scripts/bless_corpus.py`. Odin Vision kini juga punya ColorSel dan TextView. **Belum:** enam pemeriksaan macOS di Mac Intel dan Apple Silicon yang bersih (tanpa FPC dan tanpa Xcode CLT). |
 
 Perbedaan dari rencana yang sudah terjadi:
@@ -32,7 +33,7 @@ Perbedaan dari rencana yang sudah terjadi:
 - Kompilasi masih satu objek untuk seluruh program; cache unit `.ou` (Tahap 3) belum dibuat. Opsi `--cache` sudah diterima tetapi belum dipakai.
 - Sesuai FPC, tanda minus unary mengikat ke faktor (`-1 and 3 = 3`) dan literal integer bertipe terkecil (`SizeOf(200) = 1`). Deviasi yang disengaja dicatat di `tests/pascal/DEVIATIONS.md`.
 - Set selalu disimpan di memori (bukan di register), apa pun ukurannya.
-- Alokasi register sederhana (Tahap 4) belum dibuat; codegen tetap menyimpan semua variabel di memori sampai Tahap 10.
+- Alokasi register sederhana (Tahap 4) belum dibuat; codegen tetap menyimpan semua variabel di memori sampai Tahap 11.
 - Shim untuk fungsi C variadik belum ada. Di x86-64 tidak masalah, tetapi di arm64 Apple argumen variadik lewat stack: `open` (argumen `mode`) di System dan `ioctl` di Crt harus dibungkus sebelum backend arm64 (Tahap 8) dipakai.
 - Format bilangan real ada di `rtl/system/system.pas`, bukan berkas `realfmt.pas` terpisah.
 - Pengecualian FPU *invalid*, *divide by zero*, dan *overflow* dibuka (unmask) di x86-64 seperti FPC, sehingga menjadi runtime error 207/200/205. Apple Silicon tidak mendukung trap FPU, jadi Tahap 8 perlu pemeriksaan eksplisit.
@@ -50,7 +51,7 @@ Perbedaan dari rencana yang sudah terjadi:
 - Step out berhenti di statement berikutnya pada frame yang lebih dangkal. Bila pemanggil tidak punya statement tersisa, tempat berhentinya bisa lebih jauh dari sekadar "setelah return".
 - Constructor memakai ABI sendiri: `(Self, Vmt)`, mengembalikan `Self`, dan mengalokasikan object bila `Self = nil`. Dengan begitu `New(PT, Init)` menjadi panggilan biasa. Kontraknya ada di `rtl/COMPILER_INTERFACE.md` bagian 7.
 - `ForEach`, `FirstThat`, dan `LastThat` memanggil aksinya dengan static link (R10), sehingga prosedur global pun benar. FPC hanya benar untuk prosedur lokal.
-- Tipe object lokal di dalam prosedur ditolak (galat 148), sama seperti TP7. Bagian `protected` (FPC) belum didukung. Konstruktor open array (`[1, 2, 3]` untuk `array of`) juga belum didukung, karena itu fitur FPC/Delphi, bukan TP7.
+- Tipe object lokal di dalam prosedur ditolak (galat 148), sama seperti TP7. Bagian `protected` (FPC) didukung sejak Tahap 10, untuk object maupun class. Konstruktor open array (`[1, 2, 3]` untuk `array of`) belum didukung, karena itu fitur FPC/Delphi, bukan TP7.
 - `packed record` kini benar-benar tanpa padding, sama dengan FPC.
 - Untuk program dan unit FPC, System menyediakan `PtrInt`, `PtrUInt`, `SizeInt`, `SizeUInt`, dan `PPointer`. Builtin `Ofs` (alamat sebagai integer) dan `Seg` (selalu 0) juga tersedia.
 - `README.md` dan `README.txt` masih menjelaskan LLDB versi 1.0.0. Keduanya ditulis ulang di Tahap 9, sedangkan Help di aplikasi (`docs/HELP.txt`, `docs/SHORTCUTS.txt`) sudah diperbarui.
@@ -75,14 +76,14 @@ Rencana ini menggantikan semuanya dengan toolchain milik proyek sendiri, yang te
 
 ### Batasan
 
-- **Bahasa yang didukung adalah Turbo Pascal 7 di platform 64-bit**, dengan perilaku yang sama seperti FPC `-Mtp` di Odin 1.0:
+- **Bahasa yang didukung adalah Turbo Pascal 7 di platform 64-bit secara bawaan, diperluas dengan OOP berbasis `class` (Tahap 10)**, dengan perilaku yang sama seperti FPC `-Mtp` di Odin 1.0:
   - Integer 2 byte, LongInt 4 byte.
   - Real = Double (8 byte).
   - Pointer 8 byte.
 
-  Setiap perbedaan yang disengaja dari perilaku ini dicatat di `tests/pascal/DEVIATIONS.md`.
+  Setiap perbedaan yang disengaja dari perilaku ini dicatat di `tests/pascal/DEVIATIONS.md`. Perluasan class tidak menambah kata tercadang dan tidak memerlukan direktif, jadi program TP7 tetap dikompilasi seperti sebelumnya.
 - **Di luar cakupan**, sama seperti di `docs/COMPATIBILITY.txt` versi 1.0:
-  - mode ObjFPC dan Delphi,
+  - mode ObjFPC dan Delphi sebagai mode compiler (class tersedia tanpa mode; exception, interface, generic, dan `Result` tetap tidak ada),
   - Graph/BGI dan Overlay,
   - akses DOS (`Mem`, `Port`, `Intr`, `absolute $Seg:$Ofs`),
   - kompatibilitas biner dengan DOS.
@@ -216,7 +217,7 @@ Selain itu, setiap prosedur menaikkan penghitung kedalaman saat masuk dan menuru
 
 - Tidak ada step per instruksi.
 - Unit tanpa info debug dilewati oleh Trace into.
-- Mode debugger native lewat Mach/ptrace hanya opsi di Tahap 10.
+- Mode debugger native lewat Mach/ptrace hanya opsi di Tahap 11.
 
 ### 3.6 RTL dalam Pascal yang bisa dikompilasi oleh dua compiler
 
@@ -611,7 +612,7 @@ Setiap tahap ditutup oleh sebuah **gerbang**. Tahap berikutnya baru boleh dimula
   - parameter open array dan open string;
   - `absolute` (alias variabel, bukan segmen:offset);
   - fungsi `external cdecl` dan shim variadik.
-- Alokasi register sederhana di dalam satu basic block, sebagai jembatan sebelum Tahap 10.
+- Alokasi register sederhana di dalam satu basic block, sebagai jembatan sebelum Tahap 11.
 
 **Pascal: `System` lengkap** sesuai daftar di `docs/COMPATIBILITY.txt`:
 
@@ -846,12 +847,56 @@ Python (`terminal.py`):
 
 Ini adalah enam pemeriksaan macOS di `COMPATIBILITY.txt`, dengan versi baru.
 
-### Tahap 10 — Opsional
+### Tahap 10 — Perluasan OOP: `class`
+
+**Tujuan.** Odin tetap Turbo Pascal 7 secara bawaan, lalu diperluas dengan OOP berbasis `class` gaya Delphi/Free Pascal, supaya siswa bisa belajar OOP modern tanpa meninggalkan IDE ini. Cakupannya OOP inti tetapi lengkap: semua yang dibutuhkan untuk merancang hierarki class, enkapsulasi, dan polimorfisme. Exception, interface, dan generic tidak termasuk (lihat "Di luar cakupan").
+
+**Keputusan desain:**
+
+- **Tanpa mode dan tanpa kata tercadang baru.** `class`, `property`, `protected`, `published`, `strict`, `override`, `abstract`, `reintroduce`, `overload`, `dynamic`, `is`, dan `as` hanya bermakna di tempat yang tidak mungkin berisi identifier dalam program TP7, misalnya `T = class` di bagian `type`, atau kata `is` sesudah sebuah operand. Program TP7 yang memakai kata-kata itu sebagai nama tetap dikompilasi (`tests/pascal/classes/CLS_TP7_NAMES.PAS`). Satu-satunya pengecualian adalah alias `T = Class;` ke tipe bernama `Class`, yang kini dibaca sebagai deklarasi forward.
+- **Class dibangun di atas mesin `object`.** Instance class ditata seperti object dengan pointer VMT di offset 0. Variabel class adalah rujukan 8 byte (`Type::Class` di `odin-ir`), dan anggotanya diakses dengan dereferensi otomatis. Constructor memakai ABI object yang sudah ada, `(Self, Vmt)`: `TFoo.Create` memanggilnya dengan `Self = nil` dan VMT TFoo, lalu prolog constructor class juga mengosongkan instance baru. Kontraknya ada di `rtl/COMPILER_INTERFACE.md` bagian 9.
+- **Akar `System.TObject`.** Setiap class tanpa induk menurun dari `TObject` di unit System (Create, Destroy virtual, Free, ClassName, ClassNameIs, ClassParent, ClassType, InstanceSize, InheritsFrom, ToString virtual). `TObject` milik unit `Objects` adalah tipe object TP7 yang berbeda. Program yang memakai `uses Objects` tetap bisa menulis `class` tanpa induk; untuk menyebut akarnya dengan nama, tulis `System.TObject`.
+- **Pembebasan memori di pemanggil.** `Obj.Destroy` (dan `Destroy` di dalam `TObject.Free`) memanggil destructor lalu `ODIN_FREEINSTANCE`, yang membaca ukuran instance dari VMT. `inherited Destroy` hanya memanggil, jadi rantai destructor membebaskan memori sekali.
+- **Tanpa exception**, kesalahan pemakaian class menjadi runtime error: 211 untuk method abstract, 219 untuk `as` yang gagal, dan 216 untuk akses lewat rujukan `nil`. Unit RTL berbasis class memakai runtime error 201 untuk indeks di luar daftar.
+- **Overload hanya untuk method.** Overload rutin biasa tidak termasuk, karena tidak menyangkut OOP dan akan mengubah aturan nama di unit.
+
+**Rust (`odin-syntax`, `odin-ir`, `odin-sema`, `odin-codegen`, `odin-debug`):**
+
+- parser: `class`, `class(Induk)`, forward `class;`, `class of`, bagian `private`/`protected`/`public`/`published`/`strict private`/`strict protected`, `class var`, `class procedure`/`class function`, `property` (termasuk property larik dan `default`), direktif `override`/`abstract`/`reintroduce`/`overload`/`dynamic`, operator `is` dan `as`, serta `inherited` tanpa nama;
+- tipe `Type::Class` dan `Type::ClassRef` (rujukan class, yaitu alamat VMT);
+- VMT class: slot 0 berisi alamat nama class, method virtual mulai dari slot 1, method abstract menunjuk `ODIN_ABSTRACTERROR`;
+- semantik: pewarisan dengan akar TObject, override yang diperiksa tanda tangannya, peringatan 1004 untuk method yang menyembunyikan method virtual, visibilitas empat tingkat (ditambah `strict`), property lewat field, class var, atau getter/setter, class method (juga virtual), constructor virtual lewat `class of`, overload method dan constructor dengan pemilihan versi terbaik, `is`/`as`, `with` pada instance, dan typecast antara class, `Pointer`, dan integer;
+- callee baru `Callee::VirtualClass` untuk dispatch lewat VMT yang dibawa argumen (class method dan constructor virtual), di codegen x86-64 dan AArch64;
+- galat baru 904–910 dan peringatan 1004 (`odin-base/src/diag.rs`);
+- debugger: jenis tipe `class` di `.odbg`; nilai instance ditampilkan sebagai isi field-nya, dan `Obj.Field` bisa dievaluasi.
+
+**Pascal (`rtl/`):**
+
+- `system.pas`: `TObject`, `TClass`, `ODIN_IS`, `ODIN_AS`, `ODIN_FREEINSTANCE`, `ODIN_ABSTRACTERROR`;
+- `classes.pas` (baru): `TList` dan `TStringList` (urut, cari biner, berkas teks, objek pendamping);
+- `contnrs.pas` (baru): `TObjectList` yang memiliki objeknya;
+- `sysutils.pas`: `FreeAndNil`.
+
+**IDE:** penyorot sintaks mengenali kata-kata class (`odin/core.py` dan padanannya di `web/core.js`), dan menu **File › Examples - OOP** membuka sembilan contoh berbahasa Indonesia di `examples-oop/` (class pertama sampai proyek kasir toko). Paket macOS dan Windows menyalin folder itu.
+
+**Di luar cakupan Tahap 10:** exception (`try`/`except`/`finally`/`raise`), interface, generic, pointer method (`procedure of object`), `Result`, parameter bawaan, overload rutin biasa, class helper, tipe bersarang, `class constructor`, dan `sealed`/`final`.
+
+**Gerbang G10:**
+
+1. korpus `tests/pascal/classes/` identik dengan ekspektasinya dalam build biasa, `--debug`, dan `--count-steps`, dan seluruh korpus lama tetap identik;
+2. kasus galat semantik `CLS_*` melaporkan kode, baris, dan kolom yang benar;
+3. program TP7 yang memakai kata-kata class sebagai identifier tetap dikompilasi dan berjalan;
+4. debugger menampilkan field instance class dan `Self` di method class;
+5. semua contoh `examples-oop/` dikompilasi dan keluarannya sesuai.
+
+**Batasan verifikasi:** diuji di Mac Intel; seluruh korpus juga di VM Lima (x86_64-linux, dan aarch64-linux lewat qemu-user), dan korpus `classes` serta `objects` untuk Windows di bawah Wine. Runner CI, Windows sungguhan, dan Mac Apple Silicon baru menjalankannya setelah perubahan ini di-push.
+
+### Tahap 11 — Opsional
 
 - Optimasi: alokasi register linear scan, peephole, dan inline untuk rutin RTL kecil.
 - Blok `asm` x86-64/AArch64 di dalam program Pascal, memakai parser `.s` yang sudah ada.
 - Mode debugger native lewat Mach/ptrace, untuk attach ke proses dan step per instruksi. Mode ini butuh entitlement `com.apple.security.cs.debugger` dan harus dibuktikan dulu lewat spike.
-- `ColorSel` dan `TextView`, kalau belum dikerjakan di 7e.
+- Kelanjutan OOP bila diperlukan: exception dengan rantai handler di RTL, `procedure of object`, dan interface.
 
 ---
 

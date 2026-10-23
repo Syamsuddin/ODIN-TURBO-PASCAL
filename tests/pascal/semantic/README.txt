@@ -10,4 +10,7 @@ sama dengan FPC 3.2.2 (fpc -Mtp), kecuali tiga kasus yang sengaja berbeda:
   (kolom 11).
 - NOT_VAR: Odin menunjuk argumen yang bukan variabel (kolom 10), FPC
   menunjuk token sesudahnya (kolom 11).
+Kasus CLS_* menguji perluasan class (Tahap 10). FPC tidak lagi dipakai
+sebagai pembanding, jadi posisinya ditinjau dengan tangan: galat menunjuk
+nama method atau argumen yang salah, atau awal pemanggilan untuk overload.
 Diuji oleh toolchain/crates/odinpc/tests/semantic.rs.

@@ -366,11 +366,13 @@ def runtime_error_location(debug_info: Path, report: str):
 
 
 # Word lists for syntax_spans(), lower case because Pascal ignores case. RESERVED is TP7's reserved words and
-# standard directives plus a few Object Pascal words, so code from newer dialects still reads well.
+# standard directives, the class words odinpc understands, and a few more Object Pascal words, so code from newer
+# dialects still reads well.
 RESERVED = set("""and array asm begin case const constructor destructor div do downto else end exports file for function
 goto if implementation in inherited inline interface label library mod not object of or packed procedure program record
 repeat set shl shr string then to type unit until uses var while with xor absolute assembler external far forward
-interrupt near private public protected virtual class try except finally raise out property threadvar""".split())
+interrupt near private public protected published strict virtual dynamic override abstract reintroduce overload
+class is as try except finally raise out property threadvar""".split())
 CONSTANTS = set("true false nil maxint maxlongint".split())
 TYPES = set("""integer shortint smallint longint int64 byte word cardinal qword real single double extended comp char
 boolean bytebool wordbool longbool shortstring text pointer""".split())

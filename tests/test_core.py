@@ -118,6 +118,20 @@ EXAMPLE_RUNS={
     "bab20_02_nilai_siswa":("2\nAni\n80\n85\n90\nBudi\n60\n70\n65\n",[" 1  Ani","Tuntas          : 1 dari 2 siswa"]),
     "bab20_03_buku_telepon":("2\nSiti\n08123456789\ns@x.id\n0\n",["1 kontak disimpan ke kontak.dat."]),
 }
+# File > Examples - OOP (examples-oop/): lines each program must print.
+OOP_EXAMPLE_RUNS={
+    "oop_01_class_pertama":["Umur awal: 0","Meong! Aku Si Belang, umurku 3 tahun.","Nama class: TKucing"],
+    "oop_02_constructor_destructor":["Lampu ruang tamu dimatikan dulu.\nLampu ruang tamu dilepas.\nLampu dapur dilepas.\nSelesai."],
+    "oop_03_enkapsulasi_property":["Pemilik: (tanpa nama)","Siti: saldo 100000, 2 mutasi"],
+    "oop_04_pewarisan":["Kijang beroda 4, muat 7 orang","Onthel beroda 2","TSepeda turunan TMobil?    FALSE"],
+    "oop_05_polimorfisme":["       Lingkaran    153.94     43.98","   Segitiga siku      6.00     12.00","      Total luas    184.94"],
+    "oop_06_class_method_dan_class_of":["Jumlah hewan: 4","1. TAnjing bersuara guk guk","2. TKucing bersuara meong",
+                                         "4. THewan bersuara ...","Jumlah hewan: 0"],
+    "oop_07_is_as_daftar_objek":["2. Info Komputer (majalah edisi Mei)","3 barang, 2 buku, total Rp 175000","Sisa: 2 barang"],
+    "oop_08_overload":["A = 00:00  B = 07:45  C = 02:15","B + C          = 10:30","A + 25 jam     = 01:00"],
+    "oop_09_proyek_toko":[" 1  Roti tawar             7500  diskon 50%\n 3  Susu","2  Kipas angin          275000",
+                          "Total      344500","  keranjang diurutkan dari yang termurah"],
+}
 
 
 class VersionTests(unittest.TestCase):
@@ -489,6 +503,18 @@ class CompilerTests(unittest.TestCase):
                     input_data,expected=EXAMPLE_RUNS[path.stem]
                     output=self.run_example(path.name,input_data)
                     for text in expected:self.assertIn(text,output)
+
+    def test_every_oop_example_compiles_and_runs(self):
+        # File > Examples - OOP: the class programs of examples-oop/.
+        paths=sorted((ROOT/"examples-oop").glob("oop_*.pas"))
+        self.assertEqual([p.stem for p in paths],sorted(OOP_EXAMPLE_RUNS))
+        for path in paths:
+            with self.subTest(path=path.name):
+                r=build(path,self.settings,cache=self.root/"build")
+                self.assertTrue(r.success,r.output)
+                result=subprocess.run([str(r.executable)],capture_output=True,text=True,timeout=20,cwd=self.root)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                for text in OOP_EXAMPLE_RUNS[path.stem]:self.assertIn(text,result.stdout)
 
     def test_program_parameters_without_shell(self):
         source=self.root/"params.pas"

@@ -1,0 +1,11 @@
+nil 55 33 22 11 | 1 5 TRUE
+packed 4 55 11
+water=3000 tea=5000 coffee=8000 juice=9000 
+freed 2 count 2 first tea
+extracted coffee count 1 freed 2
+replaced, freed 3 coffee
+freed 4 TRUE
+Apel apel mangga pisang 
+3 FALSE 3 mangga
+-1 3 Apel apel
+APEL durian jeruk mangga pisang self TRUE 5 TRUE

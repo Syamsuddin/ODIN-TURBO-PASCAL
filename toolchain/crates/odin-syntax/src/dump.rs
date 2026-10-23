@@ -231,7 +231,11 @@ fn heading(h: &RoutineHeading) -> String {
         RoutineKind::Constructor => "constructor",
         RoutineKind::Destructor => "destructor",
     };
-    let mut s = String::from(kind);
+    let mut s = String::new();
+    if h.class_method {
+        s.push_str("class ");
+    }
+    s.push_str(kind);
     s.push(' ');
     if let Some(o) = &h.owner {
         let _ = write!(s, "{}.", o.name);
@@ -255,6 +259,10 @@ fn heading(h: &RoutineHeading) -> String {
             DirectiveKind::Export => "export".to_string(),
             DirectiveKind::Virtual(None) => "virtual".to_string(),
             DirectiveKind::Virtual(Some(e)) => format!("virtual {}", expr(e)),
+            DirectiveKind::Override => "override".to_string(),
+            DirectiveKind::Abstract => "abstract".to_string(),
+            DirectiveKind::Reintroduce => "reintroduce".to_string(),
+            DirectiveKind::Overload => "overload".to_string(),
             DirectiveKind::Other(o) => o.to_ascii_lowercase(),
         };
         let _ = write!(s, " [{name}]");
@@ -303,29 +311,52 @@ pub fn ty(t: &TypeExpr) -> String {
             format!("({}record{})", if *packed { "packed-" } else { "" }, field_list(fields))
         }
         TypeKind::Object(o) => {
-            let mut s = String::from("(object");
+            let mut s = String::from(match (o.class, o.forward) {
+                (true, true) => "(class-forward",
+                (true, false) => "(class",
+                _ => "(object",
+            });
             if let Some(p) = &o.parent {
                 let _ = write!(s, " ({})", qual(p));
             }
             for m in &o.members {
                 match m {
-                    ObjectMember::Field { decl, private } => {
+                    ObjectMember::Field { decl, vis, class_var } => {
                         let _ = write!(
                             s,
-                            " ({}{}: {})",
-                            if *private { "private " } else { "" },
+                            " ({}{}{}: {})",
+                            visibility(*vis),
+                            if *class_var { "class-var " } else { "" },
                             names(&decl.names),
                             ty(&decl.ty)
                         );
                     }
-                    ObjectMember::Method { heading: h, private } => {
-                        let _ = write!(s, " ({}{})", if *private { "private " } else { "" }, heading(h));
+                    ObjectMember::Method { heading: h, vis } => {
+                        let _ = write!(s, " ({}{})", visibility(*vis), heading(h));
+                    }
+                    ObjectMember::Property { decl: p, vis } => {
+                        let _ = write!(s, " ({}property {}", visibility(*vis), p.name.name);
+                        if !p.params.is_empty() {
+                            let _ = write!(s, " [{}]", params(&p.params));
+                        }
+                        let _ = write!(s, " : {}", ty(&p.ty));
+                        if let Some(r) = &p.read {
+                            let _ = write!(s, " read {}", r.name);
+                        }
+                        if let Some(w) = &p.write {
+                            let _ = write!(s, " write {}", w.name);
+                        }
+                        if p.default {
+                            s.push_str(" default");
+                        }
+                        s.push(')');
                     }
                 }
             }
             s.push(')');
             s
         }
+        TypeKind::ClassOf(q) => format!("(class-of {})", qual(q)),
         TypeKind::Set { base, .. } => format!("(set-of {})", ty(base)),
         TypeKind::Pointer(target) => format!("(^ {})", ty(target)),
         TypeKind::Procedural { function, params: p, result } => {
@@ -339,6 +370,18 @@ pub fn ty(t: &TypeExpr) -> String {
             s.push(')');
             s
         }
+    }
+}
+
+/// Visibility prefix; public members (the default) have none.
+fn visibility(v: Visibility) -> &'static str {
+    match v {
+        Visibility::Public => "",
+        Visibility::Published => "published ",
+        Visibility::Protected => "protected ",
+        Visibility::StrictProtected => "strict-protected ",
+        Visibility::Private => "private ",
+        Visibility::StrictPrivate => "strict-private ",
     }
 }
 
@@ -447,7 +490,8 @@ pub fn expr(e: &Expr) -> String {
         }
         ExprKind::Field { base, field } => format!("(. {} {})", expr(base), field.name),
         ExprKind::Deref(x) => format!("(^ {})", expr(x)),
-        ExprKind::Inherited(n) => format!("(inherited {})", n.name),
+        ExprKind::Inherited(Some(n)) => format!("(inherited {})", n.name),
+        ExprKind::Inherited(None) => "(inherited)".into(),
         ExprKind::StringType => "string".into(),
     }
 }

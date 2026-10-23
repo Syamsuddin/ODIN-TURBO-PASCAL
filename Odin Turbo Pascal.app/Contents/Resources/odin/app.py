@@ -39,6 +39,11 @@ GRAPH_EXAMPLE_TOPICS = {
     "05": "Isian, pola, FloodFill", "06": "Grafik batang", "07": "Diagram pai", "08": "Grafik fungsi matematika",
     "09": "Animasi dua halaman", "10": "GetImage dan PutImage (sprite)", "11": "Himpunan Mandelbrot", "12": "Jam analog",
     "13": "Menggambar dengan tombol panah", "14": "Teks di layar grafik"}
+# File > Examples - OOP: the class programs in examples-oop/ and what each one teaches.
+OOP_EXAMPLE_TOPICS = {
+    "01": "Class pertama", "02": "Constructor dan destructor", "03": "Enkapsulasi dan property", "04": "Pewarisan",
+    "05": "Polimorfisme (virtual, abstract)", "06": "Class var, class method, class of", "07": "Daftar objek, is, as",
+    "08": "Overload", "09": "Proyek: kasir toko"}
 AI_EXAMPLE_TOPICS = {
     "BASIC": "Matematika, matriks, statistik", "DATAPREP": "Praproses data CSV", "REGDEMO": "Regresi linear",
     "REGMULT": "Regresi linear berganda", "KNNDEMO": "K-Nearest Neighbors", "KMEANS": "K-Means clustering",
@@ -231,7 +236,7 @@ class App:
     def create_menus(self):
         self.menu("File", [("New",self.new,"Ctrl+N"),("Open...",self.open_file,"F3"),("Save",self.save,"F2"),
                           ("Save as...",lambda:self.save(as_new=True),""),("Save all",self.save_all,""),
-                          ("-",None,""),("Recent files...",self.recent,""),("Examples...",self.examples,""),("Examples - AI...",self.examples_ai,""),("Examples - Graph...",self.examples_graph,""),
+                          ("-",None,""),("Recent files...",self.recent,""),("Examples...",self.examples,""),("Examples - AI...",self.examples_ai,""),("Examples - Graph...",self.examples_graph,""),("Examples - OOP...",self.examples_oop,""),
                           ("Change directory...",self.change_directory,""),("-",None,""),("Exit",self.quit,"Alt+X")])
         self.menu("Edit", [("Undo",lambda:self.edit("undo"),"Alt+Backspace"),("Redo",lambda:self.edit("redo"),"Ctrl+Y"),
                           ("-",None,""),("Cut",lambda:self.edit("cut"),"Shift+Del"),("Copy",lambda:self.edit("copy"),"Ctrl+Ins"),
@@ -540,6 +545,15 @@ class App:
             messagebox.showinfo("Examples - Graph","Contoh grafik tidak ditemukan (folder examples-graph).",parent=self.root)
             return
         self.choose("Examples - Graph",items,self.open_file)
+
+    def examples_oop(self):
+        """Class samples (examples-oop/), each labelled with what it teaches."""
+        folder=ASSETS/"examples-oop"
+        items=[(f"{p.name:<36}{OOP_EXAMPLE_TOPICS.get(p.stem.split('_')[1],'')}".rstrip(),p) for p in sorted(folder.glob("oop_*.pas"))] if folder.is_dir() else []
+        if not items:
+            messagebox.showinfo("Examples - OOP","Contoh OOP tidak ditemukan (folder examples-oop).",parent=self.root)
+            return
+        self.choose("Examples - OOP",items,self.open_file)
 
     def change_directory(self):
         path=filedialog.askdirectory(parent=self.root,title="Working directory")

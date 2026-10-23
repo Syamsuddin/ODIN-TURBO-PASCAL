@@ -7,7 +7,11 @@ binary DOS, dan tidak berafiliasi dengan Borland.
 
 Komponen                          Status
 Editor dan operasi berkas         Diimplementasikan, diuji GUI Linux
-Compiler Odin (bahasa TP7)        Diimplementasikan, korpus 77 program
+Compiler Odin (bahasa TP7)        Diimplementasikan, korpus 97 program
+Perluasan OOP (class)             Diuji Mac Intel (korpus, debugger, contoh),
+                                  VM Linux x86_64, aarch64 lewat qemu, dan
+                                  Wine; belum di runner CI dan perangkat fisik
+                                  Apple Silicon atau Windows
 ReadLn, WriteLn                    Diuji melalui binary dan PTY
 CRT warna/GotoXY/ClrScr/ReadKey     Diuji melalui program CRT nyata di Linux
 Unit Pascal                       Diuji dengan unit matematika (tutorial Bab 19)
@@ -27,6 +31,8 @@ Graph (tampilan terminal)         Diuji di macOS Intel lewat PTY; hanya pratinja
                                   kasar (setengah blok), bukan piksel sebenarnya
 Math, SysUtils, WinDos, Overlay   Diuji (korpus tests/pascal); belum di Apple
                                   Silicon, Linux, dan Windows fisik
+Classes, Contnrs (unit class)     Diuji seperti perluasan OOP (korpus
+                                  tests/pascal/classes)
 Interrupt/port/mem DOS            Tidak diemulasi
 Project manager                   Tidak tersedia
 Terminal truecolor/Unicode lebar  Tidak tersedia
@@ -49,8 +55,10 @@ aarch64-linux (ELF dinamis, glibc 2.34 atau lebih baru), x86_64-windows
 (PE32+ dengan kernel32 dan UCRT). Di sistem lain (misalnya Windows on ARM)
 IDE bisa mengedit tetapi tidak mengompilasi.
 Sampai 2.3.0, Free Pascal bisa dipilih sebagai backend alternatif (dengan
-mode ObjFPC/Delphi dan Free Vision). Backend itu sudah dicabut; program
-ObjFPC/Delphi tidak lagi didukung.
+mode ObjFPC/Delphi dan Free Vision). Backend itu sudah dicabut. Sejak Tahap
+10, odinpc sendiri memahami class gaya Delphi/Free Pascal tanpa mode khusus
+(lihat BAHASA: TP7 DENGAN PERLUASAN CLASS). Program ObjFPC/Delphi yang memakai
+exception, interface, generic, atau Result tetap tidak bisa dikompilasi.
 
 Diuji 15 Oktober 2026 pada Mac Intel x86_64 (Darwin 24.6) dengan FPC 3.2.2
 sebagai pembanding: kesepuluh contoh, 77 program uji diferensial, dan layar
@@ -73,9 +81,10 @@ Kode hasil kompilasi membaca bendera FPSR sesudah operasi real dan
 menghasilkan runtime error 207, 200, atau 205 seperti di x86-64.
 
 Unit Odin: System, Crt, Dos, WinDos, Strings, Printer, Objects, Graph,
-Overlay, Math, SysUtils, dan Odin Vision (Turbo Vision milik Odin): Drivers,
-Memory, HistList, Views, Menus, Validate, Dialogs, App, MsgBox, StdDlg,
-Editors, Outline, ColorSel, TextView. Tipe object TP7 didukung.
+Overlay, Math, SysUtils, Classes, Contnrs, dan Odin Vision (Turbo Vision milik
+Odin): Drivers, Memory, HistList, Views, Menus, Validate, Dialogs, App,
+MsgBox, StdDlg, Editors, Outline, ColorSel, TextView. Tipe object TP7 dan
+class (perluasan OOP) didukung.
 Ekspektasi uji dibuat dengan Free Pascal 3.2.2 sebagai pembanding sampai
 2.3.0; perbedaan yang disengaja dicatat di tests/pascal/DEVIATIONS.md.
 
@@ -110,6 +119,50 @@ detailnya milik Odin sendiri (rincian di rtl/vision/SPEC.md):
 Executable hasil Odin memuat runtime library Odin, yang berlisensi
 GNU GPL v3 atau yang lebih baru tanpa pengecualian runtime. Bila executable
 itu dibagikan, ketentuan GPL berlaku untuk executable tersebut.
+
+BAHASA: TP7 DENGAN PERLUASAN CLASS
+
+Secara bawaan bahasanya Turbo Pascal 7. Di atasnya Odin menambah OOP
+berbasis class seperti Delphi dan Free Pascal. Perluasan ini tidak memerlukan
+direktif atau mode, dan tidak menambah kata tercadang: class, property,
+protected, published, strict, override, abstract, reintroduce, overload,
+dynamic, is, dan as hanya bermakna di tempat yang tidak mungkin berisi nama
+dalam program TP7. Program TP7 yang memakai kata-kata itu sebagai nama tetap
+dikompilasi. Satu pengecualian: alias "T = Class;" ke tipe bernama Class kini
+dibaca sebagai deklarasi forward sebuah class.
+
+Didukung:
+- class, class(Induk), deklarasi forward "TFoo = class;", dan "class of TFoo"
+  (rujukan class). Class tanpa induk menurun dari System.TObject.
+- Bagian private, protected, public, published, strict private, dan
+  strict protected. Private dan protected terlihat di seluruh unit atau
+  program yang mendeklarasikannya, seperti di Delphi.
+- Field, method, constructor, destructor, class var, class procedure dan
+  class function (juga virtual), serta Self.
+- virtual, dynamic (sama dengan virtual), override, abstract, reintroduce,
+  inherited dengan nama, dan inherited tanpa nama (memanggil method yang
+  sama milik induk dengan argumen yang sama).
+- Constructor virtual yang dipanggil lewat rujukan class (C.Create).
+- property yang membaca dan menulis lewat field, class var, atau method,
+  property hanya-baca, property larik ("Items[I: Integer]"), dan property
+  larik default ("List[I]").
+- overload untuk method dan constructor. Versi yang dipilih adalah yang
+  paling cocok dengan tipe argumen.
+- Operator is dan as, typecast antara class, Pointer, dan integer, with pada
+  instance, nil, Assigned, serta = dan <> antar-rujukan.
+- TObject: Create, Destroy, Free, ClassName, ClassNameIs, ClassParent,
+  ClassType, InstanceSize, InheritsFrom, dan ToString.
+
+Belum termasuk: exception (try/except/finally/raise), interface, generic,
+pointer method (procedure of object), Result, parameter bawaan, overload
+untuk rutin biasa, class helper, tipe bersarang, class constructor, serta
+sealed dan final. Tanpa exception, salah pakai class menjadi runtime error:
+211 (method abstract dipanggil), 219 (as gagal), dan 216 (akses lewat
+rujukan nil).
+
+Program yang memakai uses Objects punya dua TObject: tipe object TP7 milik
+Objects dan class akar milik System. Class tanpa induk tetap menurun dari
+class akar, dan nama itu bisa ditulis System.TObject.
 
 UNIT STANDAR TURBO PASCAL 7
 
@@ -179,17 +232,25 @@ Overlay        Tersedia sebagai antarmuka saja: semua kode ada di memori, jadi
                diabaikan.
 Math           Bukan unit TP7 tetapi umum di Free Pascal/Delphi: trigonometri
                dan hiperbolik, Power, IntPower, Log10, Log2, Ceil, Floor,
-               RoundTo, Min/Max, statistik larik, fungsi keuangan. Tidak ada
-               overload: Min/Max hanya Int64 (MinF/MaxF untuk Real), begitu
-               juga InRange, EnsureRange, CompareValue (akhiran F), dan
-               SumInt untuk Integer. Galat domain = runtime error 207.
+               RoundTo, Min/Max, statistik larik, fungsi keuangan. Rutin biasa
+               tidak bisa di-overload: Min/Max hanya Int64 (MinF/MaxF untuk
+               Real), begitu juga InRange, EnsureRange, CompareValue (akhiran
+               F), dan SumInt untuk Integer. Galat domain = runtime error 207.
 SysUtils       Bukan unit TP7. Subset kecil: IntToStr, IntToHex, StrToInt,
                StrToFloat, FloatToStr, FloatToStrF, FormatFloat, UpperCase,
                Trim, StringReplace, nama berkas, FileExists dan sejenisnya,
-               TDateTime (EncodeDate, FormatDateTime, ...), Sleep. Tidak ada
-               kelas, exception (galat konversi = runtime error 106; pakai
-               TryStrToInt atau StrToIntDef), Format (butuh array of const),
-               parameter bawaan, maupun overload.
+               TDateTime (EncodeDate, FormatDateTime, ...), Sleep,
+               FreeAndNil. Tidak ada exception (galat konversi = runtime
+               error 106; pakai TryStrToInt atau StrToIntDef), Format (butuh
+               array of const), parameter bawaan, maupun overload.
+Classes        Bukan unit TP7. Subset Classes Free Pascal/Delphi yang ditulis
+               dengan class: TList (daftar pointer, Sort dengan fungsi
+               pembanding) dan TStringList (Sorted, Find, IndexOf,
+               CaseSensitive, Objects, LoadFromFile, SaveToFile). Indeks di
+               luar daftar = runtime error 201 (di FPC: EListError). Tanpa
+               Text dan CommaText (String tetap 255 karakter).
+Contnrs        Bukan unit TP7. TObjectList: daftar objek yang membebaskan
+               objeknya sendiri bila OwnsObjects (bawaan TRUE).
 Graph3, Turbo3 Tidak tersedia.
 Turbo3         Tidak tersedia.
 

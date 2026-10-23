@@ -221,7 +221,7 @@ impl Analyzer<'_> {
             Builtin::Assigned => {
                 self.arg_count(args, 1, 1, span)?;
                 let v = self.expr(&args[0].value)?;
-                if !matches!(self.class(v.ty), Class::Ptr | Class::Proc) {
+                if !matches!(self.class(v.ty), Class::Ptr | Class::Proc | Class::Obj | Class::Meta) {
                     return self.error(code::POINTER_OR_PROC_VAR_EXPECTED, args[0].value.span);
                 }
                 let nil = Expr::new(ExprKind::Nil, v.ty, span);

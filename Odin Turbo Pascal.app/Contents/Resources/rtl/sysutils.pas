@@ -2,14 +2,14 @@
 { Unit SysUtils dari runtime library Odin. Bukan unit Turbo Pascal 7,
   tetapi subset kecil dari SysUtils Free Pascal/Delphi yang dipakai banyak
   program: konversi angka dan teks, rutin string, nama berkas dan direktori,
-  tanggal dan waktu (TDateTime), Sleep.
+  tanggal dan waktu (TDateTime), Sleep, FreeAndNil.
 
-  Yang tidak ada, karena bahasa Odin belum punya fiturnya: kelas dan
-  exception (galat konversi menjadi runtime error 106; pakai versi Try... atau
-  ...Def bila galat harus ditangani), Format (butuh array of const), parameter
-  bawaan (semua argumen ditulis, mis. BoolToStr(B, True), IncMonth(D, 1)), dan
-  overload (FormatDateTime dan IntToStr hanya satu bentuk). String tetap
-  String 255 karakter. }
+  Yang tidak ada, karena bahasa Odin belum punya fiturnya: exception (galat
+  konversi menjadi runtime error 106; pakai versi Try... atau ...Def bila
+  galat harus ditangani), Format (butuh array of const), parameter bawaan
+  (semua argumen ditulis, mis. BoolToStr(B, True), IncMonth(D, 1)), dan
+  overload rutin biasa (overload hanya untuk method class; FormatDateTime dan
+  IntToStr hanya satu bentuk). String tetap String 255 karakter. }
 unit SysUtils;
 
 {$R-,Q-,I-,X+}
@@ -144,6 +144,9 @@ function StrToDateTime(const S: String): TDateTime;
 procedure Sleep(Milliseconds: LongInt);
 function GetTickCount64: Int64;
 function GetTickCount: Cardinal;
+
+{ Objek }
+procedure FreeAndNil(var Obj);
 
 implementation
 
@@ -1697,6 +1700,19 @@ begin
   D := StrToDate(Copy(T, 1, P - 1));
   Tm := StrToTime(Copy(T, P + 1, 255));
   StrToDateTime := D + Tm;
+end;
+
+{ ---- objek ------------------------------------------------------------------------------- }
+
+{ Frees the instance a class variable refers to and makes the variable nil
+  (first, so the destructor no longer sees it). }
+procedure FreeAndNil(var Obj);
+var
+  Temp: TObject;
+begin
+  Temp := TObject(Obj);
+  Pointer(Obj) := nil;
+  Temp.Free;
 end;
 
 { ---- waktu sistem ------------------------------------------------------------------------- }
