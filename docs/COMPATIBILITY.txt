@@ -8,10 +8,9 @@ binary DOS, dan tidak berafiliasi dengan Borland.
 Komponen                          Status
 Editor dan operasi berkas         Diimplementasikan, diuji GUI Linux
 Compiler Odin (bahasa TP7)        Diimplementasikan, korpus 97 program
-Perluasan OOP (class)             Diuji Mac Intel (korpus, debugger, contoh),
-                                  VM Linux x86_64, aarch64 lewat qemu, dan
-                                  Wine; belum di runner CI dan perangkat fisik
-                                  Apple Silicon atau Windows
+Perluasan OOP (class)             Diuji Mac Intel (korpus, debugger, contoh)
+                                  dan runner CI kelima platform; belum di
+                                  perangkat fisik Apple Silicon atau Windows
 ReadLn, WriteLn                    Diuji melalui binary dan PTY
 CRT warna/GotoXY/ClrScr/ReadKey     Diuji melalui program CRT nyata di Linux
 Unit Pascal                       Diuji dengan unit matematika (tutorial Bab 19)

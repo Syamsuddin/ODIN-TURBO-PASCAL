@@ -356,7 +356,7 @@ type
 - Unit `Classes` (`TList`, `TStringList`) dan `Contnrs` (`TObjectList`) ditulis dengan class.
 - Belum termasuk: exception, interface, generic, `procedure of object`, dan `Result`. Tanpa exception, salah pakai menjadi runtime error (211 method abstract, 219 `as` gagal, 216 rujukan `nil`).
 - Debugger menampilkan isi field objek, dan `Obj.Field` bisa dievaluasi.
-- Diuji di Mac Intel, dan korpusnya juga di VM Linux (x86_64, aarch64 lewat qemu) serta di Wine untuk target Windows. Runner CI dan perangkat fisik Apple Silicon/Windows menyusul saat perubahan ini di-push. Rinciannya ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBILITY.txt) dan [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) (Tahap 10).
+- Diuji di Mac Intel dan di runner GitHub Actions untuk macOS Intel, macOS Apple Silicon, Linux x86_64, Linux arm64, dan Windows. Perangkat fisik Apple Silicon dan Windows belum diuji langsung. Rinciannya ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBILITY.txt) dan [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) (Tahap 10).
 
 ### Unit standar Turbo Pascal
 
@@ -375,7 +375,7 @@ Diuji dengan korpus tes di Mac Intel, di VM Ubuntu 24.04 (x86_64, dan aarch64 le
 | `Graph` | ✅ Antarmuka BGI TP7 lengkap (garis, lingkaran, busur, isian, `FloodFill`, teks, `GetImage`/`PutImage`, palet, halaman, semua mode driver). Gambar disimpan di memori per piksel dan diuji piksel demi piksel; di IDE tampil di jendela grafik dengan piksel sebenarnya, di terminal biasa hanya pratinjau kasar dengan karakter setengah blok. Tanpa berkas `.BGI`/`.CHR` (font stroke diganti font bitmap 8 x 8) |
 | `Overlay` | ✅ Antarmuka saja: `OvrInit` selalu berhasil karena seluruh kode ada di memori |
 | `Math`, `SysUtils` | ✅ Tambahan Odin (bukan unit TP7): subset unit Free Pascal/Delphi tanpa exception, `Format`, parameter bawaan, dan overload rutin biasa |
-| `Classes`, `Contnrs` | ✅ Tambahan Odin (bukan unit TP7), ditulis dengan class: `TList`, `TStringList`, `TObjectList`. Diuji di Mac Intel dan VM Linux (x86_64, aarch64 lewat qemu) |
+| `Classes`, `Contnrs` | ✅ Tambahan Odin (bukan unit TP7), ditulis dengan class: `TList`, `TStringList`, `TObjectList`. Diuji di Mac Intel dan runner CI kelima platform |
 | `Graph3`, `Turbo3` | ❌ |
 
 Rincian dan perbedaan perilaku ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBILITY.txt) dan [`tests/pascal/DEVIATIONS.md`](tests/pascal/DEVIATIONS.md).
