@@ -6,6 +6,45 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-10-23
+
+Rilis 2.9.0 memperluas bahasa Turbo Pascal 7 dengan OOP berbasis `class` (Tahap 10), tanpa mode khusus dan tanpa kata tercadang baru, sehingga program TP7 tetap dikompilasi apa adanya.
+
+### Ditambahkan
+
+- **OOP berbasis `class`** (Tahap 10 di `IMPLEMENTATION_PLAN.md`). Bahasanya tetap Turbo Pascal 7 secara bawaan, dan `odinpc` kini juga memahami class seperti Delphi dan Free Pascal, tanpa direktif atau mode dan tanpa kata tercadang baru:
+  - `class`, `class(Induk)` dengan akar `System.TObject`, deklarasi forward `TFoo = class;`, dan `class of TFoo`;
+  - bagian `private`, `protected`, `public`, `published`, `strict private`, dan `strict protected` (`protected` kini juga berlaku untuk `object`);
+  - constructor dan destructor (`Create`, `Destroy`, `Free`), `virtual`/`dynamic`, `override`, `abstract`, `reintroduce`, `inherited` dengan nama atau tanpa nama;
+  - `property` lewat field, class var, atau getter/setter, termasuk property hanya-baca, property larik, dan property larik `default`;
+  - `class var`, `class procedure`/`class function` (juga virtual), dan constructor virtual yang dipanggil lewat rujukan class;
+  - overload untuk method dan constructor, dengan versi yang paling cocok dengan tipe argumen;
+  - operator `is` dan `as`, `with` pada objek, typecast antara class, `Pointer`, dan integer.
+- `System.TObject` dan `TClass`: `Create`, `Destroy`, `Free`, `ClassName`, `ClassNameIs`, `ClassParent`, `ClassType`, `InstanceSize`, `InheritsFrom`, `ToString`.
+- Unit **Classes** (`rtl/classes.pas`): `TList` dan `TStringList` (`Sorted`, `Find`, `CaseSensitive`, `Objects`, `LoadFromFile`, `SaveToFile`). Unit **Contnrs** (`rtl/contnrs.pas`): `TObjectList` yang membebaskan objeknya sendiri. `FreeAndNil` di SysUtils.
+- Galat compiler baru 904–910 (tipe class diharapkan, override tanpa method virtual, pemanggilan method abstract, akses property, overload tidak cocok atau ambigu, fitur khusus class) dan peringatan 1004 untuk method yang menyembunyikan method virtual. Runtime error baru: 211 (method abstract) dan 219 (`as` gagal).
+- Debugger: variabel class menampilkan isi field objeknya, dan `Obj.Field` bisa dievaluasi di Watches dan Evaluate.
+- **File › Examples - OOP...**: sembilan contoh berbahasa Indonesia di `examples-oop/`, dari `oop_01_class_pertama.pas` sampai proyek `oop_09_proyek_toko.pas`. Ikut dalam bundel macOS dan paket Windows.
+- Penyorot sintaks mengenali `override`, `abstract`, `overload`, `published`, `strict`, `is`, `as`, dan kata class lainnya.
+- Tes: korpus `tests/pascal/classes/` (11 program dan unit `ZOO.PAS`, termasuk program TP7 yang memakai kata-kata class sebagai nama), 10 kasus galat semantik `CLS_*`, tes parser untuk sintaks class, `test_class_fields_and_self` (debugger), `test_every_oop_example_compiles_and_runs`, dan daftar File › Examples - OOP.
+- Dokumen: bagian Tahap 10 di `IMPLEMENTATION_PLAN.md`, bagian 9 (class) di `rtl/COMPILER_INTERFACE.md`, BAHASA: TP7 DENGAN PERLUASAN CLASS di `docs/COMPATIBILITY.txt`, CLASS (PERLUASAN OOP), UNIT CLASSES, dan UNIT CONTNRS di `docs/PASCAL.txt` (juga di bantuan HTML dan F1).
+
+### Diubah
+
+- Pointer maju `PFoo = ^TFoo` kini selalu menunjuk `TFoo` yang dideklarasikan sesudahnya di bagian `type` yang sama, walaupun nama itu sudah terlihat dari luar (misalnya `System.TObject`). Unit `Objects` bergantung pada aturan ini.
+- Alias `T = Class;` ke tipe bernama `Class` kini dibaca sebagai deklarasi forward sebuah class.
+
+### Diperbaiki
+
+- CI Windows: setup Inno Setup dijalankan dengan `MSYS_NO_PATHCONV=1`. Git Bash mengubah `/VERYSILENT` dan flag lain menjadi path, sehingga setup menunggu wizard dan langkah itu (serta tes Python Windows sesudahnya) gagal sejak setup ditambahkan.
+- Tes `test_crt_screen_matches_snapshot` di Windows: konsol Windows tidak punya blink, jadi Crt di sana menerangkan latar teks yang berkedip (sengaja, seperti Crt FPC di Windows). Tes kini membandingkan dengan `tests/pascal/crt/CRT_WINDOW.windows.snap`, yang hanya berbeda di sel-sel itu.
+- Daftar isi `docs/PASCAL.txt` terpotong sesudah UNIT GRAPH oleh paragraf Graph yang salah tempat; paragraf itu kini menggantikan teks lama di bagian UNIT GRAPH.
+
+### Pengujian
+
+- Diuji di macOS Intel: seluruh tes Rust (korpus 97 program dalam tiga mode build, galat semantik, parser) dan 147 tes Python (10 dilewati), termasuk debugger dan tes GUI. Seluruh korpus juga lulus di VM Lima Ubuntu 24.04 untuk x86_64-linux dan aarch64-linux (qemu-user), dan korpus `classes` serta `objects` untuk x86_64-windows lulus di bawah Wine.
+- CI GitHub Actions: tes Rust (termasuk korpus) dan tes Python lulus di macOS Intel, macOS Apple Silicon, Ubuntu 24.04 x86_64, dan Ubuntu 24.04 arm64. Di Windows Server 2025, tes Rust, pemeriksaan pemasang, dan setup lulus; 132 tes Python juga lulus setelah dua perbaikan di bagian Diperbaiki (setup CI dan snapshot Crt Windows); keduanya kegagalan lama yang juga muncul di `main` tanpa perubahan class. Mac Apple Silicon dan PC Windows fisik belum diuji langsung.
+
 ## [2.8.0] - 2026-10-23
 
 ### Ditambahkan
@@ -386,7 +425,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.8.0...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.9.0...HEAD
+[2.9.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.5.0...v2.6.0

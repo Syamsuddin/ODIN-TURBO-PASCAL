@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 Syams Ideris
-//! Abstract syntax tree for Turbo Pascal 7.
+//! Abstract syntax tree for Turbo Pascal 7, extended with classes.
 //!
 //! The parser resolves no names. Ambiguities that need symbol information
 //! (a call versus a typecast, a type name versus a constant in a subrange)
@@ -207,8 +207,16 @@ pub enum DirectiveKind {
     Interrupt,
     Cdecl,
     Export,
-    /// `virtual` with an optional dynamic method index.
+    /// `virtual` (or `dynamic`) with an optional dynamic method index.
     Virtual(Option<Expr>),
+    /// `override`: replaces an inherited virtual method of a class.
+    Override,
+    /// `abstract`: a virtual method without a body.
+    Abstract,
+    /// `reintroduce`: hides an inherited method on purpose.
+    Reintroduce,
+    /// `overload`: other methods of the same name stay visible.
+    Overload,
     /// Directives Odin accepts and ignores (`stdcall`, `register`, ...).
     Other(String),
 }
@@ -222,6 +230,8 @@ pub struct Directive {
 #[derive(Clone, Debug, PartialEq)]
 pub struct RoutineHeading {
     pub kind: RoutineKind,
+    /// `class procedure` / `class function`.
+    pub class_method: bool,
     /// For `procedure TObj.Method`, the object type name.
     pub owner: Option<Ident>,
     pub name: Ident,
@@ -288,7 +298,10 @@ pub enum TypeKind {
         packed: bool,
         fields: FieldList,
     },
+    /// An `object`, or a `class` (also a forward `class;`).
     Object(Box<ObjectType>),
+    /// `class of TFoo`.
+    ClassOf(QualIdent),
     Set {
         packed: bool,
         base: Box<TypeExpr>,
@@ -332,14 +345,55 @@ pub struct VariantCase {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ObjectType {
+    /// `class` rather than `object`.
+    pub class: bool,
+    /// `TFoo = class;`: completed later in the same type section.
+    pub forward: bool,
     pub parent: Option<QualIdent>,
     pub members: Vec<ObjectMember>,
 }
 
+/// Visibility section of a member.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Visibility {
+    Public,
+    Published,
+    Protected,
+    StrictProtected,
+    Private,
+    StrictPrivate,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum ObjectMember {
-    Field { decl: FieldDecl, private: bool },
-    Method { heading: RoutineHeading, private: bool },
+    /// A field; `class_var` for `class var` fields.
+    Field {
+        decl: FieldDecl,
+        vis: Visibility,
+        class_var: bool,
+    },
+    Method {
+        heading: RoutineHeading,
+        vis: Visibility,
+    },
+    Property {
+        decl: Box<PropertyDecl>,
+        vis: Visibility,
+    },
+}
+
+/// `property Name[Index: T]: T read Getter write Setter; default;`
+#[derive(Clone, Debug, PartialEq)]
+pub struct PropertyDecl {
+    pub name: Ident,
+    /// Index parameters of an array property.
+    pub params: Vec<ParamGroup>,
+    pub ty: TypeExpr,
+    pub read: Option<Ident>,
+    pub write: Option<Ident>,
+    /// `default` after an array property.
+    pub default: bool,
+    pub span: Span,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -377,6 +431,10 @@ pub enum BinOp {
     Gt,
     Ge,
     In,
+    /// `x is TFoo`.
+    Is,
+    /// `x as TFoo`.
+    As,
 }
 
 impl BinOp {
@@ -400,6 +458,8 @@ impl BinOp {
             BinOp::Gt => ">",
             BinOp::Ge => ">=",
             BinOp::In => "in",
+            BinOp::Is => "is",
+            BinOp::As => "as",
         }
     }
 }
@@ -431,8 +491,9 @@ pub enum ExprKind {
         field: Ident,
     },
     Deref(Box<Expr>),
-    /// `inherited Name` (the name is mandatory in TP7).
-    Inherited(Ident),
+    /// `inherited Name`, or a bare `inherited` (the method being defined,
+    /// with its own arguments).
+    Inherited(Option<Ident>),
     /// `string(x)` style casts to the reserved word `string`.
     StringType,
 }

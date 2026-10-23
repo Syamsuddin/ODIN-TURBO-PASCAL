@@ -1,4 +1,4 @@
-ODIN TURBO PASCAL 2.8.0
+ODIN TURBO PASCAL 2.9.0
 Paket aplikasi desktop untuk Mac Intel dan Apple Silicon; berjalan dari source di Linux
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
@@ -38,6 +38,7 @@ CHANGELOG.md          Riwayat perubahan per versi.
 main.py, odin/        Source code aplikasi yang dapat dipelajari dan diubah.
 examples/             Tutorial Pascal untuk pemula: 90 berkas dalam 20 bab,
                       yaitu 89 program dan unit matematika.pas (Bab 19).
+examples-oop/         Contoh OOP dengan class (File > Examples - OOP).
 rtl/                  Runtime library Odin dan Odin Vision (Pascal).
 toolchain/            Source toolchain Odin: compiler, assembler, linker,
                       dan debugger (Rust).
@@ -128,9 +129,11 @@ pintasan fungsi klasik. File/Edit/Search/Run/Compile/Debug/Options/Window/Help.
 Editor beberapa berkas dengan tile, cascade, zoom, undo/redo, clipboard,
 find/replace, go-to-line, indentasi, mode insert/overwrite, dan warna sintaks
 Turbo Biru Lembut yang bisa dimatikan.
-Toolchain Odin (macOS, Linux, Windows): compiler TP7 dengan tipe object, runtime library
-dengan Crt, Dos, Strings, Printer, Objects, dan Odin Vision (Turbo Vision
-lengkap, termasuk ColorSel dan TextView). Primary file, unit/include paths, range/overflow checks, build ulang, pesan compiler
+Toolchain Odin (macOS, Linux, Windows): compiler Turbo Pascal 7 dengan tipe
+object, diperluas dengan OOP berbasis class (pewarisan, virtual/override/
+abstract, property, is/as, class of, overload method), runtime library dengan
+Crt, Dos, Strings, Printer, Objects, Classes, Contnrs, dan Odin Vision (Turbo
+Vision lengkap, termasuk ColorSel dan TextView). Primary file, unit/include paths, range/overflow checks, build ulang, pesan compiler
 dan navigasi baris error.
 Terminal PTY 80x25: ReadLn, ReadKey, warna CRT, GotoXY, ClrScr, input tombol,
 dan mouse untuk program Turbo Vision.
@@ -150,7 +153,9 @@ PERBEDAAN DARI BORLAND TURBO PASCAL
 Odin merupakan implementasi baru yang mengikuti antarmuka dan alur klasik,
 bukan salinan identik setiap piksel, dialog, font, compiler, debugger, atau
 perilaku DOS. Tidak menyertakan perangkat lunak, logo, atau berkas Borland.
-Compiler Odin mengikuti bahasa Turbo Pascal 7. Hasil kompilasi berupa
+Compiler Odin mengikuti bahasa Turbo Pascal 7 secara bawaan, diperluas dengan
+class seperti Delphi dan Free Pascal tanpa mode khusus dan tanpa kata
+tercadang baru; exception, interface, dan generic belum didukung. Hasil kompilasi berupa
 program native macOS, Linux, atau Windows, bukan EXE DOS 16-bit. Kode interrupt DOS,
 Port/Mem, assembler x86 16-bit, serta pointer berbasis segment memerlukan
 porting. Tidak ada emulator DOS di dalam paket ini.
@@ -160,7 +165,10 @@ Lihat docs/COMPATIBILITY.txt untuk rincian.
 
 PENGUJIAN
 
-Rilis 2.8.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1): 144 tes
+Rilis 2.9.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1): 147 tes
+Python dan seluruh tes Rust, termasuk korpus class, dan di runner GitHub
+Actions untuk macOS Intel dan Apple Silicon, Ubuntu x86_64 dan arm64, serta
+Windows Server 2025 (tes Rust dan Python lulus di kelimanya). Rilis 2.8.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1): 144 tes
 Python (termasuk jendela grafik Graph dengan piksel sebenarnya) dan seluruh tes
 Rust. Rilis 2.7.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1): 139 tes
 Python (termasuk tampilan Graph lewat PTY) dan seluruh tes Rust. Korpus Math,

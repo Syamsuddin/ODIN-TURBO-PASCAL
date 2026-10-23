@@ -1,0 +1,18 @@
+byte 7
+longint 1000
+longint 100000
+real 2.50
+char x
+string text
+object TBetter
+TBase.Create('child')
+TBase.Create(6)
+TChild.Create(3)
+base TChild
+object TChild
+nothing
+pair 1 2
+boolean TRUE
+real 5.00
+TBase.Create
+TBase.Create(1)

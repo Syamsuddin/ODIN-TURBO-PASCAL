@@ -151,3 +151,53 @@ fn units() {
 fn eof_inside_block() {
     assert_eq!(parse_text("begin\n  x := 1;\n"), Err((10, 3, 1)));
 }
+
+#[test]
+fn class_declarations() {
+    let d = parse_text(
+        "type TB = class; TC = class of TB; \
+         TB = class(TObject) \
+           strict private FX: Integer; \
+           protected class var Count: Integer; \
+           public constructor Create(A: Integer); overload; destructor Destroy; override; \
+           function Area: Real; virtual; abstract; class function Kind: String; \
+           property X: Integer read FX write FX; \
+           property Items[I: Integer]: Integer read GetItem; default; \
+         end; \
+         TE = class(TB); \
+         class function TB.Kind: String; begin Kind := 'b' end; \
+         begin inherited; x := a is TB; y := (a as TB).X end.",
+    )
+    .unwrap();
+    assert!(d.contains("(type TB = (class-forward))"), "{d}");
+    assert!(d.contains("(type TC = (class-of TB))"), "{d}");
+    assert!(d.contains("(strict-private FX: Integer)"), "{d}");
+    assert!(d.contains("(protected class-var Count: Integer)"), "{d}");
+    assert!(d.contains("(constructor Create (A: Integer) [overload])"), "{d}");
+    assert!(d.contains("(destructor Destroy [override])"), "{d}");
+    assert!(d.contains("(function Area : Real [virtual] [abstract])"), "{d}");
+    assert!(d.contains("(class function Kind : string)"), "{d}");
+    assert!(d.contains("(property X : Integer read FX write FX)"), "{d}");
+    assert!(d.contains("(property Items [I: Integer] : Integer read GetItem default)"), "{d}");
+    assert!(d.contains("(type TE = (class (TB)))"), "{d}");
+    assert!(d.contains("(class function TB.Kind : string"), "{d}");
+    assert!(d.contains("(do (inherited))"), "{d}");
+    assert!(d.contains("(:= x (is a TB))"), "{d}");
+    assert!(d.contains("(:= y (. (as a TB) X))"), "{d}");
+}
+
+#[test]
+fn class_words_stay_identifiers_in_tp7_code() {
+    // A TP7 program may use every word of the class extension as a name.
+    let d = parse_text(
+        "type R = record Property, Override: Integer; Class: Char end; \
+         var Is, As, Strict, Published: Integer; Abstract: R; \
+         procedure Overload(Dynamic: Integer); begin end; \
+         begin Is := As + 1; Abstract.Property := Is * As; Overload(Is) end.",
+    )
+    .unwrap();
+    assert!(d.contains("(record (Property Override: Integer) (Class: Char))"), "{d}");
+    assert!(d.contains("(:= Is (+ As 1))"), "{d}");
+    assert!(d.contains("(:= (. Abstract Property) (* Is As))"), "{d}");
+    assert!(d.contains("(do (call Overload Is))"), "{d}");
+}

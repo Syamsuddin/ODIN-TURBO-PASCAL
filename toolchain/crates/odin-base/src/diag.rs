@@ -227,6 +227,13 @@ pub mod code {
     pub const DOS_ONLY: u16 = 901;
     pub const WRONG_ARG_COUNT: u16 = 902;
     pub const NO_VALUE: u16 = 903;
+    pub const CLASS_TYPE_EXPECTED: u16 = 904;
+    pub const NO_VIRTUAL_TO_OVERRIDE: u16 = 905;
+    pub const ABSTRACT_CALL: u16 = 906;
+    pub const PROPERTY_ACCESS: u16 = 907;
+    pub const NO_MATCHING_OVERLOAD: u16 = 908;
+    pub const AMBIGUOUS_OVERLOAD: u16 = 909;
+    pub const CLASS_ONLY: u16 = 910;
     pub const INTERNAL: u16 = 999;
 
     // Warnings and hints.
@@ -234,6 +241,7 @@ pub mod code {
     pub const UNUSED_VARIABLE: u16 = 1001;
     pub const UNINITIALIZED: u16 = 1002;
     pub const IGNORED_DIRECTIVE: u16 = 1003;
+    pub const HIDES_VIRTUAL: u16 = 1004;
 
     /// Standard text for an error number.
     pub fn message(code: u16) -> &'static str {
@@ -356,11 +364,19 @@ pub mod code {
             DOS_ONLY => "Fitur DOS ini tidak tersedia di sistem 64-bit",
             WRONG_ARG_COUNT => "Jumlah parameter tidak cocok",
             NO_VALUE => "Prosedur tidak menghasilkan nilai",
+            CLASS_TYPE_EXPECTED => "Tipe class diharapkan",
+            NO_VIRTUAL_TO_OVERRIDE => "Tidak ada method virtual warisan yang bisa di-override",
+            ABSTRACT_CALL => "Method abstract tidak bisa dipanggil langsung",
+            PROPERTY_ACCESS => "Akses property tidak valid",
+            NO_MATCHING_OVERLOAD => "Tidak ada versi overload yang cocok dengan argumen",
+            AMBIGUOUS_OVERLOAD => "Pemanggilan overload ambigu",
+            CLASS_ONLY => "Hanya berlaku untuk class, bukan object",
             INTERNAL => "Kesalahan internal compiler",
             UNKNOWN_DIRECTIVE => "Direktif tidak dikenal, diabaikan",
             UNUSED_VARIABLE => "Variabel tidak pernah dipakai",
             UNINITIALIZED => "Variabel mungkin belum diberi nilai",
             IGNORED_DIRECTIVE => "Direktif tidak berpengaruh di Odin, diabaikan",
+            HIDES_VIRTUAL => "Method ini menyembunyikan method virtual warisan",
             _ => "Kesalahan",
         }
     }

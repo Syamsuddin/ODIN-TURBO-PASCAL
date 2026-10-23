@@ -114,6 +114,10 @@ pub enum TypeKind {
     Pointer {
         target: Option<u32>,
     },
+    /// A class: a pointer to an instance laid out as record `instance`.
+    Class {
+        instance: u32,
+    },
     Array {
         index: u32,
         lo: i64,
@@ -215,6 +219,10 @@ impl TypeKind {
             TypeKind::Pointer { target } => {
                 pairs.push(("target", opt(*target)));
                 "pointer"
+            }
+            TypeKind::Class { instance } => {
+                pairs.push(("instance", int(*instance)));
+                "class"
             }
             TypeKind::Array { index, lo, hi, elem } => {
                 pairs.extend([("index", int(*index)), ("lo", int(*lo)), ("hi", int(*hi)), ("elem", int(*elem))]);
@@ -369,6 +377,7 @@ fn type_kind(v: &Value) -> Result<TypeKind, String> {
         "real" => TypeKind::Real,
         "string" => TypeKind::String { max: num(v, "max")? as u8 },
         "pointer" => TypeKind::Pointer { target: opt_num(v, "target").map(|n| n as u32) },
+        "class" => TypeKind::Class { instance: u("instance")? },
         "array" => TypeKind::Array { index: u("index")?, lo: num(v, "lo")?, hi: num(v, "hi")?, elem: u("elem")? },
         "openarray" => TypeKind::OpenArray { elem: u("elem")? },
         "openstring" => TypeKind::OpenString,

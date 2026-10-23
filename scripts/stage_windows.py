@@ -91,6 +91,7 @@ def stage(target):
     shutil.copytree(ROOT / "otp-AI" / "EXAMPLES", target / "otp-AI" / "EXAMPLES", ignore=ignore)  # File > Examples - AI
     shutil.copytree(ROOT / "otp-AI" / "DATA", target / "otp-AI" / "DATA", ignore=ignore)
     shutil.copytree(ROOT / "examples-graph", target / "examples-graph", ignore=ignore)  # File > Examples - Graph
+    shutil.copytree(ROOT / "examples-oop", target / "examples-oop", ignore=ignore)  # File > Examples - OOP
     for name in FILES:
         shutil.copy2(ROOT / name, target / name)
     shutil.copy2(ROOT / "scripts" / "launcher_windows.pyw", target / "OdinTurboPascal.pyw")

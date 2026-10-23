@@ -99,6 +99,7 @@ end.</code></pre>
 <li><strong>Bab 15&ndash;16</strong>: pencarian dan pengurutan.</li>
 <li><strong>Bab 17&ndash;20</strong>: berkas, pointer, unit, dan proyek akhir.</li>
 </ul>
+<p><strong>File &gt; Examples - OOP</strong> berisi sembilan program pemrograman berorientasi objek dengan class, dari <code>oop_01_class_pertama.pas</code> sampai proyek <code>oop_09_proyek_toko.pas</code>: constructor dan destructor, enkapsulasi dan property, pewarisan, polimorfisme, class method dan <code>class of</code>, daftar objek dengan <code>is</code>/<code>as</code>, dan overload. Lihat <a href="#class">Class</a>.</p>
 <div class="callout warn"><b>Perhatian</b><p>Program Bab 17 dan Bab 20 membuat berkas data (misalnya <code>catatan.txt</code> atau <code>kontak.dat</code>) di folder berkas <code>.pas</code>-nya. Contoh bawaan berstatus templat, jadi simpan salinannya ke folder sendiri dengan <strong>File &gt; Save as</strong> supaya berkas data mudah dicari.</p></div>
 
 <h3 id="daftar-bab">Daftar bab dan program</h3>
@@ -191,7 +192,7 @@ end.</code></pre>
 
 <h3 id="opsi-compiler">Options &gt; Compiler</h3>
 <ul>
-<li>Compiler Odin mengikuti bahasa Turbo Pascal 7; tidak ada pilihan mode lain.</li>
+<li>Compiler Odin mengikuti bahasa Turbo Pascal 7, diperluas dengan class (OOP gaya Delphi/Free Pascal). Tidak ada pilihan mode lain, dan perluasan itu tidak perlu diaktifkan.</li>
 <li><strong>Range checks</strong> dan <strong>overflow checks</strong> aktif secara bawaan.</li>
 <li>Informasi baris untuk runtime error selalu dibuat. <strong>Debug &gt; Start debugging</strong> membangun ulang dengan pengait debugger.</li>
 </ul>
@@ -289,6 +290,9 @@ end.</code></pre>
 <tr><td>Save all</td><td>&mdash;</td><td>Menyimpan semua editor yang berubah.</td></tr>
 <tr><td>Recent files...</td><td>&mdash;</td><td>Daftar berkas yang baru dibuka.</td></tr>
 <tr><td>Examples...</td><td>&mdash;</td><td>Tutorial dan contoh bawaan.</td></tr>
+<tr><td>Examples - AI...</td><td>&mdash;</td><td>Contoh pustaka AI/machine learning OTP-AI.</td></tr>
+<tr><td>Examples - Graph...</td><td>&mdash;</td><td>Contoh unit Graph yang membuka jendela grafik.</td></tr>
+<tr><td>Examples - OOP...</td><td>&mdash;</td><td>Contoh pemrograman berorientasi objek dengan class.</td></tr>
 <tr><td>Change directory...</td><td>&mdash;</td><td>Mengganti folder kerja dialog berkas.</td></tr>
 <tr><td>Exit</td><td><kbd>Alt+X</kbd></td><td>Keluar dari IDE.</td></tr>
 </table></div>
@@ -453,11 +457,14 @@ end.</code></pre>
 <!--@pascal:DIREKTIF COMPILER-->
 <h3 id="kode-error">Kode runtime error</h3>
 <!--@pascal:KODE RUNTIME ERROR-->
+<h3 id="class">Class (perluasan OOP)</h3>
+<p>Turbo Pascal 7 adalah bahasa bawaannya. Di atasnya Odin menambah class seperti Delphi dan Free Pascal, tanpa direktif dan tanpa kata cadangan baru: program TP7 yang memakai kata <code>class</code>, <code>property</code>, <code>is</code>, atau <code>as</code> sebagai nama tetap dikompilasi. Belum termasuk: exception, interface, generic, <code>procedure of object</code>, dan <code>Result</code>.</p>
+<!--@pascal:CLASS (PERLUASAN OOP)-->
 </section>
 
 <section class="sec" id="s-unit">
 <h2 id="unit">Unit Pustaka</h2>
-<p>Unit yang tersedia: System, Crt, Dos, WinDos, Strings, Printer, Objects, Graph, Overlay, dan Odin Vision (termasuk ColorSel dan TextView), ditambah Math dan SysUtils (subset unit Free Pascal/Delphi, bukan unit TP7). <strong>Tidak tersedia</strong>: Graph3 dan Turbo3.</p>
+<p>Unit yang tersedia: System, Crt, Dos, WinDos, Strings, Printer, Objects, Graph, Overlay, dan Odin Vision (termasuk ColorSel dan TextView), ditambah Math, SysUtils, Classes, dan Contnrs (subset unit Free Pascal/Delphi, bukan unit TP7). <strong>Tidak tersedia</strong>: Graph3 dan Turbo3.</p>
 
 <h3 id="unit-crt">Crt</h3>
 <!--@pascal:UNIT CRT-->
@@ -467,6 +474,10 @@ end.</code></pre>
 <!--@pascal:UNIT STRINGS-->
 <h3 id="unit-objects">Objects</h3>
 <!--@pascal:UNIT OBJECTS-->
+<h3 id="unit-classes">Classes</h3>
+<!--@pascal:UNIT CLASSES-->
+<h3 id="unit-contnrs">Contnrs</h3>
+<!--@pascal:UNIT CONTNRS-->
 <h3 id="unit-graph">Graph</h3>
 <!--@pascal:UNIT GRAPH-->
 <h3 id="unit-windos">WinDos</h3>
@@ -507,7 +518,8 @@ end.</code></pre>
 <div class="tw"><table class="wrap">
 <tr><th>Komponen</th><th>Status</th></tr>
 <tr><td>Editor dan operasi berkas</td><td>Diimplementasikan, diuji GUI Linux</td></tr>
-<tr><td>Compiler Odin (bahasa TP7)</td><td>Diimplementasikan, korpus 77 program</td></tr>
+<tr><td>Compiler Odin (bahasa TP7)</td><td>Diimplementasikan, korpus 97 program</td></tr>
+<tr><td>Perluasan OOP (class)</td><td>Diuji di Mac Intel (korpus <code>tests/pascal/classes</code>, debugger, contoh) dan di runner CI kelima platform; belum di perangkat fisik Apple Silicon atau Windows</td></tr>
 <tr><td><code>ReadLn</code>, <code>WriteLn</code></td><td>Diuji melalui binary dan PTY</td></tr>
 <tr><td>Crt: warna, GotoXY, ClrScr, ReadKey</td><td>Diuji melalui program Crt nyata di Linux</td></tr>
 <tr><td>Unit Pascal</td><td>Diuji dengan unit <code>matematika</code> (Bab 19)</td></tr>
@@ -524,9 +536,9 @@ end.</code></pre>
 <div class="callout warn"><b>Batas klaim</b><p>Yang diuji: compiler Odin di Mac Intel (Darwin 24.6), VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu), serta runner GitHub Actions untuk macOS 15 Apple Silicon, Ubuntu x86_64 dan arm64, dan Windows Server 2025. <strong>Belum diuji langsung</strong>: Mac Apple Silicon fisik, PC Linux fisik, PC Windows fisik, installer di Apple Silicon dan Windows, Mac bersih tanpa Xcode Command Line Tools, LaunchServices/Gatekeeper, serta <kbd>Option</kbd> pada keyboard Mac sungguhan.</p></div>
 
 <h3 id="backend">Compiler</h3>
-<p>Compiler adalah toolchain Odin: <code>odinpc</code> (Rust) dengan assembler, linker, debugger, dan runtime library sendiri. Target: x86_64-darwin, aarch64-darwin (Mach-O, dengan tanda tangan kode ad-hoc yang diwajibkan macOS di Apple Silicon), x86_64-linux dan aarch64-linux (ELF dinamis, glibc 2.34 atau lebih baru), x86_64-windows (PE32+). Sampai 2.3.0 Free Pascal bisa dipilih sebagai backend alternatif; backend itu, beserta mode ObjFPC/Delphi, sudah dicabut.</p>
+<p>Compiler adalah toolchain Odin: <code>odinpc</code> (Rust) dengan assembler, linker, debugger, dan runtime library sendiri. Target: x86_64-darwin, aarch64-darwin (Mach-O, dengan tanda tangan kode ad-hoc yang diwajibkan macOS di Apple Silicon), x86_64-linux dan aarch64-linux (ELF dinamis, glibc 2.34 atau lebih baru), x86_64-windows (PE32+). Sampai 2.3.0 Free Pascal bisa dipilih sebagai backend alternatif; backend itu, beserta mode ObjFPC/Delphi, sudah dicabut. Class kini dipahami <code>odinpc</code> sendiri tanpa mode khusus.</p>
 <ul>
-<li>Bahasanya Turbo Pascal 7 di platform 64-bit. Perbedaan CPU, ukuran pointer, ABI, sistem berkas, dan unit tetap berlaku.</li>
+<li>Bahasanya Turbo Pascal 7 di platform 64-bit, diperluas dengan class (lihat <a href="#class">Class</a>). Perbedaan CPU, ukuran pointer, ABI, sistem berkas, dan unit tetap berlaku.</li>
 <li>Di arm64, bendera FPSR diperiksa sesudah operasi real sehingga runtime error 207, 200, atau 205 muncul seperti di x86-64.</li>
 <li>Di Windows, berkas teks memakai CRLF, path memakai <code>\</code> dan huruf drive, dan <code>Printer</code> mencetak lewat <code>notepad /p</code>.</li>
 </ul>
@@ -544,7 +556,8 @@ end.</code></pre>
 <tr><td>WinDos</td><td>Tersedia: Dos dengan <code>PChar</code> (<code>FindFirst</code>, <code>FileSplit</code>, <code>GetCurDir</code>, ...), diteruskan ke Dos. Tanpa <code>Intr</code>, <code>MsDos</code>, dan <code>TRegisters</code>.</td></tr>
 <tr><td>Graph</td><td>Tersedia: antarmuka BGI lengkap (garis, lingkaran, busur, isian, <code>FloodFill</code>, teks, <code>GetImage</code>/<code>PutImage</code>, palet, halaman). Gambar disimpan di memori per piksel dan di IDE tampil di jendela grafik dengan piksel sebenarnya (di terminal biasa hanya pratinjau kasar dengan karakter setengah blok); tanpa berkas driver (<code>.BGI</code>) dan font (<code>.CHR</code>), font stroke diganti font bitmap 8 x 8. Rinciannya di bagian Unit Pustaka.</td></tr>
 <tr><td>Overlay</td><td>Tersedia sebagai antarmuka saja: <code>OvrInit</code> selalu berhasil karena seluruh kode sudah ada di memori. Direktif <code>$O</code> diabaikan.</td></tr>
-<tr><td>Math, SysUtils</td><td>Tambahan Odin (bukan unit TP7): subset unit Free Pascal/Delphi tanpa kelas, exception, <code>Format</code>, parameter bawaan, dan overload.</td></tr>
+<tr><td>Math, SysUtils</td><td>Tambahan Odin (bukan unit TP7): subset unit Free Pascal/Delphi tanpa exception, <code>Format</code>, parameter bawaan, dan overload rutin biasa.</td></tr>
+<tr><td>Classes, Contnrs</td><td>Tambahan Odin (bukan unit TP7), ditulis dengan class: <code>TList</code>, <code>TStringList</code>, dan <code>TObjectList</code>. Indeks di luar daftar menjadi runtime error 201.</td></tr>
 <tr><td>Graph3, Turbo3</td><td>Tidak tersedia.</td></tr>
 </table></div>
 
@@ -595,6 +608,7 @@ end.</code></pre>
 <tr><th>Istilah</th><th>Arti</th></tr>
 <tr><td>odinpc</td><td>Compiler Odin yang membangun program: compiler, assembler, linker, dan debugger dalam satu berkas.</td></tr>
 <tr><td>Build cache</td><td>Folder hasil kompilasi per program dan per pilihan compiler, terpisah dari folder sumber.</td></tr>
+<tr><td>Class</td><td>Tipe objek rujukan gaya Delphi/Free Pascal, perluasan Odin di atas TP7: objeknya dibuat dengan <code>Create</code> dan dibebaskan dengan <code>Free</code>.</td></tr>
 <tr><td>Odin Vision</td><td>Turbo Vision milik Odin, API-nya mengikuti Turbo Vision TP7.</td></tr>
 <tr><td>Primary file</td><td>Berkas utama yang selalu dikompilasi saat Run, apa pun editor yang aktif.</td></tr>
 <tr><td>PTY</td><td>Pseudo-terminal: saluran masukan/keluaran interaktif antara IDE dan program.</td></tr>

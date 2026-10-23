@@ -24,6 +24,10 @@ pub(crate) enum Class {
     Nil,
     Set,
     Proc,
+    /// A class instance reference.
+    Obj,
+    /// A class reference (`class of T`).
+    Meta,
     Other,
 }
 
@@ -38,6 +42,8 @@ pub(crate) enum Resolved {
     Method(Box<crate::object::MethodRef>),
     /// `TObj.Method` outside a method of TObj: only its address is usable.
     MethodName(RoutineId, Span),
+    /// A property with the instance it belongs to.
+    Property(Box<crate::object::PropRef>),
 }
 
 /// 256-bit set membership map used while building set constants.
@@ -57,6 +63,8 @@ impl Analyzer<'_> {
             Type::Nil => Class::Nil,
             Type::Set { .. } => Class::Set,
             Type::Procedural(_) => Class::Proc,
+            Type::Class(_) => Class::Obj,
+            Type::ClassRef(_) => Class::Meta,
             _ => Class::Other,
         }
     }
@@ -165,6 +173,36 @@ impl Analyzer<'_> {
         Ok(None)
     }
 
+    /// Member `field` of an analysed value: a record field, or a member of
+    /// an object, class instance or class reference.
+    pub(crate) fn member(&mut self, base: Expr, field: &ast::Ident, span: Span) -> SResult<Resolved> {
+        let base_ty = base.ty;
+        let unknown = |s: &Self| match s.hidden_member(base_ty, &field.key()) {
+            Some(vis) => s.error_with(code::CANNOT_ACCESS, field.span, format!(": {} ({vis})", field.name)),
+            None => s.error_with(code::UNKNOWN_IDENT, field.span, format!(": {}", field.name)),
+        };
+        if self.types.object(base.ty).is_some() {
+            return match self.object_member(base, &field.key(), span)? {
+                Some(r) => Ok(r),
+                None => unknown(self),
+            };
+        }
+        match self.types.get(base.ty).clone() {
+            Type::Class(_) => {
+                let instance = self.class_instance(base, span);
+                match self.object_member(instance, &field.key(), span)? {
+                    Some(r) => Ok(r),
+                    None => unknown(self),
+                }
+            }
+            Type::ClassRef(c) => match self.class_member(c, Some(base), &field.key(), span)? {
+                Some(r) => Ok(r),
+                None => unknown(self),
+            },
+            _ => Ok(Resolved::Value(self.field_access(base, field, span)?)),
+        }
+    }
+
     pub(crate) fn resolve_name(&mut self, id: &ast::Ident) -> SResult<Resolved> {
         let key = id.key();
         if let Some(r) = self.with_member(&key, id.span)? {
@@ -175,7 +213,14 @@ impl Analyzer<'_> {
         }
         match self.lookup(&key) {
             Some(sym) => self.sym_to_resolved(sym, id.span),
-            None => self.error_with(code::UNKNOWN_IDENT, id.span, format!(": {}", id.name)),
+            None => {
+                // A member of the method's own class that it may not use.
+                let own = self.method_frame().and_then(|(_, scope)| self.types.object(scope.ty)?.class);
+                match own.and_then(|c| self.hidden_member(c, &key)) {
+                    Some(vis) => self.error_with(code::CANNOT_ACCESS, id.span, format!(": {} ({vis})", id.name)),
+                    None => self.error_with(code::UNKNOWN_IDENT, id.span, format!(": {}", id.name)),
+                }
+            }
         }
     }
 
@@ -198,19 +243,22 @@ impl Analyzer<'_> {
                         Some(Sym::Type(t)) if self.types.object(t).is_some() => {
                             return self.qualified_method(t, field, e.span);
                         }
+                        Some(Sym::Type(t)) if self.types.class_object(t).is_some() => {
+                            return match self.class_member(t, None, &field.key(), e.span)? {
+                                Some(r) => Ok(r),
+                                None => self.error_with(code::UNKNOWN_IDENT, field.span, format!(": {}", field.name)),
+                            };
+                        }
                         _ => {}
                     }
                 }
                 let base = self.expr(base)?;
-                if self.types.object(base.ty).is_some() {
-                    return match self.object_member(base, &field.key(), e.span)? {
-                        Some(r) => Ok(r),
-                        None => self.error_with(code::UNKNOWN_IDENT, field.span, format!(": {}", field.name)),
-                    };
-                }
-                Ok(Resolved::Value(self.field_access(base, field, e.span)?))
+                self.member(base, field, e.span)
             }
-            ast::ExprKind::Inherited(name) => self.inherited_member(name),
+            ast::ExprKind::Inherited(Some(name)) => self.inherited_member(name),
+            ast::ExprKind::Inherited(None) => {
+                self.error_with(code::NO_INHERITED, e.span, ": inherited tanpa nama hanya sebagai statement")
+            }
             _ => Ok(Resolved::Value(self.expr(e)?)),
         }
     }
@@ -228,6 +276,9 @@ impl Analyzer<'_> {
             }
             Resolved::Builtin(b, s) => self.builtin_expr(b, &[], s),
             Resolved::Method(m) => self.method_value(*m, &[], span),
+            Resolved::Property(p) => self.property_read(*p, &[], span),
+            // A class name as a value is the class reference.
+            Resolved::Type(t, s) if self.types.class_object(t).is_some() => self.class_value(t, s),
             Resolved::Type(_, s) | Resolved::Unit(_, s) | Resolved::MethodName(_, s) => {
                 self.error(code::ERROR_IN_EXPR, s)
             }
@@ -301,8 +352,26 @@ impl Analyzer<'_> {
             }
             ast::ExprKind::Call { callee, args } => self.call_expr(callee, args, span, expected),
             ast::ExprKind::Index { base, indices } => {
-                let base = self.expr(base)?;
-                self.index(base, indices)
+                let args: Vec<ast::Arg> =
+                    indices.iter().map(|i| ast::Arg { value: i.clone(), width: None, decimals: None }).collect();
+                // An array property (`Obj.Items[I]`), or the default one
+                // (`Obj[I]`).
+                let r = self.resolve(base)?;
+                if let Resolved::Property(p) = r {
+                    if !p.prop.params.is_empty() {
+                        return self.property_read(*p, &args, span);
+                    }
+                    let v = self.property_read(*p, &[], base.span)?;
+                    if let Some(p) = self.default_property(&v, span) {
+                        return self.property_read(p, &args, span);
+                    }
+                    return self.index(v, indices);
+                }
+                let base_value = self.resolved_value(r, None, base.span)?;
+                if let Some(p) = self.default_property(&base_value, span) {
+                    return self.property_read(p, &args, span);
+                }
+                self.index(base_value, indices)
             }
             ast::ExprKind::Deref(x) => {
                 let p = self.expr(x)?;
@@ -336,9 +405,14 @@ impl Analyzer<'_> {
     }
 
     pub(crate) fn field_access(&mut self, base: Expr, field: &ast::Ident, span: Span) -> SResult<Expr> {
+        let base = match self.types.get(base.ty) {
+            Type::Class(_) => self.class_instance(base, span),
+            _ => base,
+        };
         if self.types.object(base.ty).is_some() {
             return match self.object_member(base, &field.key(), span)? {
                 Some(Resolved::Value(e)) => Ok(e),
+                Some(Resolved::Property(p)) => self.property_read(*p, &[], span),
                 Some(_) => self.error(code::FIELD_IDENT_EXPECTED, field.span),
                 None => self.error_with(code::UNKNOWN_IDENT, field.span, format!(": field {}", field.name)),
             };
@@ -455,6 +529,14 @@ impl Analyzer<'_> {
                 // @Obj.Method, @TObj.Method: the code address of the method.
                 Resolved::Method(m) => Ok(Expr::new(ExprKind::RoutineAddr(m.method.routine), b.pointer, span)),
                 Resolved::MethodName(id, _) => Ok(Expr::new(ExprKind::RoutineAddr(id), b.pointer, span)),
+                Resolved::Property(p) => {
+                    let v = self.property_read(*p, &[], x.span)?;
+                    if !v.is_lvalue() {
+                        return self.error(code::BAD_AT_ARGUMENT, x.span);
+                    }
+                    let ty = if self.sw.get(Switches::TYPED_AT) { self.pointer_to(v.ty) } else { b.pointer };
+                    Ok(Expr::new(ExprKind::AddrOf(Box::new(v)), ty, span))
+                }
                 // @P on a procedural variable is the routine address it holds (TP).
                 Resolved::Value(v) if matches!(self.types.get(v.ty), Type::Procedural(_)) => {
                     Ok(Expr::new(ExprKind::Convert(Conv::Bits, Box::new(v)), b.pointer, span))
@@ -625,6 +707,7 @@ impl Analyzer<'_> {
                 (if op == B::Shl { BinOp::Shl } else { BinOp::Shr }, l, r, if wide { b.int64 } else { b.longint })
             }
             B::Eq | B::Ne | B::Lt | B::Le | B::Gt | B::Ge => return self.comparison(op, l, r, span),
+            B::Is | B::As => return self.class_test(op, l, r, span),
             B::In => {
                 if rc != Class::Set || !self.types.is_ordinal(l.ty) {
                     return self.error(code::OPERAND_TYPES, span);
@@ -693,8 +776,8 @@ impl Analyzer<'_> {
             let l = self.to_string_value(l);
             let r = self.to_string_value(r);
             (BinOp::StrCmp(cond), l, r)
-        } else if matches!(lc, Class::Ptr | Class::Nil | Class::Proc)
-            && matches!(rc, Class::Ptr | Class::Nil | Class::Proc)
+        } else if matches!(lc, Class::Ptr | Class::Nil | Class::Proc | Class::Obj | Class::Meta)
+            && matches!(rc, Class::Ptr | Class::Nil | Class::Proc | Class::Obj | Class::Meta)
             && eq_only
         {
             (BinOp::Cmp(cond), l, r)
@@ -955,6 +1038,15 @@ impl Analyzer<'_> {
                 _ => mismatch(self),
             },
             (Class::Ptr, Class::Nil) | (Class::Proc, Class::Nil) => Ok(Expr { ty: target, ..e }),
+            (Class::Obj | Class::Meta, Class::Nil) => Ok(Expr { ty: target, ..e }),
+            // An instance of a descendant class for its ancestor.
+            (Class::Obj, Class::Obj) if self.types.is_descendant(e.ty, target) => Ok(Expr { ty: target, ..e }),
+            (Class::Meta, Class::Meta) => match (self.class_of_ref(e.ty), self.class_of_ref(target)) {
+                (Some(s), Some(t)) if self.types.is_descendant(s, t) => Ok(Expr { ty: target, ..e }),
+                _ => mismatch(self),
+            },
+            // Any instance or class reference fits an untyped Pointer.
+            (Class::Ptr, Class::Obj | Class::Meta) if target == b.pointer => Ok(Expr { ty: target, ..e }),
             (Class::Ptr, Class::Ptr) => {
                 let (Type::Pointer(t), Type::Pointer(s)) =
                     (self.types.get(target).clone(), self.types.get(e.ty).clone())
@@ -1078,14 +1170,15 @@ impl Analyzer<'_> {
         let tc = self.class(target);
         let sc = self.class(v.ty);
         let ordinal = |c: Class| matches!(c, Class::Int | Class::Char | Class::Bool | Class::Enum(_));
-        if ordinal(tc) && (ordinal(sc) || sc == Class::Ptr) {
+        let reference = |c: Class| matches!(c, Class::Ptr | Class::Proc | Class::Obj | Class::Meta);
+        if ordinal(tc) && (ordinal(sc) || matches!(sc, Class::Ptr | Class::Obj | Class::Meta)) {
             if let ExprKind::Int(n) = v.kind {
                 let k = self.types.int_kind(target);
                 return Ok(Expr::new(ExprKind::Int(wrap(n, k)), target, span));
             }
             return Ok(Expr::new(ExprKind::Convert(Conv::Resize, Box::new(v)), target, span));
         }
-        if matches!(tc, Class::Ptr | Class::Proc) && matches!(sc, Class::Ptr | Class::Proc | Class::Int | Class::Nil) {
+        if reference(tc) && (reference(sc) || matches!(sc, Class::Int | Class::Nil)) {
             return Ok(Expr::new(ExprKind::Convert(Conv::Bits, Box::new(v)), target, span));
         }
         if tc == Class::Real && sc == Class::Int {

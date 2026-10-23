@@ -17,19 +17,27 @@ type PendingPointer = (TypeId, ast::QualIdent);
 impl Analyzer<'_> {
     pub(crate) fn type_section(&mut self, items: &[ast::TypeDecl]) -> SResult<()> {
         let mut pending: Vec<PendingPointer> = Vec::new();
+        // `^T` names the T of this section even when an outer T (such as
+        // System.TObject) is visible before it.
+        let outer = std::mem::replace(&mut self.section_types, items.iter().map(|i| i.name.key()).collect());
         for item in items {
             if let ast::TypeKind::Object(obj) = &item.ty.kind {
+                if obj.class {
+                    self.class_decl(&item.name, obj)?;
+                    continue;
+                }
                 // Declared first: methods may mention their own type.
                 let ty = self.types.add(Type::Record { fields: Vec::new(), size: 0, align: 1 });
                 self.types.set_name(ty, &item.name.name);
                 self.declare(&item.name, Sym::Type(ty))?;
-                self.object_type(ty, &item.name, obj)?;
+                self.object_type(ty, None, &item.name, obj)?;
                 continue;
             }
             let ty = self.resolve_type_inner(&item.ty, Some(&mut pending))?;
             self.types.set_name(ty, &item.name.name);
             self.declare(&item.name, Sym::Type(ty))?;
         }
+        self.section_types = outer;
         for (ptr, q) in pending {
             match self.lookup_type(&q)? {
                 Some(t) => self.types.set(ptr, Type::Pointer(Some(t))),
@@ -38,7 +46,7 @@ impl Analyzer<'_> {
                 }
             }
         }
-        Ok(())
+        self.check_forward_classes()
     }
 
     /// `Some(type)` if the name denotes a type, `None` if it is undeclared,
@@ -156,6 +164,11 @@ impl Analyzer<'_> {
             }
             // Object types only appear as declarations of a type section.
             ast::TypeKind::Object(_) => self.error(code::LOCAL_OBJECT_TYPE, t.span),
+            ast::TypeKind::ClassOf(q) => match self.lookup_type(q)? {
+                Some(c) if matches!(self.types.get(c), Type::Class(_)) => Ok(self.types.add(Type::ClassRef(c))),
+                Some(_) => self.error(code::CLASS_TYPE_EXPECTED, q.span()),
+                None => self.error_with(code::UNKNOWN_IDENT, q.span(), format!(": {}", q.name.name)),
+            },
             ast::TypeKind::Set { base, .. } => {
                 let bt = self.resolve_type(base)?;
                 let (lo, hi) = self.ordinal_bounds(bt, base.span)?;
@@ -166,6 +179,16 @@ impl Analyzer<'_> {
                 Ok(self.types.add(Type::Set { base: bt, first_byte, size }))
             }
             ast::TypeKind::Pointer(target) => match &target.kind {
+                ast::TypeKind::Named(q)
+                    if pending.is_some()
+                        && q.unit.is_none()
+                        && self.section_types.contains(&q.name.key())
+                        && self.lookup_local(&q.name.key()).is_none() =>
+                {
+                    let p = self.types.add(Type::Pointer(None));
+                    pending.unwrap().push((p, q.clone()));
+                    Ok(p)
+                }
                 ast::TypeKind::Named(q) => match self.lookup_type(q)? {
                     Some(tt) => Ok(self.types.add(Type::Pointer(Some(tt)))),
                     None => match pending {
@@ -185,6 +208,7 @@ impl Analyzer<'_> {
             ast::TypeKind::Procedural { params, result, .. } => {
                 let heading = ast::RoutineHeading {
                     kind: if result.is_some() { ast::RoutineKind::Function } else { ast::RoutineKind::Procedure },
+                    class_method: false,
                     owner: None,
                     name: ast::Ident { name: String::new(), span: t.span },
                     params: params.clone(),

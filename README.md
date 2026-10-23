@@ -6,7 +6,7 @@
 
 **Layar biru Turbo Pascal yang Anda kenal, dengan compiler dan debugger yang menghasilkan program native.**
 
-[![Versi](https://img.shields.io/badge/rilis-2.8.0-0000aa?style=flat-square)](CHANGELOG.md)
+[![Versi](https://img.shields.io/badge/rilis-2.9.0-0000aa?style=flat-square)](CHANGELOG.md)
 [![CI](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml/badge.svg)](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml)
 [![Lisensi GPL v3](https://img.shields.io/badge/lisensi-GPL--3.0--or--later-ffff55?style=flat-square)](LICENSE)
 [![Offline](https://img.shields.io/badge/offline-tanpa%20telemetri-55ff55?style=flat-square)](#privasi-dan-lokasi-data)
@@ -22,7 +22,7 @@
 </div>
 
 > [!IMPORTANT]
-> **Rilis 2.8.0** membuat program yang memakai unit **Graph** membuka **jendela grafik sungguhan** di IDE (piksel sebenarnya, tombol diteruskan ke `ReadKey`), dan menambah menu **File › Examples - Graph...** dengan 14 contoh grafik. Rilis 2.7.0 menambahkan unit Graph, WinDos, Overlay, Math, dan SysUtils. IDE, toolchain Odin, debugger terpadu, dan Odin Vision berjalan di macOS (Intel dan Apple Silicon), Linux (x86_64 dan arm64), dan **Windows** (x86_64). Windows, Apple Silicon, dan Linux diuji di runner GitHub Actions, belum di perangkat fisik pengembang. Lihat [Riwayat Rilis](#riwayat-rilis) dan [Status Pengujian](#status-pengujian).
+> **Rilis 2.9.0** memperluas bahasa Turbo Pascal 7 dengan **OOP berbasis `class`** seperti Delphi dan Free Pascal (pewarisan, `virtual`/`override`/`abstract`, `property`, `is`/`as`, `class of`, overload method), tanpa mode khusus sehingga program TP7 tetap dikompilasi apa adanya. Rilis ini juga membawa unit **Classes** dan **Contnrs** serta menu **File › Examples - OOP...** dengan 9 contoh. Rilis 2.8.0 menambahkan jendela grafik sungguhan untuk unit Graph. IDE, toolchain Odin, debugger terpadu, dan Odin Vision berjalan di macOS (Intel dan Apple Silicon), Linux (x86_64 dan arm64), dan **Windows** (x86_64). Windows, Apple Silicon, dan Linux diuji di runner GitHub Actions, belum di perangkat fisik pengembang. Lihat [Riwayat Rilis](#riwayat-rilis) dan [Status Pengujian](#status-pengujian).
 
 ## Daftar Isi
 
@@ -50,6 +50,8 @@
 
 **Odin Turbo Pascal** adalah IDE Pascal yang menghadirkan kembali pengalaman Turbo Pascal era DOS: layar biru, teks kuning, menu abu-abu, jendela editor berbingkai, dan tombol fungsi klasik. Bedanya, kode Anda dikompilasi menjadi **program native untuk macOS, Linux, atau Windows**, tanpa emulator DOS. Setelah terpasang, Odin tidak memerlukan internet dan tidak mengirim telemetri.
 
+Bahasanya **Turbo Pascal 7 secara bawaan, diperluas dengan OOP berbasis `class`** seperti Delphi dan Free Pascal: program TP7 tetap dikompilasi apa adanya, dan siswa bisa melanjutkan ke pewarisan, polimorfisme, dan property tanpa pindah alat.
+
 Compiler-nya adalah **toolchain Odin sendiri**: compiler Pascal, assembler, linker, runtime library, Odin Vision (Turbo Vision milik Odin), dan debugger, semuanya ditulis dari nol, untuk macOS (Intel dan Apple Silicon), Linux (x86_64 dan arm64), dan Windows (x86_64). Odin tidak memerlukan Free Pascal, Xcode, LLDB, atau GCC; satu-satunya dependensi adalah Python dengan Tk untuk IDE-nya. Free Pascal, yang dipakai rilis 1.0.0 dan menjadi backend alternatif sampai 2.3.0, sudah dicabut.
 
 Odin cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, guru yang mengajar Pascal di kelas, dan siapa saja yang rindu menekan `Ctrl+F9` lalu melihat programnya berjalan.
@@ -68,14 +70,15 @@ Odin cocok untuk siswa dan mahasiswa yang belajar algoritma dan pemrograman, gur
 - **Program native, bukan emulasi.** Hasil kompilasi adalah executable asli untuk CPU dan sistem operasi Anda, dan bisa diekspor untuk dijalankan di luar IDE.
 - **Compiler dan debugger milik sendiri.** Di macOS, Linux, dan Windows, Odin mengompilasi dengan toolchain yang ditulis dari nol dan men-debug tanpa LLDB atau GDB, dengan jendela Watches dan Call stack seperti Turbo Pascal.
 - **Program interaktif sungguhan.** `ReadLn`, `ReadKey`, warna `Crt`, dan `GotoXY` berjalan di User screen 80×25. Aplikasi Turbo Vision (Odin Vision) juga berjalan di sana, lengkap dengan mouse.
-- **Siap untuk kelas.** Ada sebelas contoh program berbahasa Indonesia, referensi Pascal ringkas, dan daftar pesan compiler yang langsung melompat ke baris yang salah.
+- **Siap untuk kelas.** Ada tutorial 20 bab, contoh OOP, contoh grafik, dan contoh AI berbahasa Indonesia, referensi Pascal ringkas, dan daftar pesan compiler yang langsung melompat ke baris yang salah.
+- **Dari TP7 ke OOP.** Tipe `object` Turbo Pascal tetap ada, dan `class` gaya Delphi/Free Pascal tersedia tanpa mode khusus: `virtual`/`override`/`abstract`, `property`, `is`/`as`, `class of`, dan overload method.
 - **Aman untuk berkas Anda.** Penyimpanan atomik, deteksi perubahan dari luar, dan pemulihan sesi otomatis setiap 10 detik.
 - **Ringan, terbuka, dan privat.** Source yang mudah dipelajari dan diubah, berlisensi GNU GPL v3, tanpa akun, server, API key, atau telemetri.
 
 <details>
 <summary><strong>English summary</strong></summary>
 
-Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS, Linux and Windows. Programs compile into native binaries and run in a built-in 80×25 terminal with Crt and Turbo Vision support, including the mouse. Odin's own toolchain, written from scratch in Rust and Pascal (compiler with x86-64 and AArch64 code generators, assembler, Mach-O, ELF and PE linkers, runtime library, Odin Vision, and an integrated Turbo Pascal–style debugger with Watches, Locals and Call stack windows), is the only compiler, on Intel and Apple Silicon Macs, x86_64 and arm64 Linux, and x86_64 Windows; Apple Silicon, Linux and Windows are verified on GitHub Actions runners. Free Pascal, Xcode and LLDB are not needed; the IDE itself needs Python with Tk. The Free Pascal backend of releases up to 2.3.0 has been removed. Messages and documentation are in Indonesian. Licensed under the GNU GPL v3 or later.
+Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS, Linux and Windows. The language is Turbo Pascal 7 by default, extended with Delphi/Free Pascal–style classes (no mode switch, no new reserved words). Programs compile into native binaries and run in a built-in 80×25 terminal with Crt and Turbo Vision support, including the mouse. Odin's own toolchain, written from scratch in Rust and Pascal (compiler with x86-64 and AArch64 code generators, assembler, Mach-O, ELF and PE linkers, runtime library, Odin Vision, and an integrated Turbo Pascal–style debugger with Watches, Locals and Call stack windows), is the only compiler, on Intel and Apple Silicon Macs, x86_64 and arm64 Linux, and x86_64 Windows; Apple Silicon, Linux and Windows are verified on GitHub Actions runners. Free Pascal, Xcode and LLDB are not needed; the IDE itself needs Python with Tk. The Free Pascal backend of releases up to 2.3.0 has been removed. Messages and documentation are in Indonesian. Licensed under the GNU GPL v3 or later.
 
 </details>
 
@@ -92,7 +95,7 @@ Odin Turbo Pascal is a DOS-era, Turbo Pascal–style IDE for macOS, Linux and Wi
 
 ### Kompilasi
 
-- Compiler Odin (`odinpc`): bahasa Turbo Pascal 7, termasuk tipe `object`, dengan unit standar dan Turbo Vision (lihat [Unit standar](#unit-standar-turbo-pascal)). Tidak memerlukan Free Pascal, Xcode, maupun GCC. Menghasilkan program x86_64 dan arm64 untuk CPU Anda (di Windows: x86_64); di Apple Silicon, linker Odin menulis tanda tangan kode ad-hoc yang diwajibkan macOS.
+- Compiler Odin (`odinpc`): bahasa Turbo Pascal 7 secara bawaan, termasuk tipe `object`, dengan unit standar dan Turbo Vision (lihat [Unit standar](#unit-standar-turbo-pascal)), diperluas dengan OOP berbasis `class` (lihat [OOP dengan class](#oop-dengan-class)). Tidak memerlukan Free Pascal, Xcode, maupun GCC. Menghasilkan program x86_64 dan arm64 untuk CPU Anda (di Windows: x86_64); di Apple Silicon, linker Odin menulis tanda tangan kode ad-hoc yang diwajibkan macOS.
 - Compile, Make, dan Build. Tersedia *primary file* untuk proyek yang terdiri dari program dan unit.
 - Unit path dan include path, range check, dan overflow check.
 - Daftar diagnostik compiler: klik untuk melompat ke baris error, dan `Alt+F8` untuk pesan berikutnya. Pesan compiler berbahasa Indonesia dengan nomor galat gaya Turbo Pascal 7.
@@ -194,7 +197,7 @@ Pemasang macOS dapat memasang Python dengan Tk melalui Homebrew, dan pemasang Wi
 
 **Pemasang satu berkas (offline).** Unduh `OdinTurboPascal-VERSI-macos-x86_64.pkg` (Mac Intel) dari halaman Releases, lalu buka. Paket memasang aplikasi di `~/Applications` tanpa kata sandi administrator dan membawa Python dengan Tk sendiri, jadi tidak ada yang diunduh dan tidak perlu Homebrew atau Xcode. Paket belum ditandatangani Apple: bila macOS menahannya, klik kanan paketnya, pilih **Open**, atau gunakan **System Settings › Privacy & Security › Open Anyway**. Dibangun oleh `python3 scripts/build_setup_mac.py` dan oleh CI. Diuji di Mac Intel pengembang (pasang, pemeriksaan kompilasi dengan jaringan diblokir, buka lewat LaunchServices); versi `arm64` hanya dibangun di CI, dan Mac bersih tanpa Python belum diuji.
 
-**Dari repositori (`Install.command`).** Pemasang ini memasang **rilis 2.8.0**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Satu-satunya dependensi adalah Python dengan Tk.
+**Dari repositori (`Install.command`).** Pemasang ini memasang **rilis 2.9.0**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Satu-satunya dependensi adalah Python dengan Tk.
 
 1. **Unduh** repositori ini (**Code › Download ZIP**), lalu ekstrak seluruhnya. Jangan menjalankan pemasang dari pratinjau ZIP.
 2. **Buka `Install.command`.** Pemasang berjalan di Terminal dan akan:
@@ -291,7 +294,7 @@ Untuk bundel `.app` yang berjalan di Intel maupun Apple Silicon, bangun `odinpc`
 2. Tekan `F2` untuk menyimpan (di Mac juga bisa `Command+S`).
 3. Tekan `Ctrl+F9` untuk mengompilasi dan menjalankan (di Mac juga bisa `Command+R`). Program tampil di **User screen**; `Alt+F5` menampilkan atau menyembunyikannya.
 4. Tekan `F8` untuk menjalankan program baris demi baris. Sorot `Nama`, lalu tekan `Ctrl+F7` untuk melihat isinya.
-5. Buka **File › Examples** untuk belajar Pascal dari awal lewat [tutorial](#tutorial-pascal) 20 bab.
+5. Buka **File › Examples** untuk belajar Pascal dari awal lewat [tutorial](#tutorial-pascal) 20 bab, lalu **File › Examples - OOP** untuk pemrograman berorientasi objek dengan `class`.
 
 ## Tutorial Pascal
 
@@ -311,6 +314,8 @@ Untuk bundel `.app` yang berjalan di Intel maupun Apple Silicon, bangun `odinpc`
 - Program Bab 17 dan proyek Bab 20 membuat berkas data (`catatan.txt`, `angka.dat`, `siswa.dat`, `struk.txt`, `rekap_nilai.txt`, `kontak.dat`). Nama berkasnya ditulis sebagai konstanta di awal program, dan program menampilkan folder tempat berkas itu dibuat, yaitu folder berkas `.pas`-nya.
 - Contoh bawaan adalah templat: **Save** selalu menjadi **Save As**. Simpan salinannya ke folder sendiri sebelum mengubah atau menjalankan program yang membuat berkas data, supaya berkas itu tidak tersimpan di dalam folder aplikasi. Untuk Bab 19, salin juga `matematika.pas` ke folder yang sama.
 
+**File › Examples - OOP** melanjutkan tutorial dengan sembilan program berorientasi objek di [`examples-oop/`](examples-oop/): class pertama, constructor dan destructor, enkapsulasi dan property, pewarisan, polimorfisme (`virtual`, `override`, `abstract`), class var dan `class of`, daftar objek dengan `is`/`as`, overload, dan proyek kasir toko. Tes otomatis juga menjalankan dan memeriksa keluarannya. Buku tutorial PDF masih membahas Bab 1–20 saja.
+
 ## Pintasan Keyboard
 
 | Tombol | Fungsi | Tombol | Fungsi |
@@ -328,6 +333,31 @@ Alternatif Mac: `Command+N/O/S` (New/Open/Save), `Command+B` (Compile), `Command
 
 ## Kompatibilitas
 
+### OOP dengan class
+
+Bahasa bawaannya Turbo Pascal 7. Di atasnya, `odinpc` memahami OOP berbasis `class` seperti Delphi dan Free Pascal, tanpa direktif atau mode dan tanpa kata tercadang baru (program TP7 yang memakai `class`, `property`, `is`, atau `as` sebagai nama tetap dikompilasi):
+
+```pascal
+type
+  THewan = class
+  private
+    FNama: String;
+  public
+    constructor Create(const ANama: String);
+    function Suara: String; virtual; abstract;
+    property Nama: String read FNama;
+  end;
+  TKucing = class(THewan)
+    function Suara: String; override;
+  end;
+```
+
+- Didukung: `class(Induk)` dengan akar `TObject`, deklarasi forward, `private`/`protected`/`public`/`published` (dan `strict`), constructor dan destructor, `virtual`/`override`/`abstract`/`reintroduce`, `inherited` dengan atau tanpa nama, `property` (termasuk property larik dan `default`), `class var`, class method (juga virtual), `class of` dengan constructor virtual, overload method, `is`/`as`, dan `with` pada objek.
+- Unit `Classes` (`TList`, `TStringList`) dan `Contnrs` (`TObjectList`) ditulis dengan class.
+- Belum termasuk: exception, interface, generic, `procedure of object`, dan `Result`. Tanpa exception, salah pakai menjadi runtime error (211 method abstract, 219 `as` gagal, 216 rujukan `nil`).
+- Debugger menampilkan isi field objek, dan `Obj.Field` bisa dievaluasi.
+- Diuji di Mac Intel dan di runner GitHub Actions untuk macOS Intel, macOS Apple Silicon, Linux x86_64, Linux arm64, dan Windows. Perangkat fisik Apple Silicon dan Windows belum diuji langsung. Rinciannya ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBILITY.txt) dan [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) (Tahap 10).
+
 ### Unit standar Turbo Pascal
 
 Diuji dengan korpus tes di Mac Intel, di VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu), dan di runner GitHub Actions untuk macOS Apple Silicon, Linux x86_64, Linux arm64, dan Windows x86_64. Sampai 2.3.0, ekspektasi korpus dibuat dengan Free Pascal 3.2.2 sebagai pembanding.
@@ -344,7 +374,8 @@ Diuji dengan korpus tes di Mac Intel, di VM Ubuntu 24.04 (x86_64, dan aarch64 le
 | `WinDos` | ✅ `Dos` dengan `PChar` (`FindFirst`, `FileSplit`, `GetCurDir`, `GetEnvVar`, ...), diteruskan ke `Dos`. Tanpa `Intr`/`MsDos`/`TRegisters` |
 | `Graph` | ✅ Antarmuka BGI TP7 lengkap (garis, lingkaran, busur, isian, `FloodFill`, teks, `GetImage`/`PutImage`, palet, halaman, semua mode driver). Gambar disimpan di memori per piksel dan diuji piksel demi piksel; di IDE tampil di jendela grafik dengan piksel sebenarnya, di terminal biasa hanya pratinjau kasar dengan karakter setengah blok. Tanpa berkas `.BGI`/`.CHR` (font stroke diganti font bitmap 8 x 8) |
 | `Overlay` | ✅ Antarmuka saja: `OvrInit` selalu berhasil karena seluruh kode ada di memori |
-| `Math`, `SysUtils` | ✅ Tambahan Odin (bukan unit TP7): subset unit Free Pascal/Delphi tanpa kelas, exception, `Format`, parameter bawaan, dan overload |
+| `Math`, `SysUtils` | ✅ Tambahan Odin (bukan unit TP7): subset unit Free Pascal/Delphi tanpa exception, `Format`, parameter bawaan, dan overload rutin biasa |
+| `Classes`, `Contnrs` | ✅ Tambahan Odin (bukan unit TP7), ditulis dengan class: `TList`, `TStringList`, `TObjectList`. Diuji di Mac Intel dan runner CI kelima platform |
 | `Graph3`, `Turbo3` | ❌ |
 
 Rincian dan perbedaan perilaku ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBILITY.txt) dan [`tests/pascal/DEVIATIONS.md`](tests/pascal/DEVIATIONS.md).
@@ -356,7 +387,7 @@ Rincian dan perbedaan perilaku ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBIL
 - `Real` berukuran 8 byte (TP: 6 byte), dan `Real48` tidak tersedia; berkas biner lama perlu dikonversi. `Round` membulatkan ke bilangan genap untuk nilai `.5`.
 - Compiler Odin:
   - menghasilkan program untuk macOS dan Linux (x86_64 dan arm64) serta Windows (x86_64); di sistem lain IDE bisa mengedit tetapi tidak mengompilasi;
-  - mengikuti bahasa Turbo Pascal 7, termasuk tipe `object`; mode ObjFPC/Delphi dari backend Free Pascal lama tidak tersedia lagi, begitu pula blok `asm`;
+  - mengikuti bahasa Turbo Pascal 7 secara bawaan, termasuk tipe `object`, dan diperluas dengan `class` (lihat [OOP dengan class](#oop-dengan-class)); mode ObjFPC/Delphi dari backend Free Pascal lama tidak ada lagi sebagai mode, exception dan interface belum didukung, begitu pula blok `asm`;
   - mendukung unit `Objects` dan seluruh Turbo Vision lewat Odin Vision. Record data dialog harus `packed record`;
   - `Extended` sama dengan `Double`, dan fungsi seperti `Exp` dan `Sin` dihitung dalam `Double`.
 - Rilis 1.0.0 memakai konsol LLDB; sejak 2.0.0-alpha.1 debugger terpadu menggantikannya.
@@ -366,6 +397,8 @@ Rincian dan perbedaan perilaku ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBIL
 
 | Lingkungan | Hasil |
 |---|---|
+| Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, Rust 1.99 (rilis 2.9.0) | 147 tes Python lulus (10 dilewati) dan seluruh tes Rust (191), termasuk korpus 97 program (11 di antaranya class) dalam tiga mode build, galat semantik class, debugger dengan objek class, dan kesembilan contoh OOP. Korpus juga lulus di VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu) |
+| GitHub Actions: macOS 15 Intel dan Apple Silicon, Ubuntu 24.04 x86_64 dan arm64, Windows Server 2025 (rilis 2.9.0) | Tes Rust (termasuk korpus) dan tes Python lulus di kelima runner; di Windows juga pemeriksaan pemasang dan setup Inno Setup. Perangkat fisik Apple Silicon dan Windows belum diuji |
 | Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, Rust 1.99 (rilis 2.8.0) | 144 tes Python lulus (10 dilewati), termasuk tes jendela grafik dengan piksel sebenarnya, tes soket Graph, tampilan Graph lewat PTY, dan seluruh tes Rust (korpus diferensial dalam tiga mode build). Korpus Math, SysUtils, WinDos, dan Overlay serta keenam program Graph juga lulus di VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu) dengan keluaran sama. Hasil CI rilis ini dicatat di halaman Releases |
 | Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, FPC 3.2.2, Rust 1.99 (rilis 2.4.0) | 119 tes Python lulus (6 dilewati), termasuk tes GUI dengan jendela Tk sungguhan, sesi debugger nyata, snapshot Odin Vision, dan **Run › Ukur**/**Periksa...**. 189 tes Rust juga lulus. Korpus diferensial 77 program (termasuk tipe `object` dan unit `Objects`) memberi keluaran dan kode keluar yang sama dengan FPC 3.2.2, dengan build biasa, build debug, dan build hitung langkah |
 | GitHub Actions: macOS 15 Apple Silicon, Ubuntu 24.04 x86_64 dan arm64, macOS 15 Intel (rilis 2.4.0) | Korpus diferensial berjalan native dan lulus; laporan langkah `tests/steps/` sama di semua target; tes Python dengan backend Odin (GUI, debugger, Odin Vision) lulus. Lihat [CI](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml) |
@@ -467,9 +500,12 @@ ODIN-TURBO-PASCAL/
 ├── toolchain/               odinpc (Rust): lexer, parser, sema, codegen x86-64 dan AArch64,
 │                            assembler, linker Mach-O/ELF/PE, info debug, debugger;
 │                            odinpc.exe untuk paket Windows
-├── rtl/                     Runtime library (Pascal): System, Crt, Dos, Strings, Printer, Objects
+├── rtl/                     Runtime library (Pascal): System, Crt, Dos, Strings, Printer, Objects,
+│                            Classes, Contnrs, Math, SysUtils, Graph, ...
 │   └── vision/              Odin Vision: semua unit Turbo Vision TP7 dan spesifikasinya (SPEC.md)
 ├── examples/                Tutorial Pascal pemula: 89 program dan satu unit dalam 20 bab
+├── examples-graph/          Contoh unit Graph (File › Examples - Graph)
+├── examples-oop/            Contoh OOP dengan class (File › Examples - OOP)
 ├── otp-AI/                  Pustaka AI/machine learning Pascal: 19 unit, 20 contoh, tes, buku PDF
 ├── docs/                    Panduan, referensi Pascal, pintasan, kompatibilitas
 ├── tests/                   Tes Python (fungsional, compiler, debugger, GUI, Odin Vision) dan
@@ -495,7 +531,8 @@ ODIN-TURBO-PASCAL/
 
 | Versi | Ringkasan |
 |---|---|
-| **2.8.0** (terbaru) | Jendela grafik sungguhan untuk program yang memakai Graph (piksel sebenarnya, tombol diteruskan ke program) dan **File › Examples - Graph...** dengan 14 contoh |
+| **2.9.0** (terbaru) | **OOP berbasis `class`** di atas TP7, unit **Classes** dan **Contnrs**, debugger menampilkan isi objek, dan **File › Examples - OOP...** dengan 9 contoh |
+| 2.8.0 | Jendela grafik sungguhan untuk program yang memakai Graph (piksel sebenarnya, tombol diteruskan ke program) dan **File › Examples - Graph...** dengan 14 contoh |
 | 2.7.0 | Unit **Graph** (BGI TP7 lengkap: framebuffer di memori dengan pratinjau terminal), **WinDos**, **Overlay**, **Math**, dan **SysUtils** |
 | 2.6.0 | Komentar penjelasan di 20 contoh OTP-AI |
 | 2.5.0 | Bantuan HTML (`docs/help.html`, F1), referensi Pascal lengkap, unit Odin Vision `ColorSel` dan `TextView`, Setup Windows satu berkas, dan pustaka OTP-AI |

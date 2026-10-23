@@ -169,6 +169,36 @@ class DebugSessionTests(unittest.TestCase):
         self.wait("exit")
         self.assertIn("20", self.screen.text())
 
+    def test_class_fields_and_self(self):
+        source = self.root / "COUNTER2.PAS"
+        source.write_text("program Counter2;\ntype\n  TCounter = class\n    Count, Step: Integer;\n"
+                          "    constructor Create(AStep: Integer);\n    procedure Tick; virtual;\n  end;\n"
+                          "constructor TCounter.Create(AStep: Integer);\nbegin\n  Step := AStep;\nend;\n"
+                          "procedure TCounter.Tick;\nbegin\n  Count := Count + Step;\nend;\n"
+                          "var C, D: TCounter;\nbegin\n  C := TCounter.Create(3);\n  C.Tick;\n  C.Tick;\n"
+                          "  if D = nil then WriteLn(C.Count);\n  C.Free;\nend.\n")
+        s = self.start(source)
+        self.wait("breakpoints", s.set_breakpoints(source, {14}))
+        s.start()
+        event = self.wait("stopped")
+        self.assertEqual((event["line"], event["depth"]), (14, 2))
+        # A class instance shows its fields, like an object; nil stays NIL.
+        self.assertEqual(self.value("Self"), "(Count:0; Step:3)")
+        self.assertEqual(self.value("Self.Step"), "3")
+        self.assertEqual(self.value("C", frame=1), "(Count:0; Step:3)")
+        self.assertEqual(self.value("C.Step", frame=1), "3")
+        self.assertEqual(self.value("D", frame=1), "NIL")
+        local = self.wait("result", s.locals())["locals"]
+        self.assertEqual(local[0], {"name": "Self", "value": "(Count:0; Step:3)", "type": "TCounter"})
+        frames = self.wait("result", s.stack())["frames"]
+        self.assertEqual([f["name"] for f in frames], ["TCounter.Tick", "Counter2"])
+        self.assertEqual(self.wait("result", s.modify("Step", "10"))["value"], "10")
+        self.wait("breakpoints", s.set_breakpoints(source, set()))
+        s.resume()
+        self.assertEqual(self.wait("exited")["code"], 0)
+        self.wait("exit")
+        self.assertIn("20", self.screen.text())
+
 
 if __name__ == "__main__":
     unittest.main()

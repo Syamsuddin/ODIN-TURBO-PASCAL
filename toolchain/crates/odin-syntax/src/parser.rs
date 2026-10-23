@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 Syams Ideris
-//! Recursive-descent parser for Turbo Pascal 7. Stops at the first error,
-//! reported at the start of the offending token (as TP and FPC do).
+//! Recursive-descent parser for Turbo Pascal 7 with classes. Stops at the
+//! first error, reported at the start of the offending token (as TP and FPC
+//! do).
+//!
+//! The class extension adds no reserved words: `class`, `property`,
+//! `protected`, `override`, `is`, `as` and the rest only mean something
+//! where a TP7 program could not have an identifier, so TP7 programs that
+//! use them as names still parse.
 
 use odin_base::{Diagnostic, Span, code};
 
@@ -41,6 +47,11 @@ const DIRECTIVES: &[&str] = &[
     "CDECL",
     "EXPORT",
     "VIRTUAL",
+    "DYNAMIC",
+    "OVERRIDE",
+    "ABSTRACT",
+    "REINTRODUCE",
+    "OVERLOAD",
     "STDCALL",
     "REGISTER",
     "PASCAL",
@@ -143,6 +154,21 @@ impl<'t> Parser<'t> {
 
     fn is_word(&self, word: &str) -> bool {
         matches!(self.peek(), Tok::Ident(n) if n.eq_ignore_ascii_case(word))
+    }
+
+    fn is_word_at(&self, k: usize, word: &str) -> bool {
+        matches!(self.peek_at(k), Tok::Ident(n) if n.eq_ignore_ascii_case(word))
+    }
+
+    /// A context word at the start of a member or section, not a field
+    /// that happens to share its name (`Property: Integer`).
+    fn is_section_word(&self, word: &str) -> bool {
+        self.is_word(word) && !matches!(self.peek_at(1), Tok::Colon | Tok::Comma)
+    }
+
+    /// `class procedure` / `class function`.
+    fn at_class_method(&self) -> bool {
+        self.is_word("CLASS") && matches!(self.peek_at(1), Tok::Keyword(Kw::Procedure | Kw::Function))
     }
 
     fn ident(&mut self) -> PResult<Ident> {
@@ -266,6 +292,9 @@ impl<'t> Parser<'t> {
                 Tok::Keyword(Kw::Procedure | Kw::Function | Kw::Constructor | Kw::Destructor) => {
                     decls.push(Decl::Routine(Box::new(self.routine(ctx)?)));
                 }
+                Tok::Ident(_) if self.at_class_method() => {
+                    decls.push(Decl::Routine(Box::new(self.routine(ctx)?)));
+                }
                 Tok::Keyword(Kw::Exports) => {
                     return Err(Diagnostic::error_with(code::NOT_SUPPORTED, self.span(), ": exports"));
                 }
@@ -305,7 +334,7 @@ impl<'t> Parser<'t> {
             let value = if ty.is_some() { self.const_init()? } else { ConstInit::Expr(self.expr()?) };
             self.expect(&Tok::Semi, code::SEMICOLON_EXPECTED)?;
             items.push(ConstDecl { span: name.span.to(self.prev_span()), name, ty, value });
-            if !matches!(self.peek(), Tok::Ident(_)) {
+            if !matches!(self.peek(), Tok::Ident(_)) || self.at_class_method() {
                 return Ok(Decl::Consts(items));
             }
         }
@@ -364,7 +393,7 @@ impl<'t> Parser<'t> {
             let ty = self.type_expr()?;
             self.expect(&Tok::Semi, code::SEMICOLON_EXPECTED)?;
             items.push(TypeDecl { span: name.span.to(self.prev_span()), name, ty });
-            if !matches!(self.peek(), Tok::Ident(_)) {
+            if !matches!(self.peek(), Tok::Ident(_)) || self.at_class_method() {
                 return Ok(Decl::Types(items));
             }
         }
@@ -393,7 +422,7 @@ impl<'t> Parser<'t> {
             };
             self.expect(&Tok::Semi, code::SEMICOLON_EXPECTED)?;
             items.push(VarDecl { span: names[0].span.to(self.prev_span()), names, ty, absolute });
-            if !matches!(self.peek(), Tok::Ident(_)) {
+            if !matches!(self.peek(), Tok::Ident(_)) || self.at_class_method() {
                 return Ok(Decl::Vars(items));
             }
         }
@@ -417,6 +446,10 @@ impl<'t> Parser<'t> {
     fn heading(&mut self) -> PResult<RoutineHeading> {
         let start = self.span();
         let switches = self.switches();
+        let class_method = self.at_class_method();
+        if class_method {
+            self.bump();
+        }
         let kind = self.routine_kind()?;
         let mut name = self.ident()?;
         let mut owner = None;
@@ -429,7 +462,17 @@ impl<'t> Parser<'t> {
             if kind == RoutineKind::Function && self.eat(&Tok::Colon) { Some(self.type_expr()?) } else { None };
         self.expect(&Tok::Semi, code::SEMICOLON_EXPECTED)?;
         let directives = self.directives()?;
-        Ok(RoutineHeading { kind, owner, name, params, result, directives, span: start.to(self.prev_span()), switches })
+        Ok(RoutineHeading {
+            kind,
+            class_method,
+            owner,
+            name,
+            params,
+            result,
+            directives,
+            span: start.to(self.prev_span()),
+            switches,
+        })
     }
 
     fn directives(&mut self) -> PResult<Vec<Directive>> {
@@ -463,6 +506,11 @@ impl<'t> Parser<'t> {
                     let index = if self.is(&Tok::Semi) { None } else { Some(self.expr()?) };
                     DirectiveKind::Virtual(index)
                 }
+                "DYNAMIC" => DirectiveKind::Virtual(None),
+                "OVERRIDE" => DirectiveKind::Override,
+                "ABSTRACT" => DirectiveKind::Abstract,
+                "REINTRODUCE" => DirectiveKind::Reintroduce,
+                "OVERLOAD" => DirectiveKind::Overload,
                 other => DirectiveKind::Other(other.to_string()),
             };
             self.expect(&Tok::Semi, code::SEMICOLON_EXPECTED)?;
@@ -523,6 +571,11 @@ impl<'t> Parser<'t> {
 
     fn params(&mut self) -> PResult<Vec<ParamGroup>> {
         self.expect(&Tok::LParen, code::LPAREN_EXPECTED)?;
+        self.param_groups(&Tok::RParen, code::RPAREN_EXPECTED)
+    }
+
+    /// Parameter groups up to and including `close`.
+    fn param_groups(&mut self, close: &Tok, close_code: u16) -> PResult<Vec<ParamGroup>> {
         let mut groups = Vec::new();
         loop {
             let start = self.span();
@@ -539,7 +592,7 @@ impl<'t> Parser<'t> {
             if self.eat(&Tok::Semi) {
                 continue;
             }
-            self.expect(&Tok::RParen, code::RPAREN_EXPECTED)?;
+            self.expect(close, close_code)?;
             return Ok(groups);
         }
     }
@@ -599,7 +652,19 @@ impl<'t> Parser<'t> {
                 self.expect_kw(Kw::End, code::END_EXPECTED)?;
                 TypeKind::Record { packed: false, fields }
             }
-            Tok::Keyword(Kw::Object) => TypeKind::Object(Box::new(self.object_type()?)),
+            Tok::Keyword(Kw::Object) => {
+                self.bump();
+                TypeKind::Object(Box::new(self.object_body(false)?))
+            }
+            Tok::Ident(_) if self.is_word("CLASS") && self.peek_at(1) == &Tok::Keyword(Kw::Of) => {
+                self.bump();
+                self.bump();
+                TypeKind::ClassOf(self.qual_ident()?)
+            }
+            Tok::Ident(_) if self.is_word("CLASS") && self.class_body_follows() => {
+                self.bump();
+                TypeKind::Object(Box::new(self.object_body(true)?))
+            }
             Tok::Keyword(Kw::Set) => {
                 self.bump();
                 self.expect_kw(Kw::Of, code::OF_EXPECTED)?;
@@ -703,8 +768,22 @@ impl<'t> Parser<'t> {
         Ok(VariantPart { tag, tag_type, cases, span: start.to(self.prev_span()) })
     }
 
-    fn object_type(&mut self) -> PResult<ObjectType> {
-        self.bump();
+    /// Whether the word `class` just read starts a class type: `class;`,
+    /// `class(Parent)`, `class end` or a member.
+    fn class_body_follows(&self) -> bool {
+        match self.peek_at(1) {
+            Tok::Semi | Tok::LParen | Tok::Ident(_) => true,
+            Tok::Keyword(k) => {
+                matches!(k, Kw::End | Kw::Procedure | Kw::Function | Kw::Constructor | Kw::Destructor | Kw::Var)
+            }
+            _ => false,
+        }
+    }
+
+    /// The parent and members of an `object` or `class` (the keyword is
+    /// already read). Both accept the same members; semantic analysis
+    /// rejects what does not fit an object.
+    fn object_body(&mut self, class: bool) -> PResult<ObjectType> {
         let parent = if self.eat(&Tok::LParen) {
             let q = self.qual_ident()?;
             self.expect(&Tok::RParen, code::RPAREN_EXPECTED)?;
@@ -712,31 +791,61 @@ impl<'t> Parser<'t> {
         } else {
             None
         };
+        // "TFoo = class;" is a forward declaration; "TFoo = class(TBar);" a
+        // class without members of its own.
+        if class && self.is(&Tok::Semi) {
+            return Ok(ObjectType { class, forward: parent.is_none(), parent, members: Vec::new() });
+        }
         let mut members = Vec::new();
-        let mut private = false;
+        let mut vis = Visibility::Public;
+        let mut class_var = false;
         loop {
             match self.peek() {
                 Tok::Keyword(Kw::End) => {
                     self.bump();
-                    return Ok(ObjectType { parent, members });
+                    return Ok(ObjectType { class, forward: false, parent, members });
                 }
                 Tok::Keyword(Kw::Procedure | Kw::Function | Kw::Constructor | Kw::Destructor) => {
                     let heading = self.heading()?;
-                    members.push(ObjectMember::Method { heading, private });
+                    members.push(ObjectMember::Method { heading, vis });
                 }
-                Tok::Ident(w)
-                    if (w.eq_ignore_ascii_case("PRIVATE") || w.eq_ignore_ascii_case("PUBLIC"))
-                        && !matches!(self.peek_at(1), Tok::Colon | Tok::Comma) =>
-                {
-                    private = w.eq_ignore_ascii_case("PRIVATE");
+                Tok::Ident(_) if self.at_class_method() => {
+                    let heading = self.heading()?;
+                    members.push(ObjectMember::Method { heading, vis });
+                }
+                Tok::Ident(_) if self.is_word("CLASS") && self.peek_at(1) == &Tok::Keyword(Kw::Var) => {
                     self.bump();
+                    self.bump();
+                    class_var = true;
+                }
+                Tok::Keyword(Kw::Var) => {
+                    self.bump();
+                    class_var = false;
+                }
+                Tok::Ident(_)
+                    if self.is_section_word("STRICT")
+                        && (self.is_word_at(1, "PRIVATE") || self.is_word_at(1, "PROTECTED")) =>
+                {
+                    self.bump();
+                    vis = if self.is_word("PRIVATE") { Visibility::StrictPrivate } else { Visibility::StrictProtected };
+                    self.bump();
+                    class_var = false;
+                }
+                Tok::Ident(w) if self.is_section_word(w) && section_visibility(w).is_some() => {
+                    vis = section_visibility(w).unwrap();
+                    self.bump();
+                    class_var = false;
+                }
+                Tok::Ident(_) if self.is_section_word("PROPERTY") => {
+                    let decl = Box::new(self.property()?);
+                    members.push(ObjectMember::Property { decl, vis });
                 }
                 Tok::Ident(_) => {
                     let names = self.ident_list()?;
                     self.expect(&Tok::Colon, code::COLON_EXPECTED)?;
                     let ty = self.type_expr()?;
                     let decl = FieldDecl { span: names[0].span.to(self.prev_span()), names, ty };
-                    members.push(ObjectMember::Field { decl, private });
+                    members.push(ObjectMember::Field { decl, vis, class_var });
                     if !self.eat(&Tok::Semi) && !self.is_kw(Kw::End) {
                         return Err(self.unexpected(code::SEMICOLON_EXPECTED));
                     }
@@ -744,6 +853,46 @@ impl<'t> Parser<'t> {
                 _ => return Err(self.unexpected(code::END_EXPECTED)),
             }
         }
+    }
+
+    /// `property Name[Index: T]: T read X write Y; default;` (the word
+    /// `property` is next). `stored`, `nodefault` and a `default` value are
+    /// accepted and have no effect.
+    fn property(&mut self) -> PResult<PropertyDecl> {
+        let start = self.bump().span;
+        let name = self.ident()?;
+        let params = if self.eat(&Tok::LBracket) {
+            self.param_groups(&Tok::RBracket, code::RBRACKET_EXPECTED)?
+        } else {
+            Vec::new()
+        };
+        self.expect(&Tok::Colon, code::COLON_EXPECTED)?;
+        let ty = self.type_expr()?;
+        let (mut read, mut write) = (None, None);
+        loop {
+            if self.is_word("READ") {
+                self.bump();
+                read = Some(self.ident()?);
+            } else if self.is_word("WRITE") {
+                self.bump();
+                write = Some(self.ident()?);
+            } else if self.is_word("STORED") || (self.is_word("DEFAULT") && !self.peek_at(1).eq(&Tok::Semi)) {
+                self.bump();
+                self.expr()?;
+            } else if self.is_word("NODEFAULT") {
+                self.bump();
+            } else {
+                break;
+            }
+        }
+        self.expect(&Tok::Semi, code::SEMICOLON_EXPECTED)?;
+        let mut default = false;
+        if self.is_word("DEFAULT") && self.peek_at(1) == &Tok::Semi {
+            self.bump();
+            self.bump();
+            default = true;
+        }
+        Ok(PropertyDecl { name, params, ty, read, write, default, span: start.to(self.prev_span()) })
     }
 
     // ---- statements ------------------------------------------------------
@@ -1026,8 +1175,12 @@ impl<'t> Parser<'t> {
             }
             Tok::Keyword(Kw::Inherited) => {
                 self.bump();
+                // A bare "inherited" calls the same method of the parent.
+                if matches!(self.peek(), Tok::Semi | Tok::Keyword(Kw::End | Kw::Else | Kw::Until)) {
+                    return Ok(Expr { span: start, kind: ExprKind::Inherited(None) });
+                }
                 let name = self.ident()?;
-                let e = Expr { span: start.to(name.span), kind: ExprKind::Inherited(name) };
+                let e = Expr { span: start.to(name.span), kind: ExprKind::Inherited(Some(name)) };
                 return self.postfix(e);
             }
             Tok::Keyword(Kw::String) => {
@@ -1111,6 +1264,21 @@ fn binop(t: &Tok) -> Option<(BinOp, u8)> {
         Tok::Keyword(Kw::And) => (BinOp::And, PREC_MUL),
         Tok::Keyword(Kw::Shl) => (BinOp::Shl, PREC_MUL),
         Tok::Keyword(Kw::Shr) => (BinOp::Shr, PREC_MUL),
+        // No TP7 expression is followed by an identifier, so these two can
+        // stay ordinary words.
+        Tok::Ident(w) if w.eq_ignore_ascii_case("IS") => (BinOp::Is, PREC_REL),
+        Tok::Ident(w) if w.eq_ignore_ascii_case("AS") => (BinOp::As, PREC_MUL),
+        _ => return None,
+    })
+}
+
+/// The visibility a section word (`private`, `protected`, ...) starts.
+fn section_visibility(word: &str) -> Option<Visibility> {
+    Some(match word.to_ascii_uppercase().as_str() {
+        "PRIVATE" => Visibility::Private,
+        "PROTECTED" => Visibility::Protected,
+        "PUBLIC" => Visibility::Public,
+        "PUBLISHED" => Visibility::Published,
         _ => return None,
     })
 }

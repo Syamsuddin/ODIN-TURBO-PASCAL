@@ -260,3 +260,45 @@ p ID JUMLAH
 ```
 
 `steps` = jumlah semua penghitung ditambah `weight`. Baris `p` hanya untuk id yang pernah berjalan, urut naik; baris sumbernya diambil dari `lines` di `.odbg`. Pembaca harus mengabaikan kunci yang tidak dikenalnya, dan versi di baris pertama naik bila arti angka yang sudah ada berubah.
+
+## 9. Class (`class`)
+
+Class adalah perluasan Tahap 10. Instance-nya ditata seperti object (bagian 7), dengan beberapa aturan tambahan.
+
+**Rujukan.** Variabel bertipe class berisi alamat instance (8 byte, `nil` bila tidak ada). Akses `Obj.Field` dan `Obj.Method` mengikuti rujukan itu. `SizeOf(Obj)` bernilai 8; ukuran instance dibaca dengan `Obj.InstanceSize`.
+
+**Layout.** Pointer VMT selalu berada di offset 0. Field warisan menyusul, lalu field milik class itu sendiri, dengan alignment alami. Akar setiap class adalah `System.TObject`, yang tidak punya field, sehingga ukurannya 8.
+
+**VMT.** Sama dengan VMT object, tetapi slot 0 berisi data:
+
+| Offset | Isi |
+| --- | --- |
+| 0 | ukuran instance (Int64) |
+| 8 | minus ukuran instance (Int64) |
+| 16 | VMT class induk, atau nil untuk `TObject` |
+| 24 | alamat nama class: `String` (byte panjang lalu karakter) `UNIT.TFOO.$NAME` |
+| 32 + 8·n | alamat method virtual slot `n + 1` |
+
+Method abstract menunjuk `SYSTEM.ODIN_ABSTRACTERROR`. Nilai bertipe `class of T` (rujukan class) adalah alamat VMT itu, dan nama class yang dipakai sebagai nilai (`C := TFoo`) juga alamat VMT-nya.
+
+**Method.** Method instance menerima `Self` berupa rujukan instance. Class method (`class procedure`/`class function`) menerima `Self` berupa rujukan class (alamat VMT): lewat `TFoo.M` ia menerima VMT TFoo, lewat `Obj.M` VMT yang tersimpan di `Obj`. Class method virtual dipanggil lewat `[Self + 24 + 8·slot]`.
+
+**Constructor** memakai ABI object (`Self, Vmt`), dengan prolog yang juga mengosongkan instance baru (`ODIN_FILLCHAR`) sesudah `ODIN_GETMEM`:
+
+- `TFoo.Create(...)` memanggilnya dengan `Self = nil` dan VMT TFoo;
+- `C.Create(...)` untuk `C: class of TFoo` memakai `Self = nil` dan `Vmt = C`. Bila constructor itu virtual, alamatnya diambil dari `[C + 24 + 8·slot]`;
+- `inherited Create`, `Create` di dalam method, dan `Obj.Create` pada instance yang sudah ada memakai `Vmt = nil`, sehingga hanya menjalankan isi constructor;
+- hasilnya bertipe class yang dibuat, bukan class yang mendeklarasikan constructor.
+
+**Destructor.** Setiap pemanggilan destructor class selain `inherited` (termasuk `Destroy` di dalam `TObject.Free`) diikuti `ODIN_FREEINSTANCE(Obj)`, yang membebaskan instance sebesar ukuran di VMT-nya. `Fail` di constructor class juga membebaskan lewat rutin itu.
+
+**Rutin RTL untuk class** (bagian interface unit System):
+
+| Simbol | Tanda tangan | Arti |
+| --- | --- | --- |
+| `ODIN_IS` | `(Obj, Vmt: Pointer): Boolean` | `Obj is T`: FALSE untuk nil; selain itu menelusuri rantai VMT induk dari `PPointer(Obj)^`. |
+| `ODIN_AS` | `(Obj, Vmt: Pointer): Pointer` | `Obj as T`: nil tetap nil; runtime error 219 bila `Obj` bukan T. |
+| `ODIN_FREEINSTANCE` | `(Obj: Pointer)` | Membebaskan instance sesudah destructor-nya (tidak berbuat apa-apa untuk nil). |
+| `ODIN_ABSTRACTERROR` | `()` | Runtime error 211 di alamat pemanggil method abstract. |
+
+**Info debug.** Tipe class ditulis ke `.odbg` sebagai `{"kind": "class", "instance": ID}`, dengan `instance` berupa tipe record field-nya (tanpa pointer VMT). Rujukan class ditulis sebagai pointer tanpa tipe.

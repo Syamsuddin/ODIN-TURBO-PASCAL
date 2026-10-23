@@ -60,6 +60,25 @@ type
     Name: array[0..255] of Char;
   end;
 
+type
+  TObject = class;
+  { A class reference: TObject or any descendant. }
+  TClass = class of TObject;
+  { The root of every class (COMPILER_INTERFACE.md, bagian 9). }
+  TObject = class
+  public
+    constructor Create;
+    destructor Destroy; virtual;
+    procedure Free;
+    class function ClassName: String;
+    class function ClassNameIs(const Name: String): Boolean;
+    class function ClassParent: TClass;
+    class function ClassType: TClass;
+    class function InstanceSize: LongInt;
+    class function InheritsFrom(AClass: TClass): Boolean;
+    function ToString: String; virtual;
+  end;
+
 var
   Input, Output: Text;
   ExitCode: LongInt;
@@ -117,6 +136,10 @@ procedure ODIN_RANGEERROR;
 procedure ODIN_OVERFLOWERROR;
 procedure ODIN_DIVZEROERROR;
 procedure ODIN_OBJECTERROR;
+procedure ODIN_ABSTRACTERROR;
+function ODIN_IS(Obj, Vmt: Pointer): Boolean;
+function ODIN_AS(Obj, Vmt: Pointer): Pointer;
+procedure ODIN_FREEINSTANCE(Obj: Pointer);
 procedure ODIN_IOCHECK;
 procedure ODIN_STRASSIGN(Dest: Pointer; MaxLen: Int64; Src: Pointer);
 procedure ODIN_STRAPPEND(Dest: Pointer; Src: Pointer);
@@ -853,6 +876,113 @@ end;
 procedure ODIN_OBJECTERROR;
 begin
   RunErrorAt(210, ODIN_RETADDR);
+end;
+
+{ An abstract method was called: its VMT slot points here. }
+procedure ODIN_ABSTRACTERROR;
+begin
+  RunErrorAt(211, ODIN_RETADDR);
+end;
+
+{ ---- classes -------------------------------------------------------------- }
+
+{ Whether class VMT V is Vmt or descends from it (the parent VMT is at
+  offset 16). }
+function VmtInherits(V, Vmt: Pointer): Boolean;
+begin
+  VmtInherits := False;
+  while V <> nil do
+  begin
+    if V = Vmt then
+    begin
+      VmtInherits := True;
+      Exit;
+    end;
+    V := PPointer(PtrUInt(V) + 16)^;
+  end;
+end;
+
+{ Obj is TFoo: the instance's VMT is at offset 0. }
+function ODIN_IS(Obj, Vmt: Pointer): Boolean;
+begin
+  ODIN_IS := (Obj <> nil) and VmtInherits(PPointer(Obj)^, Vmt);
+end;
+
+{ Obj as TFoo: runtime error 219 (invalid typecast) when Obj is not nil and
+  not a TFoo. }
+function ODIN_AS(Obj, Vmt: Pointer): Pointer;
+begin
+  if (Obj <> nil) and not VmtInherits(PPointer(Obj)^, Vmt) then
+    RunErrorAt(219, ODIN_RETADDR);
+  ODIN_AS := Obj;
+end;
+
+{ Frees a class instance after its destructor ran; the size is in its VMT. }
+procedure ODIN_FREEINSTANCE(Obj: Pointer);
+begin
+  if Obj <> nil then
+    ODIN_FREEMEM(Obj, PInt64(PPointer(Obj)^)^);
+end;
+
+constructor TObject.Create;
+begin
+end;
+
+destructor TObject.Destroy;
+begin
+end;
+
+procedure TObject.Free;
+begin
+  if Self <> nil then
+    Destroy;
+end;
+
+{ Slot 0 of a class VMT (offset 24) holds the address of the class name. }
+class function TObject.ClassName: String;
+begin
+  ClassName := PString(PPointer(PtrUInt(Self) + 24)^)^;
+end;
+
+class function TObject.ClassNameIs(const Name: String): Boolean;
+var
+  Own: String;
+  I: Integer;
+begin
+  Own := ClassName;
+  ClassNameIs := False;
+  if Length(Own) <> Length(Name) then
+    Exit;
+  for I := 1 to Length(Own) do
+    if UpCase(Own[I]) <> UpCase(Name[I]) then
+      Exit;
+  ClassNameIs := True;
+end;
+
+class function TObject.ClassParent: TClass;
+begin
+  ClassParent := TClass(PPointer(PtrUInt(Self) + 16)^);
+end;
+
+class function TObject.ClassType: TClass;
+begin
+  ClassType := Self;
+end;
+
+class function TObject.InstanceSize: LongInt;
+begin
+  InstanceSize := PInt64(Self)^;
+end;
+
+class function TObject.InheritsFrom(AClass: TClass): Boolean;
+begin
+  InheritsFrom := VmtInherits(Pointer(Self), Pointer(AClass));
+end;
+
+{ The class name, unless a descendant says more. }
+function TObject.ToString: String;
+begin
+  ToString := ClassName;
 end;
 
 procedure ODIN_IOCHECK;

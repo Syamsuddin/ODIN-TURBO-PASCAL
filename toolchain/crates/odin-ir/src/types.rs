@@ -78,6 +78,21 @@ pub enum MethodKind {
     Destructor,
 }
 
+/// Who may use a member of an object or class type.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Visibility {
+    /// `strict private`: only methods of the declaring type.
+    StrictPrivate,
+    /// `private`: the unit (or program) that declares the type.
+    Private,
+    /// `strict protected`: methods of the declaring type and its descendants.
+    StrictProtected,
+    /// `protected`: the declaring unit, and methods of descendants.
+    Protected,
+    /// `public` and `published`.
+    Public,
+}
+
 /// A method visible in an object type (declared there or inherited).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Method {
@@ -86,8 +101,66 @@ pub struct Method {
     pub kind: MethodKind,
     /// VMT slot of a virtual method.
     pub slot: Option<u32>,
-    pub private: bool,
+    pub vis: Visibility,
     /// The object type whose declaration introduced or overrode it.
+    pub owner: TypeId,
+    /// `class procedure` / `class function`: `Self` is a class reference
+    /// (a VMT address) instead of an instance.
+    pub class_method: bool,
+    /// `abstract`: no body; the VMT slot reports runtime error 211.
+    pub is_abstract: bool,
+    /// Declared with `overload`: other methods of the same name stay
+    /// visible.
+    pub overload: bool,
+    /// Hidden by a method of the same name in a descendant (it keeps its
+    /// VMT slot, but names no longer find it).
+    pub hidden: bool,
+}
+
+/// Visibility of a field, own or inherited.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FieldVis {
+    /// Upper-case field name.
+    pub name: String,
+    pub vis: Visibility,
+    pub owner: TypeId,
+}
+
+/// How a property reads or writes its value.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Accessor {
+    /// A field of the instance.
+    Field { offset: u64, ty: TypeId },
+    /// A class variable (a global).
+    ClassVar { global: u32, ty: TypeId },
+    /// A getter (`function GetX: T`) or setter (`procedure SetX(V: T)`),
+    /// with the index parameters of an array property first.
+    Method(Box<Method>),
+}
+
+/// `property Name[Index: T]: T read ... write ...`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Property {
+    pub name: String,
+    pub ty: TypeId,
+    /// Index parameters of an array property.
+    pub params: Vec<Param>,
+    pub read: Option<Accessor>,
+    pub write: Option<Accessor>,
+    /// The default array property (`List[I]` means `List.Items[I]`).
+    pub default: bool,
+    pub vis: Visibility,
+    pub owner: TypeId,
+}
+
+/// `class var X: T`: one global shared by every instance.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ClassVar {
+    pub name: String,
+    /// Index into `Program::globals`.
+    pub global: u32,
+    pub ty: TypeId,
+    pub vis: Visibility,
     pub owner: TypeId,
 }
 
@@ -96,36 +169,69 @@ pub struct ObjectType {
     pub parent: Option<TypeId>,
     /// Inherited fields first, then the object's own.
     pub fields: Vec<Field>,
-    /// Upper-case names of private fields (own and inherited).
-    pub private_fields: Vec<String>,
+    /// Visibility of every field that is not public (own and inherited).
+    pub field_vis: Vec<FieldVis>,
     /// Inherited methods (replaced by overrides), then new ones.
     pub methods: Vec<Method>,
+    pub properties: Vec<Property>,
+    pub class_vars: Vec<ClassVar>,
     pub size: u64,
     pub align: u32,
     /// Offset of the VMT pointer, when the type has one (constructors,
-    /// destructors or virtual methods anywhere in the hierarchy).
+    /// destructors or virtual methods anywhere in the hierarchy; always 0
+    /// for a class).
     pub vmt_offset: Option<u64>,
     /// The global (index into `Program::globals`) holding the VMT: size,
-    /// -size, parent VMT, then one code pointer per slot.
+    /// -size, parent VMT, then one code pointer per slot. A class VMT keeps
+    /// its name (a pointer to a `String`) in slot 0.
     pub vmt: Option<u32>,
     pub slots: u32,
     /// Unit (index) or program (`None`) declaring the type: private members
     /// are visible only there.
     pub module: Option<usize>,
+    /// For the instance layout of a class: the class type ([`Type::Class`])
+    /// that refers to it.
+    pub class: Option<TypeId>,
 }
 
 impl ObjectType {
+    /// The visible method named `key` (the first one when overloaded).
     pub fn method(&self, key: &str) -> Option<&Method> {
-        self.methods.iter().find(|m| m.name.eq_ignore_ascii_case(key))
+        self.methods.iter().find(|m| !m.hidden && m.name.eq_ignore_ascii_case(key))
+    }
+
+    /// Every visible method named `key` (overloads).
+    pub fn methods_named(&self, key: &str) -> Vec<Method> {
+        self.methods.iter().filter(|m| !m.hidden && m.name.eq_ignore_ascii_case(key)).cloned().collect()
     }
 
     pub fn field(&self, key: &str) -> Option<&Field> {
         self.fields.iter().find(|f| f.name.eq_ignore_ascii_case(key))
     }
+
+    pub fn field_visibility(&self, key: &str) -> Option<&FieldVis> {
+        self.field_vis.iter().rev().find(|f| f.name.eq_ignore_ascii_case(key))
+    }
+
+    pub fn property(&self, key: &str) -> Option<&Property> {
+        self.properties.iter().rev().find(|p| p.name.eq_ignore_ascii_case(key))
+    }
+
+    pub fn default_property(&self) -> Option<&Property> {
+        self.properties.iter().rev().find(|p| p.default)
+    }
+
+    pub fn class_var(&self, key: &str) -> Option<&ClassVar> {
+        self.class_vars.iter().rev().find(|v| v.name.eq_ignore_ascii_case(key))
+    }
 }
 
 /// Bytes of a VMT before the method slots.
 pub const VMT_HEADER: u64 = 24;
+
+/// Slots at the start of every class VMT that hold data, not methods:
+/// slot 0 is the address of the class name (a `String`).
+pub const CLASS_DATA_SLOTS: u32 = 1;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Type {
@@ -165,8 +271,14 @@ pub enum Type {
         size: u64,
         align: u32,
     },
-    /// A Turbo Pascal `object`.
+    /// A Turbo Pascal `object`, or the instance layout of a class.
     Object(Box<ObjectType>),
+    /// A class (`TFoo = class ... end`): a reference to an instance laid
+    /// out as the object type given, with its VMT pointer at offset 0.
+    Class(TypeId),
+    /// A class reference (`class of TFoo`, or a class name used as a
+    /// value): the address of a class VMT. Holds the [`Type::Class`].
+    ClassRef(TypeId),
     /// Set of an ordinal type. Bit `v - first_byte * 8` of byte
     /// `v / 8 - first_byte` is set for member `v`.
     Set {
@@ -342,7 +454,7 @@ impl TypeTable {
             Type::Real(RealKind::Single) => 4,
             Type::Real(RealKind::Double) => 8,
             Type::ShortString(max) => *max as u64 + 1,
-            Type::Pointer(_) | Type::Procedural(_) | Type::Nil => 8,
+            Type::Pointer(_) | Type::Procedural(_) | Type::Nil | Type::Class(_) | Type::ClassRef(_) => 8,
             Type::Array { lo, hi, elem, .. } => {
                 let count = (*hi - *lo + 1).max(0) as u64;
                 count * self.size(*elem)
@@ -363,7 +475,7 @@ impl TypeTable {
             Type::Real(RealKind::Single) => 4,
             Type::Real(RealKind::Double) => 8,
             Type::ShortString(_) => 1,
-            Type::Pointer(_) | Type::Procedural(_) | Type::Nil => 8,
+            Type::Pointer(_) | Type::Procedural(_) | Type::Nil | Type::Class(_) | Type::ClassRef(_) => 8,
             Type::Array { elem, .. } | Type::OpenArray { elem } => self.align(*elem),
             Type::Record { align, .. } => *align,
             Type::Object(o) => o.align,
@@ -447,6 +559,11 @@ impl TypeTable {
             Type::OpenString => "OpenString".into(),
             Type::Record { .. } => "Record".into(),
             Type::Object(_) => "Object".into(),
+            Type::Class(i) => match self.name(*i) {
+                Some(n) => n.to_string(),
+                None => "Class".into(),
+            },
+            Type::ClassRef(c) => format!("Class of {}", self.display(*c)),
             Type::Set { base, .. } => format!("Set of {}", self.display(*base)),
             Type::File { elem: Some(e), .. } => format!("File of {}", self.display(*e)),
             Type::File { elem: None, .. } => "File".into(),
@@ -542,8 +659,11 @@ impl TypeTable {
         }
     }
 
-    /// Whether object type `ty` is `ancestor` or derives from it.
+    /// Whether object type `ty` is `ancestor` or derives from it. Class
+    /// types are compared through their instance layouts.
     pub fn is_descendant(&self, ty: TypeId, ancestor: TypeId) -> bool {
+        let ty = self.instance(ty).unwrap_or(ty);
+        let ancestor = self.instance(ancestor).unwrap_or(ancestor);
         let mut cur = Some(ty);
         while let Some(t) = cur {
             if t == ancestor {
@@ -552,6 +672,24 @@ impl TypeTable {
             cur = self.object(t).and_then(|o| o.parent);
         }
         false
+    }
+
+    /// The instance layout (an object type) of class type `id`.
+    pub fn instance(&self, id: TypeId) -> Option<TypeId> {
+        match self.get(id) {
+            Type::Class(i) => Some(*i),
+            _ => None,
+        }
+    }
+
+    /// The object type of a class's instances.
+    pub fn class_object(&self, id: TypeId) -> Option<&ObjectType> {
+        self.instance(id).and_then(|i| self.object(i))
+    }
+
+    /// Whether `id` is the instance layout of a class.
+    pub fn is_class_instance(&self, id: TypeId) -> bool {
+        self.object(id).is_some_and(|o| o.class.is_some())
     }
 }
 

@@ -1,5 +1,5 @@
 ODIN TURBO PASCAL
-Panduan penggunaan 2.8.0
+Panduan penggunaan 2.9.0
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 MEMBUAT PROGRAM PERTAMA
@@ -54,6 +54,14 @@ memanggil CloseGraph atau menjalankan program lain. Menutup jendela tidak
 menghentikan program; pakai Run > Stop. Bila setelan graph_window di
 settings.json diubah menjadi false, gambar hanya tampil sebagai pratinjau
 kasar di User screen. Contoh dibuka sebagai templat: Save menjadi Save as.
+
+File > Examples - OOP berisi 9 contoh pemrograman berorientasi objek dengan
+class: class pertama, constructor dan destructor, enkapsulasi dan property,
+pewarisan, polimorfisme (virtual, override, abstract), class var dan class of,
+daftar objek dengan is dan as (unit Contnrs), overload, dan proyek kasir toko.
+Class adalah perluasan Odin di atas Turbo Pascal 7; ringkasannya ada di
+Help > Pascal reference, bagian CLASS (PERLUASAN OOP). Contoh dibuka sebagai
+templat: Save menjadi Save as.
 
 Program Bab 17 dan Bab 20 membuat berkas data, misalnya catatan.txt atau
 kontak.dat, di folder kerja program, yaitu folder berkas .pas-nya. Nama
@@ -129,7 +137,9 @@ Alt+F8 berpindah ke diagnostik berikutnya, termasuk warning dan hint.
 Compile > Compiler messages menampilkan perintah dan seluruh keluaran compiler.
 
 Options > Compiler:
-Compiler Odin mengikuti bahasa Turbo Pascal 7; tidak ada pilihan mode lain.
+Compiler Odin mengikuti bahasa Turbo Pascal 7, diperluas dengan class (OOP
+gaya Delphi/Free Pascal). Tidak ada pilihan mode lain, dan perluasan itu tidak
+perlu diaktifkan: program TP7 tetap dikompilasi seperti biasa.
 Range checks dan overflow checks aktif secara bawaan.
 Informasi baris untuk runtime error selalu dibuat. Debug > Start debugging
 membuat build debug tersendiri dengan pengait debugger.

@@ -25,3 +25,15 @@ Sampai 2.3.0, ekspektasi korpus `tests/pascal/` dibuat dengan FPC 3.2.2 (`fpc -M
 ## Program dengan ekspektasi tulisan tangan
 
 - `runtime/RTE_STACK.PAS`: stack overflow, lihat tabel di atas.
+
+## Perluasan class
+
+Program di `classes/` memakai class, yang tidak ada di FPC `-Mtp`. Ekspektasinya dibuat dengan `scripts/bless_corpus.py` dan ditinjau terhadap perilaku class Delphi dan FPC (`-Mobjfpc`). Perbedaan yang disengaja:
+
+| Hal | Delphi / FPC objfpc | Odin | Alasan |
+| --- | --- | --- | --- |
+| Kesalahan pemakaian class | Exception (`EAbstractError`, `EInvalidCast`, `EAccessViolation`, `EListError`) | Runtime error 211, 219, 216, 201 | Odin belum punya exception. |
+| `Integer` | 32 bit | 16 bit, juga di method dan di `TListSortCompare` | Bahasa bawaannya TP7; class tidak mengubah ukuran tipe. |
+| Kata `class`, `property`, `is`, `as`, ... | Kata tercadang | Bermakna hanya di tempatnya; selain itu tetap identifier | Program TP7 yang memakai kata itu sebagai nama tetap dikompilasi. |
+| `Result`, parameter bawaan, overload rutin biasa | Ada | Tidak ada | Di luar cakupan Tahap 10. |
+| `TStringList.Text`, `CommaText` | Ada | Tidak ada | `String` tetap 255 karakter. |

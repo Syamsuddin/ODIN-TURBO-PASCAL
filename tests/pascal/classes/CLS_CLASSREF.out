@@ -1,0 +1,14 @@
+animal (TAnimal) says ...
+dog (TDog) says woof
+dog (TPuppy) says yip woof
+animal (TCat) says meow
+TAnimal ... FALSE
+TDog woof TRUE
+TPuppy yip woof TRUE
+TCat meow FALSE
+rex (TPuppy) says yip woof / yip woof / ...
+TPuppy TDog TAnimal TObject 
+TCat TAnimal TObject 
+TRUE FALSE TRUE TRUE
+TRUE TRUE TRUE FALSE 
+rex yip woof
