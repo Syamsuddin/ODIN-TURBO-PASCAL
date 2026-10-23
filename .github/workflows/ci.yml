@@ -119,7 +119,9 @@ jobs:
           setup=$(ls "$RUNNER_TEMP"/dist/OdinTurboPascal-*-Setup-x64.exe)
           # Silent install in a clean folder, then the files and the private Python are checked.
           # In the background with a deadline: a setup that hangs must show its log, not eat the job's 45 minutes.
-          "$setup" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CURRENTUSER /TASKS= "/DIR=$(cygpath -w "$RUNNER_TEMP/odin-setup-app")" "/LOG=$(cygpath -w "$RUNNER_TEMP/setup.log")" &
+          # MSYS_NO_PATHCONV: Git Bash would otherwise turn /VERYSILENT and the other switches into paths
+          # (C:/Program Files/Git/VERYSILENT), and the setup would wait for its wizard.
+          MSYS_NO_PATHCONV=1 "$setup" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CURRENTUSER /TASKS= "/DIR=$(cygpath -w "$RUNNER_TEMP/odin-setup-app")" "/LOG=$(cygpath -w "$RUNNER_TEMP/setup.log")" &
           pid=$!
           for i in $(seq 1 60); do kill -0 $pid 2>/dev/null || break; sleep 5; done
           if kill -0 $pid 2>/dev/null; then
@@ -137,7 +139,7 @@ jobs:
           test ! -f "$app/check-failed.log"
           "$app/python/python.exe" -E -c "import tkinter, sys; print(sys.version)"
           "$app/python/python.exe" -E -X utf8 "$app/scripts/check_windows.py"
-          "$app/unins000.exe" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+          MSYS_NO_PATHCONV=1 "$app/unins000.exe" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
           sleep 3
           test ! -e "$app/odin"
 
