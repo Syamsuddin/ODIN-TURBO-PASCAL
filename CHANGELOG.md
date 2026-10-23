@@ -6,6 +6,10 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-10-23
+
+Rilis 2.9.0 memperluas bahasa Turbo Pascal 7 dengan OOP berbasis `class` (Tahap 10), tanpa mode khusus dan tanpa kata tercadang baru, sehingga program TP7 tetap dikompilasi apa adanya.
+
 ### Ditambahkan
 
 - **OOP berbasis `class`** (Tahap 10 di `IMPLEMENTATION_PLAN.md`). Bahasanya tetap Turbo Pascal 7 secara bawaan, dan `odinpc` kini juga memahami class seperti Delphi dan Free Pascal, tanpa direktif atau mode dan tanpa kata tercadang baru:
@@ -421,7 +425,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.8.0...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.9.0...HEAD
+[2.9.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.5.0...v2.6.0
