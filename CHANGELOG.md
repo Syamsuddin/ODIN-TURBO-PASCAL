@@ -6,6 +6,10 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Diuji
+
+- Setup Windows 2.9.0 (`OdinTurboPascal-2.9.0-Setup-x64.exe`) dibangun di PC Windows 10 fisik, lalu dipasang dan dijalankan di sana dengan hasil berhasil.
+
 ## [2.9.0] - 2026-10-23
 
 Rilis 2.9.0 memperluas bahasa Turbo Pascal 7 dengan OOP berbasis `class` (Tahap 10), tanpa mode khusus dan tanpa kata tercadang baru, sehingga program TP7 tetap dikompilasi apa adanya.

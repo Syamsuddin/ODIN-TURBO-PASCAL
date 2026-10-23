@@ -230,7 +230,7 @@ Pemasang Windows memasang IDE beserta `odinpc.exe` dan runtime library-nya di `%
 3. **Jalankan** Odin Turbo Pascal dari menu Start.
 
 > [!NOTE]
-> Di runner GitHub Actions, pemeriksaan kompilasi dan penyalinan aplikasi oleh pemasang diuji pada setiap commit, dan setup Inno dipasang serta dihapus secara senyap. Pemasang lengkap (`Install.cmd` dengan winget, setup Inno dengan wizard, pintasan, SmartScreen) belum dijalankan di PC Windows sungguhan.
+> Di runner GitHub Actions, pemeriksaan kompilasi dan penyalinan aplikasi oleh pemasang diuji pada setiap commit, dan setup Inno dipasang serta dihapus secara senyap. Setup Inno 2.9.0 sudah dibangun, dipasang, dan dijalankan di PC Windows 10 sungguhan dengan hasil berhasil; `Install.cmd` dengan winget belum diuji di sana.
 
 ### Linux
 
@@ -399,6 +399,7 @@ Rincian dan perbedaan perilaku ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBIL
 |---|---|
 | Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, Rust 1.99 (rilis 2.9.0) | 147 tes Python lulus (10 dilewati) dan seluruh tes Rust (191), termasuk korpus 97 program (11 di antaranya class) dalam tiga mode build, galat semantik class, debugger dengan objek class, dan kesembilan contoh OOP. Korpus juga lulus di VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu) |
 | GitHub Actions: macOS 15 Intel dan Apple Silicon, Ubuntu 24.04 x86_64 dan arm64, Windows Server 2025 (rilis 2.9.0) | Tes Rust (termasuk korpus) dan tes Python lulus di kelima runner; di Windows juga pemeriksaan pemasang dan setup Inno Setup. Perangkat fisik Apple Silicon dan Windows belum diuji |
+| PC Windows fisik (Windows 10 Home 22H2, x86_64), Python 3.13.16, Rust 1.99 (rilis 2.9.0) | `cargo build --release` berhasil; Setup `OdinTurboPascal-2.9.0-Setup-x64.exe` (24,8 MB, SHA-256 `813b78b3fb0b9e742c88e55078bf3d1a3578600a71b6e72416fb379a7114ee1e`) dibangun dengan `scripts/build_setup_windows.py` (Inno Setup 6.7.3; Python pribadinya disalin dari Python 3.13.16 yang terpasang di PC itu, karena installer python.org meng-upgrade Python pengguna alih-alih memasang ke folder staging), lalu **dipasang, dijalankan, dan diuji secara manual di PC ini: berhasil**. Tes otomatis lengkap belum dijalankan di sana |
 | Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, Rust 1.99 (rilis 2.8.0) | 144 tes Python lulus (10 dilewati), termasuk tes jendela grafik dengan piksel sebenarnya, tes soket Graph, tampilan Graph lewat PTY, dan seluruh tes Rust (korpus diferensial dalam tiga mode build). Korpus Math, SysUtils, WinDos, dan Overlay serta keenam program Graph juga lulus di VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu) dengan keluaran sama. Hasil CI rilis ini dicatat di halaman Releases |
 | Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, FPC 3.2.2, Rust 1.99 (rilis 2.4.0) | 119 tes Python lulus (6 dilewati), termasuk tes GUI dengan jendela Tk sungguhan, sesi debugger nyata, snapshot Odin Vision, dan **Run › Ukur**/**Periksa...**. 189 tes Rust juga lulus. Korpus diferensial 77 program (termasuk tipe `object` dan unit `Objects`) memberi keluaran dan kode keluar yang sama dengan FPC 3.2.2, dengan build biasa, build debug, dan build hitung langkah |
 | GitHub Actions: macOS 15 Apple Silicon, Ubuntu 24.04 x86_64 dan arm64, macOS 15 Intel (rilis 2.4.0) | Korpus diferensial berjalan native dan lulus; laporan langkah `tests/steps/` sama di semua target; tes Python dengan backend Odin (GUI, debugger, Odin Vision) lulus. Lihat [CI](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml) |
@@ -408,7 +409,7 @@ Rincian dan perbedaan perilaku ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBIL
 | Linux x86_64, Python 3.12, Tk 9.0, FPC 3.2.2, Xvfb (rilis 1.0.0) | Seluruh suite saat itu lulus. Lihat [`docs/TEST_REPORT.txt`](docs/TEST_REPORT.txt) |
 
 > [!CAUTION]
-> **Belum diverifikasi langsung:** Mac Apple Silicon, PC Linux, dan PC Windows fisik (hanya runner CI dan VM); pemasangan lewat `Install.command` di Apple Silicon; `Install.cmd` lengkap (winget, pintasan, menu Start); Windows on ARM; peluncuran lewat Finder/LaunchServices; Gatekeeper; Mac bersih tanpa Free Pascal maupun Xcode Command Line Tools; LLDB di paket rilis 1.0.0; dan pencetakan lewat `Printer`.
+> **Belum diverifikasi langsung:** Mac Apple Silicon dan PC Linux (hanya runner CI dan VM); pemasangan lewat `Install.command` di Apple Silicon; `Install.cmd` lengkap (winget, pintasan, menu Start); Windows on ARM; peluncuran lewat Finder/LaunchServices; Gatekeeper; Mac bersih tanpa Free Pascal maupun Xcode Command Line Tools; LLDB di paket rilis 1.0.0; dan pencetakan lewat `Printer`.
 
 ## Privasi dan Lokasi Data
 
