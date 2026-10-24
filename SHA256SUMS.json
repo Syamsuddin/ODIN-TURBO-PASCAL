@@ -536,7 +536,7 @@
   "scripts/bless_corpus.py": "90bac07e8b567f207ea16523d0c4b84c9d8991228b52652dd65a8e26b65c5332",
   "scripts/build_book.py": "c5079c0ec57efd03f176a4428bd9f6071f565ea3eb992ea99dc4f78d4e112a9d",
   "scripts/build_help.py": "53ca2ea319c55e9f121568fc58b058558d6ed23aac6693a6263b01c433ef1c1c",
-  "scripts/build_setup_linux.py": "8907cef452053944c8ddc8b10f788884688af4fba4f7bc6f74a005193f84e68b",
+  "scripts/build_setup_linux.py": "1b00eaa5ee60ecf1b78f1ed8f15a86cd363fb312948444bbd32e24c6d3f8a8f4",
   "scripts/build_setup_mac.py": "548e982ff29165ec1c5dc496fe4b61dec617c085cb55ffbc2a7ae24a29198968",
   "scripts/build_setup_windows.py": "b4c226946c080c529ad21d7992546e8c8768190b070041554f08f0460765b7f9",
   "scripts/build_toolchain.py": "3dc065b8f5191fa624315d333144ec8eca3efc4554dde51cb5aeee4a2ec3eff1",

@@ -68,6 +68,9 @@ def stage(target, arch, python, odinpc):
     target.mkdir(parents=True)
     for folder in stage_windows.FOLDERS:
         shutil.copytree(ROOT / folder, target / folder, ignore=stage_windows.ignore)
+    # OTP-AI and the example menus, as in stage_windows.py and package_app.py.
+    for folder in ("otp-AI/UNITS", "otp-AI/EXAMPLES", "otp-AI/DATA", "examples-graph", "examples-oop"):
+        shutil.copytree(ROOT / folder, target / folder, ignore=stage_windows.ignore)
     for name in FILES:
         shutil.copy2(ROOT / name, target / name)
     for name in WEB_FILES:
