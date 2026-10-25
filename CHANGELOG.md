@@ -6,6 +6,10 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+## [3.0.0-beta.1] - 2026-10-26
+
+Pra-rilis pertama OTP-Win: tampilan DOS diganti antarmuka berjendela modern (menu teks dengan dropdown, toolbar berikon, jendela editor, Output, dan Messages yang bisa digeser, diubah ukurannya, di-minimize, dan di-maximize di dalam jendela utama), dengan bahasa, toolchain, dan pintasan Turbo Pascal yang sama. Buku tutorial bertambah Bab 21 (class) dan Bab 22 (grafik). Ini beta: hanya diuji di Mac Intel.
+
 ### Ditambahkan
 
 - Buku tutorial (**Help › Buku**) kini 484 halaman dengan **Bagian VII: Class dan Grafik**. **Bab 21** (Pemrograman Berorientasi Objek dengan Class) membahas kesembilan contoh **File › Examples - OOP**, dan **Bab 22** (Grafik dengan Unit Graph) membahas keempat belas contoh **File › Examples - Graph**. Gaya kedua bab sama dengan bab lain: tujuan pembelajaran, infografik, listing, keluaran, penjelasan baris demi baris, kesalahan yang sering terjadi dengan pesan `odinpc` asli, rangkuman, dan latihan. Gambar di Bab 22 adalah piksel jendela grafik yang sebenarnya: `scripts/build_book.py` menerima framebuffer program lewat `GraphChannel` seperti IDE. Peta buku, penutup, daftar program (113 berkas), dan glosarium ikut diperbarui. Baris listing yang lebih lebar dari halaman kini dilipat di bawah indentasinya sendiri.
@@ -26,7 +30,7 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ### Pengujian
 
-- Antarmuka berjendela (OTP-Win), diuji di macOS Intel saja: 160 tes Python lulus (10 dilewati), termasuk `tests/test_gui.py` (38 tes: menu bar, jendela child, Tile/Cascade/minimize/maximize, geser dan ubah ukuran, toolbar dan tooltip, dialog Options, desktop tersimpan, Run/Debug/Ukur di jendela Output, Odin Vision dengan mouse) dan `tests/test_icons.py`. Tampilannya belum diperiksa di Windows, Linux, dan Apple Silicon.
+- Diuji di macOS Intel saja: seluruh tes Rust (191, termasuk korpus) dan 160 tes Python lulus (10 dilewati), termasuk `tests/test_gui.py` (38 tes: menu bar, jendela child, Tile/Cascade/minimize/maximize, geser dan ubah ukuran, toolbar dan tooltip, dialog Options, desktop tersimpan, Run/Debug/Ukur di jendela Output, Odin Vision dengan mouse) dan `tests/test_icons.py`. Pemasang `OdinTurboPascal-3.0.0-beta.1-macos-x86_64.pkg` dibangun dengan `scripts/build_setup_mac.py`, dan pemeriksaannya (Python pribadi dengan Tk, compile dan run dengan `odinpc`) lulus; pemasangannya sendiri belum dicoba. Tampilannya belum diperiksa di Windows, Linux, dan Apple Silicon, dan CI belum dijalankan untuk cabang ini.
 
 ## [2.9.0] - 2026-10-23
 
@@ -447,7 +451,8 @@ Ke-24 tes lulus di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1, Free Pascal 3.2.2
 
 Yang belum diverifikasi langsung: Apple Silicon, peluncuran lewat Finder/LaunchServices, Gatekeeper, dan sesi LLDB interaktif.
 
-[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.9.0...HEAD
+[Unreleased]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v3.0.0-beta.1...HEAD
+[3.0.0-beta.1]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.9.0...v3.0.0-beta.1
 [2.9.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/compare/v2.6.0...v2.7.0

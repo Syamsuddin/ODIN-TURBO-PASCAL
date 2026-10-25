@@ -6,7 +6,7 @@
 
 **Cara kerja Turbo Pascal yang Anda kenal, dalam IDE berjendela modern, dengan compiler dan debugger yang menghasilkan program native.**
 
-[![Versi](https://img.shields.io/badge/rilis-2.9.0-0000aa?style=flat-square)](CHANGELOG.md)
+[![Versi](https://img.shields.io/badge/rilis-3.0.0--beta.1-0000aa?style=flat-square)](CHANGELOG.md)
 [![CI](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml/badge.svg)](https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/actions/workflows/ci.yml)
 [![Lisensi GPL v3](https://img.shields.io/badge/lisensi-GPL--3.0--or--later-ffff55?style=flat-square)](LICENSE)
 [![Offline](https://img.shields.io/badge/offline-tanpa%20telemetri-55ff55?style=flat-square)](#privasi-dan-lokasi-data)
@@ -22,6 +22,8 @@
 </div>
 
 > [!IMPORTANT]
+> **Pra-rilis 3.0.0-beta.1** mengganti tampilan DOS dengan **antarmuka berjendela modern**: menu teks dengan dropdown, toolbar berikon, serta jendela editor, Output, dan Messages yang bisa digeser, diubah ukurannya, di-minimize, dan di-maximize di dalam jendela utama. Beta ini hanya diuji di Mac Intel. Rilis stabil terbaru tetap 2.9.0.
+>
 > **Rilis 2.9.0** memperluas bahasa Turbo Pascal 7 dengan **OOP berbasis `class`** seperti Delphi dan Free Pascal (pewarisan, `virtual`/`override`/`abstract`, `property`, `is`/`as`, `class of`, overload method), tanpa mode khusus sehingga program TP7 tetap dikompilasi apa adanya. Rilis ini juga membawa unit **Classes** dan **Contnrs** serta menu **File › Examples - OOP...** dengan 9 contoh. Rilis 2.8.0 menambahkan jendela grafik sungguhan untuk unit Graph. IDE, toolchain Odin, debugger terpadu, dan Odin Vision berjalan di macOS (Intel dan Apple Silicon), Linux (x86_64 dan arm64), dan **Windows** (x86_64). Windows, Apple Silicon, dan Linux diuji di runner GitHub Actions, belum di perangkat fisik pengembang. Lihat [Riwayat Rilis](#riwayat-rilis) dan [Status Pengujian](#status-pengujian).
 
 ## Daftar Isi
@@ -200,7 +202,7 @@ Pemasang macOS dapat memasang Python dengan Tk melalui Homebrew, dan pemasang Wi
 
 **Pemasang satu berkas (offline).** Unduh `OdinTurboPascal-VERSI-macos-x86_64.pkg` (Mac Intel) dari halaman Releases, lalu buka. Paket memasang aplikasi di `~/Applications` tanpa kata sandi administrator dan membawa Python dengan Tk sendiri, jadi tidak ada yang diunduh dan tidak perlu Homebrew atau Xcode. Paket belum ditandatangani Apple: bila macOS menahannya, klik kanan paketnya, pilih **Open**, atau gunakan **System Settings › Privacy & Security › Open Anyway**. Dibangun oleh `python3 scripts/build_setup_mac.py` dan oleh CI. Diuji di Mac Intel pengembang (pasang, pemeriksaan kompilasi dengan jaringan diblokir, buka lewat LaunchServices); versi `arm64` hanya dibangun di CI, dan Mac bersih tanpa Python belum diuji.
 
-**Dari repositori (`Install.command`).** Pemasang ini memasang **rilis 2.9.0**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Satu-satunya dependensi adalah Python dengan Tk.
+**Dari repositori (`Install.command`).** Pemasang ini memasang **rilis 3.0.0-beta.1**: IDE, toolchain Odin universal untuk Mac Intel dan Apple Silicon, dan runtime library-nya. Satu-satunya dependensi adalah Python dengan Tk.
 
 1. **Unduh** repositori ini (**Code › Download ZIP**), lalu ekstrak seluruhnya. Jangan menjalankan pemasang dari pratinjau ZIP.
 2. **Buka `Install.command`.** Pemasang berjalan di Terminal dan akan:
@@ -400,6 +402,7 @@ Rincian dan perbedaan perilaku ada di [`docs/COMPATIBILITY.txt`](docs/COMPATIBIL
 
 | Lingkungan | Hasil |
 |---|---|
+| Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, Rust 1.99 (pra-rilis 3.0.0-beta.1) | 160 tes Python lulus (10 dilewati), termasuk 38 tes antarmuka berjendela, dan seluruh tes Rust (191) termasuk korpus. Pemeriksaan pemasang `.pkg` lulus; pemasangan di Mac bersih, Apple Silicon, Linux, dan Windows belum diuji untuk tampilan ini |
 | Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, Rust 1.99 (rilis 2.9.0) | 147 tes Python lulus (10 dilewati) dan seluruh tes Rust (191), termasuk korpus 97 program (11 di antaranya class) dalam tiga mode build, galat semantik class, debugger dengan objek class, dan kesembilan contoh OOP. Korpus juga lulus di VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu) |
 | GitHub Actions: macOS 15 Intel dan Apple Silicon, Ubuntu 24.04 x86_64 dan arm64, Windows Server 2025 (rilis 2.9.0) | Tes Rust (termasuk korpus) dan tes Python lulus di kelima runner; di Windows juga pemeriksaan pemasang dan setup Inno Setup. Perangkat fisik Apple Silicon dan Windows belum diuji |
 | Mac Intel (macOS 15.7), Python 3.13, Tk 9.1, Rust 1.99 (rilis 2.8.0) | 144 tes Python lulus (10 dilewati), termasuk tes jendela grafik dengan piksel sebenarnya, tes soket Graph, tampilan Graph lewat PTY, dan seluruh tes Rust (korpus diferensial dalam tiga mode build). Korpus Math, SysUtils, WinDos, dan Overlay serta keenam program Graph juga lulus di VM Ubuntu 24.04 (x86_64, dan aarch64 lewat qemu) dengan keluaran sama. Hasil CI rilis ini dicatat di halaman Releases |
@@ -535,6 +538,7 @@ ODIN-TURBO-PASCAL/
 
 | Versi | Ringkasan |
 |---|---|
+| **3.0.0-beta.1** (pra-rilis) | Antarmuka berjendela modern: menu teks dan dropdown, toolbar berikon, jendela child dengan minimize/maximize, jendela Output dan Messages, dialog Options bertab, desktop tersimpan; buku Bab 21–22 |
 | **2.9.0** (terbaru) | **OOP berbasis `class`** di atas TP7, unit **Classes** dan **Contnrs**, debugger menampilkan isi objek, dan **File › Examples - OOP...** dengan 9 contoh |
 | 2.8.0 | Jendela grafik sungguhan untuk program yang memakai Graph (piksel sebenarnya, tombol diteruskan ke program) dan **File › Examples - Graph...** dengan 14 contoh |
 | 2.7.0 | Unit **Graph** (BGI TP7 lengkap: framebuffer di memori dengan pratinjau terminal), **WinDos**, **Overlay**, **Math**, dan **SysUtils** |

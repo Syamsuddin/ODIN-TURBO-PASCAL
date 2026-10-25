@@ -1,4 +1,4 @@
-KOMPATIBILITAS DAN CAKUPAN VERSI 2.9.0
+KOMPATIBILITAS DAN CAKUPAN VERSI 3.0.0-beta.1
 Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 
 Implementasi baru dengan penampilan terinspirasi IDE Turbo Pascal era DOS.
