@@ -6,14 +6,6 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
-### Ditambahkan
-
-- Buku tutorial (**Help › Buku**) kini membahas semua contoh bawaan: **Bagian VIII: Kecerdasan Buatan dengan OTP-AI** berisi **Bab 23** (Machine Learning: Data dan Model Pertama) dan **Bab 24** (Model Lanjutan dan AI Klasik) untuk kedua puluh contoh **File › Examples - AI**, dinomori menurut urutan topik di menu. Gayanya sama dengan bab lain, dari tujuan pembelajaran sampai latihan, dengan pesan `odinpc` asli di bagian kesalahan. Grafik SVG yang ditulis contoh OTP-AI saat dijalankan ikut ditampilkan (tag `x-svg` di `scripts/build_book.py`), dan contoh dijalankan dengan folder kerja yang menemukan `../DATA` seperti di IDE. Peta buku, penutup, daftar program (133 berkas), glosarium, dan sampul ikut diperbarui.
-
-### Diperbaiki
-
-- Halaman pembuka Bab 21 dan Bab 22 di buku: daftar program yang panjang memampatkan bagian atas berwarna, sehingga judul Bab 21 tertimpa lintasan nomor bab dan judul Bab 22 hilang. Bagian atas kini tidak menyusut, dan bab dengan lebih dari tujuh program memakai daftar ringkas satu baris.
-
 ## [3.0.0-beta.1] - 2026-10-26
 
 Pra-rilis pertama OTP-Win: tampilan DOS diganti antarmuka berjendela modern (menu teks dengan dropdown, toolbar berikon, jendela editor, Output, dan Messages yang bisa digeser, diubah ukurannya, di-minimize, dan di-maximize di dalam jendela utama), dengan bahasa, toolchain, dan pintasan Turbo Pascal yang sama. Buku tutorial bertambah Bab 21 (class) dan Bab 22 (grafik). Ini beta: hanya diuji di Mac Intel.
@@ -21,6 +13,7 @@ Pra-rilis pertama OTP-Win: tampilan DOS diganti antarmuka berjendela modern (men
 ### Ditambahkan
 
 - Buku tutorial (**Help › Buku**) kini 484 halaman dengan **Bagian VII: Class dan Grafik**. **Bab 21** (Pemrograman Berorientasi Objek dengan Class) membahas kesembilan contoh **File › Examples - OOP**, dan **Bab 22** (Grafik dengan Unit Graph) membahas keempat belas contoh **File › Examples - Graph**. Gaya kedua bab sama dengan bab lain: tujuan pembelajaran, infografik, listing, keluaran, penjelasan baris demi baris, kesalahan yang sering terjadi dengan pesan `odinpc` asli, rangkuman, dan latihan. Gambar di Bab 22 adalah piksel jendela grafik yang sebenarnya: `scripts/build_book.py` menerima framebuffer program lewat `GraphChannel` seperti IDE. Peta buku, penutup, daftar program (113 berkas), dan glosarium ikut diperbarui. Baris listing yang lebih lebar dari halaman kini dilipat di bawah indentasinya sendiri.
+- Buku tutorial (**Help › Buku**) kini membahas semua contoh bawaan: **Bagian VIII: Kecerdasan Buatan dengan OTP-AI** berisi **Bab 23** (Machine Learning: Data dan Model Pertama) dan **Bab 24** (Model Lanjutan dan AI Klasik) untuk kedua puluh contoh **File › Examples - AI**, dinomori menurut urutan topik di menu. Gayanya sama dengan bab lain, dari tujuan pembelajaran sampai latihan, dengan pesan `odinpc` asli di bagian kesalahan. Grafik SVG yang ditulis contoh OTP-AI saat dijalankan ikut ditampilkan (tag `x-svg` di `scripts/build_book.py`), dan contoh dijalankan dengan folder kerja yang menemukan `../DATA` seperti di IDE. Peta buku, penutup, daftar program (133 berkas), glosarium, dan sampul ikut diperbarui.
 
 ### Diubah
 
@@ -37,6 +30,10 @@ Pra-rilis pertama OTP-Win: tampilan DOS diganti antarmuka berjendela modern (men
 - `DebugSession` menerima sambungan TCP dari `odinpc debug` di thread pembaca, sehingga jendela tidak tertahan selama debugger dimulai di Windows.
 - **Fit Output:** bila layar 80×25 tidak muat di jendela Output, huruf konsolnya mengecil (paling kecil 7 pt) sampai seluruh layar terlihat; bisa dimatikan di **Options › Environment**. Editor di tata letak awal kini setinggi 58% area kerja.
 - Setup Windows untuk versi pra-rilis: Inno Setup hanya menerima angka di `VersionInfoVersion`, jadi `build_setup_windows.py` mengirim versi tanpa akhiran pra-rilis (`3.0.0`) untuk kolom itu.
+
+### Diperbaiki
+
+- Halaman pembuka Bab 21 dan Bab 22 di buku: daftar program yang panjang memampatkan bagian atas berwarna, sehingga judul Bab 21 tertimpa lintasan nomor bab dan judul Bab 22 hilang. Bagian atas kini tidak menyusut, dan bab dengan lebih dari tujuh program memakai daftar ringkas satu baris.
 
 ### Pengujian
 
