@@ -350,7 +350,9 @@ class GuiTests(unittest.TestCase):
         self.widgets(win,ttk.Combobox)[0].set("Gelap")
         apply.invoke()
         self.assertEqual((self.settings["font_size"],self.settings["console_font_size"],self.settings["theme"]),(16,10,"dark"))
-        self.assertEqual((self.app.font.cget("size"),self.app.console_font.cget("size")),(16,10))
+        # Fit Output may make the console text smaller than the Output font size, never larger.
+        self.assertEqual(self.app.font.cget("size"),16)
+        self.assertLessEqual(self.app.console_font.cget("size"),10)
         self.assertEqual(editor.text.cget("bg"),"#1e1e1e")
         self.assertEqual(json.loads((self.path/"settings.json").read_text())["theme"],"dark")
         [b for b in self.widgets(win,ttk.Button) if b.cget("text")=="OK"][0].invoke()
@@ -469,6 +471,27 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(sent,[b"\x1b[1;2D",b"\x1bx",b"\x1b[Z"])
         self.app.copy_screen()
         self.assertIn("Ready",self.root.clipboard_get())
+
+    def test_output_text_fits_the_window(self):
+        output=self.app.output_window
+        console=output.console
+        output.fit()
+        self.root.update()
+        size=self.app.console_font.cget("size")
+        self.assertLess(size,self.settings["console_font_size"])
+        self.assertGreaterEqual(size,7)
+        # The whole 80x25 screen is visible, unless the smallest font is still too big.
+        width=self.app.console_font.measure("0")*80+16
+        self.assertTrue(width<=console.winfo_width() or size==7)
+        self.app.zoom(output)
+        self.root.update()
+        output.fit()
+        self.assertEqual(self.app.console_font.cget("size"),self.settings["console_font_size"])
+        self.app.zoom(output)
+        self.root.update()
+        self.settings["fit_console"]=False
+        output.fit()
+        self.assertEqual(self.app.console_font.cget("size"),self.settings["console_font_size"])
 
     def test_windows_modifier_keys(self):
         # On Windows Tk reports Alt as 0x20000 and Num Lock as Mod1 (0x08); AltGr is Ctrl+Alt and types

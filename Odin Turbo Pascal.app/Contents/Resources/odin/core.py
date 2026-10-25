@@ -188,7 +188,7 @@ DEFAULTS = {
     "recent": [], "geometry": "1120x740", "main_file": "",
     "graph_window": True,
     # Output window font, and the windows of the last session (App.desktop_state) restored at startup.
-    "console_font_size": 12, "save_desktop": True, "desktop": {},
+    "console_font_size": 12, "fit_console": True, "save_desktop": True, "desktop": {},
 }
 
 

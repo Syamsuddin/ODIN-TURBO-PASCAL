@@ -4,7 +4,9 @@
 ; Inno Setup script for the single-file offline Windows installer. Do not run ISCC on it by
 ; hand: scripts/build_setup_windows.py prepares the staging folder (the app, odinpc.exe and a
 ; private Python 3.13 with Tk) and passes these definitions:
-;   /DVersion=2.3.0  /DStaging=C:\...\app  /DOutDir=C:\...\dist
+;   /DVersion=2.3.0  /DFileVersion=2.3.0  /DStaging=C:\...\app  /DOutDir=C:\...\dist
+; FileVersion is Version without a pre-release suffix (3.0.0 for 3.0.0-beta.1): Windows file
+; versions are numbers only.
 ; Keep this file ASCII.
 
 #ifndef Version
@@ -15,6 +17,9 @@
 #endif
 #ifndef OutDir
   #define OutDir "dist"
+#endif
+#ifndef FileVersion
+  #define FileVersion Version
 #endif
 
 [Setup]
@@ -28,7 +33,7 @@ AppCopyright=Copyright (c) 2026 Syams Ideris
 AppPublisherURL=https://github.com/Syamsuddin/ODIN-TURBO-PASCAL
 AppSupportURL=https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/issues
 AppUpdatesURL=https://github.com/Syamsuddin/ODIN-TURBO-PASCAL/releases
-VersionInfoVersion={#Version}
+VersionInfoVersion={#FileVersion}
 VersionInfoDescription=Odin Turbo Pascal setup
 ; Per user, no administrator rights; same folder as Install.ps1, so it upgrades that install.
 PrivilegesRequired=lowest
@@ -37,7 +42,7 @@ DefaultGroupName=Odin Turbo Pascal
 DisableProgramGroupPage=yes
 ArchitecturesAllowed=x64os
 ArchitecturesInstallIn64BitMode=x64os
-; ConPTY (the User screen) needs Windows 10 1809.
+; ConPTY (the Output window) needs Windows 10 1809.
 MinVersion=10.0.17763
 LicenseFile={#Staging}\LICENSE
 SetupIconFile={#Staging}\odin.ico

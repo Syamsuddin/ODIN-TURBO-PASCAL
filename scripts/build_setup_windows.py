@@ -16,6 +16,7 @@ Python installer you already downloaded (it must still match the pinned SHA-256)
 import argparse
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -126,7 +127,9 @@ def build(out, python_installer_path=None):
         # The check imports odin, which may leave bytecode caches; the setup must not carry them.
         for cache in staging.rglob("__pycache__"):
             shutil.rmtree(cache, ignore_errors=True)
-        subprocess.run([iscc, f"/DVersion={__version__}", f"/DStaging={staging}", f"/DOutDir={out}",
+        # Windows file versions are numbers only: 3.0.0 for 3.0.0-beta.1.
+        file_version = re.match(r"\d+\.\d+\.\d+", __version__).group(0)
+        subprocess.run([iscc, f"/DVersion={__version__}", f"/DFileVersion={file_version}", f"/DStaging={staging}", f"/DOutDir={out}",
                         str(ROOT / "scripts" / "odin_setup.iss")], check=True, timeout=1800)
     setup = out / f"OdinTurboPascal-{__version__}-Setup-x64.exe"
     print(f"{setup} ({setup.stat().st_size / 1048576:.1f} MB)")

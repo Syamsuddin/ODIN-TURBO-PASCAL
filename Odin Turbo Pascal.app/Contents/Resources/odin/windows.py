@@ -7,6 +7,7 @@ from __future__ import annotations
 import re
 import tkinter as tk
 from bisect import bisect_right
+from tkinter import font as tkfont
 from tkinter import ttk
 
 from .core import syntax_spans
@@ -42,6 +43,8 @@ TITLE_INACTIVE = ("#e4e6ea", "#5f6368")
 FRAME_ACTIVE, FRAME_INACTIVE = "#2b5797", "#9aa0a8"
 WINDOW_BG = "#f3f3f3"
 CLOSE_HOVER = "#e81123"
+# The smallest console font Fit Output uses.
+FIT_SMALLEST = 7
 # Pixels of frame that resize a window, the smallest window, and the width of a minimized window.
 GRIP, MIN_WIDTH, MIN_HEIGHT, ICON_WIDTH = 4, 220, 110, 200
 # Cursors over each edge and corner (X11 names, which Tk maps on every platform).
@@ -557,6 +560,8 @@ class OutputWindow(ChildWindow):
         bar.pack(side="right", fill="y")
         self.console.pack(fill="both", expand=True)
         self.track(self.console)
+        self.fit_job = None
+        self.console.bind("<Configure>", self.schedule_fit, add="+")
         self.console.bind("<Control-F2>", lambda e: app.shortcut(app.stop))
         self.console.bind("<Alt-F5>", lambda e: app.shortcut(app.focus_editor))
         # While the debugger holds the program, F7/F8 step; otherwise they belong to the running
@@ -569,6 +574,37 @@ class OutputWindow(ChildWindow):
 
     def focus(self):
         self.console.focus_set()
+
+    def schedule_fit(self, event=None):
+        # On the root, like every timer of the IDE: App.cancel_callbacks cancels them there when it quits.
+        root = self.app.root
+        if self.fit_job:
+            try:
+                root.after_cancel(self.fit_job)
+            except tk.TclError:
+                pass
+        self.fit_job = root.after(60, self.fit)
+
+    def fit(self):
+        """With Options > Environment > Fit Output: the largest console font, up to the Output font size, at which the
+        80x25 screen fits in the window, so Crt and Odin Vision programs are not cut off."""
+        self.fit_job = None
+        if not self.console.winfo_exists():
+            return
+        largest = self.app.settings["console_font_size"]
+        size = largest
+        width, height = self.console.winfo_width(), self.console.winfo_height()
+        if self.app.settings["fit_console"] and width > 50 and height > 50:
+            probe = tkfont.Font(root=self.console, family=self.app.console_font.cget("family"), size=size)
+            pad_x, pad_y = 2 * int(self.console.cget("padx")), 2 * int(self.console.cget("pady"))
+            while size > FIT_SMALLEST:
+                probe.configure(size=size)
+                if (probe.measure("0") * self.console.screen.cols + pad_x <= width
+                        and probe.metrics("linespace") * self.console.screen.rows + pad_y <= height):
+                    break
+                size -= 1
+        if self.app.console_font.cget("size") != size:
+            self.app.console_font.configure(size=size)
 
     def clear(self):
         self.console.screen = Screen()

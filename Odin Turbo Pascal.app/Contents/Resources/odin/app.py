@@ -75,7 +75,7 @@ ENCODINGS = {"utf-8": "UTF-8", "utf-8-sig": "UTF-8 BOM", "cp437": "CP437"}
 MENU_BG, MENU_FG, MENU_HOVER = "#f3f3f3", "#1f1f1f", "#cce0f7"
 # Where the standard windows open, as place() options in the workspace: editors fill the upper part (cascaded),
 # Output and Messages share the lower part, the debugger's windows stack on the right.
-EDITOR_HEIGHT = .64
+EDITOR_HEIGHT = .58
 OUTPUT_PLACE = dict(x=6, rely=EDITOR_HEIGHT, y=2, relwidth=.58, width=-9, relheight=1 - EDITOR_HEIGHT, height=-8)
 MESSAGES_PLACE = dict(relx=.58, x=3, rely=EDITOR_HEIGHT, y=2, relwidth=.42, width=-9, relheight=1 - EDITOR_HEIGHT, height=-8)
 DEBUG_PLACES = {"watch_window": dict(relx=.62, x=0, y=6, relwidth=.38, width=-6, relheight=EDITOR_HEIGHT / 3, height=-6),
@@ -1756,7 +1756,7 @@ class App:
         pages={name:ttk.Frame(notebook,padding=(14,12)) for name in OPTION_TABS}
         for name,page in pages.items():notebook.add(page,text=name)
         flags={key:tk.BooleanVar(value=self.settings[key]) for key in
-               ("range_checks","overflow_checks","syntax_colors","graph_window","save_desktop")}
+               ("range_checks","overflow_checks","syntax_colors","graph_window","save_desktop","fit_console")}
         page=pages["Compiler"]
         ttk.Label(page,text="Odin native compiler, Turbo Pascal 7 + class").pack(anchor="w",pady=(0,8))
         for key,label in (("range_checks","Range checks ($R+)"),("overflow_checks","Overflow checks ($Q+)")):
@@ -1790,6 +1790,7 @@ class App:
         ttk.Checkbutton(page,text="Syntax colors",variable=flags["syntax_colors"]).pack(anchor="w",pady=(8,0))
         page=pages["Environment"]
         number(page,"console_font_size","Output font size (8..30)",8,30)
+        ttk.Checkbutton(page,text="Fit Output: smaller text when 80x25 does not fit the Output window",variable=flags["fit_console"]).pack(anchor="w",pady=(8,2))
         ttk.Checkbutton(page,text="Graph window for programs that use the Graph unit",variable=flags["graph_window"]).pack(anchor="w",pady=(8,2))
         ttk.Checkbutton(page,text="Save desktop: reopen files and windows where they were",variable=flags["save_desktop"]).pack(anchor="w",pady=2)
         def apply():
@@ -1809,6 +1810,7 @@ class App:
             self.font.configure(size=self.settings["font_size"])
             self.console_font.configure(size=self.settings["console_font_size"])
             for editor in self.editors:editor.apply_options()
+            if self.output_window:self.output_window.fit()
             if self.console:self.console.render()
             self.settings.save()
             self.update_status()

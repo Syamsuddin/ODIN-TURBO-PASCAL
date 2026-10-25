@@ -201,10 +201,12 @@ Argumen diteruskan sebagai daftar, tanpa menjalankan shell.
 JENDELA OUTPUT
 
 Jendela Output memakai pseudo-terminal OS sehingga input program bersifat
-interaktif. Ukuran layar emulasi 80 kolom × 25 baris. Jendela Output pada awal
-sesi lebih kecil dari itu; tekan F5 untuk memaksimalkannya, atau perkecil
-huruf konsol di Options > Environment (Output font size). Membesarkan jendela
-tidak mengubah ukuran buffer. Klik kanan membuka Copy screen, Clear, dan
+interaktif. Ukuran layar emulasi 80 kolom × 25 baris. Bila layar itu tidak muat
+di jendela Output, hurufnya otomatis mengecil (paling kecil 7 pt) sampai seluruh
+layar terlihat; tekan F5 untuk memaksimalkan jendela dan kembali ke huruf
+penuh. Ukuran huruf terbesar diatur di Options > Environment (Output font
+size); matikan Fit Output di sana untuk huruf tetap. Membesarkan jendela tidak
+mengubah ukuran buffer. Klik kanan membuka Copy screen, Clear, dan
 Program reset (kecuali saat program meminta mouse). Terminal mendukung bagian VT100/ANSI yang digunakan oleh CRT:
 warna 16, posisi kursor, clear, scroll, insertion/deletion, dan input keyboard.
 Karakter garis dan pola desktop Turbo Vision (Odin Vision) ditampilkan. Tombol F1..F12 dan Insert diteruskan ke program, termasuk
