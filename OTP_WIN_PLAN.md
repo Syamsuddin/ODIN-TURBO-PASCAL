@@ -24,7 +24,7 @@ Area kerja (abu-abu, dengan logo, nama, versi, kredit, hak cipta, dan lisensi di
 
 ## Tahapan
 
-Status 26 Oktober 2026: W1–W4 selesai; W5 selesai kecuali gambar. Pra-rilis **3.0.0-beta.1**: seluruh suite lulus di Mac Intel dan di CI lima runner (macOS Intel, macOS Apple Silicon, Ubuntu x86_64 dan arm64, Windows), keempat jenis pemasang dibangun di CI, dan `.pkg` Intel dipasang serta dibuka di Mac pengembang. Fit Output membuat layar 80×25 selalu terlihat di jendela Output. Belum: tangkapan layar README dan `assets/banner.svg` (tampilan klasik), gambar layar buku, pemeriksaan di perangkat fisik Apple Silicon, Windows, dan Linux, lalu rilis v3.0.0 final.
+Status 26 Oktober 2026: W1–W4 selesai; W5 selesai kecuali gambar. Pra-rilis **3.0.0-beta.1**: seluruh suite lulus di Mac Intel dan di CI lima runner (macOS Intel, macOS Apple Silicon, Ubuntu x86_64 dan arm64, Windows), keempat jenis pemasang dibangun di CI, dan `.pkg` Intel dipasang serta dibuka di Mac pengembang. Pra-rilis diterbitkan di GitHub (tag `v3.0.0-beta.1`, ditandai Pre-release; 2.9.0 tetap rilis stabil) dengan kelima pemasang, `odinpc.exe`, dan buku PDF. Fit Output membuat layar 80×25 selalu terlihat di jendela Output. Belum: tangkapan layar README dan `assets/banner.svg` (tampilan klasik), gambar layar buku, pemeriksaan di perangkat fisik Apple Silicon, Windows, dan Linux, lalu rilis v3.0.0 final.
 
 | Tahap | Isi | Gerbang |
 | --- | --- | --- |
