@@ -38,8 +38,9 @@ if APP.exists():
 (CONTENTS / "MacOS").mkdir(parents=True)
 resources = CONTENTS / "Resources"
 resources.mkdir()
-# The logo master (odin-logo-master.png) is only a source for scripts/render_logo.py.
-skip = shutil.ignore_patterns("__pycache__", "*.pyc", "odin-logo-master.png")
+# The logo master (odin-logo-master.png) is only a source for scripts/render_logo.py; *.tmp.pdf is a book
+# that scripts/build_book.py is still writing.
+skip = shutil.ignore_patterns("__pycache__", "*.pyc", "odin-logo-master.png", "*.tmp.pdf")
 
 
 def git_ignored(directory, names):

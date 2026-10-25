@@ -24,7 +24,7 @@ Area kerja (abu-abu, dengan logo, nama, versi, kredit, hak cipta, dan lisensi di
 
 ## Tahapan
 
-Status 25 Oktober 2026: W1–W4 selesai, W5 sebagian. `tests/test_gui.py` (38 tes) dan `tests/test_icons.py` lulus di Mac Intel, juga seluruh suite (160 tes, 10 dilewati). Dokumen (`docs/HELP.txt`, `SHORTCUTS.txt`, `COMPATIBILITY.txt`, README, CHANGELOG `[Unreleased]`) diperbarui dan bundel `.app` dibangun ulang. Belum: `main` (rilis 2.9.0) digabung ke cabang ini, tangkapan layar baru dan `assets/banner.svg`, buku PDF (gambar layar masih tampilan klasik), CI lima runner, lalu rilis v3.0.0.
+Status 25 Oktober 2026: W1–W4 selesai, W5 sebagian. `tests/test_gui.py` (38 tes) dan `tests/test_icons.py` lulus di Mac Intel, juga seluruh suite (160 tes, 10 dilewati). Dokumen (`docs/HELP.txt`, `SHORTCUTS.txt`, `COMPATIBILITY.txt`, README, CHANGELOG `[Unreleased]`) diperbarui dan bundel `.app` dibangun ulang. `main` (rilis 2.9.0) digabung ke cabang ini pada 25 Oktober 2026; seluruh suite tetap lulus di atasnya. Belum: tangkapan layar baru dan `assets/banner.svg`, buku PDF (gambar layar masih tampilan klasik), CI lima runner, lalu rilis v3.0.0.
 
 | Tahap | Isi | Gerbang |
 | --- | --- | --- |

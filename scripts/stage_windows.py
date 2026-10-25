@@ -18,8 +18,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 FOLDERS = ("odin", "examples", "docs", "assets", "rtl")
 FILES = ("main.py", "LICENSE", "THIRD_PARTY.txt", "README.txt", "Uninstall.ps1", "Uninstall.cmd")
-# The logo master is only a source for render_logo.py; odin.icns is the macOS icon.
-SKIP = shutil.ignore_patterns("__pycache__", "*.pyc", "odin-logo-master.png", "odin.icns")
+# The logo master is only a source for render_logo.py; odin.icns is the macOS icon; *.tmp.pdf is a book
+# that build_book.py is still writing.
+SKIP = shutil.ignore_patterns("__pycache__", "*.pyc", "odin-logo-master.png", "odin.icns", "*.tmp.pdf")
 TOOLCHAIN = (ROOT / "toolchain" / "odinpc.exe", ROOT / "toolchain" / "target" / "release" / "odinpc.exe")
 PNG = b"\x89PNG\r\n\x1a\n"
 
