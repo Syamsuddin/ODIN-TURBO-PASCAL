@@ -1,0 +1,432 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Mengklasifikasi dengan Naive Bayes, baik untuk data angka maupun teks yang diubah menjadi vektor TF-IDF.</li>
+  <li>Membangun pohon keputusan dan menelusuri jalur keputusannya dari akar sampai daun.</li>
+  <li>Menulis sistem pakar dengan fakta dan aturan, lalu menarik kesimpulan dengan <i>forward chaining</i>.</li>
+  <li>Mencari jalur di peta grid dengan BFS, DFS, dan A*, serta membandingkan hasil dan usahanya.</li>
+  <li>Mengendalikan kipas dengan logika fuzzy Mamdani, dan melatih agen dengan Q-learning.</li>
+  <li>Memahami gradient descent dengan momentum, menyimpan dan memuat model, serta membuat grafik SVG dengan AIPlot.</li>
+</ul>
+
+<p class="lead">Bab 23 membahas model yang belajar dari tabel angka. Kecerdasan buatan jauh lebih luas dari itu.
+Sebelum machine learning populer, AI sudah dipakai untuk menalar dengan aturan (sistem pakar), mencari jalan (navigasi
+dan permainan), dan mengambil keputusan dari ukuran yang samar ("agak panas", "cukup lembap"). Bab ini memakai sepuluh
+program sisanya dari <span class="menu">File ▸ Examples - AI...</span>: tiga model belajar lagi, empat teknik AI klasik,
+lalu tiga alat pendukung, yaitu optimizer, penyimpanan model, dan grafik.</p>
+
+<h2>Peta Teknik di Bab Ini</h2>
+
+<div class="trio">
+  <div class="card"><h4><span class="ikon">1</span>Belajar dari data</h4><p>Naive Bayes (angka dan teks) dan pohon keputusan. Sama seperti Bab 23: dilatih dari contoh berlabel.</p></div>
+  <div class="card"><h4><span class="ikon">2</span>Menalar dan mencari</h4><p>Sistem aturan, pencarian jalur, dan logika fuzzy. Pengetahuannya ditulis manusia, bukan dipelajari.</p></div>
+  <div class="card"><h4><span class="ikon">3</span>Belajar dari pengalaman</h4><p>Q-learning: agen mencoba-coba, mendapat hadiah atau hukuman, lalu memperbaiki caranya sendiri.</p></div>
+</div>
+
+<h2>Naive Bayes</h2>
+
+<p>Naive Bayes menebak kelas dengan peluang. Untuk setiap kelas, model mempelajari seperti apa fitur-fitur anggotanya
+biasanya, misalnya rata-rata dan sebaran panjang kelopak bunga kelas 0. Saat menebak, model bertanya: "Bila bunga ini
+kelas 0, seberapa mungkin ukurannya seperti ini? Bagaimana bila kelas 1? Kelas 2?" Kelas dengan peluang terbesar menjadi
+tebakan. Disebut <i>naive</i> (naif) karena ia menganggap setiap fitur tidak saling berhubungan. Anggapan itu jarang
+benar, tetapi hasilnya sering tetap baik.</p>
+
+<x-listing src="BAYDEMO.PAS"></x-listing>
+
+<x-run src="BAYDEMO.PAS" caption="Gaussian Naive Bayes pada BUNGA.CSV, dibagi dengan seed yang sama seperti KNN"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>22</td><td>Pembagian 70/30 dengan seed 42, persis seperti Program 23.5, sehingga hasil KNN dan Naive Bayes bisa dibandingkan.</td></tr>
+    <tr><td>23</td><td><code>FitGaussian</code> menganggap setiap fitur di setiap kelas berbentuk kurva lonceng (Gaussian) dan menyimpan rata-rata serta variansnya. Batas bawah varians 0,000001 mencegah pembagian dengan nol bila sebuah fitur bernilai sama di seluruh kelas.</td></tr>
+    <tr><td>24</td><td>Berbeda dengan KNN, prediksinya per baris: <code>PredictBayes</code> mengisi label dan peluang setiap kelas (<code>Prob</code>) untuk satu baris uji.</td></tr>
+    <tr><td>25–27</td><td>Confusion matrix dan accuracy. Pada data bunga sintetis ini, hasilnya sama sempurnanya dengan KNN.</td></tr>
+  </tbody>
+</table>
+
+<h3>Klasifikasi teks dengan TF-IDF</h3>
+
+<p>Komputer tidak bisa menghitung dengan kata, jadi teks harus diubah menjadi angka. Caranya: buat daftar kata
+(<b>vocabulary</b>), lalu setiap dokumen menjadi vektor berisi skor setiap kata. Skor <b>TF-IDF</b> menggabungkan dua hal:
+seberapa sering kata muncul di dokumen itu (TF, <i>term frequency</i>) dan seberapa jarang kata itu di seluruh korpus
+(IDF, <i>inverse document frequency</i>). Kata yang muncul di semua dokumen, seperti "dan", hampir tidak membedakan apa
+pun, sehingga IDF-nya kecil.</p>
+
+<x-listing src="TEXTDEMO.PAS"></x-listing>
+
+<x-run src="TEXTDEMO.PAS" caption="Delapan kata vocabulary, lalu empat ulasan uji yang ditebak positif (0) atau negatif (1)"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>26–27</td><td>Korpus dibaca dari TSV: setiap baris berisi label (0 positif, 1 negatif), tab, lalu teks. Korpus latih berisi 8 ulasan pendek, korpus uji 4.</td></tr>
+    <tr><td>28</td><td><code>FitText</code> membangun vocabulary dari korpus <b>latih</b> saja: paling banyak 8 kata, kata harus muncul di sedikitnya 1 dokumen, memakai IDF, dan vektornya dinormalkan. Setiap kata muncul di tepat 3 dokumen latih, jadi IDF-nya sama: 1,8109.</td></tr>
+    <tr><td>31</td><td><code>VectorizeCorpus</code> mengubah seluruh korpus latih menjadi dataset angka dengan 8 fitur, satu per kata.</td></tr>
+    <tr><td>32</td><td><b>Multinomial</b> Naive Bayes cocok untuk hitungan kata. Alpha 1 (<i>Laplace smoothing</i>) mencegah peluang nol untuk kata yang tidak pernah muncul di suatu kelas.</td></tr>
+    <tr><td>34</td><td>Setiap dokumen uji divektorkan dengan vocabulary yang <b>sama</b>; kata baru di data uji diabaikan, tidak ditambahkan ke vocabulary.</td></tr>
+    <tr><td>35–37</td><td>Tebakan dan peluangnya dicetak, lalu label sebenarnya dan tebakan disimpan untuk confusion matrix.</td></tr>
+    <tr><td>41</td><td>Vocabulary dan model disimpan ke berkas <code>.TPM</code>, sehingga program lain bisa memakainya tanpa melatih ulang.</td></tr>
+  </tbody>
+</table>
+
+<h2>Pohon Keputusan</h2>
+
+<p>Pohon keputusan menebak dengan serangkaian pertanyaan ya/tidak, seperti permainan tebak-tebakan "apakah ia
+berkaki empat?". Setiap <b>node</b> bertanya tentang satu fitur ("apakah X1 &lt;= 0,5?"), dan setiap <b>daun</b> berisi
+jawaban. Saat dilatih, pohon memilih pertanyaan yang paling memisahkan kelas, diukur dengan <i>information gain</i>.
+Kelebihan terbesarnya: keputusannya bisa dibaca dan dijelaskan manusia.</p>
+
+<figure class="grafik" id="gb-pohon-xor">
+<svg viewBox="0 0 680 200">
+  <rect class="box" x="270" y="8" width="140" height="36" rx="8"/><text class="b mid" x="340" y="24">node 1</text><text class="mono xs mid" x="340" y="38">X1 &lt;= 0.5 ?</text>
+  <rect class="dec" x="110" y="80" width="140" height="36" rx="8"/><text class="b mid" x="180" y="96">node 2</text><text class="mono xs mid" x="180" y="110">X2 &lt;= 0.5 ?</text>
+  <rect class="dec" x="430" y="80" width="140" height="36" rx="8"/><text class="b mid" x="500" y="96">node 3</text><text class="mono xs mid" x="500" y="110">X2 &lt;= 0.5 ?</text>
+  <rect class="ok" x="40" y="156" width="110" height="36" rx="8"/><text class="s mid" x="95" y="172">node 4</text><text class="b mid" x="95" y="186">kelas 0</text>
+  <rect class="no" x="210" y="156" width="110" height="36" rx="8"/><text class="s mid" x="265" y="172">node 5</text><text class="b mid" x="265" y="186">kelas 1</text>
+  <rect class="no" x="360" y="156" width="110" height="36" rx="8"/><text class="s mid" x="415" y="172">node 6</text><text class="b mid" x="415" y="186">kelas 1</text>
+  <rect class="ok" x="530" y="156" width="110" height="36" rx="8"/><text class="s mid" x="585" y="172">node 7</text><text class="b mid" x="585" y="186">kelas 0</text>
+  <path class="arrow" d="M300 44 L200 78"/><text class="xs" x="222" y="60">ya</text>
+  <path class="arrow" d="M380 44 L480 78"/><text class="xs" x="440" y="60">tidak</text>
+  <path class="arrow" d="M160 116 L100 154"/><text class="xs" x="112" y="138">ya</text>
+  <path class="arrow" d="M200 116 L260 154"/><text class="xs" x="236" y="138">tidak</text>
+  <path class="arrow" d="M480 116 L420 154"/><text class="xs" x="432" y="138">ya</text>
+  <path class="arrow" d="M520 116 L580 154"/><text class="xs" x="556" y="138">tidak</text>
+</svg>
+<figcaption>Pohon XOR yang ditemukan Program 24.3: tujuh node, empat daun.</figcaption>
+</figure>
+
+<x-listing src="TREEDEMO.PAS"></x-listing>
+
+<x-run src="TREEDEMO.PAS" caption="Setiap masukan XOR ditelusuri dari node 1 sampai daunnya"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>22</td><td><code>FitTree(Data, KedalamanMaks, DaunMin, GainMin, Model)</code>: kedalaman paling banyak 4, setiap daun minimal 1 baris, dan gain minimal 0.</td></tr>
+    <tr><td>23</td><td>Pohon yang ditemukan punya 7 node, persis seperti gambar di atas.</td></tr>
+    <tr><td>25</td><td><code>TraceTree</code> mengembalikan jalur nomor node dari akar sampai daun (<code>Path</code>, sepanjang <code>N</code>) beserta kelas daunnya.</td></tr>
+    <tr><td>27–31</td><td>Setiap node di jalur dicetak. <code>Feature = 0</code> menandai daun; node lain mencetak fitur dan ambangnya.</td></tr>
+    <tr><td>33</td><td>Pohon disimpan ke <code>TREE.TPM</code>.</td></tr>
+  </tbody>
+</table>
+
+<div class="ingat"><p>Mengapa GainMin harus 0 untuk XOR? Pertanyaan pertama, "X1 &lt;= 0,5?", sama sekali tidak
+memisahkan kelas: kedua cabangnya tetap berisi satu kelas 0 dan satu kelas 1, sehingga gain-nya nol. Baru pertanyaan
+kedua yang memisahkan dengan sempurna. Dengan GainMin di atas 0, pohon menolak membelah dan berhenti sebagai satu daun.
+Seperti perceptron di Bab 23, XOR kembali menjadi ujian yang bagus.</p></div>
+
+<h2>Sistem Pakar: Fakta dan Aturan</h2>
+
+<p>Sistem pakar menyimpan pengetahuan seorang ahli sebagai aturan <b>JIKA ... MAKA ...</b>. Tidak ada yang dipelajari
+dari data; semua aturan ditulis manusia. <b>Forward chaining</b> (penalaran maju) mulai dari fakta yang diketahui,
+menjalankan setiap aturan yang syaratnya terpenuhi, menambahkan kesimpulannya sebagai fakta baru, lalu mengulang sampai
+tidak ada fakta baru lagi.</p>
+
+<div class="alur">
+  <div><span class="ikon">1</span><b>Fakta awal</b>listrik tersedia, internet tersedia</div>
+  <div><span class="ikon">2</span><b>Aturan "perangkat"</b>JIKA listrik MAKA perangkat siap</div>
+  <div><span class="ikon">3</span><b>Aturan "kelas_daring"</b>JIKA perangkat siap DAN internet MAKA kelas daring siap</div>
+  <div><span class="ikon">4</span><b>Kesimpulan</b>kelas daring siap, lengkap dengan alasannya</div>
+</div>
+
+<x-listing src="RULEDEMO.PAS"></x-listing>
+
+<x-run src="RULEDEMO.PAS" caption="Dua aturan aktif dan pohon alasan di balik kesimpulan"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>24–28</td><td>Empat fakta dengan tiga kemungkinan nilai: 1 (benar), 0 (salah), -1 (belum diketahui). Nomor setiap fakta disimpan di variabel <code>Internet</code>, <code>Power</code>, <code>Ready</code>, dan <code>Online</code>.</td></tr>
+    <tr><td>29</td><td>Daftar aturan disiapkan; <code>FillChar</code> mengosongkan record <code>Rule</code> sebelum diisi.</td></tr>
+    <tr><td>30–33</td><td>Aturan pertama, "kelas_daring": dua syarat (perangkat siap = 1 dan internet = 1), kesimpulannya kelas daring siap = 1.</td></tr>
+    <tr><td>34–35</td><td>Record <code>Rule</code> dipakai ulang untuk aturan kedua, "perangkat", dengan satu syarat: listrik = 1.</td></tr>
+    <tr><td>36</td><td><code>Infer</code> menjalankan forward chaining. Pada putaran pertama aturan 1 belum bisa jalan, karena perangkat siap masih -1; aturan 2 jalan dan menetapkannya. Pada putaran berikutnya aturan 1 jalan. Dua aturan aktif.</td></tr>
+    <tr><td>37</td><td><code>ExplainFact</code> mencetak pohon alasan: kelas daring siap karena aturan 1, yang bergantung pada perangkat siap (dari aturan 2, karena listrik tersedia) dan internet tersedia (fakta awal).</td></tr>
+  </tbody>
+</table>
+
+<div class="tip"><p>Kemampuan menjelaskan "mengapa" adalah kekuatan utama sistem pakar. Jaringan saraf di Bab 23 bisa
+menebak XOR dengan tepat, tetapi tidak bisa menjelaskan alasannya dalam kalimat; sistem aturan bisa.</p></div>
+
+<h2>Mencari Jalur: BFS, DFS, dan A*</h2>
+
+<p>Bagaimana robot menemukan jalan keluar dari labirin? Peta dibagi menjadi grid sel, dan robot boleh melangkah ke atas,
+bawah, kiri, atau kanan, asal tidak menabrak dinding. Tiga cara klasik menjelajahinya:</p>
+
+<table class="data">
+  <caption>Tiga algoritma pencarian jalur</caption>
+  <thead><tr><th>Metode</th><th>Cara menjelajah</th><th>Jalur terpendek?</th></tr></thead>
+  <tbody>
+    <tr><td><b>BFS</b> (<i>breadth-first</i>)</td><td>melebar seperti riak air: semua sel berjarak 1, lalu semua berjarak 2, dan seterusnya</td><td>dijamin</td></tr>
+    <tr><td><b>DFS</b> (<i>depth-first</i>)</td><td>menelusuri satu lorong sejauh mungkin, baru mundur bila buntu</td><td>tidak dijamin</td></tr>
+    <tr><td><b>A*</b> (<i>A-star</i>)</td><td>mendahulukan sel yang jumlah langkah sejauh ini ditambah perkiraan sisa jarak ke tujuan paling kecil</td><td>dijamin, biasanya dengan usaha lebih sedikit dari BFS</td></tr>
+  </tbody>
+</table>
+
+<x-listing src="PATHDEMO.PAS"></x-listing>
+
+<x-run src="PATHDEMO.PAS" caption="Rute dari S ke G di grid 6 x 6 dengan dinding (#) di kolom 3; * menandai rute"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>22</td><td>Grid 6 x 6. Sel diberi nomor baris demi baris: sel 1 di kiri atas, sel 36 di kanan bawah.</td></tr>
+    <tr><td>23</td><td>Dinding di kolom 3 pada baris 1, 2, 3, dan 5. Baris 4 dibiarkan terbuka sebagai satu-satunya celah.</td></tr>
+    <tr><td>24</td><td>Perulangan <code>for</code> atas konstanta: <code>SearchBFS</code> = 1, <code>SearchDFS</code> = 2, <code>SearchAStar</code> = 3.</td></tr>
+    <tr><td>25–27</td><td><code>SearchGrid</code> mencari dari sel 1 ke sel 36. <code>Cost</code> adalah banyak langkah rute, <code>Expanded</code> banyak sel yang diperiksa. <code>PrintGrid</code> menggambar petanya di layar teks.</td></tr>
+  </tbody>
+</table>
+
+<p>Ketiganya menemukan rute 10 langkah, jarak terpendek yang mungkin. BFS memeriksa 31 sel, A* hanya 23 karena perkiraan
+jaraknya mengarahkan pencarian ke tujuan. DFS kebetulan beruntung di peta ini (11 sel, rute tetap terpendek walau
+jalannya berbeda), tetapi di peta lain DFS bisa menemukan rute yang berputar-putar.</p>
+
+<div class="coba"><p>Tutup celah di baris 4 dengan menambah <code>SetWall(G, 4, 3, True)</code>. Apa yang dicetak untuk
+<code>found</code>? Lalu buka celah baru di baris 6 dan bandingkan lagi <code>expanded</code> ketiga metode.</p></div>
+
+<h2>Logika Fuzzy</h2>
+
+<p>Dalam logika biasa, suhu 28°C hanya bisa "panas" atau "tidak panas". Manusia berpikir lebih luwes: 28°C itu "agak
+panas, sedikit sedang". <b>Logika fuzzy</b> memberi setiap nilai <b>derajat keanggotaan</b> antara 0 dan 1 pada beberapa
+himpunan sekaligus. Sistem fuzzy Mamdani bekerja dalam tiga langkah: <b>fuzzifikasi</b> (angka menjadi derajat),
+<b>evaluasi aturan</b> (JIKA suhu panas DAN kelembapan lembap MAKA kipas cepat, dengan DAN = nilai minimum), dan
+<b>defuzzifikasi</b> (gabungan semua aturan diubah kembali menjadi satu angka, di sini dengan titik berat/<i>centroid</i>).</p>
+
+<figure class="grafik" id="gb-fuzzy">
+<svg viewBox="0 0 680 200">
+  <path class="line" d="M60 160 H620"/><path class="line" d="M60 160 V30"/>
+  <text class="xs end" x="54" y="164">0</text><text class="xs end" x="54" y="44">1</text>
+  <text class="xs mid" x="60" y="176">0</text><text class="xs mid" x="200" y="176">10</text><text class="xs mid" x="340" y="176">20</text>
+  <text class="xs mid" x="480" y="176">30</text><text class="xs mid" x="620" y="176">40 °C</text>
+  <path d="M60 40 L340 160" fill="none" stroke="#3b7be0" stroke-width="2.4"/>
+  <path d="M200 160 L340 40 L480 160" fill="none" stroke="#1a9e58" stroke-width="2.4"/>
+  <path d="M340 160 L620 40" fill="none" stroke="#d64545" stroke-width="2.4"/>
+  <text class="s b" x="80" y="36" style="fill:#3b7be0">dingin</text>
+  <text class="s b mid" x="340" y="32" style="fill:#1a9e58">sedang</text>
+  <text class="s b end" x="616" y="30" style="fill:#d64545">panas</text>
+  <path class="dash" d="M452 160 V30" style="stroke:#333"/>
+  <text class="s b" x="458" y="62">28 °C</text>
+  <circle cx="452" cy="136" r="4" fill="#1a9e58"/><text class="xs" x="460" y="140" style="fill:#1a9e58">sedang 0,2</text>
+  <circle cx="452" cy="112" r="4" fill="#d64545"/><text class="xs" x="460" y="108" style="fill:#d64545">panas 0,4</text>
+</svg>
+<figcaption>Himpunan suhu bawaan <code>DefaultFuzzy</code>. Suhu 28 °C adalah "sedang" 0,2 dan "panas" 0,4 sekaligus.</figcaption>
+</figure>
+
+<x-listing src="FUZDEMO.PAS"></x-listing>
+
+<x-run src="FUZDEMO.PAS" caption="Kecepatan kipas untuk suhu 28 dan kelembapan 70, serta tingkat aktif kesembilan aturan"></x-run>
+
+<x-svg src="FUZZY.SVG" caption="<code>FUZZY.SVG</code>: kecepatan kipas naik bertahap seiring suhu, pada kelembapan tetap 70"></x-svg>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>23</td><td><code>DefaultFuzzy</code> menyiapkan sistem lengkap: suhu 0..40 (dingin, sedang, panas), kelembapan 0..100 (kering, normal, lembap), kecepatan kipas 0..100 (pelan, sedang, cepat), dan 9 aturan, satu untuk setiap pasangan himpunan masukan.</td></tr>
+    <tr><td>24–25</td><td><code>EvaluateFuzzy</code> menghitung kecepatan kipas untuk suhu 28 dan kelembapan 70. Angka 200 adalah banyak potongan saat menghitung titik berat. Hasilnya 69,8, cukup cepat.</td></tr>
+    <tr><td>26</td><td>Tingkat aktif (<i>firing</i>) setiap aturan. Kelembapan 70 adalah "normal" 0,2 dan "lembap" 0,4. Aturan 9 (panas DAN lembap) = min(0,4; 0,4) = 0,4; aturan 5, 6, dan 8 masing-masing 0,2; aturan yang memakai "dingin" atau "kering" bernilai 0.</td></tr>
+    <tr><td>28–31</td><td>Suhu disapu dari 0 sampai 40 pada kelembapan 70, lalu kurvanya disimpan sebagai SVG. Kurvanya naik bertahap, tanpa lompatan, karena derajat keanggotaan berubah perlahan.</td></tr>
+  </tbody>
+</table>
+
+<h2>Q-Learning: Belajar dari Hadiah</h2>
+
+<p>Bagaimana anjing belajar duduk? Ia mencoba berbagai gerakan, dan mendapat camilan saat duduk. Lama-lama ia tahu
+gerakan mana yang menghasilkan hadiah. <b>Reinforcement learning</b> bekerja seperti itu. Sebuah <b>agen</b> berada di
+suatu <b>keadaan</b> (sel grid), memilih <b>aksi</b> (atas, bawah, kiri, kanan), lalu menerima <b>reward</b>. Di
+<code>AIReward</code>, setiap langkah bernilai -1, menabrak dinding atau tepi -2, dan sampai di tujuan +10, sehingga agen
+terdorong mencari jalan terpendek.</p>
+
+<p><b>Q-learning</b> menyimpan tabel Q: untuk setiap keadaan dan aksi, perkiraan total reward yang akan didapat. Setiap
+langkah, nilai tabel diperbarui sedikit:</p>
+
+<div class="sintaks"><pre>Q(s, a) := Q(s, a) + <i>alpha</i> * (reward + <i>gamma</i> * maks Q(s', semua aksi) - Q(s, a))
+
+<i>alpha</i>   : learning rate, seberapa besar perbaikan tiap langkah
+<i>gamma</i>   : seberapa penting reward masa depan dibanding reward sekarang
+<i>epsilon</i> : peluang mencoba aksi acak (eksplorasi) daripada aksi terbaik</pre></div>
+
+<x-listing src="QDEMO.PAS"></x-listing>
+
+<x-run src="QDEMO.PAS" caption="Setelah 1500 episode, agen menemukan rute 6 langkah mengitari dua dinding"></x-run>
+
+<x-svg src="QRETURN.SVG" caption="<code>QRETURN.SVG</code>: total reward per episode. Episode awal penuh tabrakan dan putaran; setelahnya return mendekati nilai terbaik"></x-svg>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>26</td><td>Grid 4 x 4 dengan dinding di sel (2, 2) dan (3, 2).</td></tr>
+    <tr><td>27</td><td>Tabel Q untuk 16 keadaan dan 4 aksi, dengan alpha 0,3, gamma 0,95, dan epsilon 0,25 (seperempat langkah dipilih acak).</td></tr>
+    <tr><td>28</td><td>Pelatihan 1500 episode dari sel 1 ke sel 16, paling banyak 100 langkah per episode, seed 42.</td></tr>
+    <tr><td>29</td><td>Semua episode berhasil sampai tujuan; total 12071 langkah, sekitar 8 langkah per episode, termasuk langkah eksplorasi acak.</td></tr>
+    <tr><td>30–31</td><td><code>GreedyGridPath</code> memakai tabel Q tanpa eksplorasi, selalu memilih aksi bernilai Q tertinggi. Rutenya 6 langkah, sama dengan jarak terpendek, dan ditemukan tanpa algoritma pencarian sama sekali.</td></tr>
+    <tr><td>32–35</td><td>Return per episode digambar sebagai SVG, lalu tabel Q dan grid disimpan. Return terbaik adalah 5: lima langkah bernilai -1, lalu +10 di tujuan.</td></tr>
+  </tbody>
+</table>
+
+<div class="awas"><p>Keberhasilan dengan satu seed bukan jaminan. Ubah seed, kurangi episode, atau ubah reward, maka agen
+bisa saja belum menemukan rute terbaik. Bandingkan selalu dengan patokan yang pasti benar, misalnya BFS di Program 24.5.</p></div>
+
+<h2>Optimizer: Gradient Descent dengan Momentum</h2>
+
+<p>Regresi logistik dan jaringan saraf di Bab 23 dilatih dengan gradient descent, tetapi prosesnya tersembunyi di dalam
+<code>FitLogistic</code> dan <code>FitNeural</code>. Program ini membukanya dengan contoh terkecil: mencari <i>w</i> yang
+membuat <i>f</i>(<i>w</i>) = (<i>w</i> - 3)² sekecil mungkin. Jawabannya jelas 3, tetapi optimizer harus menemukannya
+hanya dari <b>gradien</b> (kemiringan) 2(<i>w</i> - 3), seperti orang yang menuruni bukit dalam kabut dan hanya bisa
+merasakan kemiringan tanah di bawah kakinya.</p>
+
+<figure class="grafik" id="gb-gradien">
+<svg viewBox="0 0 680 190">
+  <path d="M80 30 Q340 300 600 30" fill="none" stroke="#5b6475" stroke-width="2"/>
+  <circle cx="111" cy="60" r="7" fill="#d64545"/><text class="xs" x="124" y="56">w = -5</text>
+  <circle cx="184" cy="116" r="6" fill="#e2680b"/>
+  <circle cx="236" cy="143" r="6" fill="#d99a00"/>
+  <circle cx="288" cy="160" r="6" fill="#1a9e58"/>
+  <circle cx="340" cy="165" r="7" fill="#1a9e58"/><text class="xs mid" x="340" y="184">w = 3 (minimum)</text>
+  <path class="arrow" d="M118 66 L176 110"/><path class="arrow" d="M192 120 L228 138"/><path class="arrow" d="M244 146 L280 157"/>
+  <rect class="box" x="430" y="80" width="240" height="70" rx="8"/>
+  <text class="s" x="442" y="100">langkah = -rate x gradien</text>
+  <text class="s" x="442" y="118">+ momentum x langkah sebelumnya</text>
+  <text class="xs muted" x="442" y="138">langkah mengecil saat lereng melandai</text>
+</svg>
+<figcaption>Gradient descent menuruni lereng <i>f</i>(<i>w</i>) = (<i>w</i> - 3)²; langkah mengecil saat mendekati dasar.</figcaption>
+</figure>
+
+<x-listing src="OPTDEMO.PAS"></x-listing>
+
+<x-run src="OPTDEMO.PAS" caption="w mendekati 3 dan loss mendekati 0 dalam 40 langkah"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>19</td><td><code>W</code> adalah parameter yang dicari, dimulai dari -5. <code>V</code> adalah <i>velocity</i>, sisa dorongan langkah sebelumnya untuk momentum.</td></tr>
+    <tr><td>21</td><td>Gradien dihitung dari rumus turunan, lalu <code>SGDStep</code> memperbarui <code>W</code> dan <code>V</code>: learning rate 0,1, momentum 0,3, dan gradien dipotong (<i>clip</i>) agar tidak melebihi ±10.</td></tr>
+    <tr><td>22</td><td>Setiap 10 langkah, <code>W</code> dan loss dicetak. Di langkah 10, <code>w</code> sudah 2,79; di langkah 40 sudah 3,000000.</td></tr>
+  </tbody>
+</table>
+
+<h2>Menyimpan dan Memuat Model</h2>
+
+<p>Melatih model bisa memakan waktu lama, sedangkan memakainya cepat. Karena itu model yang sudah dilatih disimpan ke
+berkas, lalu dimuat oleh program lain yang hanya perlu menebak. OTP-AI menyimpan model ke berkas biner berakhiran
+<code>.TPM</code> lewat unit <code>AIModel</code>. Program berikut membuktikan bahwa model yang dimuat kembali memberi
+tebakan yang persis sama.</p>
+
+<x-listing src="MODELIO.PAS"></x-listing>
+
+<x-run src="MODELIO.PAS" caption="Prediksi sebelum disimpan dan sesudah dimuat sama persis"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>25–28</td><td>Regresi linear dilatih dari seluruh JAMNILAI.CSV, disimpan ke <code>LINEAR.TPM</code>, dan dimuat ke variabel lain. Tebakan untuk 5 jam dari kedua model sama: 70,012013. Angkanya sedikit berbeda dari Program 23.3 karena di sini model dilatih dari seluruh 30 baris.</td></tr>
+    <tr><td>29–30</td><td>Model KNN tidak berisi rumus, melainkan seluruh data latih. Karena itu <code>SaveKNN</code> ikut menyimpan datanya, dan <code>LoadKNN</code> butuh dataset kosong (<code>Storage</code>) milik pemanggil untuk menampungnya.</td></tr>
+    <tr><td>31–32</td><td>Untuk target bilangan, KNN menebak rata-rata nilai ketiga tetangga terdekat: 69,666667, sebelum dan sesudah dimuat.</td></tr>
+    <tr><td>34</td><td>Kedua model KNN dilepas dari datasetnya sebelum dataset dibebaskan.</td></tr>
+  </tbody>
+</table>
+
+<div class="info"><p>Berkas <code>.TPM</code> menyimpan record Pascal apa adanya, sehingga hanya bisa dibaca program
+yang dikompilasi dengan kompiler dan arsitektur yang sama. Ia bukan format pertukaran antarbahasa. Untuk berbagi data
+dengan program lain, pakai CSV.</p></div>
+
+<h2>Grafik dengan AIPlot</h2>
+
+<p>Sepanjang dua bab ini, grafik SVG muncul dari <code>SaveRegressionSVG</code>, <code>SaveScatterSVG</code>, dan
+<code>SaveCurveSVG</code>. SVG adalah berkas gambar berbasis teks yang bisa dibuka di peramban web mana pun. Program
+terakhir memperkenalkan AIPlot secara khusus. Ia juga memperlihatkan cara satu program ditulis untuk beberapa kompiler
+dengan kompilasi bersyarat (<code>{$IFDEF}</code>).</p>
+
+<x-listing src="PLOTDEMO.PAS"></x-listing>
+
+<x-run src="PLOTDEMO.PAS" caption="SVG dibuat; tampilan BGI layar penuh hanya untuk build Turbo Pascal asli"></x-run>
+
+<x-svg src="PLOT.SVG" caption="<code>PLOT.SVG</code>: 20 titik di sekitar garis <i>Y</i> = 10 + 3<i>X</i>"></x-svg>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>21–24</td><td>Dua puluh titik dibuat dari <i>Y</i> = 10 + 3<i>X</i> ditambah "derau" -1, 0, 1 yang berulang (<code>I mod 3 - 1</code>). Semua titik satu kelompok warna.</td></tr>
+    <tr><td>25</td><td><code>SaveRegressionSVG</code> menggambar titik-titik itu beserta garis dengan intercept 10 dan kemiringan 3. Garisnya diberikan langsung, tidak dilatih.</td></tr>
+    <tr><td>27–38</td><td>Kompilasi bersyarat. <code>{$IFNDEF FPC}</code> berarti "bila bukan Free Pascal". Odin Turbo Pascal bukan Free Pascal, jadi bagian BGI ikut dikompilasi.</td></tr>
+    <tr><td>28–30</td><td><code>PlotOpen</code> mencoba membuka layar grafik BGI. Folder driver bisa diganti lewat argumen program (<span class="menu">Run ▸ Parameters...</span>).</td></tr>
+    <tr><td>35</td><td>Di Odin, AIPlot dikompilasi tanpa tampilan BGI, sehingga <code>PlotOpen</code> menjawab <code>False</code> dan baris ini mencetak alasannya. Untuk grafik di layar, pakai unit Graph dari Bab 22.</td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p>Gabungkan Bab 22 dan bab ini: ambil 20 titik Program 24.10, latih regresi linear dengan
+<code>FitLinear</code> seperti Program 23.3, lalu gambar titik dan garis hasil latihan di jendela grafik dengan
+<code>PutPixel</code>, <code>Circle</code>, dan <code>Line</code>. Ingat terjemahan koordinat dari Bab 22: Y layar mengarah
+ke bawah.</p></div>
+
+<h2>Memilih Teknik yang Tepat</h2>
+
+<table class="data">
+  <caption>Ringkasan teknik AI di Bab 23 dan Bab 24</caption>
+  <thead><tr><th>Masalah</th><th>Teknik</th><th>Unit</th><th>Program</th></tr></thead>
+  <tbody>
+    <tr><td>menebak bilangan dari data</td><td>regresi linear</td><td><code>AILinear</code></td><td>23.3, 23.4</td></tr>
+    <tr><td>menebak kelas dari data</td><td>KNN, regresi logistik, Naive Bayes, pohon keputusan, jaringan saraf</td><td><code>AIKNN</code>, <code>AILinear</code>, <code>AIBayes</code>, <code>AITree</code>, <code>AINNet</code></td><td>23.5, 23.8, 23.10, 24.1, 24.3</td></tr>
+    <tr><td>menggolongkan teks</td><td>TF-IDF + Multinomial Naive Bayes</td><td><code>AIText</code>, <code>AIBayes</code></td><td>24.2</td></tr>
+    <tr><td>menemukan kelompok tanpa label</td><td>K-means</td><td><code>AIKMeans</code></td><td>23.6</td></tr>
+    <tr><td>menalar dari pengetahuan ahli</td><td>sistem aturan, forward chaining</td><td><code>AIRule</code></td><td>24.4</td></tr>
+    <tr><td>mencari rute</td><td>BFS, DFS, A*</td><td><code>AISearch</code></td><td>24.5</td></tr>
+    <tr><td>mengendalikan dengan ukuran samar</td><td>logika fuzzy Mamdani</td><td><code>AIFuzzy</code></td><td>24.6</td></tr>
+    <tr><td>belajar dari coba-coba dan hadiah</td><td>Q-learning</td><td><code>AIReward</code></td><td>24.7</td></tr>
+  </tbody>
+</table>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<p><b>Learning rate terlalu besar.</b> Langkah yang terlalu panjang melompati dasar lembah ke lereng seberang, lebih tinggi
+dari sebelumnya, sehingga loss justru membesar. Program berikut adalah Program 24.8 dengan rate 1,1 tanpa momentum.</p>
+
+<x-error name="rate_besar.pas" run caption="Dengan rate 1,1, <code>w</code> berayun makin jauh dari 3 dan loss terus membesar">program rate_besar;
+
+uses AITypes, AIOptim;
+
+var
+  W, V, G: TFloat;
+  I: Integer;
+
+begin
+  W := -5; V := 0;
+  for I := 1 to 8 do
+  begin
+    G := 2 * (W - 3);
+    if not SGDStep(W, V, G, 1.1, 0, 1000) then Halt(1);
+    WriteLn('Langkah ', I, ' w=', W:0:2, ' loss=', Sqr(W - 3):0:2);
+  end;
+end.</x-error>
+
+<ul>
+  <li><b>Membangun vocabulary dari data uji</b> pada klasifikasi teks. Itu juga data leakage; vocabulary hanya dari korpus latih.</li>
+  <li><b>Memberi GainMin di atas 0 untuk data seperti XOR</b>, sehingga pohon tidak mau membelah sama sekali.</li>
+  <li><b>Aturan yang saling bertentangan</b> di sistem pakar, misalnya satu aturan menyimpulkan 1 dan aturan lain 0 untuk fakta yang sama. Periksa selalu dengan <code>ExplainFact</code>.</li>
+  <li><b>Mengira DFS selalu memberi jalur terpendek.</b> Pakai BFS atau A* bila panjang rute penting.</li>
+  <li><b>Epsilon 0 sejak awal</b> pada Q-learning: agen tidak pernah mencoba hal baru dan bisa terjebak pada rute pertama yang ia temukan.</li>
+  <li><b>Membuka berkas <code>.TPM</code> di kompiler atau komputer lain</b>; simpan ulang dari program yang dikompilasi di sana.</li>
+</ul>
+
+<div class="rangkuman"><h2>Rangkuman</h2><ul>
+  <li>Naive Bayes menebak kelas dengan peluang; versi Gaussian untuk fitur angka, versi Multinomial untuk hitungan kata.</li>
+  <li>TF-IDF mengubah teks menjadi vektor: kata yang sering di satu dokumen tetapi jarang di korpus mendapat skor tinggi. Vocabulary hanya dibangun dari korpus latih.</li>
+  <li>Pohon keputusan menebak dengan rangkaian pertanyaan ya/tidak yang bisa dibaca manusia; <code>TraceTree</code> menunjukkan jalurnya.</li>
+  <li>Sistem pakar menalar dengan aturan JIKA-MAKA; forward chaining menurunkan fakta baru sampai tidak ada yang berubah, dan bisa menjelaskan alasannya.</li>
+  <li>BFS dan A* menjamin jalur terpendek, dan A* biasanya memeriksa lebih sedikit sel; DFS tidak menjamin jalur terpendek.</li>
+  <li>Logika fuzzy memakai derajat keanggotaan 0..1, aturan dengan DAN = minimum, dan defuzzifikasi centroid.</li>
+  <li>Q-learning memperbarui tabel nilai keadaan-aksi dari reward; epsilon mengatur eksplorasi, alpha laju belajar, gamma bobot masa depan.</li>
+  <li>Gradient descent melangkah melawan gradien; learning rate yang terlalu besar membuatnya menyimpang.</li>
+  <li>Model disimpan dan dimuat sebagai <code>.TPM</code> lewat <code>AIModel</code>; grafik disimpan sebagai SVG lewat <code>AIPlot</code>.</li>
+</ul></div>
+
+<div class="latihan"><h2>Latihan</h2><ol>
+  <li><span class="lv dasar">Dasar</span> Bandingkan accuracy Program 23.5 (KNN) dan 24.1 (Naive Bayes) bila seed pembagian diubah menjadi 7. Mana yang lebih stabil?</li>
+  <li><span class="lv dasar">Dasar</span> Tambahkan dua ulasan baru ke <code>TEXTEST.TSV</code>, misalnya "ramah tetapi lambat". Apa tebakan model, dan mengapa kata "tetapi" tidak berpengaruh?</li>
+  <li><span class="lv dasar">Dasar</span> Di Program 24.8, ubah momentum menjadi 0 dan 0,9. Pada langkah ke berapa <code>w</code> pertama kali tercetak 3,000000?</li>
+  <li><span class="lv menengah">Menengah</span> Tambahkan fakta <code>hujan_deras</code> dan aturan "JIKA hujan_deras MAKA listrik_tersedia = 0" ke Program 24.4. Apa yang terjadi pada kesimpulan bila fakta hujan bernilai 1?</li>
+  <li><span class="lv menengah">Menengah</span> Ubah grid Program 24.5 menjadi 8 x 8 dengan dinding buatan Anda sendiri. Catat <code>cost</code> dan <code>expanded</code> ketiga metode dalam sebuah tabel.</li>
+  <li><span class="lv menengah">Menengah</span> Ganti kelembapan 70 di Program 24.6 dengan 20 dan 90. Hitung dulu tingkat aktif setiap aturan dengan tangan, lalu cocokkan dengan keluaran program.</li>
+  <li><span class="lv tantangan">Tantangan</span> Di Program 24.7, kurangi episode menjadi 20, 50, dan 200. Mulai berapa episode rute greedy selalu 6 langkah untuk seed 1 sampai 5?</li>
+  <li><span class="lv tantangan">Tantangan</span> Tulis program "penasihat belajar": baca jam belajar dari keyboard, tebak nilai dengan model dari <code>LINEAR.TPM</code> (Program 24.9), lalu beri saran memakai sistem aturan Program 24.4, misalnya JIKA nilai &lt; 75 MAKA tambah jam belajar.</li>
+</ol></div>

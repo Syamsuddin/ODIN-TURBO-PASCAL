@@ -6,6 +6,14 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Ditambahkan
+
+- Buku tutorial (**Help › Buku**) kini membahas semua contoh bawaan: **Bagian VIII: Kecerdasan Buatan dengan OTP-AI** berisi **Bab 23** (Machine Learning: Data dan Model Pertama) dan **Bab 24** (Model Lanjutan dan AI Klasik) untuk kedua puluh contoh **File › Examples - AI**, dinomori menurut urutan topik di menu. Gayanya sama dengan bab lain, dari tujuan pembelajaran sampai latihan, dengan pesan `odinpc` asli di bagian kesalahan. Grafik SVG yang ditulis contoh OTP-AI saat dijalankan ikut ditampilkan (tag `x-svg` di `scripts/build_book.py`), dan contoh dijalankan dengan folder kerja yang menemukan `../DATA` seperti di IDE. Peta buku, penutup, daftar program (133 berkas), glosarium, dan sampul ikut diperbarui.
+
+### Diperbaiki
+
+- Halaman pembuka Bab 21 dan Bab 22 di buku: daftar program yang panjang memampatkan bagian atas berwarna, sehingga judul Bab 21 tertimpa lintasan nomor bab dan judul Bab 22 hilang. Bagian atas kini tidak menyusut, dan bab dengan lebih dari tujuh program memakai daftar ringkas satu baris.
+
 ## [3.0.0-beta.1] - 2026-10-26
 
 Pra-rilis pertama OTP-Win: tampilan DOS diganti antarmuka berjendela modern (menu teks dengan dropdown, toolbar berikon, jendela editor, Output, dan Messages yang bisa digeser, diubah ukurannya, di-minimize, dan di-maximize di dalam jendela utama), dengan bahasa, toolchain, dan pintasan Turbo Pascal yang sama. Buku tutorial bertambah Bab 21 (class) dan Bab 22 (grafik). Ini beta: hanya diuji di Mac Intel.

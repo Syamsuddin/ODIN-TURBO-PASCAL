@@ -10,9 +10,9 @@ Needs Google Chrome (or Chromium; $CHROME overrides) to print HTML to PDF, and P
 for the page numbers, running heads, bookmarks and page labels. Program runs need a pseudo-terminal,
 so run the script where PTYs are available (not inside the Claude Code sandbox).
 
-Sources in book/: depan.html (front matter), babNN.html (chapters 1-22), penutup.html, lampiran.html
-and buku.css. Listings are read unchanged from examples/ (chapters 1-20), examples-oop/ (chapter 21) and
-examples-graph/ (chapter 22). Their output comes from compiling them with
+Sources in book/: depan.html (front matter), babNN.html (chapters 1-24), penutup.html, lampiran.html
+and buku.css. Listings are read unchanged from examples/ (chapters 1-20), examples-oop/ (chapter 21),
+examples-graph/ (chapter 22) and otp-AI/EXAMPLES (chapters 23-24, numbered in the order of the menu). Their output comes from compiling them with
 odinpc and running them on an 80x25 PTY while the input is typed a line at a time, as a reader types
 it in the User screen. Runs are cached in book/.cache, keyed by source, input and odinpc. The runs of
 one chapter share a working folder in document order, so Bab 17 reads the file Bab 17.1 wrote. A program
@@ -37,6 +37,8 @@ Tags the chapter sources use (expanded here; attributes in [] are optional):
       The program with odinpc's real diagnostic, or with run, its run (runtime errors).
   <x-diag [name="salah.pas"]>whole program</x-diag>
       Just odinpc's first diagnostic for that program, as inline code (tables of messages).
+  <x-svg src="REGRESI.SVG" caption=".."></x-svg>
+      An SVG file that a program of the chapter wrote while it ran (OTP-AI plots), after that program's x-run.
   <x-ref to="ID"></x-ref>
       "Gambar N.M" or "Tabel N.M" of the figure or table with that id.
 Every <figcaption> and <caption> is numbered per chapter. Every example of a chapter must be listed.
@@ -85,6 +87,11 @@ EXAMPLES = ROOT / "examples"
 # The samples of the other File menu items, each with a chapter of its own: (folder, file prefix, chapter, menu item).
 EXTRA_EXAMPLES = [(ROOT / "examples-oop", "oop", 21, "Examples - OOP"),
                   (ROOT / "examples-graph", "grafik", 22, "Examples - Graph")]
+# File > Examples - AI: the OTP-AI samples. Their names carry no number, so the book numbers them in the order
+# of AI_EXAMPLE_TOPICS in odin/app.py (the menu's learning path): the first AI_FIRST in Bab 23, the rest in Bab 24.
+AI_EXAMPLES = ROOT / "otp-AI" / "EXAMPLES"
+AI_DATA = ROOT / "otp-AI" / "DATA"
+AI_CHAPTERS, AI_FIRST = (23, 24), 10
 OUTPUT = ROOT / "docs" / "Belajar_Pemrograman_Bahasa_Pascal.pdf"
 CACHE = BOOK / ".cache"
 
@@ -102,6 +109,7 @@ PARTS = [
     ("V", "Pencarian dan Pengurutan", "Algoritma klasik untuk menemukan dan menyusun data, lengkap dengan perbandingan efisiensinya.", (15, 16), "#d0266e"),
     ("VI", "File, Pointer, Unit, dan Proyek Akhir", "Menyimpan data ke disk, memakai memori dinamis, membuat unit sendiri, dan merangkai semuanya dalam proyek.", (17, 20), "#3f3cbb"),
     ("VII", "Class dan Grafik", "Melangkah lebih jauh: menyusun program dari objek dengan class, lalu menggambar di layar grafik dengan unit Graph.", (21, 22), "#0e7c4a"),
+    ("VIII", "Kecerdasan Buatan dengan OTP-AI", "Mengajari komputer belajar dari data: statistik, regresi, klasifikasi, jaringan saraf, sampai sistem pakar, logika fuzzy, dan Q-learning.", (23, 24), "#b45309"),
 ]
 CHAPTERS = {
     1: "Mengenal Pascal dan Odin Turbo Pascal", 2: "Struktur Program Pascal", 3: "Tipe Data, Variabel, dan Konstanta",
@@ -110,6 +118,7 @@ CHAPTERS = {
     12: "Mengolah String", 13: "Record", 14: "Enumerasi, Subrange, dan Set", 15: "Pencarian Data",
     16: "Pengurutan Data", 17: "Bekerja dengan File", 18: "Pointer dan Linked List", 19: "Unit dan Layar Crt",
     20: "Proyek Akhir", 21: "Pemrograman Berorientasi Objek dengan Class", 22: "Grafik dengan Unit Graph",
+    23: "Machine Learning: Data dan Model Pertama", 24: "Model Lanjutan dan AI Klasik",
 }
 # Input the book types where the tests' EXAMPLE_RUNS input is not the best demonstration. A callable
 # answers the program's output so far (the guessing game is played with a binary search).
@@ -193,21 +202,35 @@ def example_runs():
 EXAMPLE_RUNS = example_runs()
 
 
+AI_TOPICS = module_constants(ROOT / "odin" / "app.py").get("AI_EXAMPLE_TOPICS", {})
+
+
 def pascal_files(folder: Path) -> list[Path]:
     return sorted(p for p in folder.iterdir() if p.suffix.lower() == ".pas")
 
 
 def example_files():
-    """Every sample of the book in chapter order (matematika.pas with Bab 19)."""
-    paths = pascal_files(EXAMPLES) + [p for folder, *_ in EXTRA_EXAMPLES for p in pascal_files(folder)]
-    return sorted(paths, key=lambda p: (chapter_of(p), p.name))
+    """Every sample of the book in chapter and program order (matematika.pas last in Bab 19)."""
+    folders = [EXAMPLES] + [folder for folder, *_ in EXTRA_EXAMPLES] + [AI_EXAMPLES]
+    paths = [p for folder in folders for p in pascal_files(folder)]
+
+    def order(path):
+        number = program_number(path)
+        return chapter_of(path), int(number.split(".")[1]) if number else 999, path.name
+    return sorted(paths, key=order)
 
 
 def example_path(name: str) -> Path:
-    for folder in [EXAMPLES] + [folder for folder, *_ in EXTRA_EXAMPLES]:
+    for folder in [EXAMPLES] + [folder for folder, *_ in EXTRA_EXAMPLES] + [AI_EXAMPLES]:
         if (folder / name).exists():
             return folder / name
     return EXAMPLES / name
+
+
+def ai_index(path: Path):
+    """Position of an OTP-AI sample in AI_TOPICS, or None."""
+    order = list(AI_TOPICS)
+    return order.index(path.stem.upper()) if path.parent.name == AI_EXAMPLES.name and path.stem.upper() in order else None
 
 
 def extra_example(path: Path):
@@ -220,7 +243,10 @@ def program_number(path: Path) -> str:
         return f"{int(m.group(1))}.{int(m.group(2))}"
     extra = extra_example(path)
     m = re.match(r"[a-z]+_(\d\d)_", path.name)
-    return f"{extra[2]}.{int(m.group(1))}" if extra and m else ""
+    if extra and m:
+        return f"{extra[2]}.{int(m.group(1))}"
+    i = ai_index(path)
+    return "" if i is None else f"{chapter_of(path)}.{i % AI_FIRST + 1}"
 
 
 def chapter_of(path: Path) -> int:
@@ -228,17 +254,24 @@ def chapter_of(path: Path) -> int:
     if m:
         return int(m.group(1))
     extra = extra_example(path)
-    return extra[2] if extra else 19              # matematika.pas belongs to Bab 19
+    if extra:
+        return extra[2]
+    i = ai_index(path)
+    if i is not None:
+        return AI_CHAPTERS[i >= AI_FIRST]
+    return 19                                     # matematika.pas belongs to Bab 19
 
 
 def example_menu(path: Path) -> str:
     extra = extra_example(path)
-    return extra[3] if extra else "Examples"
+    return extra[3] if extra else "Examples - AI" if ai_index(path) is not None else "Examples"
 
 
 def program_title(path: Path) -> str:
     """The title in the header comment: '{ Bab 6.4 - case..of' gives 'case..of', '{ OOP 1 - Class pertama'
-    gives 'Class pertama'."""
+    gives 'Class pertama'. OTP-AI samples take their topic from the menu."""
+    if ai_index(path) is not None:
+        return AI_TOPICS[path.stem.upper()]
     m = re.search(r"\{ (?:Bab [\d.]+|OOP \d+|Grafik \d+) - ([^\n}]*)", path.read_text(encoding="utf-8"))
     return m.group(1).strip() if m else path.stem
 
@@ -514,8 +547,15 @@ def capture_chapter(chapter: int, requests: list) -> list:
     work = CACHE / "kerja" / f"bab{chapter:02}"
     shutil.rmtree(work, ignore_errors=True)
     work.mkdir(parents=True)
+    if any(ai_index(example_path(src)) is not None for src, *_ in requests):
+        # OTP-AI samples read ../DATA (COMMON.INC DataPath), as when the IDE runs them in otp-AI/EXAMPLES,
+        # and write their SVG, CSV and TPM files to their working folder, not to the repository.
+        (work / "DATA").symlink_to(AI_DATA, target_is_directory=True)
+        work = work / "EXAMPLES"
+        work.mkdir()
     results = []
     for src, kind, value, wait in requests:
+        before = {f.name: f.stat().st_mtime_ns for f in work.iterdir()}
         result = compile_source(example_path(src), chapter)
         if not result.success or not result.executable:
             raise SystemExit(f"{src} gagal dikompilasi:\n{result.output}")
@@ -533,6 +573,11 @@ def capture_chapter(chapter: int, requests: list) -> list:
             if graph:
                 graph.close()
         run = {"src": src, "segments": segments, "screens": screens, "code": code}
+        # SVG pictures the program wrote (OTP-AI plots), for x-svg.
+        svgs = {f.name: f.read_text(encoding="utf-8") for f in work.iterdir()
+                if f.suffix.lower() == ".svg" and before.get(f.name) != f.stat().st_mtime_ns}
+        if svgs:
+            run["files"] = svgs
         if graph:
             if not any(pictures):
                 raise SystemExit(f"{src}: jendela grafik tidak menerima gambar")
@@ -807,7 +852,7 @@ def dropdown_left(name: str) -> int:
 # ---------------------------------------------------------------- chapter sources
 
 # Attribute values may hold markup such as <code>, so a quoted value may contain ">".
-TAG = re.compile(r'<x-(listing|run|ide|code|error|diag|wordlist|ref)\b((?:[^>"]|"[^"]*")*)>(.*?)</x-\1>', re.S)
+TAG = re.compile(r'<x-(listing|run|ide|code|error|diag|wordlist|ref|svg)\b((?:[^>"]|"[^"]*")*)>(.*?)</x-\1>', re.S)
 
 
 class Section:
@@ -834,6 +879,8 @@ class Expander:
     def __init__(self, prefix, runs, chapter=None):
         self.prefix, self.runs, self.chapter = prefix, list(runs), chapter
         self.listed = set()
+        # SVG files the chapter's programs wrote, by name (x-svg).
+        self.files = {name: text for run in self.runs for name, text in run.get("files", {}).items()}
 
     def caption(self, text):
         return f"<figcaption>{text}</figcaption>"
@@ -880,6 +927,13 @@ class Expander:
                 raise SystemExit(f"x-diag {attrs.get('name')}: program ini ternyata terkompilasi tanpa galat")
             f, l, c, k, m = verdict["diagnostics"][0]
             return f'<code class="diag-msg">{esc(f)}({l},{c}) {esc(k)}: {esc(m)}</code>'
+        if name == "svg":
+            text = self.files.get(attrs["src"])
+            if text is None:
+                raise SystemExit(f"x-svg: {attrs['src']} tidak ditulis oleh program mana pun di bab ini")
+            data = base64.b64encode(text.encode()).decode()
+            return (f'<figure class="shot"{ident}><div class="svgout"><div class="svgout-name">{esc(attrs["src"])}</div>'
+                    f'<img src="data:image/svg+xml;base64,{data}" alt=""></div>{self.caption(attrs.get("caption", ""))}</figure>')
         if name == "ref":
             return f'<a class="ref" href="#{attrs["to"]}" data-ref="{attrs["to"]}">??</a>'
         raise AssertionError(name)
@@ -1033,7 +1087,7 @@ def chapter_programs(n: int) -> str:
             number = program_number(path) or "Unit"
             rows.append(f'<li><a href="#prog-{path.stem}"><b>{number}</b><code>{esc(path.name)}</code>'
                         f'<span>{esc(program_title(path))}</span></a></li>')
-    return f'<ul class="programs">{"".join(rows)}</ul>'
+    return f'<ul class="programs{" many" if len(rows) > 7 else ""}">{"".join(rows)}</ul>'
 
 
 def opener(section: Section) -> str:
@@ -1116,7 +1170,8 @@ def back_cover() -> str:
     items = ["Memasang dan memakai IDE Odin Turbo Pascal", "Tipe data, operator, percabangan, dan perulangan",
              "Prosedur, fungsi, dan rekursi", "Array, string, record, enumerasi, dan set",
              "Algoritma pencarian dan pengurutan", "File, pointer, linked list, dan unit", "Tiga proyek akhir yang utuh",
-             "Class, pewarisan, dan polimorfisme", "Grafik, diagram, dan animasi dengan unit Graph"]
+             "Class, pewarisan, dan polimorfisme", "Grafik, diagram, dan animasi dengan unit Graph",
+             "Machine learning dan AI klasik dengan OTP-AI"]
     checks = "".join(f"<li>{esc(i)}</li>" for i in items)
     return f'''<div class="backcover" id="sampul-belakang">
   <div class="cv-pattern"></div>
@@ -1127,8 +1182,8 @@ def back_cover() -> str:
     dan program lengkap yang bisa langsung dibuka dan dijalankan di Odin Turbo Pascal, IDE bergaya klasik yang
     berjalan di macOS, Windows, dan Linux.</p>
     <h3>Yang akan Anda kuasai</h3><ul>{checks}</ul>
-    <p>Semua {program_count()} program contoh tersedia di menu <b>File ▸ Examples</b>, <b>Examples - OOP</b>, dan
-    <b>Examples - Graph</b>, dan semua keluaran di buku ini adalah hasil
+    <p>Semua {program_count()} program contoh tersedia di menu <b>File ▸ Examples</b>, <b>Examples - OOP</b>,
+    <b>Examples - Graph</b>, dan <b>Examples - AI</b>, dan semua keluaran di buku ini adalah hasil
     menjalankan program tersebut dengan kompiler Odin.</p>
   </div>
   <div class="bc-foot"><img src="{logo}" alt=""><div><b>{esc(__author__)}</b><span>{EMAIL}</span>
@@ -1304,8 +1359,10 @@ def overlay_html(plan) -> str:
             continue
         tab = ""
         if thumb:
+            # One tab per chapter and one for the appendices, spread over 24..270 mm.
             slot = len(CHAPTERS) + 1 if thumb == "L" else int(thumb)
-            tab = f'<div class="thumb" style="top:{24 + (slot - 1) * 10.9}mm">{thumb}</div>'
+            step = min(11.5, 236 / len(CHAPTERS))
+            tab = f'<div class="thumb" style="top:{24 + (slot - 1) * step:.1f}mm;height:{step - .8:.1f}mm">{thumb}</div>'
         pages.append(f'<div class="pg" style="{color_vars(color)}"><div class="head"><span>{esc(head[0])}</span>'
                      f'<span>{esc(head[1])}</span></div>{tab}<div class="foot"><span>{esc(TITLE)} · {esc(__author__)}</span>'
                      f'<b>{esc(label)}</b></div></div>')

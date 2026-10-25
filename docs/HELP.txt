@@ -69,8 +69,9 @@ BUKU
 Help > Buku membuka buku tutorial "Belajar Pemrograman Bahasa Pascal dengan
 ODIN Turbo Pascal" (docs/Belajar_Pemrograman_Bahasa_Pascal.pdf) di aplikasi
 PDF bawaan sistem. Buku berwarna penuh ini membahas program contoh File >
-Examples (Bab 1-20), Examples - OOP (Bab 21), dan Examples - Graph (Bab 22),
-bab demi bab, dengan infografik, gambar layar, rangkuman, dan latihan.
+Examples (Bab 1-20), Examples - OOP (Bab 21), Examples - Graph (Bab 22), dan
+Examples - AI (Bab 23-24), bab demi bab, dengan infografik, gambar layar,
+rangkuman, dan latihan.
 
 TUTORIAL PASCAL
 

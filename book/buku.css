@@ -194,6 +194,13 @@ ul.programs a { display: grid; grid-template-columns: 10mm 1fr; column-gap: 2mm;
 ul.programs b { color: var(--c); font-size: 10pt; grid-row: span 2; }
 ul.programs code { background: none; padding: 0; font-size: 7.6pt; color: var(--c-dark); }
 ul.programs span { font-size: 8.6pt; color: #3b4252; }
+/* Chapters 21-24 list 9 to 14 programs: one line each (number and topic), and the colored top keeps its height. */
+ul.programs.many li { margin-bottom: .9mm; }
+ul.programs.many a { padding: .9mm 2.4mm; }
+ul.programs.many b { grid-row: auto; font-size: 8.8pt; }
+ul.programs.many code { display: none; }
+ul.programs.many span { font-size: 8.2pt; }
+.op-top { flex-shrink: 0; }
 
 /* ------------------------------------------------------------- code listings */
 figure { margin: 4.5mm 0 5.5mm; }
@@ -491,3 +498,9 @@ dl.istilah { font-size: 9.1pt; gap: 1.1mm 4mm; line-height: 1.42; }
 .graphwin img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
 .duo .graphwin { width: 100%; }
 .duo .graphwin .mac { height: 4.4mm; font-size: 5.6pt; }
+
+/* An SVG file a program wrote (OTP-AI plots), shown like a picture opened in a browser */
+.svgout { width: 132mm; max-width: 100%; background: #fff; border: .35mm solid var(--c-line); border-radius: 2.2mm; overflow: hidden;
+  box-shadow: 0 .8mm 0 var(--c-soft); }
+.svgout-name { background: var(--c-soft); color: var(--c-dark); font-family: var(--mono); font-size: 7.6pt; padding: 1mm 2.6mm; }
+.svgout img { display: block; width: 100%; height: auto; }
