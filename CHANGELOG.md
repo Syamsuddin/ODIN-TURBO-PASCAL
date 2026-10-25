@@ -35,10 +35,13 @@ Pra-rilis pertama OTP-Win: tampilan DOS diganti antarmuka berjendela modern (men
 - **Desktop tersimpan:** saat keluar, Odin mengingat berkas yang terbuka (dengan posisi kursor dan breakpoint), jendela Output, Messages, dan debugger, beserta posisi, ukuran, dan keadaan minimize/maximize, lalu memulihkannya pada pembukaan berikutnya. Bisa dimatikan di **Options › Environment**.
 - Pengaturan baru di `settings.json`: `theme`, `console_font_size`, `save_desktop`, dan `desktop`. Ukuran font editor bawaan kini 14.
 - `DebugSession` menerima sambungan TCP dari `odinpc debug` di thread pembaca, sehingga jendela tidak tertahan selama debugger dimulai di Windows.
+- **Fit Output:** bila layar 80×25 tidak muat di jendela Output, huruf konsolnya mengecil (paling kecil 7 pt) sampai seluruh layar terlihat; bisa dimatikan di **Options › Environment**. Editor di tata letak awal kini setinggi 58% area kerja.
+- Setup Windows untuk versi pra-rilis: Inno Setup hanya menerima angka di `VersionInfoVersion`, jadi `build_setup_windows.py` mengirim versi tanpa akhiran pra-rilis (`3.0.0`) untuk kolom itu.
 
 ### Pengujian
 
-- Diuji di macOS Intel saja: seluruh tes Rust (191, termasuk korpus) dan 160 tes Python lulus (10 dilewati), termasuk `tests/test_gui.py` (38 tes: menu bar, jendela child, Tile/Cascade/minimize/maximize, geser dan ubah ukuran, toolbar dan tooltip, dialog Options, desktop tersimpan, Run/Debug/Ukur di jendela Output, Odin Vision dengan mouse) dan `tests/test_icons.py`. Pemasang `OdinTurboPascal-3.0.0-beta.1-macos-x86_64.pkg` dibangun dengan `scripts/build_setup_mac.py`, dan pemeriksaannya (Python pribadi dengan Tk, compile dan run dengan `odinpc`) lulus; pemasangannya sendiri belum dicoba. Tampilannya belum diperiksa di Windows, Linux, dan Apple Silicon, dan CI belum dijalankan untuk cabang ini.
+- Diuji di macOS Intel saja: seluruh tes Rust (191, termasuk korpus) dan 160 tes Python lulus (10 dilewati), termasuk `tests/test_gui.py` (38 tes: menu bar, jendela child, Tile/Cascade/minimize/maximize, geser dan ubah ukuran, toolbar dan tooltip, dialog Options, desktop tersimpan, Run/Debug/Ukur di jendela Output, Odin Vision dengan mouse) dan `tests/test_icons.py`. Pemasang `OdinTurboPascal-3.0.0-beta.1-macos-x86_64.pkg` dipasang di Mac Intel pengembang (`installer -target CurrentUserHomeDirectory`, pemeriksaan compile pascapasang lulus) dan aplikasinya dibuka lewat LaunchServices.
+- CI GitHub Actions di cabang `OTP-Win`: tes Rust (termasuk korpus) dan 146 tes Python (tanpa tes versi web yang tidak ada di repositori), termasuk tes antarmuka berjendela, lulus di macOS Intel, macOS Apple Silicon, Ubuntu 24.04 x86_64 dan arm64, serta Windows Server 2025; keempat jenis pemasang (`.pkg` Intel dan Apple Silicon, setup Windows, `.run` x86_64 dan aarch64) dibangun dan lulus pemeriksaannya. Tampilan di Mac Apple Silicon, PC Windows, dan desktop Linux fisik belum diperiksa.
 
 ## [2.9.0] - 2026-10-23
 

@@ -170,7 +170,9 @@ Lihat docs/COMPATIBILITY.txt untuk rincian.
 PENGUJIAN
 
 Pra-rilis 3.0.0-beta.1 (antarmuka berjendela) diuji di Mac Intel (macOS 15.7,
-Python 3.13, Tk 9.1) saja: 160 tes Python dan seluruh tes Rust lulus.
+Python 3.13, Tk 9.1): 160 tes Python dan seluruh tes Rust lulus; di runner
+GitHub Actions untuk macOS Intel dan Apple Silicon, Ubuntu x86_64 dan arm64,
+serta Windows Server 2025 tes Rust dan Python juga lulus.
 Rilis 2.9.0 diuji di Mac Intel (macOS 15.7, Python 3.13, Tk 9.1): 147 tes
 Python dan seluruh tes Rust, termasuk korpus class, dan di runner GitHub
 Actions untuk macOS Intel dan Apple Silicon, Ubuntu x86_64 dan arm64, serta
