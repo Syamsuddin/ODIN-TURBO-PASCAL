@@ -1,75 +1,158 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2026 Syams Ideris
-"""MDI windows placed on the IDE desktop: shared window chrome and the Pascal editor."""
+"""Child windows of the IDE's workspace (MDI): the Pascal Editor, the Output console, compiler Messages and the
+debugger's Watches, Local variables and Call stack."""
 from __future__ import annotations
 
 import re
 import tkinter as tk
 from bisect import bisect_right
+from tkinter import ttk
 
 from .core import syntax_spans
+from .terminal import Screen, TerminalView
 
-BLUE = "#0000aa"
-CYAN = "#00aaaa"
-WHITE = "#ffff55"
-GRAY = "#aaaaaa"
-BLACK = "#000000"
-
-# Editor colors: background, text, cursor, selection background, selection text. CLASSIC is Turbo Pascal's yellow
-# on blue, shown with Syntax colors off. TURBO_BIRU_LEMBUT, shown with them on, keeps a Turbo navy (Lazarus'
-# "Pascal Classic" background) with softer pastel colors.
-CLASSIC = (BLUE, WHITE, WHITE, GRAY, BLUE)
-TURBO_BIRU_LEMBUT = ("#000080", "#f3e9a6", "#ffe680", "#3b4cc0", "#ffffff")
-# Color for each kind syntax_spans() yields, and the kinds drawn in a bold or italic editor font.
-SYNTAX_COLORS = {"reserved": "#ffffff", "identifier": "#f3e9a6", "routine": "#ffc66d", "builtin": "#8fe3ff",
-                 "type": "#9ee6a0", "constant": "#f5a8d8", "number": "#f5a8d8", "string": "#7fe0c8",
-                 "operator": "#b4c2ff", "comment": "#9aa8dc", "directive": "#ff9e9e"}
+# Editor themes: background, text, cursor, selection, current line, gutter background, gutter text, and the color
+# of each kind syntax_spans() yields.
+THEMES = {
+    "light": dict(bg="#ffffff", fg="#1f1f1f", cursor="#000000", select="#add6ff", line="#f3f6fb", gutter="#f5f5f5",
+                  number="#9a9a9a", syntax={"reserved": "#0000c8", "identifier": "#1f1f1f", "routine": "#795e26",
+                                            "builtin": "#267f99", "type": "#1c7c4c", "constant": "#9a3fb5",
+                                            "number": "#098658", "string": "#a31515", "operator": "#3c3c3c",
+                                            "comment": "#2f8a2f", "directive": "#af00db"}),
+    "dark": dict(bg="#1e1e1e", fg="#d4d4d4", cursor="#aeafad", select="#264f78", line="#2a2d2e", gutter="#1e1e1e",
+                 number="#858585", syntax={"reserved": "#569cd6", "identifier": "#d4d4d4", "routine": "#dcdcaa",
+                                           "builtin": "#4ec9b0", "type": "#4ec9b0", "constant": "#c586c0",
+                                           "number": "#b5cea8", "string": "#ce9178", "operator": "#d4d4d4",
+                                           "comment": "#6a9955", "directive": "#c586c0"}),
+}
+SYNTAX_KINDS = tuple(THEMES["light"]["syntax"])
+# Kinds drawn in a bold or italic editor font.
 SYNTAX_FONTS = {"reserved": "bold", "comment": "italic"}
+# Marks that keep their colors in both themes: compile error, search hit, debugger execution line, breakpoint.
+ERROR_BG, FOUND_BG, EXEC_BG, BREAKPOINT = "#f14c4c", "#ffd33d", "#3fb950", "#e51400"
+# Appended to the title of an editor with unsaved changes.
+DIRTY = " ●"
+
+# Window chrome: the workspace behind the child windows, title bars of the active and the other windows (background,
+# text), the frame around a window, and the close button under the mouse.
+WORKSPACE = "#c8cdd5"
+TITLE_ACTIVE = ("#2b5797", "#ffffff")
+TITLE_INACTIVE = ("#e4e6ea", "#5f6368")
+FRAME_ACTIVE, FRAME_INACTIVE = "#2b5797", "#9aa0a8"
+WINDOW_BG = "#f3f3f3"
+CLOSE_HOVER = "#e81123"
+# Pixels of frame that resize a window, the smallest window, and the width of a minimized window.
+GRIP, MIN_WIDTH, MIN_HEIGHT, ICON_WIDTH = 4, 220, 110, 200
+# Cursors over each edge and corner (X11 names, which Tk maps on every platform).
+EDGE_CURSORS = {"n": "sb_v_double_arrow", "s": "sb_v_double_arrow", "e": "sb_h_double_arrow", "w": "sb_h_double_arrow",
+                "nw": "top_left_corner", "se": "bottom_right_corner", "ne": "top_right_corner",
+                "sw": "bottom_left_corner"}
 
 
-class DesktopWindow:
-    """A frame placed on app.desktop with a [■] title [↕] bar; App manages layout and activation.
+class Tooltip:
+    """A small label under widget after the mouse rests on it, as toolbar buttons have."""
+    DELAY = 600
 
-    Subclasses fill self.body and bind <FocusIn> on their focusable widgets to app.activate(self, focus=False),
-    as Editor does. App.add_window() registers and places the window."""
+    def __init__(self, widget, text):
+        self.widget, self.text = widget, text
+        self.job = self.window = None
+        widget.bind("<Enter>", self.schedule, add="+")
+        for sequence in ("<Leave>", "<ButtonPress>"):
+            widget.bind(sequence, self.hide, add="+")
+
+    def schedule(self, event=None):
+        self.hide()
+        self.job = self.widget.after(self.DELAY, self.show)
+
+    def show(self):
+        self.job = None
+        if not self.widget.winfo_exists():
+            return
+        self.window = tk.Toplevel(self.widget)
+        self.window.wm_overrideredirect(True)
+        tk.Label(self.window, text=self.text, bg="#ffffe1", fg="#1f1f1f", relief="solid", borderwidth=1,
+                 padx=6, pady=2).pack()
+        self.window.geometry(f"+{self.widget.winfo_rootx()}+{self.widget.winfo_rooty() + self.widget.winfo_height() + 4}")
+
+    def hide(self, event=None):
+        if self.job:
+            self.widget.after_cancel(self.job)
+            self.job = None
+        if self.window:
+            self.window.destroy()
+            self.window = None
+
+
+class ChildWindow:
+    """A window inside App.workspace with its own title bar (title, minimize, maximize and close). It moves by its
+    title bar, resizes from its frame, and is placed, activated and arranged by App (add_window, activate, tile,
+    cascade). Subclasses fill self.body and call self.track(widget) on widgets that take clicks or focus."""
+    label = ""
+
     def __init__(self, app, title=""):
         self.app = app
-        self.frame = tk.Frame(app.desktop, bg=CYAN, borderwidth=0, highlightbackground=GRAY, highlightthickness=2)
-        self.titlebar = tk.Frame(self.frame, bg=GRAY)
-        self.titlebar.pack(fill="x")
-        # Flat Turbo Vision style: a raised square at each end, a bold title between them, a dark rule under the bar.
-        button = dict(bg=GRAY, fg=BLACK, font=app.font, relief="raised", borderwidth=1, padx=5, pady=0, cursor="hand2")
-        self.close_label = tk.Label(self.titlebar, text="\u25a0", **button)
-        self.close_label.pack(side="left", padx=(3, 0), pady=2)
-        self.close_label.bind("<Button-1>", lambda e: app.close_window(self))
-        self.zoom_label = tk.Label(self.titlebar, text="\u2195", **button)
-        self.zoom_label.pack(side="right", padx=(0, 3), pady=2)
-        self.zoom_label.bind("<Button-1>", lambda e: app.zoom(self))
-        self.title = tk.Label(self.titlebar, bg=GRAY, fg=BLUE, font=(app.font.cget("family"), app.font.cget("size"), "bold"), pady=0)
-        self.title.pack(side="left", expand=True, fill="x")
-        self.rule = tk.Frame(self.frame, bg=BLACK, height=1)
-        self.rule.pack(fill="x")
-        self.body = tk.Frame(self.frame, bg=BLUE)
-        self.body.pack(fill="both", expand=True, padx=3, pady=(0, 3))
-        self.title.bind("<Button-1>", self.drag_start)
-        self.title.bind("<B1-Motion>", self.drag)
-        self.title.bind("<Double-Button-1>", lambda e: app.zoom(self))
-        if title:
-            self.set_title(title)
+        self.state = "normal"           # normal, maximized or minimized
+        self.restore_place = None       # place() options to come back to from maximized or minimized
+        self.active = False
+        self.frame = tk.Frame(app.workspace, bg=WINDOW_BG, highlightthickness=1, highlightbackground=FRAME_INACTIVE,
+                              highlightcolor=FRAME_INACTIVE, borderwidth=0)
+        self.titlebar = tk.Frame(self.frame, bg=TITLE_INACTIVE[0], height=26)
+        self.titlebar.pack(fill="x", padx=GRIP - 1, pady=(GRIP - 1, 0))
+        self.titlebar.pack_propagate(False)
+        self.title = tk.Label(self.titlebar, text=title, anchor="w", bg=TITLE_INACTIVE[0], fg=TITLE_INACTIVE[1],
+                              font=app.ui_font(12, "bold"), padx=8)
+        self.buttons = {}
+        for name, glyph in (("close", "✕"), ("maximize", "□"), ("minimize", "—")):
+            button = tk.Label(self.titlebar, text=glyph, width=3, bg=TITLE_INACTIVE[0], fg=TITLE_INACTIVE[1],
+                              font=app.ui_font(11))
+            button.pack(side="right", fill="y")
+            button.bind("<Enter>", lambda e, n=name: self.hover(n, True))
+            button.bind("<Leave>", lambda e, n=name: self.hover(n, False))
+            self.buttons[name] = button
+        self.buttons["close"].bind("<ButtonRelease-1>", lambda e: app.close_window(self))
+        self.buttons["maximize"].bind("<ButtonRelease-1>", lambda e: app.zoom(self))
+        self.buttons["minimize"].bind("<ButtonRelease-1>", lambda e: app.minimize(self))
+        self.title.pack(side="left", fill="both", expand=True)
+        for widget in (self.titlebar, self.title):
+            widget.bind("<ButtonPress-1>", self.drag_start)
+            widget.bind("<B1-Motion>", self.drag)
+            widget.bind("<Double-Button-1>", lambda e: app.zoom(self))
+        self.body = ttk.Frame(self.frame)
+        self.body.pack(fill="both", expand=True, padx=GRIP - 1, pady=(0, GRIP - 1))
+        self.frame.bind("<Motion>", self.edge_cursor)
+        self.frame.bind("<ButtonPress-1>", self.resize_start)
+        self.frame.bind("<B1-Motion>", self.resize)
+        self.edge = None
+
+    # ---- title ----------------------------------------------------------------------------
 
     def set_title(self, text):
-        self.title.configure(text=f"\u2550\u2561 {text} \u255e\u2550")
+        self.title.configure(text=text)
 
     def list_label(self):
-        """Label shown in Window > List."""
-        return self.title.cget("text").strip("\u2550\u2561\u255e ")
+        """Label shown in the Window menu."""
+        return self.title.cget("text")
+
+    def track(self, widget):
+        """Clicks and focus in widget make this the active window."""
+        widget.bind("<FocusIn>", lambda e: self.app.activate(self, focus=False), add="+")
+        widget.bind("<ButtonPress-1>", lambda e: self.app.activate(self, focus=False), add="+")
 
     def set_active(self, active):
-        color = GRAY if active else CYAN
-        self.titlebar.configure(bg=color)
-        self.title.configure(bg=color, fg=BLUE if active else "#005555")
-        for label in (self.close_label, self.zoom_label):
-            label.configure(bg=color, fg=BLACK if active else "#005555", relief="raised" if active else "flat")
+        self.active = active
+        bg, fg = TITLE_ACTIVE if active else TITLE_INACTIVE
+        frame = FRAME_ACTIVE if active else FRAME_INACTIVE
+        self.frame.configure(highlightbackground=frame, highlightcolor=frame)
+        self.titlebar.configure(bg=bg)
+        for widget in (self.title, *self.buttons.values()):
+            widget.configure(bg=bg, fg=fg)
+
+    def hover(self, name, inside):
+        bg, fg = TITLE_ACTIVE if self.active else TITLE_INACTIVE
+        if inside:
+            bg, fg = (CLOSE_HOVER, "#ffffff") if name == "close" else ("#3c6cb4" if self.active else "#d0d3d8", fg)
+        self.buttons[name].configure(bg=bg, fg=fg)
 
     def focus(self):
         self.frame.focus_set()
@@ -77,61 +160,151 @@ class DesktopWindow:
     def destroy(self):
         self.frame.destroy()
 
+    # ---- moving and resizing ---------------------------------------------------------------
+
+    def geometry(self):
+        """(x, y, width, height) in the workspace."""
+        return self.frame.winfo_x(), self.frame.winfo_y(), self.frame.winfo_width(), self.frame.winfo_height()
+
+    def place_at(self, x, y, width, height):
+        self.frame.place_forget()
+        self.frame.place(x=x, y=y, width=max(MIN_WIDTH, width), height=max(MIN_HEIGHT, height))
+
+    def set_state(self, state):
+        """normal, maximized or minimized; App.zoom, minimize and restore call this."""
+        if state == self.state:
+            return
+        if self.state == "normal":
+            self.restore_place = self.frame.place_info()
+        if state == "minimized":
+            self.body.pack_forget()
+        elif self.state == "minimized":
+            self.body.pack(fill="both", expand=True, padx=GRIP - 1, pady=(0, GRIP - 1))
+        self.frame.place_forget()
+        if state == "maximized":
+            self.frame.place(x=0, y=0, relwidth=1, relheight=1)
+        elif state == "normal" and self.restore_place:
+            self.frame.place(**{k: v for k, v in self.restore_place.items() if k != "in"})
+        self.buttons["maximize"].configure(text="❐" if state != "normal" else "□")
+        self.state = state
+
     def drag_start(self, e):
         self.app.activate(self)
-        self.drag_anchor = (e.x_root, e.y_root, self.frame.winfo_x(), self.frame.winfo_y())
+        x, y, _, _ = self.geometry()
+        self.drag_anchor = (e.x_root, e.y_root, x, y)
 
     def drag(self, e):
-        x,y,left,top = self.drag_anchor
-        self.frame.place_configure(x=max(0, left+e.x_root-x), y=max(0, top+e.y_root-y))
+        if self.state == "maximized":
+            return
+        x0, y0, left, top = self.drag_anchor
+        _, _, width, height = self.geometry()
+        workspace = self.app.workspace
+        # Keep the title bar reachable.
+        x = min(max(left + e.x_root - x0, 60 - width), workspace.winfo_width() - 60)
+        y = min(max(top + e.y_root - y0, 0), max(0, workspace.winfo_height() - 26))
+        if self.state == "minimized":
+            self.frame.place_configure(x=x, y=y)
+        else:
+            self.place_at(x, y, width, height)
+
+    def edge_at(self, e):
+        if self.state != "normal":
+            return None
+        width, height = self.frame.winfo_width(), self.frame.winfo_height()
+        vertical = "n" if e.y < GRIP + 2 else "s" if e.y >= height - GRIP - 2 else ""
+        horizontal = "w" if e.x < GRIP + 2 else "e" if e.x >= width - GRIP - 2 else ""
+        return (vertical + horizontal) or None
+
+    def edge_cursor(self, e):
+        self.frame.configure(cursor=EDGE_CURSORS.get(self.edge_at(e), ""))
+
+    def resize_start(self, e):
+        self.app.activate(self)
+        self.edge = self.edge_at(e)
+        self.resize_anchor = (e.x_root, e.y_root, *self.geometry())
+
+    def resize(self, e):
+        if not self.edge:
+            return
+        x0, y0, x, y, width, height = self.resize_anchor
+        dx, dy = e.x_root - x0, e.y_root - y0
+        if "e" in self.edge:
+            width += dx
+        if "s" in self.edge:
+            height += dy
+        if "w" in self.edge:
+            dx = min(dx, width - MIN_WIDTH)
+            x, width = x + dx, width - dx
+        if "n" in self.edge:
+            dy = min(dy, height - MIN_HEIGHT)
+            y, height = y + dy, height - dy
+        self.place_at(x, y, width, height)
 
 
-class Editor(DesktopWindow):
+class Editor(ChildWindow):
     def __init__(self, app, document, number):
         super().__init__(app)
         self.document, self.number = document, number
-        content = self.body
-        # Colors come from apply_options().
-        self.gutter = tk.Canvas(content, width=17, highlightthickness=0)
-        self.gutter.pack(side="left", fill="y")
-        self.text = tk.Text(content, font=app.font, wrap="none", undo=True, maxundo=500,
-                            borderwidth=0, highlightthickness=0, padx=3, pady=3, exportselection=False,
-                            insertwidth=2, insertontime=550, insertofftime=350)
-        self.scrollbar = scrollbar = tk.Scrollbar(content, command=self.text.yview, bg=CYAN, width=16)
-        scrollbar.pack(side="right", fill="y")
-        self.text.configure(yscrollcommand=lambda a,b: (scrollbar.set(a,b), self.draw_breakpoints()))
-        self.text.pack(fill="both", expand=True)
-        horizontal = tk.Scrollbar(self.frame, orient="horizontal", command=self.text.xview, width=12)
-        horizontal.pack(fill="x", padx=3)
-        self.text.configure(xscrollcommand=horizontal.set)
+        body = self.body
+        body.rowconfigure(0, weight=1)
+        body.columnconfigure(1, weight=1)
+        # Line numbers, breakpoints and the execution arrow. Colors come from apply_options().
+        self.gutter = tk.Canvas(body, width=48, highlightthickness=0, borderwidth=0)
+        self.gutter.grid(row=0, column=0, sticky="ns")
+        self.text = tk.Text(body, font=app.font, wrap="none", undo=True, maxundo=500, borderwidth=0,
+                            highlightthickness=0, padx=6, pady=4, exportselection=False, insertwidth=2,
+                            insertontime=550, insertofftime=350, width=20, height=4)
+        self.text.grid(row=0, column=1, sticky="nsew")
+        self.scrollbar = ttk.Scrollbar(body, orient="vertical", command=self.text.yview)
+        self.scrollbar.grid(row=0, column=2, sticky="ns")
+        horizontal = ttk.Scrollbar(body, orient="horizontal", command=self.text.xview)
+        horizontal.grid(row=1, column=1, sticky="ew")
+        self.text.configure(yscrollcommand=lambda a, b: (self.scrollbar.set(a, b), self.draw_gutter()),
+                            xscrollcommand=horizontal.set)
         self.text.insert("1.0", document.text)
+        self.text.mark_set("insert", "1.0")
         self.text.edit_reset()
         self.text.edit_modified(False)
-        # Configured first, so error, found and exec below take priority over syntax colors.
-        for name, color in SYNTAX_COLORS.items():
-            self.text.tag_configure(name, foreground=color)
-        self.text.tag_configure("error", background="#aa0000", foreground="#ffffff")
-        self.text.tag_configure("found", background=CYAN, foreground=BLACK)
+        # Configured first, so the marks below take priority over syntax colors; "line" (the current line) is
+        # lowest of all.
+        self.text.tag_configure("line")
+        for name in SYNTAX_KINDS:
+            self.text.tag_configure(name)
+        self.text.tag_configure("error", background=ERROR_BG, foreground="#ffffff")
+        self.text.tag_configure("found", background=FOUND_BG, foreground="#000000")
         # The debugger's execution bar: the statement that runs next.
-        self.text.tag_configure("exec", background="#00aa00", foreground="#ffffff")
+        self.text.tag_configure("exec", background=EXEC_BG, foreground="#ffffff")
+        self.text.tag_configure("metric", underline=True)
+        self.exec_line = None
         self.breakpoint_count = 0
+        # App's shortcuts come before the Text class bindings (Ctrl+H, Ctrl+O and Ctrl+T edit text on X11).
+        self.text.bindtags((str(self.text), "OdinKeys", "Text", ".", "all"))
         self.text.bind("<<Modified>>", self.modified)
         self.text.bind("<FocusIn>", lambda e: app.activate(self, focus=False))
-        self.text.bind("<KeyRelease>", lambda e: app.user_input())
-        self.text.bind("<ButtonRelease-1>", lambda e: app.user_input())
+        self.text.bind("<KeyRelease>", lambda e: self.cursor_moved())
+        self.text.bind("<ButtonRelease-1>", lambda e: self.cursor_moved())
         self.text.bind("<Return>", self.newline)
         self.text.bind("<Tab>", self.tab)
         self.text.bind("<Shift-Tab>", self.unindent)
         self.text.bind("<ISO_Left_Tab>", self.unindent)
         self.text.bind("<Insert>", self.toggle_insert)
         self.text.bind("<KeyPress>", self.overwrite)
+        for button in ("<Button-2>", "<Button-3>") if self.text.tk.call("tk", "windowingsystem") == "aqua" else ("<Button-3>",):
+            self.text.bind(button, self.context_menu)
         self.gutter.bind("<Button-1>", self.gutter_click)
-        self.text.bind("<Configure>", lambda e: self.draw_breakpoints())
+        self.track(self.gutter)
+        self.text.bind("<Configure>", lambda e: self.draw_gutter())
         self.overwrite_mode = False
         self.win32 = self.text.tk.call("tk", "windowingsystem") == "win32"
         self.highlight_job = None
         self.apply_options()
         self.update_title()
+        self.cursor_moved(notify=False)
+
+    def caption(self):
+        doc = self.document
+        name = doc.path.name if doc.path else f"NONAME{self.number:02d}.PAS"
+        return name + DIRTY if doc.dirty else name
 
     def list_label(self):
         return self.document.path.name if self.document.path else f"NONAME{self.number}"
@@ -144,22 +317,27 @@ class Editor(DesktopWindow):
             self.app.root.after_cancel(self.highlight_job)
         super().destroy()
 
+    def theme(self):
+        return THEMES.get(self.app.settings["theme"], THEMES["light"])
+
     def apply_options(self):
-        self.text.configure(tabs=(self.app.font.measure(" " * self.app.settings["tab_width"]),))
-        bg, fg, cursor, select_bg, select_fg = TURBO_BIRU_LEMBUT if self.app.settings["syntax_colors"] else CLASSIC
-        self.text.configure(bg=bg, fg=fg, insertbackground=cursor, selectbackground=select_bg, selectforeground=select_fg)
-        self.gutter.configure(bg=bg)
-        self.scrollbar.configure(troughcolor=bg)
-        # Set here, not once in __init__, so the bold and italic fonts follow Options > Editor font size.
+        theme = self.theme()
+        self.text.configure(tabs=(self.app.font.measure(" " * self.app.settings["tab_width"]),), bg=theme["bg"],
+                            fg=theme["fg"], insertbackground=theme["cursor"], selectbackground=theme["select"],
+                            selectforeground=theme["fg"], inactiveselectbackground=theme["select"])
+        self.text.tag_configure("line", background=theme["line"])
+        self.gutter.configure(bg=theme["gutter"])
+        # Set here, not once in __init__, so the bold and italic fonts follow the editor font size.
         family, size = self.app.font.cget("family"), self.app.font.cget("size")
-        for name, style in SYNTAX_FONTS.items():
-            self.text.tag_configure(name, font=(family, size, style))
+        for name, color in theme["syntax"].items():
+            self.text.tag_configure(name, foreground=color, font=(family, size, SYNTAX_FONTS[name])
+                                    if name in SYNTAX_FONTS else "")
         self.highlight()
+        self.draw_gutter()
 
     def update_title(self):
-        doc = self.document
-        name = doc.path.name if doc.path else f"NONAME{self.number:02d}.PAS"
-        self.set_title(f"{name.upper()} {'*' if doc.dirty else ''}")
+        self.set_title(self.caption())
+        self.app.window_title_changed(self)
 
     def modified(self, event=None):
         if not self.text.edit_modified():
@@ -171,15 +349,23 @@ class Editor(DesktopWindow):
         if self.highlight_job:
             self.app.root.after_cancel(self.highlight_job)
         self.highlight_job = self.app.root.after(180, self.highlight)
-        self.app.update_status()
+        self.cursor_moved()
         if self.sync_breakpoints():
             self.app.breakpoints_changed(self)
-        self.draw_breakpoints()
+        self.draw_gutter()
         self.app.source_modified(self)
+
+    def cursor_moved(self, notify=True):
+        """Moves the current-line band to the insert line and updates the status bar."""
+        self.text.tag_remove("line", "1.0", "end")
+        self.text.tag_add("line", "insert linestart", "insert lineend+1c")
+        self.text.tag_lower("line")
+        if notify:
+            self.app.user_input()
 
     def highlight(self):
         self.highlight_job = None
-        for name in SYNTAX_COLORS:
+        for name in SYNTAX_KINDS:
             self.text.tag_remove(name, "1.0", "end")
         if self.app.settings["syntax_colors"]:
             # One tag_add per kind, with line.column indices: a "1.0+Nc" index makes Tk count from the top each time.
@@ -201,6 +387,7 @@ class Editor(DesktopWindow):
         self.remove_selection()
         self.text.insert("insert", "\n" + indent)
         self.text.see("insert")
+        self.cursor_moved()
         return "break"
 
     def remove_selection(self):
@@ -238,6 +425,23 @@ class Editor(DesktopWindow):
         if self.overwrite_mode and e.char and e.char.isprintable() and not self.command_key(e) and not self.text.tag_ranges("sel"):
             if self.text.get("insert", "insert+1c") != "\n":
                 self.text.delete("insert", "insert+1c")
+
+    def context_menu(self, e):
+        if not self.text.tag_ranges("sel"):
+            self.text.mark_set("insert", f"@{e.x},{e.y}")
+        self.cursor_moved()
+        menu = tk.Menu(self.text, tearoff=False)
+        for label, action in (("Cut", "cut"), ("Copy", "copy"), ("Paste", "paste")):
+            menu.add_command(label=label, command=lambda a=action: self.app.edit(a))
+        menu.add_separator()
+        menu.add_command(label="Toggle breakpoint", command=self.toggle_breakpoint)
+        menu.add_command(label="Add watch...", command=self.app.add_watch)
+        menu.add_command(label="Evaluate/Modify...", command=self.app.evaluate)
+        menu.add_command(label="Go to cursor", command=lambda: self.app.debug_step("cursor"))
+        menu.add_separator()
+        menu.add_command(label="Help on word", command=self.app.help_topic)
+        menu.tk_popup(e.x_root, e.y_root)
+        return "break"
 
     def gutter_click(self, e):
         line = int(self.text.index(f"@0,{e.y}").split(".")[0])
@@ -280,7 +484,7 @@ class Editor(DesktopWindow):
             if 1 <= int(line) <= last:
                 self.add_breakpoint_mark(int(line))
         self.sync_breakpoints()
-        self.draw_breakpoints()
+        self.draw_gutter()
         if notify:
             self.app.breakpoints_changed(self)
 
@@ -296,53 +500,169 @@ class Editor(DesktopWindow):
         self.text.tag_add("exec", f"{line}.0", f"{line}.0 lineend+1c")
         self.text.tag_raise("exec")
         self.text.tag_raise("sel")
+        self.exec_line = line
         self.text.mark_set("insert", f"{line}.0")
         self.text.see(f"{line}.0")
+        self.cursor_moved(notify=False)
+        self.draw_gutter()
 
     def clear_exec(self):
         self.text.tag_remove("exec", "1.0", "end")
+        self.exec_line = None
+        self.draw_gutter()
 
-    def draw_breakpoints(self):
+    def draw_gutter(self):
+        """Line numbers of the visible lines, a red dot on breakpoint lines and an arrow on the execution line."""
         if not self.gutter.winfo_exists():
             return
+        theme = self.theme()
+        last = int(self.text.index("end-1c").split(".")[0])
+        width = self.app.font.measure("9" * max(3, len(str(last)))) + 30
+        if int(self.gutter.cget("width")) != width:
+            self.gutter.configure(width=width)
         self.gutter.delete("all")
-        for line in self.document.breakpoints:
-            info = self.text.dlineinfo(f"{line}.0")
-            if info:
-                y = info[1] + info[3] // 2
-                self.gutter.create_oval(4,y-5,14,y+5,fill="#ff5555",outline="")
+        index = self.text.index("@0,0")
+        while True:
+            info = self.text.dlineinfo(index)
+            if info is None:
+                break
+            line = int(index.split(".")[0])
+            y = info[1] + info[3] // 2
+            self.gutter.create_text(width - 8, y, anchor="e", text=str(line), font=self.app.font,
+                                    fill=theme["fg"] if line == self.exec_line else theme["number"])
+            if line in self.document.breakpoints:
+                self.gutter.create_oval(5, y - 6, 17, y + 6, fill=BREAKPOINT, outline="")
+            if line == self.exec_line:
+                self.gutter.create_polygon(8, y - 6, 18, y, 8, y + 6, fill=EXEC_BG, outline="#ffffff")
+            following = self.text.index(f"{index}+1line")
+            if following == index:
+                break
+            index = following
+
+    # Kept for callers of the desktop IDE's name.
+    draw_breakpoints = draw_gutter
 
 
-class ListWindow(DesktopWindow):
-    """A desktop window showing one list: the debugger's Watches, Local variables and Call stack."""
-    label = ""
+class OutputWindow(ChildWindow):
+    """The program's console: Run, Debug and Ukur run the program here on a PTY (ConPTY on Windows), so Crt,
+    Graph's text preview and Odin Vision work as on a terminal. Keys typed here go to the program."""
+    label = "Output"
 
     def __init__(self, app):
         super().__init__(app, self.label)
-        self.list = tk.Listbox(self.body, bg=BLUE, fg=WHITE, selectbackground=CYAN, selectforeground=BLACK,
-                               font=app.font, borderwidth=0, highlightthickness=0, activestyle="none",
-                               exportselection=False)
-        self.list.pack(fill="both", expand=True, padx=2, pady=2)
-        self.list.bind("<FocusIn>", lambda e: app.activate(self, focus=False))
+        self.console = TerminalView(self.body, app.console_font, app.send_input)
+        self.console.configure(width=20, height=4)
+        bar = ttk.Scrollbar(self.body, orient="vertical", command=self.console.yview)
+        self.console.configure(yscrollcommand=bar.set)
+        bar.pack(side="right", fill="y")
+        self.console.pack(fill="both", expand=True)
+        self.track(self.console)
+        self.console.bind("<Control-F2>", lambda e: app.shortcut(app.stop))
+        self.console.bind("<Alt-F5>", lambda e: app.shortcut(app.focus_editor))
+        # While the debugger holds the program, F7/F8 step; otherwise they belong to the running
+        # program (Crt.ReadKey, Odin Vision).
+        self.console.bind("<F7>", lambda e: app.shortcut(lambda: app.debug_step("into")) if app.debug_stopped else self.console.key(e))
+        self.console.bind("<F8>", lambda e: app.shortcut(lambda: app.debug_step("over")) if app.debug_stopped else self.console.key(e))
+        menu_button = "<Button-2>" if self.console.aqua else "<Button-3>"
+        self.console.unbind(menu_button)
+        self.console.bind(menu_button, self.context_menu)
+
+    def focus(self):
+        self.console.focus_set()
+
+    def clear(self):
+        self.console.screen = Screen()
+        self.console.render()
+
+    def context_menu(self, e):
+        if self.console.screen.mouse:
+            return self.console.mouse_button(e, 2 if self.console.aqua else 3, False)
+        menu = tk.Menu(self.console, tearoff=False)
+        menu.add_command(label="Copy screen", command=self.app.copy_screen)
+        menu.add_command(label="Clear", command=self.clear)
+        menu.add_command(label="Program reset", command=self.app.stop)
+        menu.tk_popup(e.x_root, e.y_root)
+        return "break"
+
+
+class MessagesWindow(ChildWindow):
+    """Compiler messages: one row per diagnostic (double click or Enter jumps to it), then the compiler command
+    and its raw output."""
+    label = "Messages"
+
+    def __init__(self, app):
+        super().__init__(app, self.label)
+        self.list = ttk.Treeview(self.body, columns=("kind", "location", "message"), show="headings",
+                                 selectmode="browse", height=4)
+        for key, heading, width in (("kind", "Kind", 80), ("location", "Location", 160), ("message", "Message", 360)):
+            self.list.heading(key, text=heading, anchor="w")
+            self.list.column(key, width=width, anchor="w", stretch=key == "message")
+        self.list.tag_configure("Error", foreground="#c42b1c")
+        self.list.tag_configure("Warning", foreground="#9a6700")
+        self.log = tk.Text(self.body, height=3, font=app.font, wrap="word", borderwidth=0, highlightthickness=0,
+                           padx=6, pady=2, state="disabled", bg="#fafafa", fg="#444444")
+        self.log.pack(side="bottom", fill="x")
+        ttk.Separator(self.body).pack(side="bottom", fill="x")
+        self.list.pack(fill="both", expand=True)
+        self.list.bind("<Double-Button-1>", lambda e: app.jump_selected_message())
+        self.list.bind("<Return>", lambda e: app.jump_selected_message())
+        self.track(self.list)
+        self.track(self.log)
 
     def focus(self):
         self.list.focus_set()
 
+    def set_log(self, text):
+        self.log.configure(state="normal")
+        self.log.delete("1.0", "end")
+        self.log.insert("1.0", text)
+        self.log.configure(state="disabled")
+
+
+class ListWindow(ChildWindow):
+    """A window with one Treeview: the debugger's Watches, Local variables and Call stack.
+    rows() and set_rows() work with plain strings joined by ": " so the debugger code stays the same."""
+    columns = (("name", "Name", 140), ("value", "Value", 220))
+
+    def __init__(self, app):
+        super().__init__(app, self.label)
+        self.tree = ttk.Treeview(self.body, columns=[c[0] for c in self.columns], show="headings",
+                                 selectmode="browse", height=3)
+        for key, heading, width in self.columns:
+            self.tree.heading(key, text=heading, anchor="w")
+            self.tree.column(key, width=width, anchor="w", stretch=key == self.columns[-1][0])
+        bar = ttk.Scrollbar(self.body, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=bar.set)
+        bar.pack(side="right", fill="y")
+        self.tree.pack(fill="both", expand=True)
+        self.track(self.tree)
+
+    def focus(self):
+        self.tree.focus_set()
+
     def rows(self):
-        return list(self.list.get(0, "end"))
+        return [": ".join(str(v) for v in self.tree.item(item, "values")) for item in self.tree.get_children()]
 
     def set_rows(self, rows):
+        """rows: tuples of column values, or "name: value" strings."""
         selected = self.selected()
-        self.list.delete(0, "end")
+        self.tree.delete(*self.tree.get_children())
         for row in rows:
-            self.list.insert("end", row)
+            values = tuple(row.split(": ", 1)) if isinstance(row, str) else tuple(row)
+            self.tree.insert("", "end", iid=str(len(self.tree.get_children())), values=values)
         if selected is not None and selected < len(rows):
-            self.list.selection_set(selected)
-            self.list.activate(selected)
+            self.select(selected)
+
+    def select(self, index):
+        item = str(index)
+        if self.tree.exists(item):
+            self.tree.selection_set(item)
+            self.tree.focus(item)
+            self.tree.see(item)
 
     def selected(self):
-        chosen = self.list.curselection()
-        return chosen[0] if chosen else None
+        chosen = self.tree.selection()
+        return int(chosen[0]) if chosen else None
 
     def destroy(self):
         self.app.debug_window_closed(self)
@@ -352,14 +672,15 @@ class ListWindow(DesktopWindow):
 class WatchWindow(ListWindow):
     """Insert adds a watch, Delete removes the selected one, Enter or a double click edits it."""
     label = "Watches"
+    columns = (("name", "Expression", 140), ("value", "Value", 220))
 
     def __init__(self, app):
         super().__init__(app)
-        self.list.bind("<Insert>", lambda e: (app.add_watch(), "break")[1])
-        self.list.bind("<Delete>", lambda e: (app.delete_watch(self.selected()), "break")[1])
-        self.list.bind("<BackSpace>", lambda e: (app.delete_watch(self.selected()), "break")[1])
-        self.list.bind("<Return>", lambda e: (app.edit_watch(self.selected()), "break")[1])
-        self.list.bind("<Double-Button-1>", lambda e: app.edit_watch(self.selected()))
+        self.tree.bind("<Insert>", lambda e: (app.add_watch(), "break")[1])
+        self.tree.bind("<Delete>", lambda e: (app.delete_watch(self.selected()), "break")[1])
+        self.tree.bind("<BackSpace>", lambda e: (app.delete_watch(self.selected()), "break")[1])
+        self.tree.bind("<Return>", lambda e: (app.edit_watch(self.selected()), "break")[1])
+        self.tree.bind("<Double-Button-1>", lambda e: app.edit_watch(self.selected()))
 
 
 class LocalsWindow(ListWindow):
@@ -369,8 +690,9 @@ class LocalsWindow(ListWindow):
 class StackWindow(ListWindow):
     """Enter or a double click shows a frame; Watches and Local variables then use it."""
     label = "Call stack"
+    columns = (("name", "Routine", 160), ("value", "Location", 200))
 
     def __init__(self, app):
         super().__init__(app)
-        self.list.bind("<Return>", lambda e: (app.select_frame(self.selected()), "break")[1])
-        self.list.bind("<Double-Button-1>", lambda e: app.select_frame(self.selected()))
+        self.tree.bind("<Return>", lambda e: (app.select_frame(self.selected()), "break")[1])
+        self.tree.bind("<Double-Button-1>", lambda e: app.select_frame(self.selected()))

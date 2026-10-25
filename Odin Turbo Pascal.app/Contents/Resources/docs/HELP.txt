@@ -15,17 +15,61 @@ begin
 end.
 
 Ctrl+F9 mengompilasi ulang sumber terbaru dan menjalankan executable jika
-kompilasi berhasil. Masukkan nama pada User screen, lalu tekan Enter.
-Tombol Editor pada User screen kembali ke editor. Alt+F5 membukanya kembali.
-Jendela terminal yang ditutup hanya disembunyikan. Program yang sedang berjalan
-tetap aktif sampai selesai atau dihentikan dengan tombol Stop / Ctrl+F2.
-Ctrl+C pada terminal mengirim interupsi ke grup proses.
+kompilasi berhasil. Program berjalan di jendela Output, di dalam jendela
+utama Odin. Masukkan nama di sana, lalu tekan Enter. Alt+F5 di jendela Output
+kembali ke editor; Alt+F5 dari jendela lain membuka jendela Output. Program
+yang sedang berjalan tetap aktif sampai selesai atau dihentikan dengan tombol
+Stop di toolbar / Ctrl+F2. Ctrl+C di jendela Output mengirim interupsi ke grup
+proses.
+
+TAMPILAN
+
+Jendela utama Odin berisi, dari atas ke bawah:
+  menu bar      File Edit Search Run Compile Debug Options Window Help, berupa
+                menu teks dengan dropdown; Examples dan Open recent di menu
+                File adalah submenu. Klik menu, atau tekan Alt+huruf yang
+                bergaris bawah, atau F10 untuk menu File.
+  toolbar       ikon New, Open, Save | Compile, Run, Stop | Debug, Trace into,
+                Step over, Breakpoint | Tile, Cascade. Arahkan mouse ke ikon
+                untuk melihat nama dan pintasannya.
+  area kerja    jendela editor, Output, Messages, Watches, Local variables,
+                dan Call stack, di atas latar abu-abu dengan logo dan versi.
+  status bar    pesan, baris dan kolom kursor, INS/OVR, encoding dan line
+                ending berkas.
+
+Setiap jendela di area kerja punya bilah judul sendiri. Bilah judul jendela
+aktif berwarna biru. Tombol di ujung kanan bilah judul: minimize (jendela
+menjadi bilah kecil di dasar area kerja), maximize (memenuhi area kerja,
+klik lagi untuk kembali), dan close. Seret bilah judul untuk memindahkan
+jendela, seret tepi atau sudutnya untuk mengubah ukuran, klik dua kali
+bilah judul untuk maximize. Pada awal sesi editor ada di bagian atas, Output
+di kiri bawah, dan Messages di kanan bawah.
+
+Menu Window: Tile membagi area kerja rata untuk semua jendela, Cascade
+menyusunnya bertumpuk, Arrange icons merapikan jendela yang di-minimize,
+Zoom (F5) memaksimalkan atau mengembalikan jendela aktif, Next (F6) dan
+Previous (Shift+F6) berpindah jendela, Close (Alt+F3) menutupnya. Bagian
+bawah menu Window mendaftar semua jendela; pilih salah satu untuk
+mengaktifkannya.
+
+Saat keluar, Odin mengingat jendela yang terbuka: berkas yang sudah disimpan
+(beserta posisi kursor dan breakpoint), jendela Output, Messages, dan jendela
+debugger, lengkap dengan posisi, ukuran, dan keadaan minimize/maximize.
+Pembukaan berikutnya memulihkannya. Berkas yang sudah tidak ada dilewati.
+Matikan Save desktop di Options > Environment bila tidak diinginkan.
+
+Options > Options... membuka satu dialog bertab: Compiler, Directories, Editor,
+dan Environment. Menu Options > Compiler, Directories, Editor, dan Environment
+langsung membuka tab itu. Apply menerapkan perubahan tanpa menutup dialog.
+Di macOS, Settings/Preferences di menu aplikasi (Command+,) membuka dialog yang
+sama.
 
 BUKU
 
 Help > Buku membuka buku tutorial "Belajar Pemrograman Bahasa Pascal dengan
 ODIN Turbo Pascal" (docs/Belajar_Pemrograman_Bahasa_Pascal.pdf) di aplikasi
-PDF bawaan sistem. Buku berwarna penuh ini membahas semua program contoh,
+PDF bawaan sistem. Buku berwarna penuh ini membahas program contoh File >
+Examples (Bab 1-20), Examples - OOP (Bab 21), dan Examples - Graph (Bab 22),
 bab demi bab, dengan infografik, gambar layar, rangkuman, dan latihan.
 
 TUTORIAL PASCAL
@@ -51,9 +95,9 @@ sebenarnya (640 x 480 untuk VGAHi), dan tombol yang diketik di jendela itu
 diteruskan ke program (ReadKey). Jendelanya tetap terbuka dengan gambar
 terakhir sesudah program selesai tanpa CloseGraph, dan hilang saat program
 memanggil CloseGraph atau menjalankan program lain. Menutup jendela tidak
-menghentikan program; pakai Run > Stop. Bila setelan graph_window di
-settings.json diubah menjadi false, gambar hanya tampil sebagai pratinjau
-kasar di User screen. Contoh dibuka sebagai templat: Save menjadi Save as.
+menghentikan program; pakai Run > Program reset. Bila Graph window dimatikan di
+Options > Environment, gambar hanya tampil sebagai pratinjau kasar di jendela
+Output. Contoh dibuka sebagai templat: Save menjadi Save as.
 
 File > Examples - OOP berisi 9 contoh pemrograman berorientasi objek dengan
 class: class pertama, constructor dan destructor, enkapsulasi dan property,
@@ -71,7 +115,8 @@ contoh ke folder sendiri (File > Save as) supaya berkas data mudah dicari.
 EDITOR
 
 File > Open menerima .pas, .pp, .inc dan berkas teks lain. Satu berkas dibuka
-sekali dalam sesi yang sama. Tanda * menunjukkan perubahan belum disimpan.
+sekali dalam sesi yang sama. Tanda ● di judul jendela menunjukkan perubahan
+yang belum disimpan.
 Save melakukan penulisan atomik pada folder tujuan. Jika sumber diubah oleh
 editor lain, Odin meminta keputusan sebelum menimpa.
 
@@ -86,24 +131,19 @@ bab19_01_pakai_unit_sendiri dan unit matematika.
 
 Enter melanjutkan indentasi baris sebelumnya. Tab memasukkan spasi sesuai
 pengaturan. Shift+Tab mengurangi indentasi baris aktif. Insert mengganti mode
-insert/overwrite. Options > Editor mengatur font, tab, dan warna sintaks.
+insert/overwrite. Options > Editor mengatur ukuran font, lebar tab, tema, dan
+warna sintaks. Command/Ctrl+= dan Command/Ctrl+- memperbesar dan memperkecil
+font editor. Baris kursor diberi latar tipis. Klik kanan di editor membuka
+menu Cut, Copy, Paste, breakpoint, watch, dan bantuan.
 
-Warna sintaks Turbo Biru Lembut aktif secara bawaan, di latar biru tua:
-  putih tebal    kata tercadang (begin, if, var)
-  kuning lembut  variabel dan nama buatan sendiri lainnya
-  jingga muda    prosedur dan fungsi buatan sendiri
-  biru langit    rutin bawaan (WriteLn, ClrScr)
-  hijau muda     tipe bawaan (Integer, Real, Boolean)
-  merah muda     angka, termasuk heksadesimal ($0E), serta True, False, nil
-  hijau toska    string dan konstanta karakter (#13)
-  lavender       operator dan simbol (:= + ; .)
-  biru keabuan   komentar, dicetak miring
-  merah salem    direktif kompiler ({$R+})
-Matikan Syntax colors untuk kembali ke teks kuning klasik di latar biru.
+Nomor baris tampil di gutter kiri. Lingkaran merah di gutter adalah
+breakpoint; panah hijau menandai baris yang akan dijalankan debugger.
 
-Window > List menampilkan editor yang terbuka. F6 mengganti jendela aktif.
-Window > Tile membagi layar. Cascade menyusun jendela bertumpuk. F5 memperbesar
-jendela aktif. Seret bilah judul untuk memindahkan jendela. [■] menutupnya.
+Tema Terang (bawaan) memakai latar putih; tema Gelap memakai latar abu-abu
+tua. Di kedua tema warna sintaks membedakan kata tercadang (tebal), variabel,
+prosedur dan fungsi buatan sendiri, rutin bawaan, tipe bawaan, angka dan
+konstanta (True, False, nil), string, operator, komentar (miring), dan
+direktif kompiler. Matikan Syntax colors untuk teks satu warna.
 
 SEARCH
 
@@ -132,11 +172,14 @@ Compiler tidak diarahkan untuk menimpa executable di folder sumber.
 Compile > Export executable menyalin hasil build terakhir ke lokasi pilihan.
 Executable hanya sesuai OS dan CPU mesin pembuatnya.
 
-Klik dua kali pesan error untuk menuju sumber, baris, dan kolomnya.
-Alt+F8 berpindah ke diagnostik berikutnya, termasuk warning dan hint.
-Compile > Compiler messages menampilkan perintah dan seluruh keluaran compiler.
+Pesan compiler tampil di jendela Messages: jenis, berkas:baris:kolom, dan
+pesannya, lalu perintah odinpc dan seluruh keluarannya di bagian bawah. Saat
+kompilasi gagal, kursor langsung menuju error pertama. Klik dua kali pesan
+lain untuk menuju sumber, baris, dan kolomnya. Alt+F8 berpindah ke diagnostik
+berikutnya, termasuk warning dan hint. Compile > Compiler messages membuka
+jendela Messages.
 
-Options > Compiler:
+Options > Compiler (tab Compiler):
 Compiler Odin mengikuti bahasa Turbo Pascal 7, diperluas dengan class (OOP
 gaya Delphi/Free Pascal). Tidak ada pilihan mode lain, dan perluasan itu tidak
 perlu diaktifkan: program TP7 tetap dikompilasi seperti biasa.
@@ -155,11 +198,14 @@ Run > Parameters menerima argumen dengan aturan kutip seperti:
 Program membacanya dengan ParamCount dan ParamStr(1), ParamStr(2), dst.
 Argumen diteruskan sebagai daftar, tanpa menjalankan shell.
 
-USER SCREEN
+JENDELA OUTPUT
 
-Terminal memakai pseudo-terminal OS sehingga input program bersifat interaktif.
-Ukuran layar emulasi 80 kolom × 25 baris. Membesarkan jendela tidak mengubah
-ukuran buffer. Terminal mendukung bagian VT100/ANSI yang digunakan oleh CRT:
+Jendela Output memakai pseudo-terminal OS sehingga input program bersifat
+interaktif. Ukuran layar emulasi 80 kolom × 25 baris. Jendela Output pada awal
+sesi lebih kecil dari itu; tekan F5 untuk memaksimalkannya, atau perkecil
+huruf konsol di Options > Environment (Output font size). Membesarkan jendela
+tidak mengubah ukuran buffer. Klik kanan membuka Copy screen, Clear, dan
+Program reset (kecuali saat program meminta mouse). Terminal mendukung bagian VT100/ANSI yang digunakan oleh CRT:
 warna 16, posisi kursor, clear, scroll, insertion/deletion, dan input keyboard.
 Karakter garis dan pola desktop Turbo Vision (Odin Vision) ditampilkan. Tombol F1..F12 dan Insert diteruskan ke program, termasuk
 dengan Shift, Ctrl, atau Alt; F7/F8 hanya menjadi perintah debugger saat
@@ -175,7 +221,7 @@ METRIK: UKUR DAN PERIKSA
 
 Run > Ukur (Shift+F9) membangun program dengan build juri (odinpc build
 --count-steps, dengan pemeriksaan range dan overflow) dan menjalankannya di
-User screen seperti Run. Saat program selesai, jendela Metrik menampilkan:
+jendela Output seperti Run. Saat program selesai, jendela Metrik menampilkan:
 
   Angka resmi   langkah eksekusi, puncak heap, memori global, dan kedalaman
                 panggilan. Angka ini dihitung toolchain, bukan diukur dari
@@ -198,7 +244,7 @@ Klik baris berwarna di jendela Metrik untuk membuka baris itu di editor.
 Simpan laporan menyimpan laporan lengkap sebagai JSON (otp-metrics/1).
 
 Run > Periksa memilih folder paket soal lalu menjalankan program dengan
-setiap kasus ujinya tanpa User screen. Isi paket:
+setiap kasus ujinya tanpa jendela Output. Isi paket:
 
   soal.md        pernyataan soal
   aturan.json    {"judul": "...", "pembanding": "trim", "toleransi": 1e-6,
@@ -223,8 +269,8 @@ Batas waktu, atau Keluaran terlalu panjang.
 
 DEBUGGER
 
-Program dikompilasi ulang dengan pengait debugger, lalu dijalankan di User
-screen. LLDB, GDB, dan Xcode tidak diperlukan. Diuji di Mac Intel, dan di
+Program dikompilasi ulang dengan pengait debugger, lalu dijalankan di jendela
+Output. LLDB, GDB, dan Xcode tidak diperlukan. Diuji di Mac Intel, dan di
 runner GitHub Actions untuk Mac Apple Silicon, Linux x86_64 dan arm64, serta
 Windows x86_64.
 
@@ -242,11 +288,12 @@ Saat program berhenti, baris berikutnya yang akan dijalankan ditandai hijau:
   F7 / Trace into           satu baris; masuk ke prosedur yang dipanggil
   F4 / Go to cursor         lanjut sampai baris kursor
   Continue, Ctrl+F9         lanjut sampai breakpoint berikutnya atau selesai
-  Ctrl+C di User screen     hentikan sementara program yang sedang berjalan
+  Ctrl+C di jendela Output  hentikan sementara program yang sedang berjalan
   Ctrl+F2                   akhiri program
 
 Jendela Watches, Local variables, dan Call stack ada di menu Debug. Ketiganya
-jendela desktop biasa, sehingga ikut diatur Tile, Cascade, dan Window > List.
+terbuka di kanan area editor sebagai jendela biasa, sehingga ikut diatur Tile,
+Cascade, dan daftar jendela di menu Window.
 Di Watches: Insert menambah, Delete menghapus, Enter mengubah ekspresi.
 Nilai diperbarui setiap kali program berhenti. Double-click pada Call stack
 memilih frame; Watches dan Local variables lalu memakai frame itu.
@@ -277,10 +324,10 @@ TROUBLESHOOTING
 Compiler not found: jalankan kembali Install.command (Install.cmd di Windows).
 Dari source: cargo build --release di folder toolchain/.
 Unit not found: periksa primary file, nama unit, dan Options > Directories.
-ReadLn terlihat diam: klik User screen, ketik masukan, lalu Enter.
+ReadLn terlihat diam: klik jendela Output, ketik masukan, lalu Enter.
 Tombol F1..F12 mengatur volume/kecerahan: gunakan Fn bersama tombol fungsi,
 atau aktifkan penggunaan tombol fungsi standar pada pengaturan Keyboard Mac.
-Font terlalu besar: Options > Editor. Gunakan Command+B/R jika tombol fungsi
+Font terlalu besar: Options > Editor, atau Command/Ctrl+- . Gunakan Command+B/R jika tombol fungsi
 lebih nyaman dipakai untuk kontrol perangkat.
 Program macet: Run > Program reset. Proses diterminasi, lalu dipaksa berhenti
 jika belum keluar setelah satu detik.

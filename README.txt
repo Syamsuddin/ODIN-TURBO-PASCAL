@@ -124,18 +124,22 @@ pengguna, bukan mengubah /Applications milik sistem.
 
 FITUR YANG TERIMPLEMENTASI
 
-Antarmuka biru, teks kuning, menu abu-abu, jendela editor, status bar, dan
-pintasan fungsi klasik. File/Edit/Search/Run/Compile/Debug/Options/Window/Help.
-Editor beberapa berkas dengan tile, cascade, zoom, undo/redo, clipboard,
-find/replace, go-to-line, indentasi, mode insert/overwrite, dan warna sintaks
-Turbo Biru Lembut yang bisa dimatikan.
+Antarmuka berjendela modern dengan pintasan fungsi Turbo Pascal: menu teks
+File/Edit/Search/Run/Compile/Debug/Options/Window/Help dengan dropdown dan
+submenu, toolbar berikon, status bar. Jendela editor, Output, Messages, Watches,
+Local variables, dan Call stack di dalam jendela utama, masing-masing dengan
+tombol minimize/maximize/close, bisa digeser dan diubah ukurannya; tile,
+cascade, arrange icons, zoom, dan tata letak yang dipulihkan pada sesi
+berikutnya. Undo/redo, clipboard, find/replace, go-to-line, indentasi, mode
+insert/overwrite, nomor baris, tema Terang/Gelap, warna sintaks, dan satu
+dialog Options bertab.
 Toolchain Odin (macOS, Linux, Windows): compiler Turbo Pascal 7 dengan tipe
 object, diperluas dengan OOP berbasis class (pewarisan, virtual/override/
 abstract, property, is/as, class of, overload method), runtime library dengan
 Crt, Dos, Strings, Printer, Objects, Classes, Contnrs, dan Odin Vision (Turbo
 Vision lengkap, termasuk ColorSel dan TextView). Primary file, unit/include paths, range/overflow checks, build ulang, pesan compiler
 dan navigasi baris error.
-Terminal PTY 80x25: ReadLn, ReadKey, warna CRT, GotoXY, ClrScr, input tombol,
+Jendela Output (PTY 80x25): ReadLn, ReadKey, warna CRT, GotoXY, ClrScr, input tombol,
 dan mouse untuk program Turbo Vision.
 Argumen program, penghentian proses, ekspor executable native.
 Debugger terpadu: breakpoint, Trace into, Step over, Go to

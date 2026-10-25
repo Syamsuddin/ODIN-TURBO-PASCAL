@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2026 Syams Ideris
-"""Debug session: `odinpc debug` runs the program on the user screen PTY; commands and events
-travel as JSON lines over two pipes, or over a TCP connection to 127.0.0.1 on Windows, which
-cannot pass descriptors to a child (IMPLEMENTATION_PLAN.md section 6.2). No Tk here: the IDE and
-tests/test_debugger.py drive the same class."""
+"""Debug session: `odinpc debug` runs the program on a PTY or in a terminal window of the OS;
+commands and events travel as JSON lines over two pipes, or over a TCP connection to 127.0.0.1
+on Windows and from a terminal window, which cannot receive descriptors (IMPLEMENTATION_PLAN.md
+section 6.2). No Tk here: the IDE and tests/test_debugger.py drive the same class."""
 from __future__ import annotations
 
 import json
@@ -11,6 +11,7 @@ import os
 import socket
 import sys
 import threading
+import time
 from pathlib import Path
 
 from .console import Process
@@ -21,28 +22,34 @@ class DebugSession:
     for every event of the debugger. Call update(event) on the thread that handles events: it
     keeps state ("starting", "running", "stopped", "exited") and the stop location."""
 
-    def __init__(self, toolchain, executable, debug_info, arguments, cwd, emit, env=None):
+    def __init__(self, toolchain, executable, debug_info, arguments, cwd, emit, env=None, launch=None):
+        """launch(argv, cwd, emit, env=...) starts odinpc debug, console.Process by default; the IDE passes a
+        launch.TerminalRun to run it in a terminal window of the OS."""
         common = ["--exe", str(executable), "--odbg", str(debug_info)]
         tail = ["--cwd", str(cwd), "--", *arguments]
         self._socket = None
-        if sys.platform == "win32":
-            # No descriptors reach a Windows child: odinpc debug connects back to a port here.
+        self._commands = None
+        self._closed = False
+        self.emit = emit
+        self.state = "starting"
+        self.location = None     # (Path, line) of the last stop
+        self.reason = None
+        self.exit_code = None
+        self.runtime_error = None  # event dict of the last runtime error
+        self._next_id = 0
+        self._lock = threading.Lock()
+        if launch or sys.platform == "win32":
+            # No descriptors reach a Windows child or a program in another terminal: odinpc debug connects back to
+            # a port here. The reader thread accepts, so the IDE does not wait for a terminal window to open.
             server = socket.create_server(("127.0.0.1", 0))
+            port = server.getsockname()[1]
+            argv = [str(toolchain), "debug", *common, "--ide", f"127.0.0.1:{port}", *tail]
             try:
-                server.settimeout(15)
-                port = server.getsockname()[1]
-                argv = [str(toolchain), "debug", *common, "--ide", f"127.0.0.1:{port}", *tail]
-                self.process = Process(argv, cwd, emit, env=env or None)
-                try:
-                    self._socket, _ = server.accept()
-                except OSError:
-                    self.process.stop()
-                    raise OSError("odinpc debug tidak terhubung ke IDE.")
-            finally:
+                self.process = (launch or Process)(argv, cwd, emit, env=env or None)
+            except BaseException:
                 server.close()
-            self._socket.settimeout(None)
-            self._commands = self._socket.makefile("w", encoding="utf-8")
-            events = self._socket.makefile("r", encoding="utf-8")
+                raise
+            threading.Thread(target=self._accept, args=(server, 60 if launch else 15), daemon=True).start()
         else:
             command_read, command_write = os.pipe()
             event_read, event_write = os.pipe()
@@ -58,15 +65,39 @@ class DebugSession:
                 os.close(event_write)
             self._commands = os.fdopen(command_write, "w", encoding="utf-8")
             events = os.fdopen(event_read, encoding="utf-8")
-        self.emit = emit
-        self.state = "starting"
-        self.location = None     # (Path, line) of the last stop
-        self.reason = None
-        self.exit_code = None
-        self.runtime_error = None  # event dict of the last runtime error
-        self._next_id = 0
-        self._lock = threading.Lock()
-        threading.Thread(target=self._read, args=(events,), daemon=True).start()
+            threading.Thread(target=self._read, args=(events,), daemon=True).start()
+
+    def _accept(self, server, timeout):
+        """Waits for odinpc debug to connect; close() (the program ended) stops waiting."""
+        connection = None
+        server.settimeout(0.5)
+        deadline = time.monotonic() + timeout
+        try:
+            while connection is None and not self._closed and time.monotonic() < deadline:
+                try:
+                    connection, _ = server.accept()
+                except socket.timeout:
+                    continue
+                except OSError:
+                    break
+        finally:
+            server.close()
+        if connection is None:
+            if not self._closed:
+                self.process.stop()
+                self.emit("debug", {"event": "error", "message": "odinpc debug tidak terhubung ke IDE."})
+            self.emit("debug", {"event": "closed"})
+            return
+        connection.settimeout(None)
+        with self._lock:
+            self._socket = connection
+            self._commands = connection.makefile("w", encoding="utf-8")
+            if self._closed:
+                self._commands = None
+        if self._commands is None:
+            connection.close()
+            return
+        self._read(connection.makefile("r", encoding="utf-8"))
 
     def _read(self, events):
         with events:
@@ -86,6 +117,8 @@ class DebugSession:
         with self._lock:
             self._next_id += 1
             request = self._next_id
+            if self._commands is None:
+                return request
             try:
                 self._commands.write(json.dumps({"command": command, "id": request, **fields}) + "\n")
                 self._commands.flush()
@@ -167,8 +200,10 @@ class DebugSession:
 
     def close(self):
         with self._lock:
+            self._closed = True
             try:
-                self._commands.close()
+                if self._commands is not None:
+                    self._commands.close()
             except OSError:
                 pass
             if self._socket is not None:

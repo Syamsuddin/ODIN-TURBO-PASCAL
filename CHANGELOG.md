@@ -27,6 +27,18 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ### Diubah
 
+- **Antarmuka IDE berjendela modern** (cabang OTP-Win, `OTP_WIN_PLAN.md`), menggantikan tiruan layar DOS:
+  - menu teks di dalam jendela utama, sama di macOS, Linux, dan Windows (File, Edit, Search, Run, Compile, Debug, Options, Window, Help) dengan dropdown dan submenu **File › Examples** (Tutorial, AI, Graph, OOP) dan **File › Open recent**; di macOS bar menu global hanya berisi menu aplikasi, yang kini bernama Odin Turbo Pascal, bukan Python;
+  - toolbar berikon dengan tooltip (`odin/icons.py`: ikon digambar dari bentuk sederhana dan di-encode ke PNG tanpa berkas gambar);
+  - jendela child di dalam area kerja: editor, **Output**, **Messages**, Watches, Local variables, dan Call stack, masing-masing dengan bilah judul, tombol minimize/maximize/close, bisa digeser dan diubah ukurannya; menu **Window** dengan Tile, Cascade, Arrange icons, Zoom (`F5`), Next/Previous (`F6`/`Shift+F6`), Close, dan daftar jendela;
+  - program berjalan di jendela **Output** (pengganti User screen); pesan compiler beserta perintah dan keluaran `odinpc` di jendela **Messages**, dan kompilasi yang gagal langsung menuju error pertama;
+  - editor dengan nomor baris, sorotan baris kursor, menu klik kanan, tema Terang (bawaan) dan Gelap; status bar dengan baris/kolom, INS/OVR, dan encoding;
+  - satu dialog **Options** bertab (Compiler, Directories, Editor, Environment) dengan Apply; ukuran font jendela Output tersendiri;
+  - logo, tag versi, kredit penulis, hak cipta, dan lisensi di tengah area kerja.
+- **Desktop tersimpan:** saat keluar, Odin mengingat berkas yang terbuka (dengan posisi kursor dan breakpoint), jendela Output, Messages, dan debugger, beserta posisi, ukuran, dan keadaan minimize/maximize, lalu memulihkannya pada pembukaan berikutnya. Bisa dimatikan di **Options › Environment**.
+- Pengaturan baru di `settings.json`: `theme`, `console_font_size`, `save_desktop`, dan `desktop`. Ukuran font editor bawaan kini 14.
+- `DebugSession` menerima sambungan TCP dari `odinpc debug` di thread pembaca, sehingga jendela tidak tertahan selama debugger dimulai di Windows.
+
 - Pointer maju `PFoo = ^TFoo` kini selalu menunjuk `TFoo` yang dideklarasikan sesudahnya di bagian `type` yang sama, walaupun nama itu sudah terlihat dari luar (misalnya `System.TObject`). Unit `Objects` bergantung pada aturan ini.
 - Alias `T = Class;` ke tipe bernama `Class` kini dibaca sebagai deklarasi forward sebuah class.
 
@@ -39,6 +51,7 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 ### Pengujian
 
 - Diuji di macOS Intel: seluruh tes Rust (korpus 97 program dalam tiga mode build, galat semantik, parser) dan 147 tes Python (10 dilewati), termasuk debugger dan tes GUI. Seluruh korpus juga lulus di VM Lima Ubuntu 24.04 untuk x86_64-linux dan aarch64-linux (qemu-user), dan korpus `classes` serta `objects` untuk x86_64-windows lulus di bawah Wine.
+- Antarmuka berjendela (OTP-Win), diuji di macOS Intel saja: 160 tes Python lulus (10 dilewati), termasuk `tests/test_gui.py` (38 tes: menu bar, jendela child, Tile/Cascade/minimize/maximize, geser dan ubah ukuran, toolbar dan tooltip, dialog Options, desktop tersimpan, Run/Debug/Ukur di jendela Output, Odin Vision dengan mouse) dan `tests/test_icons.py`. Tampilannya belum diperiksa di Windows, Linux, dan Apple Silicon.
 - CI GitHub Actions: tes Rust (termasuk korpus) dan tes Python lulus di macOS Intel, macOS Apple Silicon, Ubuntu 24.04 x86_64, dan Ubuntu 24.04 arm64. Di Windows Server 2025, tes Rust, pemeriksaan pemasang, dan setup lulus; 132 tes Python juga lulus setelah dua perbaikan di bagian Diperbaiki (setup CI dan snapshot Crt Windows); keduanya kegagalan lama yang juga muncul di `main` tanpa perubahan class. Mac Apple Silicon dan PC Windows fisik belum diuji langsung.
 
 ## [2.8.0] - 2026-10-23

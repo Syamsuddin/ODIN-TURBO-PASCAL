@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2026 Syams Ideris
-"""Classic text-inspired desktop interface; all commands are local."""
+"""GUI of the IDE (OTP_WIN_PLAN.md): one main window with a text menu bar, a toolbar, a workspace of child windows
+(MDI: editors, Output, Messages, debugger windows) and a status bar. All commands are local."""
 from __future__ import annotations
 
+import base64
 import json
+import math
 import os
 import platform
 import queue
@@ -18,7 +21,7 @@ import webbrowser
 import tkinter as tk
 from pathlib import Path
 from urllib.parse import quote
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 
 from . import __author__, __copyright__, __version_tag__
@@ -29,17 +32,19 @@ from .core import (PACKAGE_ROOT, BuildResult, Diagnostic, Document, Settings, at
 from .debugger import DebugSession
 from .graphics import GraphChannel
 from .graphwindow import GraphWindow
-from .terminal import Process, Screen, TerminalView
-from .windows import BLACK, BLUE, CYAN, GRAY, WHITE, Editor, LocalsWindow, StackWindow, WatchWindow
+from .icons import png as icon_png
+from .terminal import Process, Screen
+from .windows import (GRIP, ICON_WIDTH, WORKSPACE, Editor, LocalsWindow, MessagesWindow, OutputWindow, StackWindow,
+                      Tooltip, WatchWindow)
 
 ASSETS = Path(__file__).resolve().parent.parent
-# File > Examples - Graph: the programs in examples-graph/ and what each one shows.
+# File > Examples > Graph: the programs in examples-graph/ and what each one shows.
 GRAPH_EXAMPLE_TOPICS = {
     "01": "Program grafik pertama", "02": "Garis, gaya garis, titik kini", "03": "Bentuk dasar", "04": "Warna dan palet",
     "05": "Isian, pola, FloodFill", "06": "Grafik batang", "07": "Diagram pai", "08": "Grafik fungsi matematika",
     "09": "Animasi dua halaman", "10": "GetImage dan PutImage (sprite)", "11": "Himpunan Mandelbrot", "12": "Jam analog",
     "13": "Menggambar dengan tombol panah", "14": "Teks di layar grafik"}
-# File > Examples - OOP: the class programs in examples-oop/ and what each one teaches.
+# File > Examples > OOP: the class programs in examples-oop/ and what each one teaches.
 OOP_EXAMPLE_TOPICS = {
     "01": "Class pertama", "02": "Constructor dan destructor", "03": "Enkapsulasi dan property", "04": "Pewarisan",
     "05": "Polimorfisme (virtual, abstract)", "06": "Class var, class method, class of", "07": "Daftar objek, is, as",
@@ -53,116 +58,159 @@ AI_EXAMPLE_TOPICS = {
     "OPTDEMO": "Optimizer gradient descent", "MODELIO": "Simpan dan muat model", "PLOTDEMO": "Grafik SVG"}
 # Help > Buku opens this PDF in docs/.
 BOOK = "Belajar_Pemrograman_Bahasa_Pascal.pdf"
-# Help > Help in browser opens this page in docs/.
+# Help > Contents opens this page in docs/.
 HELP_HTML = "help.html"
 TEMPLATE = "program Untitled;\n\nbegin\n  WriteLn('Hello, Pascal!');\nend.\n"
 # Compile actions that need a debug build and run under the debugger.
 DEBUG_ACTIONS = ("debug", "step", "cursor")
 # Monospace fonts in order of preference; Courier when none is installed.
 FONTS = {"darwin": ("Menlo",), "win32": ("Consolas", "Courier New")}
-# The plaque under the desktop logo: a Turbo Vision dialog (gray, white double frame, black shadow).
-# Its fonts are fixed, so it keeps its shape whatever the editor font size is.
-PLAQUE_GAP, PLAQUE_PAD, PLAQUE_SHADOW = 14, 16, 8
-PLAQUE_FRAME, PLAQUE_VERSION = "#ffffff", "#006060"
+# The ttk theme that draws native widgets on each OS.
+TTK_THEMES = {"darwin": "aqua", "win32": "vista"}
+AQUA = sys.platform == "darwin"
+# The command modifier: Command on macOS, Control elsewhere.
+MOD = "Command" if AQUA else "Control"
+ENCODINGS = {"utf-8": "UTF-8", "utf-8-sig": "UTF-8 BOM", "cp437": "CP437"}
+# Menu bar colors: background, text, item under the mouse or open.
+MENU_BG, MENU_FG, MENU_HOVER = "#f3f3f3", "#1f1f1f", "#cce0f7"
+# Where the standard windows open, as place() options in the workspace: editors fill the upper part (cascaded),
+# Output and Messages share the lower part, the debugger's windows stack on the right.
+EDITOR_HEIGHT = .64
+OUTPUT_PLACE = dict(x=6, rely=EDITOR_HEIGHT, y=2, relwidth=.58, width=-9, relheight=1 - EDITOR_HEIGHT, height=-8)
+MESSAGES_PLACE = dict(relx=.58, x=3, rely=EDITOR_HEIGHT, y=2, relwidth=.42, width=-9, relheight=1 - EDITOR_HEIGHT, height=-8)
+DEBUG_PLACES = {"watch_window": dict(relx=.62, x=0, y=6, relwidth=.38, width=-6, relheight=EDITOR_HEIGHT / 3, height=-6),
+                "locals_window": dict(relx=.62, x=0, rely=EDITOR_HEIGHT / 3, y=2, relwidth=.38, width=-6,
+                                      relheight=EDITOR_HEIGHT / 3, height=-6),
+                "stack_window": dict(relx=.62, x=0, rely=2 * EDITOR_HEIGHT / 3, y=-2, relwidth=.38, width=-6,
+                                     relheight=EDITOR_HEIGHT / 3, height=-4)}
+# Height of a minimized window: its title bar and frame.
+ICON_HEIGHT = 26 + 2 * GRIP
+# Toolbar buttons in groups: key in App.tools, icon in odin/icons.py, tooltip, App method name and its argument.
+TOOLBAR = ((("New", "new", "New (Mod+N)", "new", None), ("Open", "open", "Open (F3)", "open_file", None),
+            ("Save", "save", "Save (F2)", "save", None)),
+           (("Compile", "compile", "Compile (F9)", "compile", None), ("Run", "run", "Run (Ctrl+F9)", "run", None),
+            ("Stop", "stop", "Program reset (Ctrl+F2)", "stop", None)),
+           (("Debug", "debug", "Start debugging", "debug", None), ("into", "into", "Trace into (F7)", "debug_step", "into"),
+            ("over", "over", "Step over (F8)", "debug_step", "over"),
+            ("Breakpoint", "breakpoint", "Toggle breakpoint (Ctrl+F8)", "breakpoint", None)),
+           (("Tile", "tile", "Tile windows", "tile", None), ("Cascade", "cascade", "Cascade windows", "cascade", None)))
+TOOLBAR_ICON = 20
+# Kinds of windows the desktop (Options > Environment > Save desktop) remembers, and their App attributes.
+DESKTOP_WINDOWS = {"output": "output_window", "messages": "messages_window", "watches": "watch_window",
+                   "locals": "locals_window", "stack": "stack_window"}
+OPTION_TABS = ("Compiler", "Directories", "Editor", "Environment")
+
+
+def accel(keys):
+    """Menu accelerator text for keys written as Mod+S, Ctrl+F9 or Alt+F8: Tk's Command-S form on macOS, which the
+    menus draw as symbols, and Ctrl+S elsewhere."""
+    if not keys:
+        return ""
+    parts = keys.split("+")
+    if AQUA:
+        names = {"Mod": "Command", "Ctrl": "Control", "Alt": "Option"}
+        return "-".join(names.get(part, part) for part in parts)
+    return "+".join("Ctrl" if part == "Mod" else part for part in parts)
 
 
 class App:
     def __init__(self, root):
         self.root = root
         self.settings = Settings()
-        # windows: every desktop window in creation order; active: any of them; last_editor: most recently active Editor.
+        # windows: every child window in creation order; active: any of them; last_editor: most recently active Editor.
         self.windows, self.active, self.last_editor = [], None, None
         self.counter = 0
         self.messages = queue.Queue(maxsize=256)
         self.compiling = False
-        self.process = None
+        self.process = None             # console Process of the program (or of odinpc debug) while it runs
+        self.finished_runs = 0          # programs that ended, counted when the IDE has handled their end
         self.debugger = None            # DebugSession while debugging
-        self.debug_requests = {}       # request id -> callback(result event)
-        self.debug_frame = 0           # call stack frame used by Watches and Local variables
+        self.debug_requests = {}        # request id -> callback(result event)
+        self.debug_frame = 0            # call stack frame used by Watches and Local variables
         self.stack_frames = []
-        self.watches = []              # watch expressions, shown with their latest values
+        self.watches = []               # watch expressions, shown with their latest values
         self.watch_values = {}
         self.watch_window = self.locals_window = self.stack_window = None
-        self.pending_cursor = None     # (path, line) for Go to cursor
+        self.output_window = self.messages_window = None
+        self.pending_cursor = None      # (path, line) for Go to cursor
         self.restart_debug = None
         self.debug_source_changed = False
-        self.last_runtime_error = None # (code, path or None, line or None)
-        self.error_report = None       # (debug_info, report file) of the last Run
-        self.measuring = None          # Run > Ukur in progress: what the Metrik window needs when it ends
-        self.last_metrics = None       # the report the Metrik window shows last
-        self.console_window = None
-        self.console = None
-        self.graph_channel = None     # the Graph window of the running program (odin/graphics.py)
+        self.last_runtime_error = None  # (code, path or None, line or None)
+        self.error_report = None        # (debug_info, report file) of the last Run
+        self.measuring = None           # Run > Ukur in progress: what the Metrik window needs when it ends
+        self.last_metrics = None        # the report the Metrik window shows last
+        self.graph_channel = None       # the Graph window of the running program (odin/graphics.py)
         self.graph_window = None
         self.last_build = None
+        self.error_index = -1
         self.search_term = ""
         self.closed = False
         self.pending_action = None
         self.banner = True
-        self.notice = None             # kept in the status bar until the next key or click
+        self.notice = None              # kept in the status bar until the next key or click
         self.session = data_dir() / "recovery.json"
         root.title("Odin Turbo Pascal")
         root.geometry(self.settings["geometry"])
-        root.minsize(800, 540)
-        root.configure(bg=BLUE)
+        root.minsize(820, 560)
         root.protocol("WM_DELETE_WINDOW", self.quit)
         root.report_callback_exception = self.report_error
+        self.style = ttk.Style(root)
+        theme = TTK_THEMES.get(sys.platform, "clam")
+        if theme in self.style.theme_names():
+            self.style.theme_use(theme)
         available = {f.lower() for f in tkfont.families(root)}
         family = next((f for f in FONTS.get(sys.platform, ("DejaVu Sans Mono",)) if f.lower() in available), "Courier")
-        self.font = tkfont.Font(family=family, size=self.settings["font_size"])
-        root.option_add("*Font", self.font)
+        self.font = tkfont.Font(root=root, family=family, size=self.settings["font_size"])
+        self.console_font = tkfont.Font(root=root, family=family, size=self.settings["console_font_size"])
         self.icon = self.load_image("odin.png")
         if self.icon:
             root.iconphoto(True, self.icon)
         self.logo = self.load_image("odin-logo.png")
         self.logo_small = self.load_image("odin-logo-small.png")
-        self.menubar = tk.Frame(root, bg=GRAY)
-        self.menubar.pack(fill="x")
+        if AQUA:
+            # The macOS menu bar keeps only the application menu (About, Quit); the IDE's menus are in its window.
+            system = tk.Menu(root)
+            system.add_cascade(menu=tk.Menu(system, name="apple", tearoff=False))
+            root.configure(menu=system)
+        self.menubar = tk.Frame(root, bg=MENU_BG)
+        self.menubar.pack(side="top", fill="x")
         self.menus = {}
         self.create_menus()
-        # Footer: a compact key row over the status line, split by a dark rule. Labels, not Buttons, so Windows adds no
-        # focus ring or default padding between the rows.
-        self.status = tk.Label(root, bg=GRAY, fg=BLUE, anchor="w", font=self.font, pady=0, padx=2, borderwidth=0, highlightthickness=0)
-        self.status.pack(side="bottom", fill="x")
-        tk.Frame(root, bg=BLACK, height=1).pack(side="bottom", fill="x")
-        self.keys = tk.Frame(root, bg=GRAY)
-        self.keys.pack(side="bottom", fill="x")
-        for label, action in (("F1 Help",self.help_topic), ("F2 Save",self.save), ("F3 Open",self.open_file),
-                              ("F6 Next",self.next_editor), ("F9 Make",self.compile), ("^F9 Run",self.run), ("Alt-X Exit",self.quit)):
-            key, _, name = label.partition(" ")
-            cell = tk.Frame(self.keys, bg=GRAY, cursor="hand2")
-            cell.pack(side="left", padx=(0, 2))
-            parts = (tk.Label(cell, text=key, bg=GRAY, fg="#aa0000", padx=0, pady=0, borderwidth=0),
-                     tk.Label(cell, text=" " + name, bg=GRAY, fg=BLACK, padx=0, pady=0, borderwidth=0))
-            for part in parts:
-                part.pack(side="left")
-            cell.configure(padx=6)
-            for widget in (cell, *parts):
-                widget.bind("<Button-1>", lambda e, a=action: a())
-                widget.bind("<Enter>", lambda e, c=cell, p=parts: [w.configure(bg=CYAN) for w in (c, *p)])
-                widget.bind("<Leave>", lambda e, c=cell, p=parts: [w.configure(bg=GRAY) for w in (c, *p)])
-        self.desktop = tk.Frame(root, bg=BLUE)
-        self.desktop.pack(fill="both", expand=True)
-        if self.logo:
-            self.watermark = tk.Label(self.desktop, image=self.logo, bg=BLUE, borderwidth=0)
-        else:
-            self.watermark = tk.Label(self.desktop, text="ODIN\nTURBO PASCAL", bg=BLUE, fg=CYAN, font=(family, 24, "bold"),
-                                      justify="center")
-        self.plaque = self.make_plaque(family)
-        # The logo and the plaque are centered together on the desktop.
-        below = PLAQUE_GAP + int(self.plaque.cget("height"))
-        self.watermark.place(relx=.5, rely=.5, y=-below // 2, anchor="center")
-        self.plaque.place(in_=self.watermark, relx=.5, rely=1, y=PLAQUE_GAP, anchor="n")
+        ttk.Separator(root).pack(side="top", fill="x")
+        self.toolbar = ttk.Frame(root, padding=(6, 3))
+        self.toolbar.pack(side="top", fill="x")
+        self.tools = {}
+        self.create_toolbar()
+        ttk.Separator(root).pack(side="top", fill="x")
+        status = ttk.Frame(root)
+        status.pack(side="bottom", fill="x")
+        ttk.Separator(root).pack(side="bottom", fill="x")
+        self.status = ttk.Label(status, anchor="w", padding=(8, 3))
+        self.status.pack(side="left", fill="x", expand=True)
+        self.encoding_label = ttk.Label(status, padding=(10, 3))
+        self.encoding_label.pack(side="right")
+        self.mode_label = ttk.Label(status, padding=(10, 3), width=5, anchor="center")
+        self.mode_label.pack(side="right")
+        self.position_label = ttk.Label(status, padding=(10, 3), width=16)
+        self.position_label.pack(side="right")
+        self.workspace = tk.Frame(root, bg=WORKSPACE)
+        self.workspace.pack(fill="both", expand=True)
+        self.plaque = self.make_plaque()
+        self.plaque.place(relx=.5, rely=.5, anchor="center")
         self.bind_keys()
         self.restore_session()
+        if not (self.settings["save_desktop"] and self.restore_desktop()):
+            self.show_output(activate=False)
+            self.show_messages_window(activate=False)
         if not self.editors:
             example = ASSETS / "examples" / "bab01_01_halo_dunia.pas"
             self.new_document(Document.read(example) if example.exists() else Document(TEMPLATE))
         self.update_status()
         root.after(40, self.poll)
         root.after(10000, self.recover_tick)
-        if sys.platform == "darwin":
+        if AQUA:
             root.createcommand("tkAboutDialog", self.about)
+            root.createcommand("::tk::mac::ShowPreferences", self.options)
             root.createcommand("::tk::mac::Quit", self.quit)
             root.createcommand("::tk::mac::OpenDocument", lambda *paths: [self.open_file(Path(p)) for p in paths])
 
@@ -173,37 +221,26 @@ class App:
         except tk.TclError:
             return None
 
-    def make_plaque(self, family):
-        """The desktop plaque under the logo: tagline and release tag, author credit, copyright and
-        license. Canvas items carry the tags tagline, version, author, copyright and license."""
-        small = tkfont.Font(root=self.root, family=family, size=10)
-        fonts = {"tagline": tkfont.Font(root=self.root, family=family, size=12, weight="bold"),
-                 "author": tkfont.Font(root=self.root, family=family, size=14, weight="bold"),
-                 "copyright": small, "license": small}
-        lines = [("tagline", "NATIVE PASCAL IDE"), ("author", f"Created by {__author__}"),
-                 ("copyright", __copyright__), ("license", "GNU GPL v3 or later")]
-        gap = 5
-        version_width = fonts["tagline"].measure(__version_tag__)
-        inner = max(fonts["tagline"].measure(lines[0][1]) + 3 * gap + version_width,
-                    *(fonts[tag].measure(text) for tag, text in lines[1:]))
-        width = inner + 2 * PLAQUE_PAD
-        height = sum(fonts[tag].metrics("linespace") for tag, _ in lines) + (len(lines) - 1) * gap + 2 * PLAQUE_PAD
-        canvas = tk.Canvas(self.desktop, width=width + PLAQUE_SHADOW, height=height + PLAQUE_SHADOW, bg=BLUE,
-                           highlightthickness=0, borderwidth=0)
-        canvas.create_rectangle(PLAQUE_SHADOW, PLAQUE_SHADOW, width + PLAQUE_SHADOW, height + PLAQUE_SHADOW, fill=BLACK, width=0)
-        canvas.create_rectangle(0, 0, width, height, fill=GRAY, width=0)
-        # Double frame, as on an active Turbo Vision dialog.
-        for inset in (5, 9):
-            canvas.create_rectangle(inset, inset, width - inset, height - inset, outline=PLAQUE_FRAME, width=1)
-        y = PLAQUE_PAD
-        for tag, text in lines:
-            canvas.create_text(PLAQUE_PAD, y, text=text, anchor="nw", fill=BLACK, font=fonts[tag], tags=tag)
-            if tag == "tagline":
-                canvas.create_text(width - PLAQUE_PAD, y, text=__version_tag__, anchor="ne", fill=PLAQUE_VERSION,
-                                   font=fonts[tag], tags="version")
-            y += fonts[tag].metrics("linespace") + gap
-        canvas.fonts = fonts
-        return canvas
+    def ui_font(self, size, weight="normal"):
+        """The OS's interface font at another size, for headings."""
+        return (tkfont.nametofont("TkDefaultFont", root=self.root).cget("family"), size, weight)
+
+    def make_plaque(self):
+        """The caption in the middle of the workspace, behind the windows: logo, name and release tag, author
+        credit, copyright and license. Its labels are the attributes tagline, version, author, copyright, license."""
+        plaque = tk.Frame(self.workspace, bg=WORKSPACE)
+        if self.logo_small:
+            tk.Label(plaque, image=self.logo_small, bg=WORKSPACE, borderwidth=0).pack(pady=(0, 12))
+        rows = (("tagline", "Odin Turbo Pascal", self.ui_font(20, "bold"), "#26313d"),
+                ("version", f"Native Pascal IDE  {__version_tag__}", self.ui_font(13), "#2b5797"),
+                ("author", f"Created by {__author__}", self.ui_font(13, "bold"), "#26313d"),
+                ("copyright", __copyright__, self.ui_font(11), "#4a5562"),
+                ("license", "GNU GPL v3 or later", self.ui_font(11), "#4a5562"))
+        for name, text, font, color in rows:
+            label = tk.Label(plaque, text=text, font=font, fg=color, bg=WORKSPACE)
+            label.pack()
+            setattr(plaque, name, label)
+        return plaque
 
     def report_error(self, kind, value, tb):
         detail = "".join(traceback.format_exception(kind, value, tb))
@@ -213,89 +250,181 @@ class App:
             pass
         messagebox.showerror("Odin", f"Operasi gagal: {value}\n\nDetail: {data_dir() / 'last-error.log'}", parent=self.root)
 
-    def menu(self, name, items, underline=0):
-        button = tk.Menubutton(self.menubar, text=f" {name} ", bg=GRAY, fg=BLACK, activebackground=CYAN,
-                               activeforeground=BLACK, relief="flat", underline=underline+1, padx=1, pady=1)
-        button.pack(side="left")
-        menu = tk.Menu(button, tearoff=False, bg=GRAY, fg=BLACK, activebackground=CYAN,
-                       activeforeground=BLACK, borderwidth=2)
-        button.configure(menu=menu)
-        for label, command, shortcut in items:
-            if label == "-": menu.add_separator()
-            else: menu.add_command(label=label, command=command, accelerator=shortcut)
-        self.menus[name] = (button, menu)
-        self.root.bind(f"<Alt-{name[underline].lower()}>", lambda e,b=button,m=menu: self.post_menu(b,m))
+    # ---- menus, toolbar and keys -------------------------------------------------------------
+
+    def menu(self, label, items, parent=None):
+        """A menu of (label, command, keys) items: a text item of the menu bar with its dropdown, or a cascade of
+        parent. "-" is a separator and a list as command makes a cascade."""
+        if parent is None:
+            button = tk.Menubutton(self.menubar, text=label, underline=0, relief="flat", borderwidth=0, padx=9, pady=4,
+                                   bg=MENU_BG, fg=MENU_FG, activebackground=MENU_HOVER, activeforeground=MENU_FG,
+                                   highlightthickness=0, font=self.ui_font(13))
+            button.pack(side="left")
+            menu = tk.Menu(button, tearoff=False)
+            button.configure(menu=menu)
+            self.root.bind(f"<Alt-{label[0].lower()}>", lambda e, b=button: self.post_menu(b))
+        else:
+            button = None
+            menu = tk.Menu(parent, tearoff=False)
+            parent.add_cascade(label=label, menu=menu)
+        for text, command, keys in items:
+            if text == "-":
+                menu.add_separator()
+            elif isinstance(command, list):
+                self.menu(text, command, parent=menu)
+            else:
+                menu.add_command(label=text, command=command, accelerator=accel(keys))
+        self.menus[label] = (button, menu)
         return menu
 
-    def post_menu(self, button, menu):
-        menu.post(button.winfo_rootx(), button.winfo_rooty()+button.winfo_height())
-        menu.activate(0)
-        menu.focus_set()
+    def post_menu(self, button):
+        """Opens a menu of the menu bar from the keyboard (F10, Alt+letter)."""
+        try:
+            self.root.tk.call("tk::MbPost", str(button))
+        except tk.TclError:
+            menu = self.root.nametowidget(button.cget("menu"))
+            menu.post(button.winfo_rootx(), button.winfo_rooty() + button.winfo_height())
         return "break"
 
     def create_menus(self):
-        self.menu("File", [("New",self.new,"Ctrl+N"),("Open...",self.open_file,"F3"),("Save",self.save,"F2"),
-                          ("Save as...",lambda:self.save(as_new=True),""),("Save all",self.save_all,""),
-                          ("-",None,""),("Recent files...",self.recent,""),("Examples...",self.examples,""),("Examples - AI...",self.examples_ai,""),("Examples - Graph...",self.examples_graph,""),("Examples - OOP...",self.examples_oop,""),
-                          ("Change directory...",self.change_directory,""),("-",None,""),("Exit",self.quit,"Alt+X")])
-        self.menu("Edit", [("Undo",lambda:self.edit("undo"),"Alt+Backspace"),("Redo",lambda:self.edit("redo"),"Ctrl+Y"),
-                          ("-",None,""),("Cut",lambda:self.edit("cut"),"Shift+Del"),("Copy",lambda:self.edit("copy"),"Ctrl+Ins"),
-                          ("Paste",lambda:self.edit("paste"),"Shift+Ins"),("Select all",lambda:self.edit("all"),"Ctrl+A"),
-                          ("Delete line",self.delete_line,"Ctrl+L")])
-        self.menu("Search", [("Find...",self.find_dialog,"Ctrl+F"),("Replace...",lambda:self.find_dialog(True),"Ctrl+H"),
-                            ("Search again",self.find_next,"Ctrl+G"),("Go to line...",self.goto_line,"Ctrl+J"),
-                            ("Next error",self.next_error,"Alt+F8"),("Find error",self.find_error,"")])
-        self.menu("Run", [("Run",self.run,"Ctrl+F9"),("Program reset",self.stop,"Ctrl+F2"),
-                         ("Parameters...",self.parameters,""),("User screen",self.show_console,"Alt+F5"),("-",None,""),
-                         ("Ukur",self.measure,"Shift+F9"),("Periksa...",self.check_package,"")])
-        self.menu("Compile", [("Compile",self.compile,"Alt+F9"),("Make",self.compile,"F9"),
-                             ("Build",lambda:self.compile(rebuild=True),""),("Primary file...",self.primary_file,""),
-                             ("Clear primary file",self.clear_primary,""),("Compiler messages",self.show_messages,""),
-                             ("Export executable...",self.export_executable,"")])
-        self.menu("Debug", [("Start debugging",self.debug,""),("Step over",lambda:self.debug_step("over"),"F8"),
-                           ("Trace into",lambda:self.debug_step("into"),"F7"),("Go to cursor",lambda:self.debug_step("cursor"),"F4"),
-                           ("Continue",lambda:self.debug_step("continue"),""),("-",None,""),
-                           ("Toggle breakpoint",self.breakpoint,"Ctrl+F8"),("Clear breakpoints",self.clear_breakpoints,""),("-",None,""),
-                           ("Watch window",self.show_watches,""),("Add watch...",self.add_watch,""),
-                           ("Local variables",self.show_locals,""),("Call stack",self.show_stack,""),
-                           ("Evaluate/Modify...",self.evaluate,"Ctrl+F7")])
-        self.menu("Options", [("Compiler...",self.compiler_options,""),("Directories...",self.directory_options,""),
-                             ("Editor...",self.editor_options,""),("Save options",self.settings.save,""),
-                             ("Environment information",self.environment,"")])
-        self.menu("Window", [("Tile",self.tile,""),("Cascade",self.cascade,""),("Zoom",self.zoom,"F5"),
-                            ("Next",self.next_editor,"F6"),("Close",self.close_window,"Alt+F3"),("List...",self.window_list,"")])
-        self.menu("Help", [("Contents",self.help_html,"F1"),("Pascal reference",self.reference,""),
-                          ("Keyboard shortcuts",lambda:self.help("SHORTCUTS.txt"),""),("Buku",self.book,""),
-                          ("About Odin",self.about,"")])
-        tk.Label(self.menubar,text="◉",bg=GRAY,fg=BLUE,font=self.font).pack(side="right",padx=10)
+        examples = [("Tutorial...", self.examples, ""), ("AI...", self.examples_ai, ""),
+                    ("Graph...", self.examples_graph, ""), ("OOP...", self.examples_oop, "")]
+        file_items = [("New", self.new, "Mod+N"), ("Open...", self.open_file, "Mod+O"), ("Open recent", [], ""),
+                      ("Examples", examples, ""), ("-", None, ""), ("Save", self.save, "Mod+S"),
+                      ("Save as...", lambda: self.save(as_new=True), "Mod+Shift+S"), ("Save all", self.save_all, ""),
+                      ("-", None, ""), ("Change directory...", self.change_directory, ""), ("-", None, ""),
+                      ("Exit", self.quit, "Mod+Q" if AQUA else "Alt+X")]
+        self.menu("File", file_items)
+        self.menus["Open recent"][1].configure(postcommand=self.fill_recent)
+        redo = "Mod+Shift+Z" if AQUA else "Ctrl+Y"
+        self.menu("Edit", [("Undo", lambda: self.edit("undo"), "Mod+Z"), ("Redo", lambda: self.edit("redo"), redo),
+                           ("-", None, ""), ("Cut", lambda: self.edit("cut"), "Mod+X"),
+                           ("Copy", lambda: self.edit("copy"), "Mod+C"), ("Paste", lambda: self.edit("paste"), "Mod+V"),
+                           ("Select all", lambda: self.edit("all"), "Mod+A"), ("-", None, ""),
+                           ("Delete line", self.delete_line, "Ctrl+L")])
+        self.menu("Search", [("Find...", self.find_dialog, "Mod+F"), ("Replace...", lambda: self.find_dialog(True), "Ctrl+H"),
+                             ("Search again", self.find_next, "Mod+G"), ("Go to line...", self.goto_line, "Ctrl+J"),
+                             ("-", None, ""), ("Next error", self.next_error, "Alt+F8"), ("Find error", self.find_error, "")])
+        self.menu("Run", [("Run", self.run, "Ctrl+F9"), ("Program reset", self.stop, "Ctrl+F2"),
+                          ("Parameters...", self.parameters, ""), ("-", None, ""),
+                          ("Ukur", self.measure, "Shift+F9"), ("Periksa...", self.check_package, "")])
+        self.menu("Compile", [("Compile", self.compile, "Alt+F9"), ("Make", self.compile, "F9"),
+                              ("Build", lambda: self.compile(rebuild=True), ""), ("-", None, ""),
+                              ("Primary file...", self.primary_file, ""), ("Clear primary file", self.clear_primary, ""),
+                              ("-", None, ""), ("Compiler messages", self.show_messages, ""),
+                              ("Export executable...", self.export_executable, "")])
+        self.menu("Debug", [("Start debugging", self.debug, ""), ("Step over", lambda: self.debug_step("over"), "F8"),
+                            ("Trace into", lambda: self.debug_step("into"), "F7"),
+                            ("Go to cursor", lambda: self.debug_step("cursor"), "F4"),
+                            ("Continue", lambda: self.debug_step("continue"), ""), ("-", None, ""),
+                            ("Toggle breakpoint", self.breakpoint, "Ctrl+F8"), ("Clear breakpoints", self.clear_breakpoints, ""),
+                            ("-", None, ""), ("Watches", self.show_watches, ""), ("Add watch...", self.add_watch, ""),
+                            ("Local variables", self.show_locals, ""), ("Call stack", self.show_stack, ""),
+                            ("Evaluate/Modify...", self.evaluate, "Ctrl+F7")])
+        self.menu("Options", [("Options...", self.options, "Mod+," if AQUA else ""), ("-", None, ""),
+                              ("Compiler...", self.compiler_options, ""), ("Directories...", self.directory_options, ""),
+                              ("Editor...", self.editor_options, ""), ("Environment...", self.environment_options, ""),
+                              ("-", None, ""), ("Zoom in", lambda: self.zoom_font(1), "Mod+="),
+                              ("Zoom out", lambda: self.zoom_font(-1), "Mod+-"), ("-", None, ""),
+                              ("Save options", self.settings.save, ""), ("Environment information", self.environment, "")])
+        self.menu("Window", [])
+        self.menus["Window"][1].configure(postcommand=self.fill_window_menu)
+        self.fill_window_menu()
+        self.menu("Help", [("Contents", self.help_html, "F1"), ("Pascal reference", self.reference, ""),
+                           ("Keyboard shortcuts", lambda: self.help("SHORTCUTS.txt"), ""), ("Buku", self.book, ""),
+                           ("-", None, ""), ("About Odin", self.about, "")])
+
+    def fill_recent(self):
+        menu = self.menus["Open recent"][1]
+        menu.delete(0, "end")
+        for path in self.settings["recent"]:
+            menu.add_command(label=path, command=lambda p=path: self.open_file(p))
+        if not self.settings["recent"]:
+            menu.add_command(label="(empty)", state="disabled")
+
+    def fill_window_menu(self):
+        """The Window menu: arrangement commands, then one entry per window with a check at the active one."""
+        menu = self.menus["Window"][1]
+        menu.delete(0, "end")
+        for label, command, keys in (("Tile", self.tile, ""), ("Cascade", self.cascade, ""),
+                                     ("Arrange icons", self.arrange_icons, ""), ("-", None, ""),
+                                     ("Zoom", self.zoom, "F5"), ("Minimize", self.minimize, ""),
+                                     ("Next", self.next_window, "F6"), ("Previous", self.previous_window, "Shift+F6"),
+                                     ("Close", self.close_window, "Alt+F3"), ("Close all", self.close_all, ""),
+                                     ("-", None, ""), ("Output", self.show_output, "Alt+F5"),
+                                     ("Messages", self.show_messages, "")):
+            if label == "-":
+                menu.add_separator()
+            else:
+                menu.add_command(label=label, command=command, accelerator=accel(keys))
+        if self.windows:
+            menu.add_separator()
+            self.window_choice = tk.IntVar(master=self.root, value=self.windows.index(self.active) if self.active in self.windows else -1)
+            for n, window in enumerate(self.windows):
+                menu.add_radiobutton(label=f"{n + 1} {window.list_label()}", variable=self.window_choice, value=n,
+                                     command=lambda w=window: self.activate(w))
+
+    def create_toolbar(self):
+        """Icon buttons (odin/icons.py) with tooltips; without PNG support in Tk they show their key as text."""
+        self.tool_images = {}
+        for n, group in enumerate(TOOLBAR):
+            if n:
+                ttk.Separator(self.toolbar, orient="vertical").pack(side="left", fill="y", padx=6, pady=2)
+            for key, icon, tip, method, argument in group:
+                command = (lambda m=method, a=argument: getattr(self, m)(a)) if argument else (lambda m=method: getattr(self, m)())
+                try:
+                    image = self.tool_images[key] = tk.PhotoImage(master=self.root, format="png",
+                                                                  data=base64.b64encode(icon_png(icon, TOOLBAR_ICON)))
+                except tk.TclError:
+                    image = None
+                button = ttk.Button(self.toolbar, image=image or "", text=key, compound="image" if image else "text",
+                                    command=command, style="Toolbutton", takefocus=False)
+                button.pack(side="left", padx=1)
+                button.tooltip = Tooltip(button, tip.replace("Mod+", "Cmd+" if AQUA else "Ctrl+"))
+                self.tools[key] = button
 
     def bind_keys(self):
-        commands = {"<F1>":self.help_topic,"<F2>":self.save,"<F3>":self.open_file,"<F5>":self.zoom,"<F6>":self.next_editor,
-                    "<F4>":lambda:self.debug_step("cursor"),
-                    "<F7>":lambda:self.debug_step("into"),"<F8>":lambda:self.debug_step("over"),"<F9>":self.compile,
-                    "<F10>":lambda:self.post_menu(*self.menus["File"]),"<Control-F9>":self.run,"<Alt-F9>":self.compile,
-                    "<Shift-F9>":self.measure,
-                    "<Alt-F3>":self.close_window,"<Alt-F5>":self.show_console,"<Control-F2>":self.stop,
-                    "<Control-F8>":self.breakpoint,"<Control-F7>":self.evaluate,"<Alt-F8>":self.next_error,
-                    "<Alt-x>":self.quit,"<Alt-BackSpace>":lambda:self.edit("undo"),
-                    "<Control-n>":self.new,"<Control-o>":self.open_file,"<Control-s>":self.save,
-                    "<Control-f>":self.find_dialog,"<Control-h>":lambda:self.find_dialog(True),"<Control-g>":self.find_next,
-                    "<Control-j>":self.goto_line,"<Control-l>":self.delete_line,"<Control-y>":lambda:self.edit("redo")}
+        commands = {"<F1>": self.help_topic, "<F2>": self.save, "<F3>": self.open_file, "<F5>": self.zoom,
+                    "<F6>": self.next_window, "<Shift-F6>": self.previous_window,
+                    "<F4>": lambda: self.debug_step("cursor"), "<F7>": lambda: self.debug_step("into"),
+                    "<F8>": lambda: self.debug_step("over"), "<F9>": self.compile, "<Control-F9>": self.run,
+                    "<Alt-F9>": self.compile, "<Shift-F9>": self.measure, "<Alt-F3>": self.close_window,
+                    "<Alt-F5>": self.show_output, "<F10>": lambda: self.post_menu(self.menus["File"][0]),
+                    "<Control-F2>": self.stop, "<Control-F8>": self.breakpoint, "<Control-F7>": self.evaluate,
+                    "<Alt-F8>": self.next_error, "<Alt-BackSpace>": lambda: self.edit("undo"),
+                    f"<{MOD}-n>": self.new, f"<{MOD}-o>": self.open_file, f"<{MOD}-s>": self.save,
+                    f"<{MOD}-S>": lambda: self.save(as_new=True), f"<{MOD}-w>": self.close_window,
+                    f"<{MOD}-f>": self.find_dialog, f"<{MOD}-g>": self.find_next, f"<{MOD}-r>": self.run,
+                    f"<{MOD}-b>": self.compile, f"<{MOD}-equal>": lambda: self.zoom_font(1),
+                    f"<{MOD}-plus>": lambda: self.zoom_font(1), f"<{MOD}-minus>": lambda: self.zoom_font(-1),
+                    "<Control-h>": lambda: self.find_dialog(True), "<Control-j>": self.goto_line,
+                    "<Control-l>": self.delete_line, "<Control-Tab>": self.next_window,
+                    "<Control-Shift-Tab>": self.previous_window}
+        if not AQUA:
+            # Ctrl+Y pastes in X11 Text widgets; here it redoes, as on Windows.
+            commands.update({"<Alt-x>": self.quit, "<Control-y>": lambda: self.edit("redo")})
+        if self.root.tk.call("tk", "windowingsystem") == "x11":
+            commands["<Control-ISO_Left_Tab>"] = self.previous_window
         for sequence, action in commands.items():
-            self.root.bind(sequence, lambda e,a=action: self.shortcut(a))
-        for name, action in (("s",self.save),("o",self.open_file),("n",self.new),("f",self.find_dialog),
-                             ("r",self.run),("b",self.compile),("w",self.close_window),("q",self.quit)):
-            if sys.platform == "darwin":
-                self.root.bind(f"<Command-{name}>",lambda e,a=action:self.shortcut(a))
+            handler = lambda e, a=action: self.shortcut(a)
+            self.root.bind(sequence, handler)
+            # Editors put the OdinKeys tag before Text, so these win over the Text class bindings.
+            self.root.bind_class("OdinKeys", sequence, handler)
 
     def shortcut(self, action):
         action()
         return "break"
 
+    # ---- child windows -------------------------------------------------------------------
+
     @property
     def debugging(self):
         """A debug session is running (the program may be running or stopped)."""
         return bool(self.debugger and self.debugger.alive)
+
+    @property
+    def program_running(self):
+        return bool(self.process and self.process.child.poll() is None)
 
     @property
     def editors(self):
@@ -307,11 +436,26 @@ class App:
         """The active window when it is an Editor. Text commands do nothing for other windows."""
         return self.active if isinstance(self.active, Editor) else None
 
-    def add_window(self, window):
+    @property
+    def console(self):
+        """The TerminalView of the Output window, or None while it is closed."""
+        return self.output_window.console if self.output_window else None
+
+    def add_window(self, window, place=None, activate=True):
         self.windows.append(window)
-        n = (len(self.windows)-1) % 5
-        window.frame.place(x=8+n*20, y=8+n*22, relwidth=1, relheight=1, width=-28-n*20, height=-26-n*22)
-        self.activate(window)
+        if place is None:
+            # Editors cascade in the upper part of the workspace.
+            n = (len(self.editors) - 1) % 6
+            place = dict(x=6 + n * 24, y=6 + n * 24, relwidth=1, width=-12 - n * 24, relheight=EDITOR_HEIGHT,
+                         height=-6 - n * 24)
+        window.frame.place(**place)
+        if activate:
+            self.activate(window)
+        else:
+            window.frame.lift()
+            window.set_active(False)
+            if self.active:
+                self.active.frame.lift()
         return window
 
     def new_document(self, doc):
@@ -322,12 +466,264 @@ class App:
         return self.new_document(Document(TEMPLATE))
 
     def activate(self, window, focus=True):
+        if window not in self.windows:
+            return
+        if window.state == "minimized" and focus:
+            self.restore(window)
         self.active = window
-        if isinstance(window, Editor): self.last_editor = window
+        if isinstance(window, Editor):
+            self.last_editor = window
         window.frame.lift()
-        for item in self.windows: item.set_active(item is window)
-        if focus: window.focus()
+        for item in self.windows:
+            item.set_active(item is window)
+        if focus:
+            window.focus()
+        self.update_title()
         self.update_status()
+
+    def focus_editor(self):
+        if self.last_editor:
+            self.activate(self.last_editor)
+
+    def window_title_changed(self, window):
+        if window is self.active:
+            self.update_title()
+
+    def update_title(self):
+        window = self.active
+        name = window.caption() if isinstance(window, Editor) else window.list_label() if window else ""
+        self.root.title(f"{name} - Odin Turbo Pascal" if name else "Odin Turbo Pascal")
+
+    def close_window(self, window=None):
+        window = window or self.active
+        if not window: return True
+        if isinstance(window, Editor) and window.document.dirty:
+            self.activate(window)
+            answer = messagebox.askyesnocancel("Save changes", "Simpan perubahan sebelum menutup?", parent=self.root)
+            if answer is None or (answer and not self.save(window)): return False
+        if window is self.output_window and self.program_running:
+            if not messagebox.askyesno("Output", "Program masih berjalan di jendela ini. Hentikan program?", parent=self.root):
+                return False
+            self.stop()
+        window.destroy()
+        self.windows.remove(window)
+        if window is self.output_window:
+            self.output_window = None
+        if window is self.messages_window:
+            self.messages_window = None
+        if window is self.last_editor:
+            editors = self.editors
+            self.last_editor = editors[-1] if editors else None
+        self.active = None
+        visible = [w for w in self.windows if w.state != "minimized"]
+        if visible:
+            self.activate(visible[-1])
+        else:
+            self.update_title()
+            self.update_status()
+        if window.state == "minimized":
+            self.arrange_icons()
+        return True
+
+    # Kept for callers of the earlier name.
+    close_editor = close_window
+
+    def close_all(self):
+        for window in list(self.windows):
+            if not self.close_window(window):
+                return False
+        return True
+
+    def next_window(self, step=1):
+        if self.windows:
+            index = self.windows.index(self.active) if self.active in self.windows else -1
+            self.activate(self.windows[(index + step) % len(self.windows)])
+
+    def previous_window(self):
+        self.next_window(-1)
+
+    # Kept for callers of the desktop IDE's name.
+    next_editor = next_window
+
+    def zoom(self, window=None):
+        """F5: maximizes the window in the workspace, or restores it."""
+        window = window or self.active
+        if not window:
+            return
+        window.set_state("normal" if window.state == "maximized" else "maximized")
+        self.arrange_icons()
+        self.activate(window)
+
+    def minimize(self, window=None):
+        window = window or self.active
+        if not window:
+            return
+        window.set_state("minimized")
+        self.arrange_icons()
+        window.set_active(False)
+        visible = [w for w in self.windows if w.state != "minimized"]
+        if visible:
+            self.activate(visible[-1])
+        else:
+            self.active = None
+            self.update_status()
+
+    def restore(self, window):
+        window.set_state("normal")
+        self.arrange_icons()
+
+    def arrange_icons(self):
+        """Minimized windows line up along the bottom of the workspace."""
+        for n, window in enumerate(w for w in self.windows if w.state == "minimized"):
+            window.frame.place_forget()
+            window.frame.place(x=4 + n * (ICON_WIDTH + 4), rely=1, y=-4, anchor="sw", width=ICON_WIDTH, height=ICON_HEIGHT)
+            window.frame.lift()
+
+    def arranged(self):
+        """The windows Tile and Cascade arrange: every window that is not minimized, maximized ones restored."""
+        windows = [w for w in self.windows if w.state != "minimized"]
+        for window in windows:
+            window.set_state("normal")
+        bottom = ICON_HEIGHT + 8 if len(windows) < len(self.windows) else 0
+        return windows, bottom
+
+    def tile(self):
+        windows, bottom = self.arranged()
+        if not windows:
+            return
+        cols = 1 if len(windows) == 1 else 2 if len(windows) <= 4 else 3
+        rows = math.ceil(len(windows) / cols)
+        for i, window in enumerate(windows):
+            window.frame.place_forget()
+            window.frame.place(relx=(i % cols) / cols, rely=(i // cols) / rows, x=3, y=3, relwidth=1 / cols,
+                               relheight=1 / rows, width=-6, height=-6 - bottom / rows)
+        if self.active in windows:
+            self.activate(self.active)
+
+    def cascade(self):
+        windows, bottom = self.arranged()
+        for i, window in enumerate(windows):
+            n = i % 8
+            window.frame.place_forget()
+            window.frame.place(x=6 + n * 26, y=6 + n * 26, relwidth=1, relheight=1, width=-12 - n * 26 - 104,
+                               height=-12 - n * 26 - 104 - bottom)
+            window.frame.lift()
+        if windows:
+            self.activate(windows[-1])
+
+    def window_list(self):
+        self.choose("Windows", [(w.list_label(), w) for w in self.windows], self.activate)
+
+    def show_output(self, activate=True, place=None):
+        window = self.output_window
+        if window is None:
+            window = self.output_window = self.add_window(OutputWindow(self), place or dict(OUTPUT_PLACE), activate=activate)
+        elif activate:
+            self.activate(window)
+        return window
+
+    def show_messages_window(self, activate=True, place=None):
+        window = self.messages_window
+        if window is None:
+            window = self.messages_window = self.add_window(MessagesWindow(self), place or dict(MESSAGES_PLACE),
+                                                            activate=activate)
+            self.fill_messages()
+        elif activate:
+            self.activate(window)
+        return window
+
+    # ---- desktop: the windows of the last session -------------------------------------------
+
+    def window_box(self, window):
+        """Where window is when it is not maximized or minimized, as fractions (x, y, width, height) of the
+        workspace; None before the workspace has a size."""
+        width, height = self.workspace.winfo_width(), self.workspace.winfo_height()
+        info = window.frame.place_info() if window.state == "normal" else window.restore_place
+        if width < 50 or height < 50 or not info:
+            return None
+        value = lambda key: float(info.get(key) or 0)
+        box = (value("relx") * width + value("x"), value("rely") * height + value("y"),
+               value("relwidth") * width + value("width"), value("relheight") * height + value("height"))
+        return [round(box[0] / width, 4), round(box[1] / height, 4), round(box[2] / width, 4), round(box[3] / height, 4)]
+
+    def desktop_state(self):
+        """The open windows for settings["desktop"]: saved editors with cursor and breakpoints, Output, Messages
+        and the debugger's windows, each with its place and state, and which one was active."""
+        names = {getattr(self, attribute): kind for kind, attribute in DESKTOP_WINDOWS.items()}
+        windows = []
+        active = None
+        for window in self.windows:
+            box = self.window_box(window)
+            if box is None:
+                continue
+            if isinstance(window, Editor):
+                if not window.document.path:
+                    continue
+                item = {"kind": "editor", "path": str(window.document.path), "cursor": window.text.index("insert"),
+                        "breakpoints": sorted(window.document.breakpoints)}
+            elif window in names:
+                item = {"kind": names[window]}
+            else:
+                continue
+            item.update(box=box, state=window.state)
+            if window is self.active:
+                active = len(windows)
+            windows.append(item)
+        return {"windows": windows, "active": active} if windows else {}
+
+    def restore_desktop(self):
+        """Reopens the windows of settings["desktop"]; files that are gone are skipped. Returns True when it
+        restored any window."""
+        desktop = self.settings["desktop"]
+        items = desktop.get("windows") if isinstance(desktop, dict) else None
+        if not isinstance(items, list):
+            return False
+        restored = {}   # index in items -> window
+        for index, item in enumerate(items):
+            try:
+                box = [float(v) for v in item["box"]]
+                if len(box) != 4 or not all(-1 <= v <= 2 for v in box) or box[2] <= 0 or box[3] <= 0:
+                    continue
+                place = dict(relx=box[0], rely=box[1], relwidth=box[2], relheight=box[3])
+                kind = item["kind"]
+                if kind == "editor":
+                    path = Path(item["path"])
+                    window = self.editor_for(path)
+                    if window:
+                        window.frame.place_forget()
+                        window.frame.place(**place)
+                    elif path.is_file():
+                        self.counter += 1
+                        window = self.add_window(Editor(self, Document.read(path), self.counter), place, activate=False)
+                        window.set_breakpoints([int(l) for l in item.get("breakpoints", [])], notify=False)
+                        window.text.mark_set("insert", str(item.get("cursor", "1.0")))
+                        window.text.see("insert")
+                        window.cursor_moved(notify=False)
+                    else:
+                        continue
+                elif kind == "output":
+                    window = self.show_output(activate=False, place=place)
+                elif kind == "messages":
+                    window = self.show_messages_window(activate=False, place=place)
+                elif kind in DESKTOP_WINDOWS:
+                    kinds = {"watches": WatchWindow, "locals": LocalsWindow, "stack": StackWindow}
+                    window = self.debug_window(DESKTOP_WINDOWS[kind], kinds[kind], place=place, activate=False)
+                else:
+                    continue
+            except (KeyError, TypeError, ValueError, OSError, tk.TclError):
+                continue
+            if item.get("state") in ("maximized", "minimized"):
+                window.set_state(item["state"])
+            restored[index] = window
+        self.arrange_icons()
+        active = restored.get(desktop.get("active"))
+        if active is None and restored:
+            active = list(restored.values())[-1]
+        if active:
+            self.activate(active)
+        return bool(restored)
+
+    # ---- files ---------------------------------------------------------------------------
 
     def open_file(self, path=None):
         if path is None:
@@ -387,25 +783,6 @@ class App:
                 if not self.save(editor): return False
         return True
 
-    def close_window(self, window=None):
-        window = window or self.active
-        if not window: return True
-        if isinstance(window, Editor) and window.document.dirty:
-            answer = messagebox.askyesnocancel("Save changes", "Simpan perubahan sebelum menutup?", parent=self.root)
-            if answer is None or (answer and not self.save(window)): return False
-        window.destroy()
-        self.windows.remove(window)
-        if window is self.last_editor:
-            editors = self.editors
-            self.last_editor = editors[-1] if editors else None
-        self.active = self.windows[-1] if self.windows else None
-        if self.active: self.activate(self.active)
-        else: self.update_status()
-        return True
-
-    def close_editor(self, window=None):
-        return self.close_window(window)
-
     def user_input(self):
         self.banner = False
         self.notice = None
@@ -413,44 +790,39 @@ class App:
 
     def update_status(self, message=None):
         if not hasattr(self,"status"): return
+        editor = self.active_editor
         if message:
-            self.status.configure(text=" " + message)
+            text = message
         elif self.notice:
-            self.status.configure(text=" " + self.notice)
-        elif self.banner or not self.active_editor:
-            # Turbo Pascal style startup banner, kept until the first key or click in an editor.
-            self.status.configure(text=f" Odin Turbo Pascal {__version_tag__}   |   Created by {__author__}   |   F1 Help")
+            text = self.notice
+        elif self.banner or not editor:
+            # Startup banner, kept until the first key or click in an editor.
+            text = f"Odin Turbo Pascal {__version_tag__}   |   Created by {__author__}   |   F1 Help"
         else:
-            editor = self.active_editor
-            line,col = editor.text.index("insert").split(".")
-            name = str(editor.document.path) if editor.document.path else "NONAME.PAS"
-            self.status.configure(text=f" {'Overwrite' if editor.overwrite_mode else 'Insert'}  {int(line):5}:{int(col)+1:<4}  {name}  [TP]")
+            text = str(editor.document.path) if editor.document.path else "Belum disimpan"
+        self.status.configure(text=text)
+        if editor:
+            line, col = editor.text.index("insert").split(".")
+            newline = "CRLF" if editor.document.newline == "\r\n" else "LF"
+            self.position_label.configure(text=f"Ln {int(line)}, Col {int(col) + 1}")
+            self.mode_label.configure(text="OVR" if editor.overwrite_mode else "INS")
+            self.encoding_label.configure(text=f"{ENCODINGS.get(editor.document.encoding, editor.document.encoding)}  {newline}")
+        else:
+            for label in (self.position_label, self.mode_label, self.encoding_label):
+                label.configure(text="")
+        self.update_actions()
 
-    def next_editor(self):
-        if self.windows:
-            index = self.windows.index(self.active) if self.active in self.windows else -1
-            self.activate(self.windows[(index+1)%len(self.windows)])
+    def update_actions(self):
+        """Toolbar buttons that only make sense in some states."""
+        if "Stop" in self.tools:
+            self.tools["Stop"].state(["!disabled"] if self.program_running else ["disabled"])
 
-    def zoom(self, window=None):
-        window = window or self.active
-        if window:
-            window.frame.place(x=5,y=5,relwidth=1,relheight=1,width=-10,height=-10)
-            self.activate(window)
-
-    def cascade(self):
-        for n,window in enumerate(self.windows):
-            i=n%7
-            window.frame.place(x=8+i*22,y=8+i*25,relwidth=1,relheight=1,width=-28-i*22,height=-30-i*25)
-            window.frame.lift()
-        if self.windows:self.activate(self.windows[-1])
-
-    def tile(self):
-        count=len(self.windows)
-        if count:
-            cols=2 if count>1 else 1
-            rows=(count+cols-1)//cols
-            for i,window in enumerate(self.windows):
-                window.frame.place(relx=(i%cols)/cols,rely=(i//cols)/rows,x=3,y=3,relwidth=1/cols,relheight=1/rows,width=-6,height=-6)
+    def zoom_font(self, step):
+        size = min(30, max(10, self.font.cget("size") + step))
+        self.font.configure(size=size)
+        self.settings["font_size"] = size
+        for editor in self.editors:
+            editor.apply_options()
 
     def edit(self, action):
         if not self.active_editor:return
@@ -466,36 +838,44 @@ class App:
     def delete_line(self):
         if self.active_editor:self.active_editor.text.delete("insert linestart","insert lineend+1c")
 
+    # ---- dialogs ---------------------------------------------------------------------------
+
     def dialog(self,title,width=640):
-        win=tk.Toplevel(self.root,bg=GRAY)
+        win=tk.Toplevel(self.root)
         win.title(title)
         win.transient(self.root)
         win.resizable(False,False)
-        frame=tk.Frame(win,bg=GRAY,highlightthickness=2,highlightbackground=BLUE,padx=18,pady=14)
-        frame.pack(fill="both",expand=True,padx=5,pady=5)
-        tk.Label(frame,text=f" {title} ",bg=GRAY,fg=BLUE,font=self.font).pack(pady=(0,12))
+        frame=ttk.Frame(win,padding=(18,14))
+        frame.pack(fill="both",expand=True)
         win.bind("<Escape>",lambda e:win.destroy())
         win.update_idletasks()
         win.geometry(f"+{self.root.winfo_rootx()+80}+{self.root.winfo_rooty()+80}")
         return win,frame
 
     def field(self,parent,label,value="",width=50):
-        tk.Label(parent,text=label,bg=GRAY,fg=BLACK,anchor="w").pack(fill="x",pady=(7,2))
+        ttk.Label(parent,text=label,anchor="w").pack(fill="x",pady=(7,2))
         var=tk.StringVar(value=value)
-        entry=tk.Entry(parent,textvariable=var,bg=BLUE,fg=WHITE,insertbackground=WHITE,width=width,relief="sunken")
+        entry=ttk.Entry(parent,textvariable=var,width=width)
         entry.pack(fill="x")
         return var,entry
 
-    def button(self,parent,label,command):
-        return tk.Button(parent,text=f" {label} ",command=command,bg=CYAN,fg=BLACK,activebackground=BLUE,
-                         activeforeground=WHITE,relief="raised",padx=8,pady=3)
+    def button(self,parent,label,command,default=False):
+        return ttk.Button(parent,text=label,command=command,default="active" if default else "normal")
+
+    def buttons(self,parent,*items):
+        """A right-aligned row of (label, command) buttons; the first is the default."""
+        bar=ttk.Frame(parent)
+        bar.pack(fill="x",pady=(14,0))
+        for n,(label,command) in enumerate(reversed(items)):
+            self.button(bar,label,command,default=n==len(items)-1).pack(side="right",padx=(6,0))
+        return bar
 
     def input(self,title,label,value,callback):
         win,body=self.dialog(title)
         var,entry=self.field(body,label,value)
         def accept():
             if callback(var.get()) is not False:win.destroy()
-        self.button(body,"OK",accept).pack(pady=(14,0))
+        self.buttons(body,("OK",accept),("Cancel",win.destroy))
         entry.bind("<Return>",lambda e:accept())
         entry.focus_set()
         entry.select_range(0,"end")
@@ -503,30 +883,34 @@ class App:
 
     def choose(self,title,items,callback):
         win,body=self.dialog(title)
-        box=tk.Frame(body,bg=GRAY)
+        box=ttk.Frame(body)
         box.pack(fill="both",expand=True)
-        listing=tk.Listbox(box,width=65,height=min(15,max(4,len(items))),bg=BLUE,fg=WHITE,selectbackground=CYAN,selectforeground=BLACK)
+        listing=ttk.Treeview(box,columns=("label",),show="",height=min(15,max(4,len(items))),selectmode="browse")
+        listing.column("label",width=560)
         if len(items)>15:
             # The tutorial alone has 90 examples.
-            bar=tk.Scrollbar(box,orient="vertical",command=listing.yview)
+            bar=ttk.Scrollbar(box,orient="vertical",command=listing.yview)
             listing.configure(yscrollcommand=bar.set)
             bar.pack(side="right",fill="y")
         listing.pack(side="left",fill="both",expand=True)
-        for label,value in items:listing.insert("end",label)
+        for n,(label,value) in enumerate(items):listing.insert("","end",iid=str(n),values=(label,))
         def accept(e=None):
-            indices=listing.curselection()
-            if indices:
-                value=items[indices[0]][1]
+            chosen=listing.selection()
+            if chosen:
+                value=items[int(chosen[0])][1]
                 win.destroy()
                 callback(value)
         listing.bind("<Double-Button-1>",accept)
         listing.bind("<Return>",accept)
-        self.button(body,"Open",accept).pack(pady=(12,0))
-        if items:listing.selection_set(0)
+        self.buttons(body,("Open",accept),("Cancel",win.destroy))
+        if items:
+            listing.selection_set("0")
+            listing.focus("0")
         listing.focus_set()
+        win.listing=listing
+        return win
 
     def recent(self):self.choose("Recent files",[(p,p) for p in self.settings["recent"]],self.open_file)
-    def window_list(self):self.choose("Windows",[(w.list_label(),w) for w in self.windows],self.activate)
     def examples(self):self.choose("Examples",[(p.name,p) for p in sorted((ASSETS/"examples").iterdir()) if p.suffix.lower()==".pas"],self.open_file)
     def examples_ai(self):
         """OTP-AI samples (otp-AI/EXAMPLES), each labelled with its topic; COMMON.INC is only an include file."""
@@ -566,7 +950,7 @@ class App:
         replacement=None
         if replace:replacement,_=self.field(body,"New text")
         sensitive=tk.BooleanVar(value=False)
-        tk.Checkbutton(body,text="Case sensitive",variable=sensitive,bg=GRAY,fg=BLACK,selectcolor=GRAY).pack(anchor="w",pady=8)
+        ttk.Checkbutton(body,text="Case sensitive",variable=sensitive).pack(anchor="w",pady=(10,0))
         def search():
             self.search_term=find.get()
             self.find_next(case=sensitive.get())
@@ -591,14 +975,12 @@ class App:
                     text.delete("sel.first","sel.last")
                     text.insert(start,replacement.get())
                 self.find_next(case=sensitive.get())
-        bar=tk.Frame(body,bg=GRAY)
-        bar.pack(pady=10)
-        self.button(bar,"Find next",search).pack(side="left",padx=4)
-        if replace:
-            self.button(bar,"Replace",change).pack(side="left",padx=4)
-            self.button(bar,"Replace all",lambda:change(True)).pack(side="left",padx=4)
+        items=[("Find next",search)]
+        if replace:items+=[("Replace",change),("Replace all",lambda:change(True))]
+        self.buttons(body,*items,("Close",win.destroy))
         entry.focus_set()
         entry.bind("<Return>",lambda e:search())
+        return win
 
     def find_next(self,case=False):
         if not self.active_editor:return
@@ -612,6 +994,7 @@ class App:
             text.tag_add("sel",match,f"{match}+{len(self.search_term)}c")
             text.mark_set("insert",f"{match}+{len(self.search_term)}c")
             text.see(match)
+            self.active_editor.cursor_moved(notify=False)
             self.update_status()
         else:self.update_status("Text not found")
 
@@ -624,16 +1007,20 @@ class App:
             editor.text.mark_set("insert",f"{int(value)}.0")
             editor.text.see("insert")
             editor.text.focus_set()
+            editor.cursor_moved(notify=False)
+            self.update_status()
         self.input("Go to line","Line number","1",go)
+
+    # ---- compile and run -------------------------------------------------------------------
 
     def compile(self,rebuild=False,after=None):
         if self.compiling:
             self.update_status("Compiler is already running")
             return
-        if self.process and self.process.child.poll() is None:
+        if self.program_running:
             messagebox.showinfo("Compile","Hentikan program/debugger melalui Run > Program reset terlebih dahulu.",parent=self.root)
             return
-        # Without a primary file, Compile/Run use the most recently active Editor, even from another desktop window.
+        # Without a primary file, Compile/Run use the most recently active Editor, even from another window.
         if not self.last_editor:return
         if not self.save_all():return
         path=Path(self.settings["main_file"]) if self.settings["main_file"] else self.last_editor.document.path
@@ -677,12 +1064,16 @@ class App:
                 self.error_index=-1
                 action=self.pending_action
                 self.pending_action=None
+                self.fill_messages()
                 if value.success:
                     self.update_status("Compile successful" if value.executable else "Unit compiled. No executable.")
                     if action and value.executable:self.start_process(action)
                     elif action:messagebox.showinfo("Run","Berkas ini menghasilkan unit. Pilih berkas program sebagai Primary file.",parent=self.root)
                     else:self.show_messages()
-                else:self.show_messages()
+                else:
+                    self.update_status("Compile failed")
+                    self.show_messages()
+                    self.next_error()
             elif kind=="build_error":
                 self.compiling=False
                 self.pending_action=None
@@ -714,6 +1105,14 @@ class App:
         if render and self.console:self.console.render()
         self.root.after(40,self.poll)
 
+    def prepare_console(self,title):
+        """The Output window, emptied and active, for a program about to start."""
+        window=self.show_output()
+        window.set_title(f"Output - {title}")
+        window.clear()
+        window.focus()
+        return window
+
     def start_process(self,action="run"):
         result=self.last_build
         if not result or not result.executable:return
@@ -721,9 +1120,7 @@ class App:
         except ValueError as error:
             messagebox.showerror("Parameters",str(error),parent=self.root)
             return
-        self.show_console()
-        self.console.screen=Screen()
-        self.console.render()
+        self.prepare_console(result.executable.name)
         emit=lambda k,v:self.messages.put((k,v))
         graph_env=self.open_graph_channel(emit)
         self.last_runtime_error=None
@@ -745,8 +1142,9 @@ class App:
                 self.error_report=(result.debug_info,report) if result.debug_info else None
                 self.process=Process([str(result.executable),*arguments],result.source.parent,emit,
                                      env={**graph_env,**({"ODIN_ERROR_FILE":str(report)} if result.debug_info else {})} or None)
-            self.console.focus_set()
+                self.update_status("Program berjalan di jendela Output")
         except OSError as error:messagebox.showerror("Run",str(error),parent=self.root)
+        self.update_actions()
 
     def open_graph_channel(self,emit):
         """A new channel for the Graph window of the program about to start; returns the environment that
@@ -787,6 +1185,7 @@ class App:
             session.close()
             self.debugger=None
             self.clear_exec()
+            self.refresh_debug_windows()
             if self.restart_debug:
                 action,self.restart_debug=self.restart_debug,None
                 self.root.after(10,lambda:self.compile(after=action))
@@ -799,7 +1198,11 @@ class App:
             except OSError:text=""
             location=runtime_error_location(debug_info,text) if text else None
             if location:self.runtime_error_at(*location)
+        self.process=None
+        self.finished_runs+=1
+        if self.output_window:self.output_window.set_title("Output")
         if not self.last_runtime_error:self.update_status(f"Program finished. Exit code {code}")
+        self.update_actions()
         return code
 
     # ---- Ukur and Periksa (metrics reports, odin/metrics.py) ---------------------------------
@@ -818,7 +1221,7 @@ class App:
         if self.compiling:
             self.update_status("Compiler is already running")
             return None
-        if self.process and self.process.child.poll() is None:
+        if self.program_running:
             messagebox.showinfo("Metrik","Hentikan program/debugger melalui Run > Program reset terlebih dahulu.",parent=self.root)
             return None
         if not self.last_editor or not self.save_all():return None
@@ -829,7 +1232,7 @@ class App:
         return path
 
     def measure(self):
-        """Run > Ukur (Shift+F9): a judge build (odinpc --count-steps) runs in the user screen like
+        """Run > Ukur (Shift+F9): a judge build (odinpc --count-steps) runs in the Output window like
         Run; when it ends, the Metrik window shows its steps, heap, call depth, steps per line
         and structure notes."""
         toolchain=self.metrics_toolchain()
@@ -848,7 +1251,7 @@ class App:
         threading.Thread(target=worker,daemon=True).start()
 
     def show_compile_report(self,path,report_or_diagnostics):
-        """Compiler messages of a failed judge build, in the usual Compiler messages window."""
+        """Compiler messages of a failed judge build, in the Messages window."""
         items=report_or_diagnostics["compile"]["diagnostics"] if isinstance(report_or_diagnostics,dict) else report_or_diagnostics
         diagnostics=[Diagnostic(d.get("file",""),int(d.get("line",0)),int(d.get("column",0)),
                                 {"warning":"Warning","note":"Note","hint":"Hint"}.get(d.get("severity"),"Error"),d.get("message",""))
@@ -856,6 +1259,7 @@ class App:
         output="\n".join(f"{d.path}({d.line},{d.column}) {d.kind}: {d.message}" for d in diagnostics)
         self.last_build=BuildResult(False,[],output or "Kompilasi gagal.",diagnostics,None,path)
         self.error_index=-1
+        self.fill_messages()
         self.show_messages()
 
     def start_measure(self,toolchain,path,structure,exe,info,diagnostics):
@@ -870,9 +1274,7 @@ class App:
         folder=data_dir()/"metrics"/"ukur"
         stats,report=folder/"ukur.stats",folder/"ukur.error"
         for f in (stats,report):f.unlink(missing_ok=True)
-        self.show_console()
-        self.console.screen=Screen()
-        self.console.render()
+        self.prepare_console(f"Ukur {path.name}")
         self.last_runtime_error=None
         self.clear_error_marks()
         odbg=exe.with_name(exe.name+".odbg")
@@ -883,11 +1285,11 @@ class App:
         try:
             self.process=Process([str(exe),*arguments],path.parent,emit,
                                  env={"ODIN_STATS_FILE":str(stats),"ODIN_ERROR_FILE":str(report)})
-            self.update_status("Ukur: program berjalan di User screen")
-            self.console.focus_set()
+            self.update_status("Ukur: program berjalan di jendela Output")
         except OSError as error:
             self.measuring=None
             messagebox.showerror("Ukur",str(error),parent=self.root)
+        self.update_actions()
 
     def finish_measure(self,code):
         m,self.measuring=self.measuring,None
@@ -906,7 +1308,7 @@ class App:
 
     def check_package(self):
         """Run > Periksa...: every case of a problem package (a folder with aturan.json and kasus/,
-        docs/HELP.txt), run without the user screen; the Metrik window shows verdicts and score."""
+        docs/HELP.txt), run without the Output window; the Metrik window shows verdicts and score."""
         toolchain=self.metrics_toolchain()
         path=self.metrics_source() if toolchain else None
         if not path:return
@@ -926,20 +1328,20 @@ class App:
     def show_metrics(self,path,report):
         """The Metrik window: the report as text; lines with a source line number jump there."""
         self.last_metrics=report
-        win=tk.Toplevel(self.root,bg=BLUE)
-        win.title(f"Odin \u2022 Metrik \u2022 {path.name}")
+        win=tk.Toplevel(self.root)
+        win.title(f"Odin • Metrik • {path.name}")
         win.geometry("820x620")
-        toolbar=tk.Frame(win,bg=GRAY)
+        toolbar=ttk.Frame(win,padding=(8,6))
         toolbar.pack(fill="x")
-        tk.Label(toolbar,text=" Metrik ",bg=GRAY,fg=BLUE).pack(side="left")
-        self.button(toolbar,"Tutup",win.destroy).pack(side="right")
+        ttk.Label(toolbar,text="Metrik",font=self.ui_font(13,"bold")).pack(side="left")
+        self.button(toolbar,"Tutup",win.destroy).pack(side="right",padx=(6,0))
         self.button(toolbar,"Simpan laporan...",lambda:self.save_metrics(report,path)).pack(side="right")
-        text=tk.Text(win,bg=BLUE,fg=WHITE,font=self.font,wrap="word",padx=22,pady=16,relief="flat",cursor="arrow")
-        scroll=tk.Scrollbar(win,command=text.yview)
+        text=tk.Text(win,font=self.font,wrap="word",padx=22,pady=16,borderwidth=0,highlightthickness=0,cursor="arrow")
+        scroll=ttk.Scrollbar(win,command=text.yview)
         scroll.pack(side="right",fill="y")
         text.configure(yscrollcommand=scroll.set)
         text.pack(fill="both",expand=True)
-        text.tag_configure("link",foreground="#FFFF55")
+        text.tag_configure("link",foreground="#0b62d6",underline=True)
         for i,(content,line) in enumerate(metrics_report.summary(report)):
             if line:
                 tag=f"jump{i}"
@@ -964,32 +1366,6 @@ class App:
         if target:
             atomic_write(Path(target),json.dumps(report,ensure_ascii=False,indent=2).encode("utf-8"))
             self.update_status(f"Laporan disimpan: {Path(target).name}")
-
-    def show_console(self):
-        if self.console_window and self.console_window.winfo_exists():
-            self.console_window.deiconify()
-            self.console_window.lift()
-            self.console.focus_set()
-            return
-        win=tk.Toplevel(self.root,bg=BLACK)
-        win.title("Odin • User screen")
-        win.protocol("WM_DELETE_WINDOW",win.withdraw)
-        toolbar=tk.Frame(win,bg=GRAY)
-        toolbar.pack(fill="x")
-        tk.Label(toolbar,text=" User screen 80×25 ",bg=GRAY,fg=BLUE).pack(side="left")
-        self.button(toolbar,"Stop",self.stop).pack(side="right")
-        self.button(toolbar,"Editor",lambda:(win.withdraw(),self.active.focus() if self.active else None)).pack(side="right")
-        self.button(toolbar,"Copy screen",self.copy_screen).pack(side="right")
-        self.console=TerminalView(win,self.font,self.send_input)
-        self.console.pack(fill="both",expand=True)
-        self.console_window=win
-        self.console.bind("<Control-F2>",lambda e:self.shortcut(self.stop))
-        self.console.bind("<Alt-F5>",lambda e:self.shortcut(win.withdraw))
-        # While the debugger holds the program, F7/F8 step; otherwise they belong to the running
-        # program (Crt.ReadKey, Turbo Vision).
-        self.console.bind("<F7>",lambda e:self.shortcut(lambda:self.debug_step("into")) if self.debug_stopped else self.console.key(e))
-        self.console.bind("<F8>",lambda e:self.shortcut(lambda:self.debug_step("over")) if self.debug_stopped else self.console.key(e))
-        self.console.focus_set()
 
     def copy_screen(self):
         if self.console:
@@ -1094,6 +1470,7 @@ class App:
             editor.text.tag_add(tag,f"{line}.0",f"{line}.0 lineend")
             editor.text.mark_set("insert",f"{line}.0")
             editor.text.see(f"{line}.0")
+            editor.cursor_moved(notify=False)
         return editor
 
     def clear_exec(self):
@@ -1128,14 +1505,13 @@ class App:
     def source_modified(self,editor):
         if self.debugging:self.debug_source_changed=True
 
-    # Watches, Local variables and Call stack: desktop windows filled when the program stops.
-    def debug_window(self,attribute,kind,place=None):
+    # Watches, Local variables and Call stack: child windows filled when the program stops.
+    def debug_window(self,attribute,kind,place=None,activate=True):
         window=getattr(self,attribute)
         if window is None:
-            window=self.add_window(kind(self))
+            window=self.add_window(kind(self),place or dict(DEBUG_PLACES[attribute]),activate=activate)
             setattr(self,attribute,window)
-            if place:window.frame.place(**place)
-        self.activate(window)
+        if activate:self.activate(window)
         return window
 
     def debug_window_closed(self,window):
@@ -1143,8 +1519,7 @@ class App:
             if getattr(self,attribute) is window:setattr(self,attribute,None)
 
     def show_watches(self):
-        # Turbo Pascal keeps Watches in a strip along the bottom of the desktop.
-        window=self.debug_window("watch_window",WatchWindow,dict(x=5,y=-5,relx=0,rely=.72,relwidth=1,relheight=.28,width=-10))
+        window=self.debug_window("watch_window",WatchWindow)
         self.draw_watches()
         return window
 
@@ -1160,7 +1535,7 @@ class App:
 
     def draw_watches(self):
         if self.watch_window:
-            self.watch_window.set_rows([f"{e}: {self.watch_values.get(i,'')}" for i,e in enumerate(self.watches)])
+            self.watch_window.set_rows([(e,self.watch_values.get(i,"")) for i,e in enumerate(self.watches)])
 
     def add_watch(self):
         word=self.word_at_cursor()
@@ -1203,7 +1578,7 @@ class App:
             return
         def done(event):
             if self.locals_window:
-                rows=[f"{v['name']}: {v['value']}" for v in event.get("locals",[])] if event.get("ok") else [event.get("error","")]
+                rows=[(v['name'],v['value']) for v in event.get("locals",[])] if event.get("ok") else [(event.get("error",""),"")]
                 self.locals_window.set_rows(rows)
         self.debug_request(self.debugger.locals(self.debug_frame),done)
 
@@ -1215,10 +1590,9 @@ class App:
         def done(event):
             self.stack_frames=event.get("frames",[]) if event.get("ok") else []
             if self.stack_window:
-                self.stack_window.set_rows([f"{f['name']}  ({Path(f['file']).name}:{f['line']})" for f in self.stack_frames])
+                self.stack_window.set_rows([(f['name'],f"{Path(f['file']).name}:{f['line']}") for f in self.stack_frames])
                 if self.stack_frames:
-                    self.stack_window.list.selection_clear(0,"end")
-                    self.stack_window.list.selection_set(min(self.debug_frame,len(self.stack_frames)-1))
+                    self.stack_window.select(min(self.debug_frame,len(self.stack_frames)-1))
         self.debug_request(self.debugger.stack(),done)
 
     def refresh_debug_windows(self):
@@ -1236,6 +1610,7 @@ class App:
             if editor:
                 editor.text.mark_set("insert",f"{frame['line']}.0")
                 editor.text.see(f"{frame['line']}.0")
+                editor.cursor_moved(notify=False)
         self.refresh_watches()
         self.refresh_locals()
         if self.stack_window:self.activate(self.stack_window)
@@ -1251,8 +1626,8 @@ class App:
         win,body=self.dialog("Evaluate and modify")
         expression,entry=self.field(body,"Expression",self.word_at_cursor())
         result=tk.StringVar()
-        tk.Label(body,text="Result",bg=GRAY,fg=BLACK,anchor="w").pack(fill="x",pady=(7,2))
-        tk.Entry(body,textvariable=result,state="readonly",readonlybackground=BLUE,fg=WHITE,width=50,relief="sunken").pack(fill="x")
+        ttk.Label(body,text="Result",anchor="w").pack(fill="x",pady=(7,2))
+        ttk.Entry(body,textvariable=result,state="readonly",width=50).pack(fill="x")
         new_value,_=self.field(body,"New value")
         def show(event):
             if win.winfo_exists():result.set(event["value"] if event.get("ok") else event.get("error",""))
@@ -1267,11 +1642,7 @@ class App:
                 self.debug_request(self.debugger.modify(expression.get(),new_value.get(),self.debug_frame),changed)
             else:
                 self.debug_request(self.debugger.evaluate(expression.get(),self.debug_frame),show)
-        bar=tk.Frame(body,bg=GRAY)
-        bar.pack(pady=(14,0))
-        self.button(bar,"Evaluate",lambda:run("evaluate")).pack(side="left",padx=4)
-        self.button(bar,"Modify",lambda:run("modify")).pack(side="left",padx=4)
-        self.button(bar,"Close",win.destroy).pack(side="left",padx=4)
+        self.buttons(body,("Evaluate",lambda:run("evaluate")),("Modify",lambda:run("modify")),("Close",win.destroy))
         entry.bind("<Return>",lambda e:run("evaluate"))
         entry.focus_set()
         entry.select_range(0,"end")
@@ -1283,30 +1654,41 @@ class App:
         for editor in self.editors:
             editor.set_breakpoints(set())
 
-    def show_messages(self):
-        result=self.last_build
+    # ---- compiler messages -----------------------------------------------------------------
+
+    def fill_messages(self):
+        """The Messages window for the last build: one row per diagnostic, a summary row, then the command and the
+        compiler's raw output."""
+        window,result=self.messages_window,self.last_build
+        if not window:return
+        window.list.delete(*window.list.get_children())
         if not result:
+            window.set_log("Belum ada kompilasi. F9 Make, Ctrl+F9 Run.")
+            return
+        for n,diag in enumerate(result.diagnostics):
+            window.list.insert("","end",iid=str(n),tags=(diag.kind,),
+                               values=(diag.kind,f"{Path(diag.file).name}:{diag.line}:{diag.column}",diag.message))
+        summary="Compile successful" if result.success else "Compile failed"
+        if result.success and result.executable:summary+=f": {result.executable.name}"
+        window.list.insert("","end",iid="summary",values=("Info",result.source.name if result.source else "",summary))
+        window.set_log(f"$ {join_command(result.command)}\n{result.output}".rstrip())
+
+    def show_messages(self):
+        if not self.last_build:
             self.update_status("No compiler messages")
             return
-        win,body=self.dialog("Compile successful" if result.success else "Compile failed")
-        text=tk.Text(body,width=82,height=18,bg=BLUE,fg=WHITE,wrap="word",font=self.font)
-        text.pack(fill="both",expand=True)
-        text.insert("end", "$ "+join_command(result.command)+"\n\n"+result.output)
-        text.configure(state="disabled")
-        if result.diagnostics:
-            listing=tk.Listbox(body,width=82,height=min(5,len(result.diagnostics)),bg=GRAY,fg="#aa0000",selectbackground=CYAN)
-            listing.pack(fill="x",pady=8)
-            for diag in result.diagnostics:listing.insert("end",f"{diag.kind}  {diag.file}:{diag.line}:{diag.column}  {diag.message}")
-            def jump(e=None):
-                selection=listing.curselection()
-                if selection:
-                    win.destroy()
-                    self.jump_diagnostic(result.diagnostics[selection[0]])
-            listing.bind("<Double-Button-1>",jump)
-            listing.bind("<Return>",jump)
-            self.button(body,"Go to error",jump).pack(side="left",pady=8)
-            listing.selection_set(0)
-        self.button(body,"OK",win.destroy).pack(side="right",pady=8)
+        window=self.show_messages_window()
+        children=window.list.get_children()
+        if children:
+            window.list.selection_set(children[0])
+            window.list.focus(children[0])
+
+    def jump_selected_message(self):
+        window=self.messages_window
+        chosen=window.list.selection() if window else ()
+        if chosen and chosen[0]!="summary" and self.last_build:
+            self.error_index=int(chosen[0])
+            self.jump_diagnostic(self.last_build.diagnostics[self.error_index])
 
     def jump_diagnostic(self,diag):
         path=Path(diag.file)
@@ -1317,11 +1699,17 @@ class App:
             editor.text.mark_set("insert",pos)
             editor.text.tag_add("error",f"{diag.line}.0",f"{diag.line}.end")
             editor.text.see(pos)
+            editor.cursor_moved(notify=False)
             self.update_status(diag.message)
 
     def next_error(self):
         if self.last_build and self.last_build.diagnostics:
-            self.error_index=(getattr(self,"error_index",-1)+1)%len(self.last_build.diagnostics)
+            self.error_index=(self.error_index+1)%len(self.last_build.diagnostics)
+            item=str(self.error_index)
+            window=self.messages_window
+            if window and window.list.exists(item):
+                window.list.selection_set(item)
+                window.list.see(item)
             self.jump_diagnostic(self.last_build.diagnostics[self.error_index])
 
     def primary_file(self):
@@ -1347,6 +1735,8 @@ class App:
                 self.update_status("Executable exported: "+path)
             except OSError as error:messagebox.showerror("Export",str(error),parent=self.root)
 
+    # ---- options -------------------------------------------------------------------------
+
     def parameters(self):
         def accept(value):
             try:split_arguments(value)
@@ -1357,64 +1747,91 @@ class App:
             self.settings.save()
         self.input("Program parameters","Arguments, e.g. \"hello world\" 123",self.settings["arguments"],accept)
 
-    def compiler_options(self):
-        win,body=self.dialog("Compiler options")
-        tk.Label(body,text="Odin native compiler, Turbo Pascal 7",bg=GRAY,fg=BLUE).pack(anchor="w")
-        flags={}
-        for key,label in (("range_checks","Range checks"),("overflow_checks","Overflow checks")):
-            flags[key]=tk.BooleanVar(value=self.settings[key])
-            tk.Checkbutton(body,text=label,variable=flags[key],bg=GRAY,selectcolor=GRAY).pack(anchor="w")
-        def save():
-            for key,var in flags.items():self.settings[key]=var.get()
-            self.settings.save()
-            win.destroy()
-            self.update_status()
-        self.button(body,"OK",save).pack(pady=10)
-
-    def directory_options(self):
-        win,body=self.dialog("Directories")
-        tk.Label(body,text="Satu direktori per baris. Path dengan spasi didukung.",bg=GRAY).pack()
-        fields={}
+    def options(self,tab="Compiler"):
+        """Options: one dialog with the tabs Compiler, Directories, Editor and Environment. OK and Apply check the
+        numbers, store the settings and apply them to the open windows."""
+        win,body=self.dialog("Options")
+        notebook=ttk.Notebook(body)
+        notebook.pack(fill="both",expand=True)
+        pages={name:ttk.Frame(notebook,padding=(14,12)) for name in OPTION_TABS}
+        for name,page in pages.items():notebook.add(page,text=name)
+        flags={key:tk.BooleanVar(value=self.settings[key]) for key in
+               ("range_checks","overflow_checks","syntax_colors","graph_window","save_desktop")}
+        page=pages["Compiler"]
+        ttk.Label(page,text="Odin native compiler, Turbo Pascal 7 + class").pack(anchor="w",pady=(0,8))
+        for key,label in (("range_checks","Range checks ($R+)"),("overflow_checks","Overflow checks ($Q+)")):
+            ttk.Checkbutton(page,text=label,variable=flags[key]).pack(anchor="w",pady=2)
+        ttk.Label(page,text=f"Primary file: {self.settings['main_file'] or '(active editor)'}").pack(anchor="w",pady=(12,0))
+        page=pages["Directories"]
+        ttk.Label(page,text="Satu direktori per baris. Path dengan spasi didukung.").pack(anchor="w")
+        paths={}
         for key,label in (("unit_paths","Unit search paths"),("include_paths","Include search paths")):
-            tk.Label(body,text=label,bg=GRAY,fg=BLUE).pack(anchor="w",pady=8)
-            text=tk.Text(body,width=60,height=4,bg=BLUE,fg=WHITE,insertbackground=WHITE)
-            text.pack()
+            ttk.Label(page,text=label).pack(anchor="w",pady=(10,2))
+            text=tk.Text(page,width=60,height=4,font=self.font,highlightthickness=1)
+            text.pack(fill="x")
             text.insert("1.0","\n".join(self.settings[key]))
-            fields[key]=text
-        def save():
-            for key,text in fields.items():self.settings[key]=[str(Path(p.strip()).expanduser().resolve()) for p in text.get("1.0","end-1c").splitlines() if p.strip()]
-            self.settings.save()
-            win.destroy()
-        self.button(body,"OK",save).pack(pady=12)
-
-    def editor_options(self):
-        win,body=self.dialog("Editor options")
-        size,_=self.field(body,"Font size (10..30)",str(self.settings["font_size"]))
-        tab,_=self.field(body,"Tab width (1..8)",str(self.settings["tab_width"]))
-        syntax=tk.BooleanVar(value=self.settings["syntax_colors"])
-        tk.Checkbutton(body,text="Syntax colors: Turbo Biru Lembut (off = classic yellow on blue)",variable=syntax,bg=GRAY,selectcolor=GRAY).pack(pady=12)
-        def save():
-            try:
-                font_size,tab_width=int(size.get()),int(tab.get())
-                if not 10<=font_size<=30 or not 1<=tab_width<=8:raise ValueError()
-            except ValueError:
-                messagebox.showerror("Editor","Masukkan ukuran dan tab sesuai rentang.",parent=win)
-                return
-            self.settings["font_size"]=font_size
-            self.settings["tab_width"]=tab_width
-            self.settings["syntax_colors"]=syntax.get()
-            self.font.configure(size=font_size)
+            paths[key]=text
+        page=pages["Editor"]
+        numbers={}
+        def number(page,key,label,low,high):
+            row=ttk.Frame(page)
+            row.pack(fill="x",pady=3)
+            ttk.Label(row,text=label,width=26).pack(side="left")
+            numbers[key]=(tk.StringVar(value=str(self.settings[key])),low,high,label)
+            ttk.Spinbox(row,from_=low,to=high,textvariable=numbers[key][0],width=6).pack(side="left")
+        number(page,"font_size","Font size (10..30)",10,30)
+        number(page,"tab_width","Tab width (1..8)",1,8)
+        themes={"Terang":"light","Gelap":"dark"}
+        theme=tk.StringVar(value=next(k for k,v in themes.items() if v==self.settings["theme"]))
+        row=ttk.Frame(page)
+        row.pack(fill="x",pady=3)
+        ttk.Label(row,text="Theme",width=26).pack(side="left")
+        ttk.Combobox(row,textvariable=theme,values=list(themes),state="readonly",width=12).pack(side="left")
+        ttk.Checkbutton(page,text="Syntax colors",variable=flags["syntax_colors"]).pack(anchor="w",pady=(8,0))
+        page=pages["Environment"]
+        number(page,"console_font_size","Output font size (8..30)",8,30)
+        ttk.Checkbutton(page,text="Graph window for programs that use the Graph unit",variable=flags["graph_window"]).pack(anchor="w",pady=(8,2))
+        ttk.Checkbutton(page,text="Save desktop: reopen files and windows where they were",variable=flags["save_desktop"]).pack(anchor="w",pady=2)
+        def apply():
+            values={}
+            for key,(var,low,high,label) in numbers.items():
+                try:value=int(var.get())
+                except ValueError:value=None
+                if value is None or not low<=value<=high:
+                    messagebox.showerror("Options",f"{label}: masukkan angka dalam rentang.",parent=win)
+                    return False
+                values[key]=value
+            self.settings.values.update(values)
+            for key,var in flags.items():self.settings[key]=var.get()
+            for key,text in paths.items():
+                self.settings[key]=[str(Path(p.strip()).expanduser().resolve()) for p in text.get("1.0","end-1c").splitlines() if p.strip()]
+            self.settings["theme"]=themes[theme.get()]
+            self.font.configure(size=self.settings["font_size"])
+            self.console_font.configure(size=self.settings["console_font_size"])
             for editor in self.editors:editor.apply_options()
+            if self.console:self.console.render()
             self.settings.save()
-            win.destroy()
-        self.button(body,"OK",save).pack()
+            self.update_status()
+        def accept():
+            if apply() is not False:win.destroy()
+        self.buttons(body,("OK",accept),("Cancel",win.destroy),("Apply",apply))
+        notebook.select(pages[tab] if tab in pages else 0)
+        win.notebook=notebook
+        return win
+
+    def compiler_options(self):return self.options("Compiler")
+    def directory_options(self):return self.options("Directories")
+    def editor_options(self):return self.options("Editor")
+    def environment_options(self):return self.options("Environment")
+
+    # ---- help ------------------------------------------------------------------------------
 
     def show_text(self,title,content,image=None):
-        win=tk.Toplevel(self.root,bg=BLUE)
+        win=tk.Toplevel(self.root)
         win.title(title)
         win.geometry("900x620")
-        text=tk.Text(win,bg=BLUE,fg=WHITE,font=self.font,wrap="word",padx=22,pady=20,relief="flat")
-        scroll=tk.Scrollbar(win,command=text.yview)
+        text=tk.Text(win,font=self.font,wrap="word",padx=22,pady=20,borderwidth=0,highlightthickness=0)
+        scroll=ttk.Scrollbar(win,command=text.yview)
         scroll.pack(side="right",fill="y")
         text.configure(yscrollcommand=scroll.set)
         text.pack(fill="both",expand=True)
@@ -1471,11 +1888,14 @@ class App:
             messagebox.showerror(title,f"Berkas tidak bisa dibuka: {error}\n{path}",parent=self.root)
             return
         self.update_status(f"Opening {path.name}")
+
     def about(self):
-        self.show_text("About Odin Turbo Pascal",f"ODIN TURBO PASCAL\nVersion {__version_tag__}\nCreated by {__author__}\n\nIndependent classic Pascal IDE.\nPython / Tk + Odin native toolchain (compiler, RTL, debugger).\n\nInterface inspired by the DOS-era Turbo Pascal IDE.\nThis software is not Borland Turbo Pascal and is not affiliated with Borland.\nNo Borland binaries, logos, fonts, or help files are included.\n\nNative Pascal compilation for the host CPU.\nIntel x86_64 and Apple Silicon arm64 use the same application sources.\n\n{__copyright__}.\nThis program is free software: you can redistribute it and/or modify it\nunder the terms of the GNU General Public License, version 3 or later.\nIt comes with ABSOLUTELY NO WARRANTY. See LICENSE and THIRD_PARTY.txt.\n",self.logo_small)
+        self.show_text("About Odin Turbo Pascal",f"ODIN TURBO PASCAL\nVersion {__version_tag__}\nCreated by {__author__}\n\nIndependent Pascal IDE with a windowed interface on every OS.\nPython / Tk + Odin native toolchain (compiler, RTL, debugger).\n\nThe Pascal dialect and keyboard shortcuts follow Turbo Pascal 7.\nThis software is not Borland Turbo Pascal and is not affiliated with Borland.\nNo Borland binaries, logos, fonts, or help files are included.\n\nNative Pascal compilation for the host CPU.\nIntel x86_64 and Apple Silicon arm64 use the same application sources.\n\n{__copyright__}.\nThis program is free software: you can redistribute it and/or modify it\nunder the terms of the GNU General Public License, version 3 or later.\nIt comes with ABSOLUTELY NO WARRANTY. See LICENSE and THIRD_PARTY.txt.\n",self.logo_small)
 
     def environment(self):
         self.show_text("Environment",f"Odin {__version_tag__}\n\nOS: {platform.platform()}\nCPU: {platform.machine()}\nPython: {sys.version}\nRuntime: {sys.executable}\nTk: {self.root.tk.call('info','patchlevel')}\nOdin toolchain: {locate_toolchain() or 'NOT FOUND'}\nPrimary file: {self.settings['main_file'] or '(active editor)'}\nSettings: {self.settings.path}\n")
+
+    # ---- session -------------------------------------------------------------------------
 
     def recover_tick(self):
         if self.closed:return
@@ -1507,7 +1927,7 @@ class App:
         if self.compiling:
             messagebox.showinfo("Exit","Tunggu kompilasi selesai sebelum keluar.",parent=self.root)
             return
-        if self.process and self.process.child.poll() is None:
+        if self.program_running:
             if not messagebox.askyesno("Exit","Hentikan program yang masih berjalan dan keluar?",parent=self.root):return
         # Gather decisions first. Cancel must not close any editor.
         for editor in self.editors:
@@ -1516,6 +1936,7 @@ class App:
                 answer=messagebox.askyesnocancel("Save changes",f"Simpan {editor.document.path.name if editor.document.path else 'NONAME.PAS'}?",parent=self.root)
                 if answer is None or (answer and not self.save(editor)):return
         self.stop()
+        self.settings["desktop"]=self.desktop_state() if self.settings["save_desktop"] else {}
         self.settings["geometry"]=self.root.geometry()
         self.settings.save()
         self.session.unlink(missing_ok=True)
@@ -1528,7 +1949,42 @@ class App:
             self.root.after_cancel(callback)
 
 
+def macos_app_name(name):
+    """Tk names the application menu and its About, Hide and Quit items after CFBundleName of the main bundle, which
+    is Python when the IDE runs on Python.app (from source, and from the .app, whose launcher starts python3). Sets it
+    in the bundle's info dictionary through the Objective-C runtime; call before Tk starts. Returns the name the
+    bundle reports afterwards, or None where this is not possible."""
+    import ctypes
+    import ctypes.util
+    try:
+        objc=ctypes.cdll.LoadLibrary(ctypes.util.find_library("objc"))
+        ctypes.cdll.LoadLibrary(ctypes.util.find_library("Foundation"))
+    except (OSError,TypeError):
+        return None
+    objc.objc_getClass.restype=objc.sel_registerName.restype=ctypes.c_void_p
+    objc.objc_getClass.argtypes=objc.sel_registerName.argtypes=[ctypes.c_char_p]
+    address=ctypes.cast(objc.objc_msgSend,ctypes.c_void_p).value
+    # objc_msgSend gets an exact prototype per call: arm64 does not pass variadic arguments like fixed ones.
+    send=lambda restype,*argtypes:ctypes.CFUNCTYPE(restype,ctypes.c_void_p,ctypes.c_void_p,*argtypes)(address)
+    sel=objc.sel_registerName
+    def string(text):
+        new=send(ctypes.c_void_p)(objc.objc_getClass(b"NSString"),sel(b"alloc"))
+        return send(ctypes.c_void_p,ctypes.c_char_p)(new,sel(b"initWithUTF8String:"),text.encode("utf-8"))
+    bundle=send(ctypes.c_void_p)(objc.objc_getClass(b"NSBundle"),sel(b"mainBundle"))
+    info=send(ctypes.c_void_p)(bundle,sel(b"infoDictionary")) if bundle else None
+    # An immutable dictionary would raise an Objective-C exception, which ends the process: ask first.
+    if not info or not send(ctypes.c_bool,ctypes.c_void_p)(info,sel(b"respondsToSelector:"),sel(b"setObject:forKey:")):
+        return None
+    for key in ("CFBundleName","CFBundleDisplayName"):
+        send(None,ctypes.c_void_p,ctypes.c_void_p)(info,sel(b"setObject:forKey:"),string(name),string(key))
+    value=send(ctypes.c_void_p,ctypes.c_void_p)(bundle,sel(b"objectForInfoDictionaryKey:"),string("CFBundleName"))
+    text=send(ctypes.c_char_p)(value,sel(b"UTF8String")) if value else None
+    return text.decode("utf-8") if text else None
+
+
 def main():
+    if AQUA:
+        macos_app_name("Odin Turbo Pascal")
     root=tk.Tk(className="OdinTurboPascal")
     lock = lock_instance(data_dir() / "instance.lock")
     if lock is None:

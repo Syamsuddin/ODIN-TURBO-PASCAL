@@ -4,8 +4,8 @@ Lisensi GNU GPL v3 atau yang lebih baru, hak cipta (c) 2026 Syams Ideris.
 F1                  Help; di editor: bantuan untuk kata di kursor/seleksi
 F2                  Save
 F3                  Open
-F5                  Zoom editor
-F6                  Next editor
+F5                  Zoom: maximize / restore the active window
+F6 / Shift+F6       Next / previous window
 F4                  Go to cursor (debugger)
 F7                  Trace into (debugger)
 F8                  Step over (debugger)
@@ -15,8 +15,8 @@ Ctrl+F9             Compile and run; continue in the debugger
 Alt+F9              Compile
 Shift+F9            Ukur (laporan metrik program)
 Ctrl+F2             Stop program/debugger
-Alt+F3              Close editor
-Alt+F5              User screen
+Alt+F3              Close window
+Alt+F5              Output window
 Ctrl+F8             Toggle breakpoint
 Ctrl+F7             Evaluate/Modify (debugger)
 Alt+F8              Next diagnostic
@@ -30,6 +30,8 @@ Ctrl+G              Search again
 Ctrl+J              Go to line
 Ctrl+L              Delete current line
 Ctrl+Y              Redo
+Ctrl+Tab            Next window
+Ctrl+= / Ctrl+-     Larger / smaller editor font
 Tab / Shift+Tab     Indent / Unindent current line
 Insert              Toggle insert / overwrite
 
@@ -38,7 +40,9 @@ Command+N / O / S   New / Open / Save
 Command+B           Compile
 Command+R           Compile and run
 Command+F           Find
-Command+W           Close editor
+Command+W           Close window
+Command+= / -       Larger / smaller editor font
+Command+,           Options
 Command+Q           Quit
 Command+C / V / X   Copy / Paste / Cut in the editor (Tk native bindings)
 Command+Z           Undo in the editor (Tk native binding)
@@ -48,7 +52,7 @@ Di sebagian pengaturan Mac, tombol Option menghasilkan simbol khusus.
 Gunakan klik menu atau pintasan Command bila mnemonic tidak diteruskan Tk.
 Tekan Fn bersama F1..F12 jika tombol fungsi dipakai untuk kontrol perangkat.
 
-USER SCREEN
+OUTPUT WINDOW
 Enter              Input newline
 Arrow/Home/End      Terminal navigation
 F1..F12, Insert    Diteruskan ke program (ReadKey, Turbo Vision)
@@ -56,10 +60,15 @@ Option+huruf       Alt+huruf untuk program (Esc + huruf), misalnya Alt+X
 Mouse              Diteruskan ke program Turbo Vision yang memintanya
 Ctrl+C             Interrupt process group
 Ctrl+F2            Stop
-Alt+F5             Hide User screen
+Alt+F5             Back to the editor
 F7/F8              Langkah debugger saat program berhenti, selain itu ke program
 Ctrl+C             Saat debugging: hentikan sementara di statement berikutnya
-Copy screen        Menyalin layar teks 80x25 ke clipboard
+Copy screen        Menyalin layar teks 80x25 ke clipboard (klik kanan)
+
+JENDELA
+Bilah judul         seret untuk memindahkan, klik dua kali untuk maximize
+Tepi / sudut        seret untuk mengubah ukuran
+_  □  ✕             minimize, maximize/restore, close
 
 Ctrl+Insert/Shift+Insert dan Shift+Delete mengikuti binding clipboard Tk pada
 platform terkait. Menu Edit tersedia apabila keyboard Mac tidak memiliki Insert.

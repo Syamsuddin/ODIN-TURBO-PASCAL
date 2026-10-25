@@ -181,12 +181,14 @@ class Document:
 
 # "syntax_colors" replaces the old "syntax" key, which was off by default, so saved settings start with colors on.
 DEFAULTS = {
-    "font_size": 17,
+    "font_size": 14, "theme": "light",
     "syntax_colors": True, "tab_width": 2, "range_checks": True,
     "overflow_checks": True,
     "unit_paths": [], "include_paths": [], "arguments": "",
     "recent": [], "geometry": "1120x740", "main_file": "",
     "graph_window": True,
+    # Output window font, and the windows of the last session (App.desktop_state) restored at startup.
+    "console_font_size": 12, "save_desktop": True, "desktop": {},
 }
 
 
@@ -195,6 +197,7 @@ class Settings:
         self.path = path or data_dir() / "settings.json"
         self.values = dict(DEFAULTS)
         self.values["recent"] = []
+        self.values["desktop"] = {}
         try:
             saved = json.loads(self.path.read_text(encoding="utf-8"))
             for key, default in DEFAULTS.items():
@@ -204,6 +207,9 @@ class Settings:
             pass
         self.values["font_size"] = min(30, max(10, self.values["font_size"]))
         self.values["tab_width"] = min(8, max(1, self.values["tab_width"]))
+        self.values["console_font_size"] = min(30, max(8, self.values["console_font_size"]))
+        if self.values["theme"] not in ("light", "dark"):
+            self.values["theme"] = "light"
 
     def __getitem__(self, key):
         return self.values[key]

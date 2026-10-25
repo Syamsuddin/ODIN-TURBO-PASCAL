@@ -1282,8 +1282,8 @@ end.</code></pre>
 <tr id="k-f1"><td><kbd>F1</kbd></td><td>Help; di editor: bantuan untuk kata di kursor/seleksi</td></tr>
 <tr id="k-f2"><td><kbd>F2</kbd></td><td>Save</td></tr>
 <tr id="k-f3"><td><kbd>F3</kbd></td><td>Open</td></tr>
-<tr id="k-f5"><td><kbd>F5</kbd></td><td>Zoom editor</td></tr>
-<tr id="k-f6"><td><kbd>F6</kbd></td><td>Next editor</td></tr>
+<tr id="k-f5"><td><kbd>F5</kbd></td><td>Zoom: maximize / restore the active window</td></tr>
+<tr id="k-f6"><td><kbd>F6</kbd> / <kbd>Shift+F6</kbd></td><td>Next / previous window</td></tr>
 <tr id="k-f4"><td><kbd>F4</kbd></td><td>Go to cursor (debugger)</td></tr>
 <tr id="k-f7"><td><kbd>F7</kbd></td><td>Trace into (debugger)</td></tr>
 <tr id="k-f8"><td><kbd>F8</kbd></td><td>Step over (debugger)</td></tr>
@@ -1293,8 +1293,8 @@ end.</code></pre>
 <tr id="k-alt-f9"><td><kbd>Alt+F9</kbd></td><td>Compile</td></tr>
 <tr id="k-shift-f9"><td><kbd>Shift+F9</kbd></td><td>Ukur (laporan metrik program)</td></tr>
 <tr id="k-ctrl-f2"><td><kbd>Ctrl+F2</kbd></td><td>Stop program/debugger</td></tr>
-<tr id="k-alt-f3"><td><kbd>Alt+F3</kbd></td><td>Close editor</td></tr>
-<tr id="k-alt-f5"><td><kbd>Alt+F5</kbd></td><td>User screen</td></tr>
+<tr id="k-alt-f3"><td><kbd>Alt+F3</kbd></td><td>Close window</td></tr>
+<tr id="k-alt-f5"><td><kbd>Alt+F5</kbd></td><td>Output window</td></tr>
 <tr id="k-ctrl-f8"><td><kbd>Ctrl+F8</kbd></td><td>Toggle breakpoint</td></tr>
 <tr id="k-ctrl-f7"><td><kbd>Ctrl+F7</kbd></td><td>Evaluate/Modify (debugger)</td></tr>
 <tr id="k-alt-f8"><td><kbd>Alt+F8</kbd></td><td>Next diagnostic</td></tr>
@@ -1310,6 +1310,8 @@ end.</code></pre>
 <tr id="k-ctrl-j"><td><kbd>Ctrl+J</kbd></td><td>Go to line</td></tr>
 <tr id="k-ctrl-l"><td><kbd>Ctrl+L</kbd></td><td>Delete current line</td></tr>
 <tr id="k-ctrl-y"><td><kbd>Ctrl+Y</kbd></td><td>Redo</td></tr>
+<tr id="k-ctrl-tab"><td><kbd>Ctrl+Tab</kbd></td><td>Next window</td></tr>
+<tr id="k-ctrl"><td><kbd>Ctrl+=</kbd> / <kbd>Ctrl+-</kbd></td><td>Larger / smaller editor font</td></tr>
 <tr id="k-tab"><td><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd></td><td>Indent / Unindent current line</td></tr>
 <tr><td><kbd>Insert</kbd></td><td>Toggle insert / overwrite</td></tr>
 </table></div>
@@ -1319,27 +1321,19 @@ end.</code></pre>
 <tr id="k-command-b"><td><kbd>Command+B</kbd></td><td>Compile</td></tr>
 <tr id="k-command-r"><td><kbd>Command+R</kbd></td><td>Compile and run</td></tr>
 <tr id="k-command-f"><td><kbd>Command+F</kbd></td><td>Find</td></tr>
-<tr id="k-command-w"><td><kbd>Command+W</kbd></td><td>Close editor</td></tr>
+<tr id="k-command-w"><td><kbd>Command+W</kbd></td><td>Close window</td></tr>
+<tr id="k-command"><td><kbd>Command+=</kbd> / <kbd>-</kbd></td><td>Larger / smaller editor font</td></tr>
+<tr><td><kbd>Command+,</kbd></td><td>Options</td></tr>
 <tr id="k-command-q"><td><kbd>Command+Q</kbd></td><td>Quit</td></tr>
 <tr id="k-command-c"><td><kbd>Command+C</kbd> / <kbd>V</kbd> / <kbd>X</kbd></td><td>Copy / Paste / Cut in the editor (Tk native bindings)</td></tr>
 <tr id="k-command-z"><td><kbd>Command+Z</kbd></td><td>Undo in the editor (Tk native binding)</td></tr>
 </table></div>
 <p>Menu mnemonics: Alt+F/E/S/R/C/D/O/W/H. Di sebagian pengaturan Mac, tombol Option menghasilkan simbol khusus. Gunakan klik menu atau pintasan Command bila mnemonic tidak diteruskan Tk. Tekan Fn bersama F1..F12 jika tombol fungsi dipakai untuk kontrol perangkat.</p>
-<h3 id="pintasan-user"><span class="n">11.4</span>Di User screen <a class="anchor" href="#pintasan-user" aria-label="Tautan">#</a></h3>
-<div class="tw"><table class="ref"><tr><th>Tombol</th><th>Fungsi</th></tr>
-<tr id="k-enter"><td><kbd>Enter</kbd></td><td>Input newline</td></tr>
-<tr id="k-arrow-home-end"><td><kbd>Arrow/Home/End</kbd></td><td>Terminal navigation</td></tr>
-<tr id="k-f1-f12"><td><kbd>F1..F12,</kbd> <kbd>Insert</kbd></td><td>Diteruskan ke program (ReadKey, Turbo Vision)</td></tr>
-<tr id="k-option-huruf"><td><kbd>Option+huruf</kbd></td><td>Alt+huruf untuk program (Esc + huruf), misalnya Alt+X</td></tr>
-<tr id="k-mouse"><td><kbd>Mouse</kbd></td><td>Diteruskan ke program Turbo Vision yang memintanya</td></tr>
-<tr id="k-ctrl-c"><td><kbd>Ctrl+C</kbd></td><td>Interrupt process group</td></tr>
-<tr><td><kbd>Ctrl+F2</kbd></td><td>Stop</td></tr>
-<tr><td><kbd>Alt+F5</kbd></td><td>Hide User screen</td></tr>
-<tr id="k-f7-f8"><td><kbd>F7/F8</kbd></td><td>Langkah debugger saat program berhenti, selain itu ke program</td></tr>
-<tr><td><kbd>Ctrl+C</kbd></td><td>Saat debugging: hentikan sementara di statement berikutnya</td></tr>
-<tr><td><kbd>Copy</kbd> <kbd>screen</kbd></td><td>Menyalin layar teks 80x25 ke clipboard</td></tr>
-</table></div>
+<p>OUTPUT WINDOW Enter              Input newline Arrow/Home/End      Terminal navigation F1..F12, Insert    Diteruskan ke program (ReadKey, Turbo Vision) Option+huruf       Alt+huruf untuk program (Esc + huruf), misalnya Alt+X Mouse              Diteruskan ke program Turbo Vision yang memintanya Ctrl+C             Interrupt process group Ctrl+F2            Stop Alt+F5             Back to the editor F7/F8              Langkah debugger saat program berhenti, selain itu ke program Ctrl+C             Saat debugging: hentikan sementara di statement berikutnya Copy screen        Menyalin layar teks 80x25 ke clipboard (klik kanan)</p>
+<p>JENDELA Bilah judul         seret untuk memindahkan, klik dua kali untuk maximize Tepi / sudut        seret untuk mengubah ukuran _  □  ✕             minimize, maximize/restore, close</p>
 <p>Ctrl+Insert/Shift+Insert dan Shift+Delete mengikuti binding clipboard Tk pada platform terkait. Menu Edit tersedia apabila keyboard Mac tidak memiliki Insert.</p>
+<h3 id="pintasan-user"><span class="n">11.4</span>Di User screen <a class="anchor" href="#pintasan-user" aria-label="Tautan">#</a></h3>
+
 </section>
 
 <section class="sec" id="s-kompatibilitas">

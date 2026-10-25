@@ -72,7 +72,7 @@ langsung.
 
 Di Windows, berkas teks memakai CRLF (WriteLn menulis CRLF seperti di DOS),
 path memakai '\' dan huruf drive, Exec memakai _spawnvpe, dan Printer
-mencetak lewat notepad /p. User screen IDE memakai ConPTY, dan debugger
+mencetak lewat notepad /p. Jendela Output IDE memakai ConPTY, dan debugger
 berbicara dengan program lewat TCP 127.0.0.1.
 
 Di arm64, prosesor tidak menghentikan program saat operasi real gagal.
@@ -101,8 +101,8 @@ detailnya milik Odin sendiri (rincian di rtl/vision/SPEC.md):
   editor bisa bertanya "simpan?".
 - Pesan validator, judul MessageBox, dan label tombol bawaan berbahasa
   Inggris, seperti Turbo Vision.
-- Ukuran layar mengikuti terminal (di User screen 80x25). Mouse berjalan di
-  User screen dan di terminal yang mendukung laporan mouse SGR (xterm,
+- Ukuran layar mengikuti terminal (di jendela Output 80x25). Mouse berjalan di
+  jendela Output dan di terminal yang mendukung laporan mouse SGR (xterm,
   Terminal.app, iTerm2). Alt+huruf dikirim sebagai Esc + huruf; di User
   screen macOS, Option dipakai sebagai Alt (tata letak keyboard US). Option
   pada keyboard Mac sungguhan belum diuji, hanya dengan event sintetis.
