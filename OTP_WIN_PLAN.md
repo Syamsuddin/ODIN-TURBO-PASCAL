@@ -16,7 +16,7 @@ IDE Odin Turbo Pascal menjadi aplikasi GUI biasa di setiap OS (macOS, Windows, L
 
 Versi bertab dengan Run di terminal OS (23 Oktober 2026, `launch.py`/`runner.py`) ditinggalkan dan dihapus. Dari situ yang tetap dipakai: `DebugSession` menerima sambungan TCP di thread pembaca (Tk tidak tertahan di Windows), editor dengan nomor baris dan tema terang/gelap, nama menu aplikasi macOS (`macos_app_name`).
 
-Yang tidak berubah: bahasa, `odinpc`, RTL, Odin Vision, `core.py`, `console.py`/`terminal.py`, protokol debugger, `metrics.py`, jendela Graph, format `settings.json` dan `recovery.json`, pintasan Turbo Pascal (F9 Make, Ctrl+F9 Run, F7/F8, Ctrl+F8, Alt+F8 ...). Versi web tidak disentuh.
+Yang tidak berubah: bahasa, `odinpc`, RTL, Odin Vision, `core.py`, `console.py`/`terminal.py`, protokol debugger, `metrics.py`, jendela Graph, format `settings.json` dan `recovery.json`, pintasan Turbo Pascal (F9 Make, Ctrl+F9 Run, F7/F8, Ctrl+F8, Alt+F8 ...).
 
 ## Tata letak awal
 
@@ -24,7 +24,7 @@ Area kerja (abu-abu, dengan logo, nama, versi, kredit, hak cipta, dan lisensi di
 
 ## Tahapan
 
-Status 26 Oktober 2026: W1–W4 selesai; W5 selesai kecuali gambar. Pra-rilis **3.0.0-beta.1**: seluruh suite lulus di Mac Intel dan di CI lima runner (macOS Intel, macOS Apple Silicon, Ubuntu x86_64 dan arm64, Windows), keempat jenis pemasang dibangun di CI, dan `.pkg` Intel dipasang serta dibuka di Mac pengembang. Fit Output membuat layar 80×25 selalu terlihat di jendela Output. Belum: tangkapan layar README dan `assets/banner.svg` (tampilan klasik), gambar layar buku, pemeriksaan di perangkat fisik Apple Silicon, Windows, dan Linux, cermin tampilan di versi web (keputusan pemilik proyek), lalu rilis v3.0.0 final.
+Status 26 Oktober 2026: W1–W4 selesai; W5 selesai kecuali gambar. Pra-rilis **3.0.0-beta.1**: seluruh suite lulus di Mac Intel dan di CI lima runner (macOS Intel, macOS Apple Silicon, Ubuntu x86_64 dan arm64, Windows), keempat jenis pemasang dibangun di CI, dan `.pkg` Intel dipasang serta dibuka di Mac pengembang. Fit Output membuat layar 80×25 selalu terlihat di jendela Output. Belum: tangkapan layar README dan `assets/banner.svg` (tampilan klasik), gambar layar buku, pemeriksaan di perangkat fisik Apple Silicon, Windows, dan Linux, lalu rilis v3.0.0 final.
 
 | Tahap | Isi | Gerbang |
 | --- | --- | --- |
