@@ -1,0 +1,710 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menjelaskan gagasan pemrograman berorientasi objek: objek menyatukan data (field) dan perilaku (method).</li>
+  <li>Mendeklarasikan <code>class</code>, membuat objek dengan <code>Create</code>, dan membebaskannya dengan <code>Free</code>.</li>
+  <li>Menulis constructor dan destructor sendiri, lengkap dengan <code>inherited</code>.</li>
+  <li>Melindungi data dengan <code>private</code>, <code>protected</code>, <code>public</code>, dan <code>property</code>.</li>
+  <li>Menurunkan class dari class lain (pewarisan) dan memakai method <code>virtual</code>, <code>override</code>, dan <code>abstract</code> (polimorfisme).</li>
+  <li>Memakai <code>class var</code>, <code>class function</code>, <code>class of</code>, <code>is</code>, <code>as</code>, dan <code>overload</code>.</li>
+  <li>Menyimpan objek dalam <code>TObjectList</code> dan <code>TStringList</code>, lalu merangkai semuanya dalam program kasir toko.</li>
+</ul>
+
+<p class="lead">Sejak Bab 9 Anda memecah program menjadi prosedur dan fungsi, dan sejak Bab 13 Anda mengelompokkan data
+dalam record. Keduanya masih hidup terpisah: record hanya berisi data, sedangkan prosedur yang mengolahnya ditulis di
+tempat lain. Pemrograman berorientasi objek (<i>object-oriented programming</i>, OOP) menyatukan keduanya. Sebuah
+<b>objek</b> membawa datanya sendiri sekaligus tahu cara mengolah data itu. Bab ini memakai sembilan program dari menu
+<span class="menu">File ▸ Examples - OOP...</span>, dari class pertama sampai program kasir toko yang utuh.</p>
+
+<h2>Mengapa Objek?</h2>
+
+<p>Bayangkan sebuah remote televisi. Anda tidak perlu tahu rangkaian listrik di dalamnya; cukup menekan tombol
+<i>volume</i> atau <i>kanal</i>. Remote itu menyimpan keadaannya sendiri (kanal yang sedang aktif, besar suara) dan
+menyediakan tombol untuk mengubahnya. Objek dalam program bekerja dengan cara yang sama: ia menyimpan <b>data</b> dan
+menyediakan <b>perintah</b> untuk mengolah data itu. Bagian program lain cukup "menekan tombolnya".</p>
+
+<div class="trio">
+  <div class="card"><h4><span class="ikon">1</span>Enkapsulasi</h4><p>Data dan prosedur yang mengolahnya dibungkus dalam satu class. Data penting disembunyikan dan hanya bisa diubah lewat pintu yang disediakan.</p></div>
+  <div class="card"><h4><span class="ikon">2</span>Pewarisan</h4><p>Class baru dibuat dari class yang sudah ada. Ia mewarisi semua isinya, lalu menambah atau mengubah sebagian.</p></div>
+  <div class="card"><h4><span class="ikon">3</span>Polimorfisme</h4><p>Satu perintah yang sama, misalnya <code>Luas</code>, dijalankan dengan cara berbeda menurut jenis objeknya: lingkaran, persegi, atau segitiga.</p></div>
+</div>
+
+<p>Ketiga ide ini sering disebut tiga pilar OOP. Setiap pilar punya program contohnya sendiri di bab ini.</p>
+
+<div class="info"><p><b>Turbo Pascal 7 dan class.</b> Turbo Pascal 7 sudah mengenal OOP lewat kata <code>object</code>.
+Odin Turbo Pascal memakai bahasa TP7 secara bawaan, lalu memperluasnya dengan <code>class</code> gaya Delphi dan Free
+Pascal, yaitu bentuk OOP yang dipakai Pascal modern. Program TP7 lama tetap terkompilasi seperti biasa: kata seperti
+<code>class</code>, <code>property</code>, atau <code>override</code> hanya menjadi kata kunci di tempat yang memang
+tidak mungkin berisi nama variabel. Beberapa fitur Delphi belum tersedia, yaitu <i>exception</i>
+(<code>try</code>..<code>except</code>), <i>interface</i>, <i>generics</i>, <code>procedure of object</code>, dan variabel
+<code>Result</code>. Overload hanya berlaku untuk method.</p></div>
+
+<h2>Class dan Objek Pertama</h2>
+
+<p><b>Class</b> adalah cetakan, dan <b>objek</b> adalah benda yang dicetak darinya. Satu cetakan kue bisa menghasilkan
+banyak kue; satu class <code>TKucing</code> bisa menghasilkan banyak objek kucing, masing-masing dengan nama dan umurnya
+sendiri. Class ditulis di bagian <code>type</code>, mirip record, tetapi selain field ia juga memuat header
+<b>method</b>, yaitu prosedur dan fungsi milik class itu.</p>
+
+<div class="sintaks"><pre><b>type</b>
+  <i>TNamaClass</i> = <b>class</b>
+    <i>Field1</i>: <i>Tipe</i>;                <i>{ data milik setiap objek }</i>
+    <b>procedure</b> <i>Method1</i>;          <i>{ hanya header }</i>
+    <b>function</b> <i>Method2</i>: <i>Tipe</i>;
+  <b>end</b>;
+
+<b>procedure</b> <i>TNamaClass</i>.<i>Method1</i>;   <i>{ badan method: nama class, titik, nama method }</i>
+<b>begin</b>
+  ...
+<b>end</b>;</pre></div>
+
+<p>Nama class lazim diawali huruf <code>T</code> (dari <i>type</i>), seperti <code>TKucing</code>, <code>TLampu</code>,
+atau <code>TRekening</code>. Badan method ditulis sesudah deklarasi tipe, dengan nama class di depan nama method.
+Buka <code>oop_01_class_pertama.pas</code> lewat <span class="menu">File ▸ Examples - OOP...</span>.</p>
+
+<x-ide desktop menu="File" pick="Examples - OOP..." marks="dropdown" caption="Kesembilan program bab ini dibuka dari menu <b>File ▸ Examples - OOP...</b>"></x-ide>
+
+<x-listing src="oop_01_class_pertama.pas"></x-listing>
+
+<x-run src="oop_01_class_pertama.pas" caption="Satu objek kucing: dibuat, diubah, diberi nama baru lewat rujukan kedua, lalu dibebaskan"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>12–17</td><td>Deklarasi class <code>TKucing</code>: dua field (<code>Nama</code>, <code>Umur</code>) dan dua method (<code>Perkenalan</code>, <code>UlangTahun</code>). Di sini method hanya ditulis header-nya.</td></tr>
+    <tr><td>19–22</td><td>Badan <code>TKucing.Perkenalan</code>. Di dalam method, <code>Nama</code> dan <code>Umur</code> langsung berarti field milik objek yang sedang dipanggil, tanpa awalan apa pun.</td></tr>
+    <tr><td>24–28</td><td><code>UlangTahun</code> menambah <code>Umur</code> objek itu sendiri. Kucing lain tidak ikut bertambah umur.</td></tr>
+    <tr><td>31</td><td>Dua variabel bertipe <code>TKucing</code>. Pada titik ini belum ada objek sama sekali; variabel class baru berupa tempat menyimpan <b>rujukan</b>.</td></tr>
+    <tr><td>34</td><td><code>TKucing.Create</code> membuat objek baru di memori dan mengembalikan rujukannya. Constructor <code>Create</code> diwarisi dari <code>TObject</code>, induk semua class. Semua field objek baru bernilai nol atau kosong, sehingga baris 35 mencetak <code>Umur awal: 0</code>.</td></tr>
+    <tr><td>36–40</td><td>Field diisi dengan notasi titik, sama seperti record. Method juga dipanggil dengan titik: <code>Kucing.Perkenalan</code>. Setelah <code>UlangTahun</code>, umurnya menjadi 3.</td></tr>
+    <tr><td>42–44</td><td><code>Sama := Kucing</code> <b>tidak</b> menyalin objek. Yang disalin hanya rujukannya, jadi <code>Sama</code> dan <code>Kucing</code> menunjuk objek yang sama. Mengubah <code>Sama.Nama</code> ikut mengubah nama yang dicetak lewat <code>Kucing</code>.</td></tr>
+    <tr><td>46</td><td><code>ClassName</code> juga diwarisi dari <code>TObject</code>; isinya nama class objek, <code>TKucing</code>.</td></tr>
+    <tr><td>47</td><td><code>Free</code> membebaskan memori objek. Karena hanya ada satu objek, cukup satu kali <code>Free</code>; jangan memanggil <code>Sama.Free</code> lagi.</td></tr>
+  </tbody>
+</table>
+
+<figure class="grafik" id="gb-rujukan-objek">
+<svg viewBox="0 0 680 210">
+  <rect class="box" x="10" y="20" width="200" height="170" rx="10"/>
+  <text class="h c" x="24" y="44">class TKucing</text>
+  <text class="xs muted" x="24" y="60">cetakan (tipe), bukan data</text>
+  <text class="mono s" x="24" y="84">Nama: String;</text>
+  <text class="mono s" x="24" y="100">Umur: Integer;</text>
+  <text class="mono s" x="24" y="124">procedure Perkenalan;</text>
+  <text class="mono s" x="24" y="140">procedure UlangTahun;</text>
+  <text class="xs muted" x="24" y="172">Create membuat objek dari cetakan ini</text>
+  <path class="arrow" d="M210 105 H286"/>
+  <text class="s muted mid" x="248" y="96">Create</text>
+  <rect class="ok" x="290" y="50" width="170" height="110" rx="10"/>
+  <text class="b" x="304" y="72">objek TKucing</text>
+  <text class="xs muted" x="304" y="86">di memori dinamis</text>
+  <rect class="box-w" x="304" y="96" width="142" height="22" rx="4"/>
+  <text class="mono s" x="312" y="111">Nama = 'Si Belang'</text>
+  <rect class="box-w" x="304" y="124" width="142" height="22" rx="4"/>
+  <text class="mono s" x="312" y="139">Umur = 3</text>
+  <rect class="io" x="540" y="40" width="130" height="44" rx="8"/>
+  <text class="mono b mid" x="605" y="60">Kucing</text>
+  <text class="xs mid" x="605" y="74">variabel: rujukan</text>
+  <rect class="io" x="540" y="126" width="130" height="44" rx="8"/>
+  <text class="mono b mid" x="605" y="146">Sama</text>
+  <text class="xs mid" x="605" y="160">Sama := Kucing</text>
+  <path class="arrow" d="M540 62 H500 V90 H464"/>
+  <path class="arrow" d="M540 148 H500 V122 H464"/>
+  <text class="s b mid" x="605" y="196" style="fill:#b42318">dua rujukan, satu objek</text>
+</svg>
+<figcaption>Class adalah cetakan. <code>Create</code> membuat objek di memori; variabel hanya menyimpan rujukan ke objek itu.</figcaption>
+</figure>
+
+<div class="ingat"><p>Variabel class mirip pointer di Bab 18: isinya alamat sebuah objek, bukan objeknya. Karena itu
+penugasan <code>A := B</code> antara dua variabel class membuat keduanya menunjuk objek yang sama. Berbeda dengan record,
+yang disalin seluruh isinya. Bedanya dengan pointer, Anda tidak perlu menulis <code>^</code>: <code>Kucing.Nama</code>
+sudah otomatis mengikuti rujukannya.</p></div>
+
+<div class="coba"><p>Tambahkan variabel <code>Kitty: TKucing</code>, buat objeknya dengan <code>TKucing.Create</code>, isi
+nama dan umurnya, lalu panggil <code>Kitty.Perkenalan</code>. Sekarang ada dua objek yang benar-benar terpisah.
+Jangan lupa <code>Kitty.Free</code> di akhir program.</p></div>
+
+<h2>Constructor dan Destructor</h2>
+
+<p>Objek yang baru dibuat semua field-nya nol. Sering kali kita ingin objek langsung siap pakai, misalnya lampu yang
+sudah tahu letaknya. Untuk itu class boleh punya <b>constructor</b> sendiri, yaitu method khusus yang dijalankan saat
+objek dibuat. Pasangannya, <b>destructor</b>, dijalankan tepat sebelum memori objek dikembalikan. Destructor sebuah
+class selalu bernama <code>Destroy</code> dan ditandai <code>override</code>, karena ia menggantikan
+<code>Destroy</code> milik <code>TObject</code>.</p>
+
+<div class="alur">
+  <div><span class="ikon">1</span><b>Create</b>memori dipesan, field dinolkan, constructor mengisi nilai awal</div>
+  <div><span class="ikon">2</span><b>Dipakai</b>field dibaca dan diubah, method dipanggil</div>
+  <div><span class="ikon">3</span><b>Free</b>memeriksa rujukan; bila bukan <code>nil</code>, memanggil <code>Destroy</code></div>
+  <div><span class="ikon">4</span><b>Destroy</b>membereskan objek, lalu memorinya dikembalikan</div>
+</div>
+
+<x-listing src="oop_02_constructor_destructor.pas"></x-listing>
+
+<x-run src="oop_02_constructor_destructor.pas" caption="Pesan dari constructor muncul saat objek dibuat, pesan dari destructor saat objek dibebaskan"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>14–15</td><td>Header constructor dan destructor. <code>constructor Create(const ARuang: String)</code> menerima letak lampu. Awalan <code>A</code> pada nama parameter (<i>argument</i>) adalah kebiasaan untuk membedakannya dari field <code>Ruang</code>.</td></tr>
+    <tr><td>19–25</td><td>Badan constructor. <code>inherited Create</code> menjalankan constructor induknya (<code>TObject</code>) lebih dulu, lalu field diisi dan pesan dicetak.</td></tr>
+    <tr><td>27–33</td><td>Destructor mematikan lampu bila masih menyala, mencetak pesan, lalu memanggil <code>inherited Destroy</code> sebagai langkah terakhir, supaya induknya ikut membereskan bagiannya.</td></tr>
+    <tr><td>35–42</td><td><code>Tekan</code> membalik keadaan dengan <code>not</code>, seperti saklar.</td></tr>
+    <tr><td>48–49</td><td>Objek dibuat dengan constructor buatan sendiri: <code>TLampu.Create('ruang tamu')</code>. Dua baris pertama keluaran berasal dari sini.</td></tr>
+    <tr><td>50–52</td><td>Lampu tamu dinyalakan, lampu dapur dinyalakan lalu dipadamkan lagi.</td></tr>
+    <tr><td>53–54</td><td><code>Free</code> memanggil <code>Destroy</code>. Lampu tamu masih menyala, jadi ia "dimatikan dulu"; lampu dapur sudah padam, jadi langsung dilepas.</td></tr>
+    <tr><td>55–56</td><td>Rujukan diisi <code>nil</code>, lalu <code>Free</code> dipanggil lagi. <code>Free</code> memeriksa <code>nil</code> lebih dulu, sehingga tidak terjadi apa-apa.</td></tr>
+  </tbody>
+</table>
+
+<div class="awas"><p>Bebaskan objek dengan <code>Free</code>, jangan dengan <code>Destroy</code> secara langsung.
+<code>Free</code> aman untuk rujukan <code>nil</code>; <code>Destroy</code> pada rujukan <code>nil</code> menghentikan
+program dengan <i>runtime error</i> 216. Satu lagi: setelah <code>Free</code>, rujukannya tidak otomatis menjadi
+<code>nil</code>. Jangan memakai objek yang sudah dibebaskan.</p></div>
+
+<h2>Enkapsulasi dan Property</h2>
+
+<p>Pada <code>TKucing</code>, siapa pun boleh menulis <code>Kucing.Umur := -5</code>. Untuk kucing itu mungkin tidak
+berbahaya, tetapi untuk rekening bank jelas berbahaya: saldo tidak boleh diubah sembarangan, hanya lewat setoran dan
+penarikan. Class bisa membagi isinya menjadi beberapa bagian dengan <b>tingkat akses</b> yang berbeda.</p>
+
+<table class="data">
+  <caption>Tingkat akses anggota class</caption>
+  <thead><tr><th>Bagian</th><th>Boleh dipakai oleh</th><th>Kegunaan</th></tr></thead>
+  <tbody>
+    <tr><td><code>private</code></td><td>class itu sendiri (dan unit atau program tempat class ditulis)</td><td>data dan method pembantu yang tidak boleh disentuh pihak luar</td></tr>
+    <tr><td><code>protected</code></td><td>class itu dan semua turunannya</td><td>bagian yang perlu dipakai class turunan, tetapi bukan pihak luar</td></tr>
+    <tr><td><code>public</code></td><td>siapa saja</td><td>"tombol" yang boleh ditekan semua pihak</td></tr>
+  </tbody>
+</table>
+
+<p>Data <code>private</code> dibuka ke luar lewat <b>property</b>. Property terlihat seperti field, tetapi Anda menentukan
+apa yang terjadi saat ia dibaca (<code>read</code>) dan ditulis (<code>write</code>). Keduanya boleh langsung ke field,
+atau lewat method yang memeriksa nilainya lebih dulu. Property tanpa <code>write</code> hanya bisa dibaca.</p>
+
+<div class="sintaks"><pre><b>property</b> <i>Nama</i>: <i>Tipe</i> <b>read</b> <i>FieldAtauFungsi</i> <b>write</b> <i>FieldAtauProsedur</i>;
+<b>property</b> <i>Nama</i>: <i>Tipe</i> <b>read</b> <i>FieldAtauFungsi</i>;          <i>{ hanya baca }</i></pre></div>
+
+<x-listing src="oop_03_enkapsulasi_property.pas"></x-listing>
+
+<x-run src="oop_03_enkapsulasi_property.pas" caption="Nama kosong diganti oleh setter, setoran negatif dan penarikan melebihi saldo ditolak"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>12–16</td><td>Bagian <code>private</code>: tiga field dan method <code>SetPemilik</code>. Nama field diawali <code>F</code> (<i>field</i>), kebiasaan agar mudah dibedakan dari property-nya.</td></tr>
+    <tr><td>17–23</td><td>Bagian <code>public</code>. <code>Pemilik</code> dibaca langsung dari <code>FPemilik</code> tetapi ditulis lewat <code>SetPemilik</code>. <code>Saldo</code> dan <code>Mutasi</code> tidak punya <code>write</code>, jadi hanya bisa dibaca.</td></tr>
+    <tr><td>29</td><td>Constructor mengisi <code>Pemilik</code>, bukan <code>FPemilik</code>, supaya nilai awal juga melewati pemeriksaan di <code>SetPemilik</code>.</td></tr>
+    <tr><td>32–38</td><td><code>SetPemilik</code> menolak nama kosong dan menggantinya dengan <code>'(tanpa nama)'</code>. Itulah sebabnya baris pertama keluaran berbunyi demikian.</td></tr>
+    <tr><td>40–46</td><td><code>Setor</code> keluar dengan <code>Exit</code> bila jumlahnya tidak positif. Hanya setoran yang sah menambah saldo dan menaikkan <code>FMutasi</code>.</td></tr>
+    <tr><td>48–56</td><td><code>Tarik</code> adalah fungsi yang memberi tahu berhasil atau tidak. Nilai awalnya <code>False</code>; baru menjadi <code>True</code> di akhir bila penarikan sah.</td></tr>
+    <tr><td>62–71</td><td>Pemakaian dari luar. Setoran 150000 diterima, setoran -5000 ditolak diam-diam, penarikan 200000 ditolak, penarikan 50000 berhasil. Saldo akhir 100000 dengan 2 mutasi.</td></tr>
+    <tr><td>72</td><td>Baris komentar ini sengaja tidak dijalankan. Bila tanda komentarnya dihapus, kompiler menolak program; lihat galatnya di akhir bab.</td></tr>
+  </tbody>
+</table>
+
+<figure class="grafik" id="gb-enkapsulasi">
+<svg viewBox="0 0 680 200">
+  <rect class="box" x="200" y="12" width="280" height="176" rx="12"/>
+  <text class="h c" x="216" y="36">objek TRekening</text>
+  <rect class="no" x="226" y="52" width="228" height="74" rx="8"/>
+  <text class="b" x="238" y="72">private</text>
+  <text class="mono s" x="238" y="92">FPemilik  FSaldo  FMutasi</text>
+  <text class="xs muted" x="238" y="112">tidak bisa disentuh dari luar</text>
+  <text class="xs muted" x="216" y="150">public: property dan method</text>
+  <text class="xs muted" x="216" y="164">adalah satu-satunya pintu</text>
+  <rect class="io" x="10" y="30" width="150" height="36" rx="8"/>
+  <text class="mono s mid" x="85" y="52">R.Pemilik := 'Siti'</text>
+  <path class="arrow" d="M160 48 H222"/>
+  <text class="xs mid" x="190" y="42">setter</text>
+  <rect class="io" x="10" y="84" width="150" height="36" rx="8"/>
+  <text class="mono s mid" x="85" y="106">R.Setor(150000)</text>
+  <path class="arrow" d="M160 102 H222"/>
+  <text class="xs mid" x="190" y="96">periksa</text>
+  <rect class="ok" x="520" y="30" width="150" height="36" rx="8"/>
+  <text class="mono s mid" x="595" y="52">WriteLn(R.Saldo)</text>
+  <path class="arrow" d="M458 70 H500 V48 H516"/>
+  <text class="xs mid" x="490" y="82">read</text>
+  <rect class="no" x="520" y="120" width="150" height="40" rx="8"/>
+  <text class="mono s mid" x="595" y="138">R.Saldo := 1000000</text>
+  <text class="xs mid" x="595" y="152" style="fill:#b42318">ditolak kompiler</text>
+  <path class="dash" d="M516 140 H484" style="stroke:#b42318"/>
+</svg>
+<figcaption>Enkapsulasi: data <code>private</code> hanya bisa diubah lewat property dan method yang memeriksanya.</figcaption>
+</figure>
+
+<div class="tip"><p>Biasakan tiga kebiasaan penamaan ini, karena dipakai di seluruh dunia Pascal: field
+<code>private</code> diawali <code>F</code>, parameter constructor diawali <code>A</code>, dan method pengubah property
+diawali <code>Set</code> (pembacanya <code>Get</code>). Dengan begitu, sekali lihat Anda tahu jenis setiap nama.</p></div>
+
+<h2>Pewarisan</h2>
+
+<p>Mobil dan sepeda sama-sama kendaraan: keduanya punya merek dan jumlah roda. Daripada menulis field yang sama dua kali,
+kita buat class umum <code>TKendaraan</code>, lalu <b>menurunkan</b> <code>TMobil</code> dan <code>TSepeda</code> darinya.
+Class turunan mewarisi semua field dan method induknya, lalu menambah miliknya sendiri. Nama induk ditulis dalam kurung:
+<code>TMobil = class(TKendaraan)</code>. Class tanpa kurung otomatis turunan <code>TObject</code>.</p>
+
+<figure class="grafik" id="gb-pohon-class">
+<svg viewBox="0 0 680 200">
+  <rect class="box-w" x="250" y="8" width="180" height="40" rx="8"/>
+  <text class="b mid" x="340" y="26">TObject</text>
+  <text class="xs mid muted" x="340" y="40">Create, Free, ClassName, ...</text>
+  <rect class="box" x="230" y="76" width="220" height="50" rx="8"/>
+  <text class="b c mid" x="340" y="96">TKendaraan</text>
+  <text class="mono xs mid" x="340" y="114">FRoda (protected), Merek, Info</text>
+  <rect class="ok" x="70" y="148" width="230" height="44" rx="8"/>
+  <text class="b mid" x="185" y="166">TMobil</text>
+  <text class="mono xs mid" x="185" y="182">+ Penumpang, InfoLengkap</text>
+  <rect class="ok" x="380" y="148" width="230" height="44" rx="8"/>
+  <text class="b mid" x="495" y="166">TSepeda</text>
+  <text class="mono xs mid" x="495" y="182">hanya constructor sendiri</text>
+  <path class="arrow" d="M340 76 V52"/>
+  <path class="arrow" d="M185 148 V137 H340 V130"/>
+  <path class="line" d="M495 148 V137 H340"/>
+  <text class="s muted" x="350" y="66">turunan dari</text>
+</svg>
+<figcaption>Pohon class Program 21.4. Panah menunjuk ke induk; setiap turunan mewarisi isi semua leluhurnya.</figcaption>
+</figure>
+
+<x-listing src="oop_04_pewarisan.pas"></x-listing>
+
+<x-run src="oop_04_pewarisan.pas" caption="Mobil dan sepeda memakai method warisan <code>Info</code>; <code>InheritsFrom</code> memeriksa hubungan induk-turunan"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>13–20</td><td>Class induk. <code>FRoda</code> berada di bagian <code>protected</code>: turunan boleh mengubahnya, pihak luar tidak. <code>Merek</code>, constructor, dan <code>Info</code> bersifat <code>public</code>.</td></tr>
+    <tr><td>22–26</td><td><code>TMobil</code> turunan <code>TKendaraan</code>. Ia menambah field <code>Penumpang</code>, constructor dengan dua parameter, dan method <code>InfoLengkap</code>.</td></tr>
+    <tr><td>28–30</td><td><code>TSepeda</code> hanya punya constructor sendiri. Semua isi lainnya warisan.</td></tr>
+    <tr><td>39–45</td><td><code>Info</code> ditulis sekali di induk. <code>Str</code> mengubah angka menjadi string agar bisa digabung dengan <code>+</code>.</td></tr>
+    <tr><td>47–52</td><td>Constructor <code>TMobil</code> memanggil <code>inherited Create(AMerek)</code>: bagian induk (merek) disiapkan oleh constructor induk, lalu <code>TMobil</code> mengisi bagiannya sendiri. <code>FRoda</code> boleh diubah karena <code>protected</code>.</td></tr>
+    <tr><td>54–60</td><td><code>InfoLengkap</code> memanggil <code>Info</code> warisan, lalu menambah keterangan penumpang.</td></tr>
+    <tr><td>76</td><td><code>S.Info</code>: <code>TSepeda</code> tidak menulis <code>Info</code>, tetapi tetap bisa memanggilnya karena mewarisinya.</td></tr>
+    <tr><td>77–79</td><td><code>ClassParent</code> memberi class induk, dan <code>InheritsFrom</code> menjawab apakah sebuah class turunan class lain. <code>TSepeda</code> bukan turunan <code>TMobil</code>; keduanya "bersaudara".</td></tr>
+  </tbody>
+</table>
+
+<div class="ingat"><p>Pewarisan menjawab pertanyaan "<i>adalah</i>". Mobil <i>adalah</i> kendaraan, jadi
+<code>TMobil</code> pantas menjadi turunan <code>TKendaraan</code>. Mobil <i>punya</i> mesin, tetapi mobil bukan mesin;
+untuk hubungan "<i>punya</i>" pakailah field bertipe class lain, seperti keranjang yang punya daftar produk di akhir
+bab ini.</p></div>
+
+<h2>Polimorfisme: virtual, override, abstract</h2>
+
+<p>Lingkaran, persegi, dan segitiga sama-sama bangun datar, dan semuanya punya luas. Rumusnya saja yang berbeda. Kita
+ingin menyimpan ketiganya dalam satu larik bertipe <code>TBangun</code>, lalu cukup menulis <code>Bangun[I].Luas</code>,
+dan setiap bangun menghitung luasnya dengan rumusnya sendiri. Kemampuan inilah yang disebut <b>polimorfisme</b>
+("banyak bentuk").</p>
+
+<p>Kuncinya ada pada tiga kata. Method <b><code>virtual</code></b> dipilih saat program berjalan menurut class objek yang
+sebenarnya, bukan menurut tipe variabelnya. Turunan menggantinya dengan <b><code>override</code></b>. Method
+<b><code>abstract</code></b> tidak punya badan sama sekali: induk hanya berjanji bahwa method itu ada, dan setiap turunan
+wajib mengisinya.</p>
+
+<figure class="grafik" id="gb-polimorfisme">
+<svg viewBox="0 0 680 220">
+  <text class="h c" x="10" y="22">Bangun: array[1..3] of TBangun</text>
+  <rect class="io" x="10" y="36" width="120" height="40" rx="6"/><text class="mono b mid" x="70" y="61">Bangun[1]</text>
+  <rect class="io" x="10" y="96" width="120" height="40" rx="6"/><text class="mono b mid" x="70" y="121">Bangun[2]</text>
+  <rect class="io" x="10" y="156" width="120" height="40" rx="6"/><text class="mono b mid" x="70" y="181">Bangun[3]</text>
+  <path class="arrow" d="M130 56 H186"/><path class="arrow" d="M130 116 H186"/><path class="arrow" d="M130 176 H186"/>
+  <rect class="ok" x="190" y="36" width="160" height="40" rx="6"/><text class="b mid" x="270" y="54">TLingkaran</text><text class="mono xs mid" x="270" y="68">R = 7</text>
+  <rect class="ok" x="190" y="96" width="160" height="40" rx="6"/><text class="b mid" x="270" y="114">TPersegi</text><text class="mono xs mid" x="270" y="128">Sisi = 5</text>
+  <rect class="ok" x="190" y="156" width="160" height="40" rx="6"/><text class="b mid" x="270" y="174">TSegitigaSiku</text><text class="mono xs mid" x="270" y="188">Alas = 3, Tinggi = 4</text>
+  <rect class="navy" x="410" y="20" width="260" height="190" rx="10"/>
+  <text class="mono code-fg" x="424" y="44">Bangun[I].Luas</text>
+  <text class="xs" x="424" y="62" style="fill:#c9d4ff">dipilih saat berjalan menurut objeknya:</text>
+  <text class="mono code-fg" x="424" y="96">Pi * R * R</text><text class="mono code-fg end" x="656" y="96">153.94</text>
+  <text class="mono code-fg" x="424" y="136">Sisi * Sisi</text><text class="mono code-fg end" x="656" y="136">25.00</text>
+  <text class="mono code-fg" x="424" y="176">Alas * Tinggi / 2</text><text class="mono code-fg end" x="656" y="176">6.00</text>
+  <path class="dash" d="M350 56 H380 V92 H418"/><path class="dash" d="M350 116 H380 V132 H418"/><path class="dash" d="M350 176 H418"/>
+</svg>
+<figcaption>Satu panggilan <code>Bangun[I].Luas</code>, tiga rumus. Method virtual dipilih menurut class objeknya.</figcaption>
+</figure>
+
+<x-listing src="oop_05_polimorfisme.pas"></x-listing>
+
+<x-run src="oop_05_polimorfisme.pas" caption="Tabel bangun dicetak oleh satu method <code>Cetak</code> milik induk"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>12–17</td><td><code>TBangun</code> adalah class abstrak: <code>Nama</code>, <code>Luas</code>, dan <code>Keliling</code> bertanda <code>virtual; abstract;</code> dan tidak punya badan. Hanya <code>Cetak</code> yang punya badan.</td></tr>
+    <tr><td>19–41</td><td>Tiga turunan. Masing-masing punya field dan constructor sendiri, lalu mengisi ketiga method abstrak dengan <code>override</code>.</td></tr>
+    <tr><td>43–48</td><td><code>Cetak</code> ditulis sekali di induk dan memanggil <code>Nama</code>, <code>Luas</code>, <code>Keliling</code>. Yang terpanggil adalah versi milik class objeknya, padahal <code>Cetak</code> tidak tahu apa-apa tentang lingkaran atau persegi.</td></tr>
+    <tr><td>61–69</td><td>Rumus lingkaran memakai konstanta bawaan <code>Pi</code>.</td></tr>
+    <tr><td>109–112</td><td>Keliling segitiga siku-siku: alas + tinggi + sisi miring, dengan sisi miring dari teorema Pythagoras (<code>Sqrt</code>).</td></tr>
+    <tr><td>115</td><td>Larik bertipe induk. Setiap elemen boleh berisi objek turunan apa pun dari <code>TBangun</code>.</td></tr>
+    <tr><td>120–122</td><td>Tiga objek berbeda class dimasukkan ke larik yang sama.</td></tr>
+    <tr><td>125–129</td><td>Perulangan tidak memeriksa jenis bangun sama sekali. <code>Bangun[I].Cetak</code> dan <code>Bangun[I].Luas</code> otomatis memilih rumus yang tepat.</td></tr>
+    <tr><td>131–132</td><td>Setiap objek dibebaskan sendiri-sendiri.</td></tr>
+  </tbody>
+</table>
+
+<div class="tip"><p>Untuk menambah bangun baru, misalnya trapesium, Anda cukup menulis class <code>TTrapesium</code>
+yang meng-<code>override</code> tiga method itu. Perulangan di program utama dan method <code>Cetak</code> tidak perlu
+diubah sedikit pun. Inilah keuntungan terbesar polimorfisme: kode lama tidak tersentuh ketika jenis baru ditambahkan.</p></div>
+
+<h2>Class Var, Class Method, dan class of</h2>
+
+<p>Field biasa dimiliki setiap objek: tiap kucing punya namanya sendiri. Kadang kita butuh satu data untuk seluruh class,
+misalnya jumlah hewan yang sedang hidup. Itulah <b><code>class var</code></b>. Dengan cara yang sama,
+<b><code>class function</code></b> adalah method yang dipanggil lewat nama class tanpa perlu membuat objek, misalnya
+<code>TAnjing.Suara</code>.</p>
+
+<p>Tipe <b><code>class of</code></b> lebih unik lagi: variabelnya tidak menyimpan objek, melainkan sebuah <i>class</i>.
+Program bisa memilih class mana yang akan dibuat saat berjalan, misalnya menurut pilihan pengguna. Agar constructor
+milik class terpilih yang dijalankan, constructor induknya harus <code>virtual</code>.</p>
+
+<table class="data">
+  <caption>Milik objek atau milik class</caption>
+  <thead><tr><th>Bentuk</th><th>Contoh</th><th>Dipanggil lewat</th><th>Jumlah salinan</th></tr></thead>
+  <tbody>
+    <tr><td>field biasa</td><td><code>Nama: String;</code></td><td>objek: <code>Kandang[1].Nama</code></td><td>satu per objek</td></tr>
+    <tr><td><code>class var</code></td><td><code>class var Jumlah: Integer;</code></td><td>class: <code>THewan.Jumlah</code></td><td>satu untuk seluruh class</td></tr>
+    <tr><td>method biasa</td><td><code>procedure Tekan;</code></td><td>objek: <code>Tamu.Tekan</code></td><td>bekerja pada satu objek</td></tr>
+    <tr><td><code>class function</code></td><td><code>class function Suara: String;</code></td><td>class atau objek: <code>TAnjing.Suara</code></td><td>tidak butuh objek</td></tr>
+    <tr><td><code>class of</code></td><td><code>THewanClass = class of THewan;</code></td><td>variabel berisi class: <code>Jenis.Create</code></td><td>memilih class saat berjalan</td></tr>
+  </tbody>
+</table>
+
+<x-listing src="oop_06_class_method_dan_class_of.pas"></x-listing>
+
+<x-run src="oop_06_class_method_dan_class_of.pas" caption="Empat hewan dibuat dari class yang dipilih saat berjalan; <code>Jumlah</code> naik saat dibuat dan turun saat dibebaskan"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>14–15</td><td><code>THewan = class;</code> adalah deklarasi awal (<i>forward</i>), supaya <code>THewanClass = class of THewan</code> bisa ditulis sebelum isi <code>THewan</code> lengkap.</td></tr>
+    <tr><td>19–20</td><td><code>Nama</code> milik tiap objek, <code>Jumlah</code> milik class. Semua field sesudah <code>class var</code> sampai bagian berikutnya ikut menjadi class var, karena itu <code>public</code> ditulis lagi di baris 21.</td></tr>
+    <tr><td>22</td><td>Constructor <code>virtual</code>. Tanpa ini, <code>Jenis.Create</code> di baris 58 selalu menjalankan constructor <code>THewan</code>, dan pesan "kucing baru lahir" tidak pernah muncul.</td></tr>
+    <tr><td>24–25</td><td><code>Suara</code> adalah class function virtual yang di-override turunan. <code>Buat</code> adalah "pabrik": ia menerima sebuah class dan nama, lalu membuat objeknya.</td></tr>
+    <tr><td>37–47</td><td>Constructor menaikkan <code>Jumlah</code>, destructor menurunkannya. Jadi <code>Jumlah</code> selalu sama dengan banyak hewan yang masih hidup.</td></tr>
+    <tr><td>54–61</td><td><code>Jenis.Create</code> membuat objek dari class yang tersimpan di <code>Jenis</code>.</td></tr>
+    <tr><td>68–72</td><td>Constructor <code>TKucing</code> meng-override constructor induk dan mencetak pesan. Pesan ini muncul dua kali karena ada dua kucing.</td></tr>
+    <tr><td>88</td><td><code>TAnjing.Suara</code> dipanggil tanpa objek apa pun.</td></tr>
+    <tr><td>89–98</td><td>Untuk setiap huruf pilihan, <code>case</code> memilih class lalu menyimpannya di <code>Jenis</code>. <code>Jenis.ClassName</code> dipakai sebagai nama hewan.</td></tr>
+    <tr><td>99–104</td><td>Jumlah hewan 4, masing-masing bersuara menurut class-nya. Setelah semua dibebaskan, <code>Jumlah</code> kembali 0.</td></tr>
+  </tbody>
+</table>
+
+<h2>Daftar Objek dengan is dan as</h2>
+
+<p>Larik di Program 21.5 berukuran tetap, tiga elemen. Untuk jumlah objek yang berubah-ubah, Odin menyediakan unit
+<code>Contnrs</code> dengan class <code>TObjectList</code>, daftar yang bisa bertambah dan berkurang. Ia juga
+<i>memiliki</i> objek di dalamnya: saat sebuah objek dihapus dari daftar, atau daftarnya sendiri dibebaskan, objek itu
+ikut dibebaskan. Unit <code>Classes</code> menyediakan <code>TList</code> (daftar pointer) dan <code>TStringList</code>
+(daftar string) yang dipakai di program proyek nanti.</p>
+
+<p>Isi <code>TObjectList</code> bertipe <code>TObject</code>. Untuk memakainya sebagai buku atau majalah, kita perlu
+memeriksa dan mengubah tipenya.</p>
+
+<table class="data">
+  <caption>Memeriksa dan mengubah tipe objek</caption>
+  <thead><tr><th>Bentuk</th><th>Arti</th><th>Bila objeknya bukan class itu</th></tr></thead>
+  <tbody>
+    <tr><td><code>X is TBuku</code></td><td><code>True</code> bila <code>X</code> sebuah <code>TBuku</code> atau turunannya</td><td>hasilnya <code>False</code></td></tr>
+    <tr><td><code>(X as TBuku).Halaman</code></td><td>memakai <code>X</code> sebagai <code>TBuku</code>, dengan pemeriksaan</td><td><i>runtime error</i> 219</td></tr>
+    <tr><td><code>TBuku(X).Halaman</code></td><td>memakai <code>X</code> sebagai <code>TBuku</code> tanpa pemeriksaan</td><td>data yang terbaca kacau</td></tr>
+  </tbody>
+</table>
+
+<x-listing src="oop_07_is_as_daftar_objek.pas"></x-listing>
+
+<x-run src="oop_07_is_as_daftar_objek.pas" caption="Isi rak diperiksa satu per satu dengan <code>is</code>, lalu dipakai dengan <code>as</code>"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10–11</td><td><code>uses Contnrs;</code> menyediakan <code>TObjectList</code>.</td></tr>
+    <tr><td>14–24</td><td><code>TBarang</code> dengan dua turunan. <code>TBuku</code> dan <code>TMajalah</code> tidak menulis constructor; mereka memakai constructor warisan <code>TBarang</code>.</td></tr>
+    <tr><td>33–49</td><td>Dua fungsi pembantu yang membuat objek, mengisi field khususnya, lalu mengembalikan objek itu.</td></tr>
+    <tr><td>58–61</td><td>Daftar dibuat, lalu diisi tiga objek dengan <code>Add</code>. Tanpa parameter, <code>TObjectList.Create</code> memiliki objek-objeknya.</td></tr>
+    <tr><td>64–66</td><td>Indeks <code>TObjectList</code> mulai dari 0 sampai <code>Count - 1</code>. <code>Rak[I]</code> memberi objek ke-I bertipe <code>TObject</code>.</td></tr>
+    <tr><td>67</td><td><code>(X as TBarang).Judul</code>: setiap isi rak memang barang, jadi <code>as</code> selalu berhasil.</td></tr>
+    <tr><td>68–74</td><td><code>is</code> memeriksa jenisnya. Bila buku, field <code>Halaman</code> aman dibaca dengan <code>TBuku(X)</code> karena sudah diperiksa; bila majalah, edisinya dicetak.</td></tr>
+    <tr><td>79–81</td><td><code>Rak.Delete(1)</code> menghapus elemen kedua (majalah) sekaligus membebaskannya. <code>Rak.Free</code> membebaskan daftar beserta dua buku yang tersisa.</td></tr>
+  </tbody>
+</table>
+
+<div class="awas"><p>Indeks di luar <code>0..Count - 1</code> pada <code>TList</code>, <code>TObjectList</code>, atau
+<code>TStringList</code> menghentikan program dengan <i>runtime error</i> 201. Perulangan yang benar ditulis
+<code>for I := 0 to Daftar.Count - 1 do</code>, bukan <code>1 to Count</code>.</p></div>
+
+<h2>Overload</h2>
+
+<p>Kadang ada beberapa cara wajar untuk membuat objek yang sama. Waktu bisa dibuat dari jam dan menit, dari total menit,
+atau sebagai 00:00. Dengan <b><code>overload</code></b>, beberapa method boleh memakai nama yang sama asalkan daftar
+parameternya berbeda. Kompiler memilih versi yang paling cocok dengan argumen yang diberikan. Di Odin Turbo Pascal,
+overload hanya berlaku untuk method, tidak untuk prosedur dan fungsi biasa.</p>
+
+<x-listing src="oop_08_overload.pas"></x-listing>
+
+<x-run src="oop_08_overload.pas" caption="Tiga constructor dan dua method <code>Tambah</code> dengan nama yang sama"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>13–17</td><td>Tiga constructor <code>Create</code> (tanpa parameter, jam dan menit, total menit) dan dua <code>Tambah</code> (menit, objek waktu lain). Semuanya bertanda <code>overload</code>.</td></tr>
+    <tr><td>21–24</td><td><code>Create</code> tanpa parameter memanggil versi dua parameter: <code>Create(0, 0)</code>. Dengan begitu nilai awal hanya diatur di satu tempat.</td></tr>
+    <tr><td>33–36</td><td>Versi total menit memecahnya menjadi jam (<code>div 60</code>) dan menit (<code>mod 60</code>).</td></tr>
+    <tr><td>38–45</td><td><code>Tambah(M: Integer)</code> menghitung ulang dalam menit lalu memotongnya dengan <code>mod (24 * 60)</code>, supaya jam berputar kembali ke 00:00 setelah 23:59.</td></tr>
+    <tr><td>47–50</td><td><code>Tambah(Lain: TWaktu)</code> mengubah waktu lain menjadi menit, lalu memanggil versi pertama.</td></tr>
+    <tr><td>52–61</td><td><code>Teks</code> memformat dua digit: <code>Str(Jam:2, J)</code> memberi <code>' 7'</code>, lalu spasi di depan diganti <code>'0'</code>.</td></tr>
+    <tr><td>68–71</td><td>Kompiler memilih constructor menurut argumen. <code>Durasi</code> sengaja bertipe <code>LongInt</code> agar yang terpilih versi total menit.</td></tr>
+    <tr><td>73–78</td><td><code>B.Tambah(30)</code> memilih versi menit, <code>B.Tambah(C)</code> memilih versi objek. 25 jam setelah 00:00 adalah 01:00.</td></tr>
+  </tbody>
+</table>
+
+<h2>Proyek: Kasir Toko</h2>
+
+<p>Program terakhir merangkai semua yang sudah dipelajari. Sebuah toko menjual makanan dan barang elektronik. Makanan
+yang hampir kedaluwarsa didiskon 50%, barang elektronik dikenai pajak 10%. Keranjang belanja menyimpan produk, mengurutkan
+dari yang termurah, mencetak struk, dan mencatat setiap kejadian.</p>
+
+<figure class="grafik" id="gb-kasir-toko">
+<svg viewBox="0 0 680 250">
+  <rect class="box" x="10" y="10" width="260" height="120" rx="10"/>
+  <text class="h c" x="24" y="32">TProduk (abstrak)</text>
+  <text class="mono xs" x="24" y="52">private FKode, FNama, FHarga</text>
+  <text class="mono xs" x="24" y="68">class var Nomor</text>
+  <text class="mono xs" x="24" y="84">HargaJual: virtual; abstract;</text>
+  <text class="mono xs" x="24" y="100">Keterangan: virtual;</text>
+  <text class="mono xs" x="24" y="116">property Kode, Nama, Harga</text>
+  <rect class="ok" x="10" y="170" width="120" height="70" rx="8"/>
+  <text class="b mid" x="70" y="190">TMakanan</text>
+  <text class="xs mid" x="70" y="208">diskon 50% bila</text>
+  <text class="xs mid" x="70" y="222">hampir kedaluwarsa</text>
+  <rect class="ok" x="150" y="170" width="120" height="70" rx="8"/>
+  <text class="b mid" x="210" y="190">TElektronik</text>
+  <text class="xs mid" x="210" y="208">pajak 10%,</text>
+  <text class="xs mid" x="210" y="222">garansi n bulan</text>
+  <path class="arrow" d="M70 170 V150 H140 V134"/>
+  <path class="line" d="M210 170 V150 H140"/>
+  <rect class="io" x="390" y="10" width="280" height="120" rx="10"/>
+  <text class="h" x="404" y="32">TKeranjang</text>
+  <text class="mono xs" x="404" y="52">FIsi: TObjectList</text>
+  <text class="mono xs" x="404" y="68">FCatatan: TStringList</text>
+  <text class="mono xs" x="404" y="84">Masukkan, UrutkanMurah, Total, CetakStruk</text>
+  <text class="mono xs" x="404" y="100">property Produk[I] (default)</text>
+  <text class="mono xs" x="404" y="116">property Jumlah, Catatan</text>
+  <path class="arrow" d="M390 70 H274"/>
+  <text class="s muted mid" x="332" y="62">punya banyak</text>
+  <rect class="dec" x="390" y="170" width="280" height="70" rx="8"/>
+  <text class="b" x="404" y="190">Destroy keranjang</text>
+  <text class="xs" x="404" y="208">FIsi.Free membebaskan semua produk,</text>
+  <text class="xs" x="404" y="222">FCatatan.Free membebaskan catatan</text>
+  <path class="dash" d="M530 130 V166"/>
+</svg>
+<figcaption>Rancangan class proyek kasir: pewarisan untuk jenis produk, kepemilikan untuk isi keranjang.</figcaption>
+</figure>
+
+<x-listing src="oop_09_proyek_toko.pas"></x-listing>
+
+<x-run src="oop_09_proyek_toko.pas" caption="Struk diurutkan dari harga jual termurah, diikuti catatan kejadian dari <code>TStringList</code>"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>11–12</td><td>Dua unit RTL: <code>Classes</code> untuk <code>TStringList</code>, <code>Contnrs</code> untuk <code>TObjectList</code>.</td></tr>
+    <tr><td>15–28</td><td><code>TProduk</code>: data <code>private</code> dibuka sebagai property hanya-baca. <code>Nomor</code> adalah class var penghitung kode produk. <code>HargaJual</code> abstrak, <code>Keterangan</code> virtual dengan badan bawaan.</td></tr>
+    <tr><td>30–46</td><td>Dua turunan, masing-masing dengan field <code>private</code> sendiri dan override <code>HargaJual</code> serta <code>Keterangan</code>.</td></tr>
+    <tr><td>48–64</td><td><code>TKeranjang</code>. Property <code>Produk[I]</code> bertanda <code>default</code>, sehingga <code>K[I]</code> atau <code>Self[I]</code> sama dengan <code>K.Produk[I]</code>.</td></tr>
+    <tr><td>68–75</td><td>Setiap produk baru menaikkan <code>Nomor</code> dan memakainya sebagai kode. Produk pertama berkode 1, dan seterusnya.</td></tr>
+    <tr><td>88–102</td><td>Makanan: harga jual separuh bila hampir kedaluwarsa. Bila tidak, <code>Keterangan</code> memakai versi induk lewat <code>inherited Keterangan</code> (string kosong).</td></tr>
+    <tr><td>110–121</td><td>Elektronik: harga ditambah sepersepuluhnya, keterangan menyebut garansi.</td></tr>
+    <tr><td>128–140</td><td>Fungsi pembanding untuk <code>Sort</code>: -1, 1, atau 0. Komentarnya menjelaskan mengapa tidak memakai selisih <code>HA - HB</code>: hasil fungsi bertipe <code>Integer</code> hanya sampai 32767.</td></tr>
+    <tr><td>142–154</td><td>Constructor membuat daftar dan catatan; destructor membebaskan keduanya. Karena <code>FIsi</code> memiliki produknya, semua produk ikut dibebaskan.</td></tr>
+    <tr><td>156–159</td><td>Pembaca property <code>Produk</code> memakai <code>as TProduk</code>, karena isi <code>TObjectList</code> bertipe <code>TObject</code>.</td></tr>
+    <tr><td>166–176</td><td><code>Masukkan</code> menambah produk dan mencatat nama class-nya. <code>UrutkanMurah</code> memanggil <code>Sort</code> dengan fungsi pembanding.</td></tr>
+    <tr><td>178–187</td><td><code>Total</code> menjumlahkan <code>Self[I].HargaJual</code>. Panggilan ini polimorfik: diskon atau pajak dihitung oleh class masing-masing produk.</td></tr>
+    <tr><td>189–201</td><td><code>CetakStruk</code> merapikan kolom: <code>'':17 - Length(P.Nama)</code> mencetak spasi sebanyak sisa lebar kolom nama.</td></tr>
+    <tr><td>208–220</td><td>Program utama hanya merangkai: mengisi keranjang, mengurutkan, mencetak struk dan catatan, lalu satu <code>K.Free</code> membereskan semuanya.</td></tr>
+  </tbody>
+</table>
+
+<div class="info"><p>Perhatikan betapa pendeknya program utama (baris 207–221). Semua rincian ada di dalam class, dan
+program utama membaca hampir seperti kalimat: masukkan, urutkan, cetak struk. Inilah tujuan OOP: program besar disusun
+dari objek-objek kecil yang masing-masing mengurus dirinya sendiri.</p></div>
+
+<div class="coba"><p>Tambahkan class <code>TMinuman</code> turunan <code>TProduk</code> yang memberi potongan Rp 1000 bila
+harganya di atas Rp 10000. Masukkan dua minuman ke keranjang. Bagian mana dari <code>TKeranjang</code> yang perlu diubah?
+Jawabannya: tidak ada.</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<p><b>Memakai objek sebelum dibuat.</b> Variabel class yang belum diisi <code>Create</code> belum menunjuk objek apa pun.
+Mengisi field-nya sama dengan mengikuti pointer <code>nil</code> di Bab 18.</p>
+
+<x-error name="lupa_create.pas" run caption="Lupa <code>Create</code>: program berhenti dengan <i>runtime error</i> 216">program lupa_create;
+
+type
+  TKucing = class
+    Nama: String;
+  end;
+
+var
+  Kucing: TKucing;
+
+begin
+  Kucing.Nama := 'Belang';
+  WriteLn(Kucing.Nama);
+end.</x-error>
+
+<p><b>Mengubah property hanya-baca.</b> Property tanpa <code>write</code> ditolak kompiler bila diberi nilai.</p>
+
+<x-error name="saldo.pas" caption="Property <code>Saldo</code> tidak punya <code>write</code>">program saldo;
+
+type
+  TRekening = class
+  private
+    FSaldo: LongInt;
+  public
+    property Saldo: LongInt read FSaldo;
+  end;
+
+var
+  R: TRekening;
+
+begin
+  R := TRekening.Create;
+  R.Saldo := 1000000;
+  R.Free;
+end.</x-error>
+
+<p><b>Menulis <code>virtual</code> padahal maksudnya <code>override</code>.</b> Method di turunan yang ditandai
+<code>virtual</code> lagi tidak menggantikan method induk, melainkan menyembunyikannya. Program tetap terkompilasi dengan
+peringatan, tetapi polimorfismenya hilang: anjing bersuara <code>...</code>.</p>
+
+<x-error name="lupa_override.pas" run caption="Peringatan kompiler patut dibaca: <code>H.Suara</code> memanggil versi <code>THewan</code>">program lupa_override;
+
+type
+  THewan = class
+    function Suara: String; virtual;
+  end;
+  TAnjing = class(THewan)
+    function Suara: String; virtual;
+  end;
+
+function THewan.Suara: String;
+begin
+  Suara := '...';
+end;
+
+function TAnjing.Suara: String;
+begin
+  Suara := 'guk guk';
+end;
+
+var
+  H: THewan;
+
+begin
+  H := TAnjing.Create;
+  WriteLn(H.Suara);
+  H.Free;
+end.</x-error>
+
+<p><b>Membuat objek dari class abstrak.</b> Kompiler mengizinkan <code>TBangun.Create</code>, tetapi memanggil method
+abstraknya menghentikan program dengan <i>runtime error</i> 211. Buatlah objek dari class turunan yang sudah mengisi
+semua method abstrak.</p>
+
+<x-error name="abstrak.pas" run caption="Method abstrak tidak punya badan untuk dijalankan">program abstrak;
+
+type
+  TBangun = class
+    function Luas: Real; virtual; abstract;
+  end;
+
+var
+  B: TBangun;
+
+begin
+  B := TBangun.Create;
+  WriteLn(B.Luas:0:2);
+  B.Free;
+end.</x-error>
+
+<p><b>Memakai <code>as</code> tanpa memeriksa.</b> Bila objeknya ternyata bukan class yang diminta, <code>as</code>
+menghentikan program. Periksa dulu dengan <code>is</code> bila jenisnya belum pasti.</p>
+
+<x-error name="salah_as.pas" run caption="Majalah bukan buku: <i>runtime error</i> 219 (<i>invalid typecast</i>)">program salah_as;
+
+type
+  TBarang = class
+    Judul: String;
+  end;
+  TBuku = class(TBarang)
+    Halaman: Integer;
+  end;
+  TMajalah = class(TBarang)
+    Edisi: String;
+  end;
+
+var
+  X: TBarang;
+
+begin
+  X := TMajalah.Create;
+  WriteLn((X as TBuku).Halaman);
+  X.Free;
+end.</x-error>
+
+<p><b>Lupa <code>overload</code>.</b> Dua method bernama sama tanpa tanda <code>overload</code> dianggap nama ganda.</p>
+
+<x-error name="tanpa_overload.pas" caption="Setiap versi method harus ditandai <code>overload</code>">program tanpa_overload;
+
+type
+  TWaktu = class
+    Jam: Integer;
+    procedure Tambah(M: Integer);
+    procedure Tambah(Lain: TWaktu);
+  end;
+
+procedure TWaktu.Tambah(M: Integer);
+begin
+  Jam := Jam + M div 60;
+end;
+
+procedure TWaktu.Tambah(Lain: TWaktu);
+begin
+  Jam := Jam + Lain.Jam;
+end;
+
+begin
+end.</x-error>
+
+<ul>
+  <li><b>Lupa membebaskan objek.</b> Setiap <code>Create</code> butuh pasangan <code>Free</code>, kecuali objek yang
+  dimiliki <code>TObjectList</code>. Memori yang tidak dibebaskan baru kembali saat program selesai.</li>
+  <li><b>Membebaskan objek dua kali</b>, misalnya lewat dua rujukan ke objek yang sama seperti <code>Kucing</code> dan
+  <code>Sama</code> di Program 21.1.</li>
+  <li><b>Lupa <code>inherited</code></b> di constructor dan destructor. Bagian milik induk tidak disiapkan atau tidak
+  dibereskan.</li>
+  <li><b>Menulis <code>inherited Destroy</code> di awal destructor.</b> Panggil di akhir, setelah bagian milik class
+  sendiri dibereskan.</li>
+</ul>
+
+<div class="rangkuman"><h2>Rangkuman</h2><ul>
+  <li><b>Class</b> adalah cetakan yang menyatukan field (data) dan method (perilaku); <b>objek</b> dibuat darinya dengan <code>Create</code> dan dibebaskan dengan <code>Free</code>.</li>
+  <li>Variabel class menyimpan <b>rujukan</b>. Penugasan antarvariabel class menyalin rujukan, bukan objeknya.</li>
+  <li>Constructor menyiapkan objek, destructor <code>Destroy</code> (dengan <code>override</code>) membereskannya. Keduanya memanggil versi induk lewat <code>inherited</code>.</li>
+  <li><code>private</code>, <code>protected</code>, dan <code>public</code> mengatur siapa boleh memakai anggota class; <b>property</b> membuka data lewat <code>read</code> dan <code>write</code> yang bisa diperiksa.</li>
+  <li><b>Pewarisan</b> (<code>class(TInduk)</code>) membuat class baru dari class lama; semua class berakar pada <code>TObject</code>.</li>
+  <li><b>Polimorfisme</b>: method <code>virtual</code> dipilih menurut class objek saat program berjalan; turunan menggantinya dengan <code>override</code>; method <code>abstract</code> wajib diisi turunan.</li>
+  <li><code>class var</code> dan <code>class function</code> milik class, bukan objek; <code>class of</code> menyimpan class yang dipilih saat berjalan.</li>
+  <li><code>is</code> memeriksa jenis objek, <code>as</code> memakainya sebagai class tertentu dengan pemeriksaan (galat 219 bila salah).</li>
+  <li><code>overload</code> membolehkan beberapa method bernama sama dengan parameter berbeda.</li>
+  <li><code>TObjectList</code> (unit <code>Contnrs</code>) dan <code>TStringList</code> (unit <code>Classes</code>) menyimpan daftar objek dan string dengan indeks mulai 0.</li>
+</ul></div>
+
+<div class="latihan"><h2>Latihan</h2><ol>
+  <li><span class="lv dasar">Dasar</span> Buat class <code>TPersegiPanjang</code> dengan field <code>Panjang</code> dan <code>Lebar</code> serta fungsi <code>Luas</code> dan <code>Keliling</code>. Buat dua objek dan cetak hasilnya.</li>
+  <li><span class="lv dasar">Dasar</span> Tambahkan constructor <code>Create(APanjang, ALebar: Real)</code> ke class latihan 1, lalu cetak pesan dari destructor saat objek dibebaskan.</li>
+  <li><span class="lv dasar">Dasar</span> Ubah Program 21.3 agar property <code>Saldo</code> bisa ditulis lewat setter <code>SetSaldo</code> yang menolak nilai negatif. Mengapa rancangan ini kurang baik untuk rekening bank sungguhan?</li>
+  <li><span class="lv menengah">Menengah</span> Turunkan <code>TMotor</code> dari <code>TKendaraan</code> di Program 21.4, dengan field <code>CC</code> (isi silinder) dan method <code>InfoLengkap</code>. Cetak hasil <code>TMotor.InheritsFrom(TKendaraan)</code>.</li>
+  <li><span class="lv menengah">Menengah</span> Tambahkan <code>TTrapesium</code> ke Program 21.5. Perhatikan bahwa <code>Cetak</code> dan perulangan utama tidak perlu diubah.</li>
+  <li><span class="lv menengah">Menengah</span> Pada Program 21.7, tambahkan class <code>TKomik</code> turunan <code>TBuku</code>. Apakah <code>X is TBuku</code> bernilai <code>True</code> untuk sebuah komik? Jelaskan mengapa.</li>
+  <li><span class="lv tantangan">Tantangan</span> Tulis class <code>TAntrean</code> yang menyimpan nama pelanggan dalam <code>TStringList</code>, dengan method <code>Masuk</code>, <code>Keluar</code> (mengambil nama paling depan), dan property <code>Panjang</code>. Uji dengan lima pelanggan.</li>
+  <li><span class="lv tantangan">Tantangan</span> Kembangkan proyek kasir: tambahkan method <code>Hapus(Kode: Integer)</code> ke <code>TKeranjang</code>, catat penghapusannya, dan cetak struk sebelum dan sesudah. Ingat bahwa <code>TObjectList.Delete</code> ikut membebaskan produknya.</li>
+</ol></div>

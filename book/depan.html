@@ -18,7 +18,8 @@ Naskah lengkap lisensi ada di berkas <code>LICENSE</code> yang menyertai Odin Tu
 
 <p>Odin Turbo Pascal, termasuk kode sumber buku ini, tersedia di <a href="https://github.com/Syamsuddin/ODIN-TURBO-PASCAL"><code>github.com/Syamsuddin/ODIN-TURBO-PASCAL</code></a>.</p>
 
-<p>Semua program contoh di buku ini tersedia di Odin Turbo Pascal melalui menu <b>File ▸ Examples</b>. Setiap listing
+<p>Semua program contoh di buku ini tersedia di Odin Turbo Pascal melalui menu <b>File ▸ Examples</b>,
+<b>File ▸ Examples - OOP</b>, dan <b>File ▸ Examples - Graph</b>. Setiap listing
 dicetak langsung dari berkas contoh tersebut, dan setiap keluaran program adalah hasil kompilasi dengan kompiler Odin
 lalu menjalankan program itu. Keluaran di komputer Anda bisa sedikit berbeda bila bergantung pada sistem operasi,
 prosesor, atau bilangan acak.</p>
@@ -47,12 +48,13 @@ nanti Anda pelajari.</p>
 <p>Masalahnya, Turbo Pascal asli adalah program DOS yang tidak lagi berjalan dengan nyaman di komputer masa kini.
 Karena itu saya membangun <b>Odin Turbo Pascal</b>: IDE bergaya klasik yang berjalan di macOS, Windows, dan Linux,
 lengkap dengan kompiler Odin yang menghasilkan program native, layar program 80×25, debugger, dan kumpulan program
-contoh. Buku ini adalah pasangan Odin Turbo Pascal. Ke-89 program contoh di dalamnya tersedia di menu
-<b>File ▸ Examples</b>, sehingga Anda bisa membaca penjelasan di buku sambil membuka, menjalankan, dan mengubah
-programnya sendiri.</p>
+contoh. Buku ini adalah pasangan Odin Turbo Pascal. Ke-112 program contoh di dalamnya tersedia di menu
+<b>File ▸ Examples</b>, <b>Examples - OOP</b>, dan <b>Examples - Graph</b>, sehingga Anda bisa membaca penjelasan di buku
+sambil membuka, menjalankan, dan mengubah programnya sendiri.</p>
 
-<p>Buku ini disusun sebagai tutorial bertahap dalam 20 bab yang dikelompokkan menjadi enam bagian, dari mengenal IDE dan
-menulis program pertama sampai menyelesaikan tiga proyek akhir yang utuh. Setiap konsep dijelaskan dengan bahasa
+<p>Buku ini disusun sebagai tutorial bertahap dalam 22 bab yang dikelompokkan menjadi tujuh bagian, dari mengenal IDE dan
+menulis program pertama sampai menyelesaikan tiga proyek akhir yang utuh, lalu melangkah ke pemrograman berorientasi
+objek dengan class dan grafik dengan unit Graph. Setiap konsep dijelaskan dengan bahasa
 sehari-hari, digambarkan dengan infografik berwarna, lalu dipraktikkan dengan program lengkap. Setiap program disertai
 keluarannya dan penjelasan baris demi baris. Di akhir bab tersedia rangkuman dan latihan bertingkat untuk menguji
 pemahaman.</p>
@@ -79,12 +81,12 @@ bab-bab sebelumnya. Bagian ini menjelaskan susunan buku dan arti tanda-tanda yan
 
 <h2>Peta Buku</h2>
 
-<p>Kedua puluh bab dikelompokkan menjadi enam bagian. Setiap bagian punya warna sendiri, dan warna itu dipakai pada
+<p>Dua puluh dua bab itu dikelompokkan menjadi tujuh bagian. Setiap bagian punya warna sendiri, dan warna itu dipakai pada
 judul, tabel, infografik, serta tab penanda bab di tepi kanan halaman, sehingga Anda selalu tahu sedang berada di
 bagian mana.</p>
 
 <figure class="grafik" id="gb-peta-buku">
-<svg viewBox="0 0 680 300">
+<svg viewBox="0 0 680 400">
   <g style="--c:#1d4ed8;--c-soft:#e8edfb">
     <rect class="term" x="0" y="10" width="216" height="130" rx="12"/>
     <text class="white xs b" x="16" y="34">BAGIAN I · BAB 1–5</text>
@@ -131,8 +133,15 @@ bagian mana.</p>
   <path class="arrow" d="M216 75 H228"/><path class="arrow" d="M448 75 H460"/>
   <path class="arrow" d="M572 140 V150 H108 V156"/>
   <path class="arrow" d="M216 225 H228"/><path class="arrow" d="M448 225 H460"/>
+  <g style="--c:#0e7c4a">
+    <rect class="term" x="0" y="310" width="680" height="84" rx="12"/>
+    <text class="white xs b" x="16" y="334">BAGIAN VII · BAB 21–22</text>
+    <text class="white h" x="16" y="358">Class dan Grafik</text>
+    <text class="white s" x="16" y="380">Pemrograman berorientasi objek dengan class, lalu menggambar garis, diagram, dan animasi dengan unit Graph</text>
+  </g>
+  <path class="arrow" d="M572 290 V300 H340 V306"/>
 </svg>
-<figcaption>Enam bagian buku. Ikuti panah: setiap bagian dibangun di atas bagian sebelumnya.</figcaption>
+<figcaption>Tujuh bagian buku. Ikuti panah: setiap bagian dibangun di atas bagian sebelumnya.</figcaption>
 </figure>
 
 <h2>Susunan Setiap Bab</h2>

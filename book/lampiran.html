@@ -225,7 +225,8 @@ tertangkap sebagai kode 201, bukan menghasilkan nilai yang salah secara diam-dia
 </section>
 
 <section data-key="lampiran-daftar-program" data-prefix="E" data-title="Daftar Program Contoh" data-color="#e2680b">
-<p>Kesembilan puluh berkas di <span class="menu">File ▸ Examples...</span>, urut sesuai bab. Angka di kanan adalah
+<p>Seluruh 113 berkas contoh, urut sesuai bab: 90 berkas di <span class="menu">File ▸ Examples...</span> (Bab 1–20),
+9 di <span class="menu">File ▸ Examples - OOP...</span> (Bab 21), dan 14 di <span class="menu">File ▸ Examples - Graph...</span> (Bab 22). Angka di kanan adalah
 halaman tempat listing lengkapnya dibahas.</p>
 [[DAFTAR-PROGRAM]]
 </section>
@@ -236,13 +237,17 @@ halaman tempat listing lengkapnya dibahas.</p>
   <dt>Algoritma</dt><dd>Urutan langkah yang jelas dan berhingga untuk menyelesaikan suatu masalah.</dd>
   <dt>Array</dt><dd>Kumpulan data bertipe sama yang disimpan berurutan dan diakses lewat indeks.</dd>
   <dt>Breakpoint</dt><dd>Titik henti yang dipasang pada sebuah baris agar debugger berhenti di situ.</dd>
+  <dt>Class</dt><dd>Cetakan objek yang menyatukan field (data) dan method (perilaku); objek dibuat darinya dengan <code>Create</code>.</dd>
+  <dt>Constructor</dt><dd>Method khusus yang menyiapkan objek baru, misalnya <code>Create</code>. Pasangannya destructor <code>Destroy</code>.</dd>
   <dt>Debugger</dt><dd>Alat untuk menjalankan program langkah demi langkah dan memeriksa nilai variabel.</dd>
   <dt>Deklarasi</dt><dd>Pengumuman nama (variabel, konstanta, tipe, prosedur) beserta sifatnya sebelum dipakai.</dd>
+  <dt>Destructor</dt><dd>Method khusus (<code>Destroy</code>) yang membereskan objek sebelum memorinya dikembalikan; dipanggil lewat <code>Free</code>.</dd>
   <dt>Direktif kompiler</dt><dd>Perintah untuk kompiler, ditulis di antara <code>{$ ... }</code>, misalnya <code>{$R+}</code>.</dd>
   <dt>Ekspresi</dt><dd>Gabungan nilai, variabel, dan operator yang menghasilkan sebuah nilai.</dd>
   <dt>Executable</dt><dd>Program hasil kompilasi yang bisa langsung dijalankan prosesor.</dd>
   <dt>Fungsi</dt><dd>Subprogram yang mengembalikan sebuah nilai.</dd>
   <dt>IDE</dt><dd>Lingkungan pengembangan terpadu: editor, kompiler, dan alat bantu dalam satu aplikasi.</dd>
+  <dt>Jendela grafik</dt><dd>Jendela <i>Odin • Graph</i> yang menampilkan piksel program yang memakai unit Graph.</dd>
   <dt>Kata tercadang</dt><dd>Kata yang maknanya sudah ditetapkan bahasa dan tidak boleh dipakai sebagai nama sendiri.</dd>
   <dt>Kode sumber</dt><dd>Teks program yang ditulis manusia, misalnya berkas <code>.pas</code>.</dd>
   <dt>Komentar</dt><dd>Catatan untuk pembaca manusia yang diabaikan kompiler, ditulis di antara <code>{ ... }</code>.</dd>
@@ -250,9 +255,16 @@ halaman tempat listing lengkapnya dibahas.</p>
   <dt>Kompilasi</dt><dd>Proses menerjemahkan kode sumber menjadi executable.</dd>
   <dt>Konstanta</dt><dd>Nilai bernama yang tidak berubah selama program berjalan.</dd>
   <dt>Linked list</dt><dd>Rangkaian node yang saling terhubung lewat pointer, bisa tumbuh dan menyusut saat program berjalan.</dd>
+  <dt>Method</dt><dd>Prosedur atau fungsi milik sebuah class, dipanggil lewat objek dengan notasi titik.</dd>
+  <dt>Objek</dt><dd>Benda yang dibuat dari sebuah class: menyimpan datanya sendiri dan bisa menjalankan method class itu.</dd>
+  <dt>Palet</dt><dd>Daftar warna yang menentukan warna nyata setiap nomor warna di layar grafik.</dd>
   <dt>Parameter</dt><dd>Data yang dikirim ke prosedur atau fungsi. Parameter nilai dikirim sebagai salinan, parameter <code>var</code> sebagai acuan.</dd>
+  <dt>Pewarisan</dt><dd>Pembuatan class baru (turunan) dari class yang sudah ada (induk); turunan mewarisi semua isi induknya.</dd>
+  <dt>Piksel</dt><dd>Titik terkecil gambar di layar grafik, beralamat koordinat <code>(X, Y)</code>.</dd>
   <dt>Pointer</dt><dd>Variabel yang menyimpan alamat variabel lain di memori.</dd>
+  <dt>Polimorfisme</dt><dd>Kemampuan satu panggilan method <code>virtual</code> menjalankan versi yang berbeda menurut class objeknya.</dd>
   <dt>Prosedur</dt><dd>Subprogram yang mengerjakan tugas tanpa mengembalikan nilai.</dd>
+  <dt>Property</dt><dd>Anggota class yang tampak seperti field, tetapi pembacaan dan penulisannya diatur lewat <code>read</code> dan <code>write</code>.</dd>
   <dt>Record</dt><dd>Tipe yang menggabungkan beberapa field bertipe berbeda menjadi satu kesatuan.</dd>
   <dt>Rekursi</dt><dd>Prosedur atau fungsi yang memanggil dirinya sendiri.</dd>
   <dt>Runtime error</dt><dd>Kesalahan yang terjadi saat program berjalan, menyebabkannya berhenti.</dd>

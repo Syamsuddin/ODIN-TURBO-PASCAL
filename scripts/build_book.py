@@ -10,18 +10,24 @@ Needs Google Chrome (or Chromium; $CHROME overrides) to print HTML to PDF, and P
 for the page numbers, running heads, bookmarks and page labels. Program runs need a pseudo-terminal,
 so run the script where PTYs are available (not inside the Claude Code sandbox).
 
-Sources in book/: depan.html (front matter), babNN.html (chapters 1-20), penutup.html, lampiran.html
-and buku.css. Listings are read from examples/ unchanged. Their output comes from compiling them with
+Sources in book/: depan.html (front matter), babNN.html (chapters 1-22), penutup.html, lampiran.html
+and buku.css. Listings are read unchanged from examples/ (chapters 1-20), examples-oop/ (chapter 21) and
+examples-graph/ (chapter 22). Their output comes from compiling them with
 odinpc and running them on an 80x25 PTY while the input is typed a line at a time, as a reader types
 it in the User screen. Runs are cached in book/.cache, keyed by source, input and odinpc. The runs of
-one chapter share a working folder in document order, so Bab 17 reads the file Bab 17.1 wrote.
+one chapter share a working folder in document order, so Bab 17 reads the file Bab 17.1 wrote. A program
+that uses Graph sends its framebuffer to a GraphChannel (odin/graphics.py), as in the IDE, and the book
+shows the picture the program had on screen before each key, in the Graph window.
 
 Tags the chapter sources use (expanded here; attributes in [] are optional):
   <x-listing src="F.pas" [lines="A-B"]></x-listing>
-      Program listing, numbered "Program N.M" after the file name babNN_MM_*.pas.
-  <x-run src="F.pas" [input="a\\nb\\n"] [keys="Down Enter Esc"] [shot="N"] [caption=".."]></x-run>
+      Program listing, numbered "Program N.M" after the file name babNN_MM_*.pas (oop_MM_*: 21.M, grafik_MM_*: 22.M).
+  <x-run src="F.pas" [input="a\\nb\\n"] [keys="Down Enter Right*20 Esc"] [wait="1.5"] [shot="N"] [user] [caption=".."]></x-run>
       The run in the User screen; typed input is highlighted. Without input/keys it types BOOK_INPUTS or
-      the input of EXAMPLE_RUNS in tests/test_core.py. Crt programs show screen N (1 = before the first key).
+      the input of EXAMPLE_RUNS in tests/test_core.py. Crt programs show screen N (1 = before the first key);
+      Graph programs show the Graph window before key N (without shot, before the last key), or with user
+      the User screen. wait: seconds before the first key (animations draw meanwhile; a Graph program is
+      silent on the terminal, so its runs otherwise count every Delay as waiting for a key).
   <x-ide [file="F.pas"|name="X.PAS"] [path=".."] [top="1"] [rows="16"] [cursor="L:C"] [menu="Run"] [pick=".."]
          [dialog="examples|messages"] [breakpoints="9,12"] [exec="9"] [error="6"] [watches="I: 3;N: 4"] [locals=".."] [stack=".."]
          [desktop] [dirty] [status=".."] [marks="menu,title,editor,gutter,keys,status"] caption="..">[code]</x-ide>
@@ -39,6 +45,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import base64
 import codecs
 import fcntl
 import hashlib
@@ -62,6 +69,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from odin import __author__, __copyright__, __version__, __version_tag__  # noqa: E402
 from odin.core import Settings, build, locate_toolchain, syntax_spans  # noqa: E402
+from odin.graphics import GraphChannel  # noqa: E402
 
 try:
     from odin.terminal import PALETTE, Screen
@@ -74,6 +82,9 @@ except ImportError:
 
 BOOK = ROOT / "book"
 EXAMPLES = ROOT / "examples"
+# The samples of the other File menu items, each with a chapter of its own: (folder, file prefix, chapter, menu item).
+EXTRA_EXAMPLES = [(ROOT / "examples-oop", "oop", 21, "Examples - OOP"),
+                  (ROOT / "examples-graph", "grafik", 22, "Examples - Graph")]
 OUTPUT = ROOT / "docs" / "Belajar_Pemrograman_Bahasa_Pascal.pdf"
 CACHE = BOOK / ".cache"
 
@@ -90,6 +101,7 @@ PARTS = [
     ("IV", "Struktur Data", "Menyimpan dan mengolah banyak data dengan array, string, record, enumerasi, subrange, dan set.", (11, 14), "#7c3aed"),
     ("V", "Pencarian dan Pengurutan", "Algoritma klasik untuk menemukan dan menyusun data, lengkap dengan perbandingan efisiensinya.", (15, 16), "#d0266e"),
     ("VI", "File, Pointer, Unit, dan Proyek Akhir", "Menyimpan data ke disk, memakai memori dinamis, membuat unit sendiri, dan merangkai semuanya dalam proyek.", (17, 20), "#3f3cbb"),
+    ("VII", "Class dan Grafik", "Melangkah lebih jauh: menyusun program dari objek dengan class, lalu menggambar di layar grafik dengan unit Graph.", (21, 22), "#0e7c4a"),
 ]
 CHAPTERS = {
     1: "Mengenal Pascal dan Odin Turbo Pascal", 2: "Struktur Program Pascal", 3: "Tipe Data, Variabel, dan Konstanta",
@@ -97,17 +109,20 @@ CHAPTERS = {
     8: "Berlatih Algoritma dengan Perulangan", 9: "Prosedur dan Fungsi", 10: "Rekursi", 11: "Array",
     12: "Mengolah String", 13: "Record", 14: "Enumerasi, Subrange, dan Set", 15: "Pencarian Data",
     16: "Pengurutan Data", 17: "Bekerja dengan File", 18: "Pointer dan Linked List", 19: "Unit dan Layar Crt",
-    20: "Proyek Akhir",
+    20: "Proyek Akhir", 21: "Pemrograman Berorientasi Objek dengan Class", 22: "Grafik dengan Unit Graph",
 }
 # Input the book types where the tests' EXAMPLE_RUNS input is not the best demonstration. A callable
 # answers the program's output so far (the guessing game is played with a binary search).
 BOOK_INPUTS = {
     "bab08_06_tebak_angka": "tebak",
     "bab19_02_unit_crt": {"keys": "x"},
+    # Graph programs: one key after the picture is drawn (see the x-run wait attribute).
+    **{path.stem: {"keys": "Space"} for path in (ROOT / "examples-graph").glob("*.pas")},
 }
 # Where the IDE lives on a reader's Mac once Install.command has copied it (shown in status bars).
-APP_EXAMPLES = "~/Applications/Odin Turbo Pascal.app/Contents/Resources/examples"
+APP_RESOURCES = "~/Applications/Odin Turbo Pascal.app/Contents/Resources"
 QUIET = 0.35          # seconds without output before a sleeping program counts as waiting for input
+GRAPH_QUIET = 0.15    # the same for Graph programs, which take many keys and print nothing
 KEY_BYTES = {"Enter": b"\r", "Esc": b"\x1b", "Up": b"\x1b[A", "Down": b"\x1b[B", "Right": b"\x1b[C",
              "Left": b"\x1b[D", "Space": b" ", "Tab": b"\t", "Backspace": b"\x7f", "Home": b"\x1b[H",
              "End": b"\x1b[F", "F1": b"\x1bOP", "F2": b"\x1bOQ", "F10": b"\x1b[21~"}
@@ -178,23 +193,53 @@ def example_runs():
 EXAMPLE_RUNS = example_runs()
 
 
+def pascal_files(folder: Path) -> list[Path]:
+    return sorted(p for p in folder.iterdir() if p.suffix.lower() == ".pas")
+
+
 def example_files():
-    return sorted(p for p in EXAMPLES.iterdir() if p.suffix.lower() == ".pas")
+    """Every sample of the book in chapter order (matematika.pas with Bab 19)."""
+    paths = pascal_files(EXAMPLES) + [p for folder, *_ in EXTRA_EXAMPLES for p in pascal_files(folder)]
+    return sorted(paths, key=lambda p: (chapter_of(p), p.name))
+
+
+def example_path(name: str) -> Path:
+    for folder in [EXAMPLES] + [folder for folder, *_ in EXTRA_EXAMPLES]:
+        if (folder / name).exists():
+            return folder / name
+    return EXAMPLES / name
+
+
+def extra_example(path: Path):
+    return next((e for e in EXTRA_EXAMPLES if path.name.startswith(e[1] + "_")), None)
 
 
 def program_number(path: Path) -> str:
     m = re.match(r"bab(\d\d)_(\d\d)_", path.name)
-    return f"{int(m.group(1))}.{int(m.group(2))}" if m else ""
+    if m:
+        return f"{int(m.group(1))}.{int(m.group(2))}"
+    extra = extra_example(path)
+    m = re.match(r"[a-z]+_(\d\d)_", path.name)
+    return f"{extra[2]}.{int(m.group(1))}" if extra and m else ""
 
 
 def chapter_of(path: Path) -> int:
     m = re.match(r"bab(\d\d)_", path.name)
-    return int(m.group(1)) if m else 19          # matematika.pas belongs to Bab 19
+    if m:
+        return int(m.group(1))
+    extra = extra_example(path)
+    return extra[2] if extra else 19              # matematika.pas belongs to Bab 19
+
+
+def example_menu(path: Path) -> str:
+    extra = extra_example(path)
+    return extra[3] if extra else "Examples"
 
 
 def program_title(path: Path) -> str:
-    """The title in the header comment: '{ Bab 6.4 - case..of' gives 'case..of'."""
-    m = re.search(r"\{ Bab [\d.]+ - ([^\n}]*)", path.read_text(encoding="utf-8"))
+    """The title in the header comment: '{ Bab 6.4 - case..of' gives 'case..of', '{ OOP 1 - Class pertama'
+    gives 'Class pertama'."""
+    m = re.search(r"\{ (?:Bab [\d.]+|OOP \d+|Grafik \d+) - ([^\n}]*)", path.read_text(encoding="utf-8"))
     return m.group(1).strip() if m else path.stem
 
 
@@ -251,16 +296,25 @@ def highlight(text: str) -> list[str]:
     return lines
 
 
+FOLD = 86     # columns of a listing line that fit the page; a longer line folds under its own indentation
+
+
 def code_block(text: str, numbers=True, first=1, marks=None, css="code") -> str:
     """Navy editor-style block; marks maps a line number to an extra row class (error, exec)."""
     marks = marks or {}
     rows = []
+    raw = text.rstrip("\n").split("\n")
     for n, line in enumerate(highlight(text.rstrip("\n")), start=1):
         if n < first:
             continue
         cls = "row " + marks.get(n, "")
+        style = ""
+        if len(raw[n - 1]) > FOLD:
+            hang = len(raw[n - 1]) - len(raw[n - 1].lstrip(" ")) + 4
+            cls += " fold"
+            style = f' style="padding-left:calc(1mm + {hang}ch);text-indent:-{hang}ch"'
         number = f'<span class="ln">{n}</span>' if numbers else ""
-        rows.append(f'<div class="{cls.strip()}">{number}<span class="src">{line or " "}</span></div>')
+        rows.append(f'<div class="{cls.strip()}">{number}<span class="src"{style}>{line or " "}</span></div>')
     return f'<div class="{css}">{"".join(rows)}</div>'
 
 
@@ -285,20 +339,21 @@ def snapshot(screen) -> list:
     return rows
 
 
-def capture(argv, cwd, feeder, limit=40):
+def capture(argv, cwd, feeder, limit=40, graph=None, quiet=QUIET, wait=0.0):
     """Runs argv on an 80x25 PTY with echo off. When the program sleeps without output it is waiting for
     input: feeder(output so far) gives (bytes, shown) to type, or None. Returns segments [["out"|"in", text]],
-    screens (one before each input and one at the end) and the exit code."""
+    screens (one before each input and one at the end), pictures (the Graph window before each input,
+    with graph, a GraphChannel) and the exit code. No input is typed in the first wait seconds."""
     master, slave = os.openpty()
     fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 25, 80, 0, 0))
     attrs = termios.tcgetattr(slave)
     attrs[3] &= ~termios.ECHO
     termios.tcsetattr(slave, termios.TCSANOW, attrs)
-    env = dict(os.environ, TERM="xterm", COLUMNS="80", LINES="25")
+    env = dict(os.environ, TERM="xterm", COLUMNS="80", LINES="25", **(graph.env() if graph else {}))
     proc = subprocess.Popen(argv, cwd=cwd, stdin=slave, stdout=slave, stderr=slave, start_new_session=True, env=env)
     os.close(slave)
     screen, decoder = Screen(), codecs.getincrementaldecoder("utf-8")("replace")
-    segments, screens, output = [], [], []
+    segments, screens, pictures, output = [], [], [], []
 
     def add(kind, text):
         if segments and segments[-1][0] == kind:
@@ -307,6 +362,7 @@ def capture(argv, cwd, feeder, limit=40):
             segments.append([kind, text])
 
     start = last = time.monotonic()
+    drawn = 0
     try:
         while True:
             ready, _, _ = select.select([master], [], [], 0.03)
@@ -330,13 +386,27 @@ def capture(argv, cwd, feeder, limit=40):
             now = time.monotonic()
             if now - start > limit:
                 raise RuntimeError(f"{argv[0]}: lebih dari {limit} detik")
-            if now - last > QUIET and sleeping(proc.pid):
+            if graph:
+                # New frames count as output (except in animations, which have a wait and never stop
+                # drawing), and the first key waits for the first picture: keys typed before the program
+                # reaches its drawing may be flushed when it starts.
+                if graph.version != drawn:
+                    drawn = graph.version
+                    if not wait:
+                        last = now
+                if not drawn:
+                    continue
+            if now - start < wait:
+                continue
+            if now - last > quiet and sleeping(proc.pid):
                 item = feeder("".join(output))
                 if item is None:
                     if now - last > 2:
                         raise RuntimeError(f"{Path(argv[0]).name} masih menunggu masukan, tetapi masukannya sudah habis")
                     continue
                 screens.append(snapshot(screen))
+                if graph:
+                    pictures.append(graph_picture(graph))
                 typed, shown = item
                 add("in", shown)
                 os.write(master, typed)
@@ -347,7 +417,17 @@ def capture(argv, cwd, feeder, limit=40):
         proc.wait()
         os.close(master)
     screens.append(snapshot(screen))
-    return segments, screens, proc.returncode
+    return segments, screens, pictures, proc.returncode
+
+
+def graph_picture(graph):
+    """The Graph window as [width, height, asp, base64 PNG], or None when no picture is shown."""
+    time.sleep(0.15)          # the frames the program sent just before it started to wait
+    picture = graph.snapshot()
+    if not picture or not picture[0]:
+        return None
+    _, width, height, asp, data = picture
+    return [width, height, asp, base64.b64encode(data).decode()]
 
 
 def line_feeder(text: str):
@@ -359,7 +439,11 @@ def line_feeder(text: str):
 
 
 def key_feeder(keys: str):
-    pending = [(KEY_BYTES.get(k, k.encode()), KEY_LABELS.get(k, k)) for k in keys.split()]
+    """Keys separated by spaces; Right*20 is the key Right twenty times."""
+    pending = []
+    for word in keys.split():
+        key, _, times = word.partition("*")
+        pending += [(KEY_BYTES.get(key, key.encode()), KEY_LABELS.get(key, key))] * int(times or 1)
     return lambda output: pending.pop(0) if pending else None
 
 
@@ -413,12 +497,16 @@ def compile_source(path: Path, chapter: int):
     return build(path, Settings(CACHE / "settings.json"), cache=CACHE / "bin" / f"bab{chapter:02}")
 
 
+def uses_graph(text: str) -> bool:
+    return bool(re.search(r"\buses\b[^;]*\bGraph\b", text, re.I))
+
+
 def capture_chapter(chapter: int, requests: list) -> list:
     """Runs of one chapter, in document order, sharing one working folder; cached as a whole."""
     if not requests:
         return []
-    key_data = [toolchain_stamp()] + [[(EXAMPLES / src).read_text(encoding="utf-8"), kind, value]
-                                      for src, kind, value in requests]
+    key_data = [toolchain_stamp()] + [[example_path(src).read_text(encoding="utf-8"), kind, value] + ([wait] if wait else [])
+                                      for src, kind, value, wait in requests]
     key = hashlib.sha256(json.dumps(key_data).encode()).hexdigest()[:20]
     cached = CACHE / "runs" / f"bab{chapter:02}-{key}.json"
     if cached.exists():
@@ -427,16 +515,29 @@ def capture_chapter(chapter: int, requests: list) -> list:
     shutil.rmtree(work, ignore_errors=True)
     work.mkdir(parents=True)
     results = []
-    for src, kind, value in requests:
-        result = compile_source(EXAMPLES / src, chapter)
+    for src, kind, value, wait in requests:
+        result = compile_source(example_path(src), chapter)
         if not result.success or not result.executable:
             raise SystemExit(f"{src} gagal dikompilasi:\n{result.output}")
         print(f"  jalankan {src}", flush=True)
+        graph = GraphChannel(lambda kind, value: None) if uses_graph(example_path(src).read_text(encoding="utf-8")) else None
         try:
-            segments, screens, code = capture([str(result.executable)], work, feeder_for(kind, value))
+            if graph:
+                segments, screens, pictures, code = capture([str(result.executable)], work, feeder_for(kind, value), limit=180,
+                                                            graph=graph, quiet=GRAPH_QUIET, wait=wait)
+            else:
+                segments, screens, pictures, code = capture([str(result.executable)], work, feeder_for(kind, value), wait=wait)
         except OSError as error:
             raise SystemExit(f"{src}: {error} (PTY perlu tersedia; jalankan di luar sandbox)")
-        results.append({"src": src, "segments": segments, "screens": screens, "code": code})
+        finally:
+            if graph:
+                graph.close()
+        run = {"src": src, "segments": segments, "screens": screens, "code": code}
+        if graph:
+            if not any(pictures):
+                raise SystemExit(f"{src}: jendela grafik tidak menerima gambar")
+            run["pictures"] = pictures
+        results.append(run)
     cached.parent.mkdir(parents=True, exist_ok=True)
     for old in cached.parent.glob(f"bab{chapter:02}-*.json"):
         old.unlink()
@@ -462,7 +563,7 @@ def compile_snippet(code: str, name: str, run: bool, typed: str):
     if run:
         if not result.executable:
             raise SystemExit(f"{name} di buku seharusnya terkompilasi:\n{result.output}")
-        segments, screens, exit_code = capture([str(result.executable)], folder, line_feeder(typed))
+        segments, screens, _, exit_code = capture([str(result.executable)], folder, line_feeder(typed))
         data.update(segments=segments, screens=screens, code=exit_code)
     cached.write_text(json.dumps(data), encoding="utf-8")
     return data
@@ -509,6 +610,16 @@ def screen_html(rows) -> str:
             parts.append(f'<span style="color:{PALETTE[fg]};background:{PALETTE[bg]}">{esc(text)}</span>')
         lines.append("".join(parts))
     return "\n".join(lines)
+
+
+def graph_window(picture) -> str:
+    """The Graph window of the IDE (odin/graphwindow.py) with the program's real pixels, zoomed like the
+    window zooms them: small modes doubled, and the height following the pixel aspect."""
+    width, height, asp, data = picture
+    zx = 1 if width >= 512 else 2 if width >= 256 else 4
+    zy = max(1, round(zx * 10000 / asp))
+    return (f'<div class="win graphwin">{mac_bar("Odin • Graph")}'
+            f'<img src="data:image/png;base64,{data}" alt="" style="aspect-ratio:{width * zx}/{height * zy}"></div>')
 
 
 def user_screen(body_html: str, crt=False) -> str:
@@ -586,7 +697,7 @@ def list_window(title, rows, style="") -> str:
 
 
 def dialog_examples(pick: str) -> str:
-    names = [p.name for p in example_files()]
+    names = [p.name for p in pascal_files(EXAMPLES)]
     index = names.index(pick) if pick in names else 0
     first = max(0, min(index - 6, len(names) - 13))
     rows = "".join(f'<div{" class=pick" if n == pick else ""}>{esc(n)}</div>' for n in names[first:first + 13])
@@ -631,9 +742,9 @@ def ide_figure(attrs: dict, inner: str) -> str:
             status = f"Odin Turbo Pascal {__version_tag__}   |   Created by {__author__}   |   F1 Help"
     else:
         if "file" in attrs:
-            path = EXAMPLES / attrs["file"]
+            path = example_path(attrs["file"])
             text = path.read_text(encoding="utf-8")
-            full = attrs.get("path", f"{APP_EXAMPLES}/{path.name}")
+            full = attrs.get("path", f"{APP_RESOURCES}/{path.parent.name}/{path.name}")
             title = path.name.upper()
         else:
             text = html.unescape(inner.strip("\n")) + "\n"
@@ -670,7 +781,7 @@ def ide_figure(attrs: dict, inner: str) -> str:
         desk.append(dialog_examples(attrs.get("pick", "bab01_01_halo_dunia.pas")) + mark("dialog", "right:22%;top:3em"))
     elif dialog == "messages":
         if "file" in attrs:
-            verdict = compile_snippet((EXAMPLES / attrs["file"]).read_text(encoding="utf-8"), attrs["file"], False, "")
+            verdict = compile_snippet(example_path(attrs["file"]).read_text(encoding="utf-8"), attrs["file"], False, "")
             name = attrs["file"]
         else:
             name = attrs.get("name", "NONAME01.PAS").lower()
@@ -715,7 +826,7 @@ def run_requests(text: str) -> list:
             attrs = attributes(attr_text)
             stem = Path(attrs["src"]).stem
             kind, value = run_input(stem, attrs)
-            requests.append((attrs["src"], kind, value))
+            requests.append((attrs["src"], kind, value, float(attrs.get("wait", 0))))
     return requests
 
 
@@ -738,6 +849,12 @@ class Expander:
             if run["src"] != attrs["src"]:
                 raise SystemExit(f"Urutan x-run kacau: {run['src']} != {attrs['src']}")
             caption = attrs.get("caption") or f"Keluaran <code>{esc(attrs['src'])}</code> di User screen"
+            if run.get("pictures") and "user" not in attrs:
+                # Without shot: the last picture, the one before the key that ends the program.
+                picture = run["pictures"][int(attrs["shot"]) - 1] if "shot" in attrs else [p for p in run["pictures"] if p][-1]
+                if not picture:
+                    raise SystemExit(f"x-run {attrs['src']}: tidak ada gambar grafik sebelum tombol ke-{attrs.get('shot', 1)}")
+                return f'<figure class="shot"{ident}>{graph_window(picture)}{self.caption(caption)}</figure>'
             if any("\x1b" in text for kind, text in run["segments"] if kind == "out"):
                 shot = int(attrs.get("shot", 1)) - 1
                 body = screen_html(run["screens"][shot])
@@ -768,7 +885,7 @@ class Expander:
         raise AssertionError(name)
 
     def listing(self, attrs):
-        path = EXAMPLES / attrs["src"]
+        path = example_path(attrs["src"])
         if not path.exists():
             raise SystemExit(f"x-listing: {path} tidak ada")
         self.listed.add(path.name)
@@ -783,7 +900,7 @@ class Expander:
         anchor = f' id="prog-{path.stem}"' if "lines" not in attrs else ""
         return (f'<figure class="listing"{anchor}><div class="listing-head"><span class="num">{label}</span>'
                 f'<span class="file">{esc(path.name)}</span><span class="desc">{esc(program_title(path))}</span>'
-                f'<span class="open">File ▸ Examples…</span></div>{code_block(text, first=first)}</figure>')
+                f'<span class="open">File ▸ {esc(example_menu(path))}…</span></div>{code_block(text, first=first)}</figure>')
 
     def error(self, attrs, code, ident):
         name = attrs.get("name", "salah.pas")
@@ -791,13 +908,15 @@ class Expander:
         marks = {line: "error" for _, line, _, kind, _ in verdict["diagnostics"] if kind in ("Error", "Fatal")}
         head = f'<div class="listing-head err"><span class="num">{esc(name)}</span><span class="desc">{esc(attrs.get("title", ""))}</span></div>'
         block = code_block(code, marks=marks)
+        messages = "".join(f'<div><b>{esc(f)}({l},{c})</b> {esc(k)}: {esc(m)}</div>' for f, l, c, k, m in verdict["diagnostics"])
         if "run" in attrs:
+            # A program that compiles may still get warnings; they are shown above its run.
             result = user_screen(transcript_html(verdict["segments"], verdict["code"]))
             caption = attrs.get("caption", f"Keluaran <code>{esc(name)}</code>")
-            return f'<figure class="listing error-demo"{ident}>{head}{block}</figure><figure class="shot">{result}{self.caption(caption)}</figure>'
+            warnings = f'<div class="diag"><span class="diag-label">Pesan kompiler</span>{messages}</div>' if messages else ""
+            return f'<figure class="listing error-demo"{ident}>{head}{block}{warnings}</figure><figure class="shot">{result}{self.caption(caption)}</figure>'
         if verdict["success"]:
             raise SystemExit(f"x-error {name}: program ini ternyata terkompilasi tanpa galat")
-        messages = "".join(f'<div><b>{esc(f)}({l},{c})</b> {esc(k)}: {esc(m)}</div>' for f, l, c, k, m in verdict["diagnostics"])
         caption = attrs.get("caption", "")
         return (f'<figure class="listing error-demo"{ident}>{head}{block}'
                 f'<div class="diag"><span class="diag-label">Pesan kompiler</span>{messages}</div>'
@@ -967,6 +1086,11 @@ def program_index(pages) -> str:
     return f'<div class="program-index">{"".join(rows)}</div>'
 
 
+def program_count() -> int:
+    """Programs, not units (matematika.pas)."""
+    return sum(1 for p in example_files() if program_number(p))
+
+
 def cover() -> str:
     logo = (ROOT / "assets" / "odin.png").as_uri()
     code = ("program HaloDunia;\n\nbegin\n  WriteLn('Halo, Dunia!');\n  WriteLn('Selamat datang di Odin Turbo Pascal.');\nend.\n")
@@ -981,7 +1105,7 @@ def cover() -> str:
     <div class="cv-screen"><div>Halo, Dunia!</div><div>Selamat datang di Odin Turbo Pascal.</div><div class="cv-cursor">_</div></div>
     <img class="cv-logo" src="{logo}" alt="">
   </div>
-  <div class="cv-chips"><span>20 Bab</span><span>89 Program Contoh</span><span>Infografik &amp; Latihan</span><span>Proyek Akhir</span></div>
+  <div class="cv-chips"><span>{len(CHAPTERS)} Bab</span><span>{program_count()} Program Contoh</span><span>Infografik &amp; Latihan</span><span>Proyek Akhir</span></div>
   <div class="cv-author"><b>{esc(__author__)}</b><span>{EMAIL}</span></div>
   <div class="cv-band"><span>ODIN TURBO PASCAL</span><span>Native Pascal IDE · macOS · Windows · Linux</span></div>
 </div>'''.replace("&lt;ODIN&gt;", "<b>ODIN</b>")
@@ -991,7 +1115,8 @@ def back_cover() -> str:
     logo = (ROOT / "assets" / "odin.png").as_uri()
     items = ["Memasang dan memakai IDE Odin Turbo Pascal", "Tipe data, operator, percabangan, dan perulangan",
              "Prosedur, fungsi, dan rekursi", "Array, string, record, enumerasi, dan set",
-             "Algoritma pencarian dan pengurutan", "File, pointer, linked list, dan unit", "Tiga proyek akhir yang utuh"]
+             "Algoritma pencarian dan pengurutan", "File, pointer, linked list, dan unit", "Tiga proyek akhir yang utuh",
+             "Class, pewarisan, dan polimorfisme", "Grafik, diagram, dan animasi dengan unit Graph"]
     checks = "".join(f"<li>{esc(i)}</li>" for i in items)
     return f'''<div class="backcover" id="sampul-belakang">
   <div class="cv-pattern"></div>
@@ -1002,7 +1127,8 @@ def back_cover() -> str:
     dan program lengkap yang bisa langsung dibuka dan dijalankan di Odin Turbo Pascal, IDE bergaya klasik yang
     berjalan di macOS, Windows, dan Linux.</p>
     <h3>Yang akan Anda kuasai</h3><ul>{checks}</ul>
-    <p>Semua 89 program contoh tersedia di menu <b>File ▸ Examples</b>, dan semua keluaran di buku ini adalah hasil
+    <p>Semua {program_count()} program contoh tersedia di menu <b>File ▸ Examples</b>, <b>Examples - OOP</b>, dan
+    <b>Examples - Graph</b>, dan semua keluaran di buku ini adalah hasil
     menjalankan program tersebut dengan kompiler Odin.</p>
   </div>
   <div class="bc-foot"><img src="{logo}" alt=""><div><b>{esc(__author__)}</b><span>{EMAIL}</span>
@@ -1094,11 +1220,13 @@ def check_scale(doc) -> None:
                 for span in line["spans"]:
                     if "Charter" in span["font"]:
                         sizes[round(span["size"], 1)] = sizes.get(round(span["size"], 1), 0) + len(span["text"])
-    if sizes:
+    # Shrinking scales every size, so body text at BODY_SIZE disappears. (The most common size is not always
+    # the body: chapters 21 and 22 have more text in their line tables, 9.4pt, than in paragraphs.)
+    body = sum(count for size, count in sizes.items() if abs(size - BODY_SIZE) <= .1)
+    if sizes and body < .1 * sum(sizes.values()):
         size = max(sizes, key=sizes.get)
-        if size < BODY_SIZE - .2:
-            raise SystemExit(f"Ada elemen yang lebih lebar dari halaman, sehingga Chrome mengecilkan seluruh buku "
-                             f"(huruf isi {size}pt, seharusnya {BODY_SIZE}pt). Cari figure, tabel, atau baris pre yang terlalu lebar.")
+        raise SystemExit(f"Ada elemen yang lebih lebar dari halaman, sehingga Chrome mengecilkan seluruh buku "
+                         f"(huruf isi {size}pt, seharusnya {BODY_SIZE}pt). Cari figure, tabel, atau baris pre yang terlalu lebar.")
 
 
 def anchor_pages(pdf: Path) -> tuple[dict, int]:
@@ -1176,8 +1304,8 @@ def overlay_html(plan) -> str:
             continue
         tab = ""
         if thumb:
-            slot = 21 if thumb == "L" else int(thumb)
-            tab = f'<div class="thumb" style="top:{30 + (slot - 1) * 11.5}mm">{thumb}</div>'
+            slot = len(CHAPTERS) + 1 if thumb == "L" else int(thumb)
+            tab = f'<div class="thumb" style="top:{24 + (slot - 1) * 10.9}mm">{thumb}</div>'
         pages.append(f'<div class="pg" style="{color_vars(color)}"><div class="head"><span>{esc(head[0])}</span>'
                      f'<span>{esc(head[1])}</span></div>{tab}<div class="foot"><span>{esc(TITLE)} · {esc(__author__)}</span>'
                      f'<b>{esc(label)}</b></div></div>')
@@ -1190,7 +1318,7 @@ body{font-family:"Avenir Next","Helvetica Neue",sans-serif}
 .head span:last-child{font-weight:500;color:#555;text-transform:none;letter-spacing:.01em;font-size:8pt}
 .foot{position:absolute;left:20mm;right:20mm;bottom:8.5mm;display:flex;justify-content:space-between;align-items:center;font-size:7.4pt;color:#888}
 .foot b{display:inline-block;min-width:9mm;text-align:center;background:var(--c);color:#fff;border-radius:3mm;padding:.9mm 2.4mm;font-size:8.4pt;font-weight:700}
-.thumb{position:absolute;right:0;width:7mm;height:10.5mm;background:var(--c);color:#fff;font-weight:800;font-size:8.5pt;
+.thumb{position:absolute;right:0;width:7mm;height:10mm;background:var(--c);color:#fff;font-weight:800;font-size:8.5pt;
  display:flex;align-items:center;justify-content:center;border-radius:2mm 0 0 2mm}"""
     return f'<!doctype html><html><head><meta charset="utf-8"><style>{css}</style></head><body>{"".join(pages)}</body></html>'
 

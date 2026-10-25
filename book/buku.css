@@ -210,6 +210,9 @@ figure.listing { break-inside: auto; }
 .code .row { display: flex; break-inside: avoid; }
 .code .ln { flex: 0 0 9mm; text-align: right; padding-right: 2.6mm; color: var(--ed-ln); user-select: none; }
 .code .src { white-space: pre; padding-left: 1mm; flex: 1; }
+/* A line wider than the page (some samples outside examples/ reach 108 columns) folds; code_block indents
+   the continuation under the line's own indentation. */
+.code .row.fold .src { white-space: pre-wrap; min-width: 0; }
 .code .row.error .src { background: #aa0000; }
 .code .row.error .src, .code .row.error .src span { color: #fff !important; }
 .code .row.exec .src { background: #00aa00; }
@@ -482,3 +485,9 @@ dl.istilah { break-inside: auto; }
 dl.istilah dt { break-after: avoid; }
 
 dl.istilah { font-size: 9.1pt; gap: 1.1mm 4mm; line-height: 1.42; }
+
+/* Graph window (programs that use the Graph unit): the real pixels the IDE shows */
+.graphwin { width: 148mm; max-width: 100%; background: #000; }
+.graphwin img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.duo .graphwin { width: 100%; }
+.duo .graphwin .mac { height: 4.4mm; font-size: 5.6pt; }

@@ -6,6 +6,10 @@ Semua perubahan penting pada Odin Turbo Pascal dicatat di berkas ini. Formatnya 
 
 ## [Unreleased]
 
+### Ditambahkan
+
+- Buku tutorial (**Help › Buku**) kini 484 halaman dengan **Bagian VII: Class dan Grafik**. **Bab 21** (Pemrograman Berorientasi Objek dengan Class) membahas kesembilan contoh **File › Examples - OOP**, dan **Bab 22** (Grafik dengan Unit Graph) membahas keempat belas contoh **File › Examples - Graph**. Gaya kedua bab sama dengan bab lain: tujuan pembelajaran, infografik, listing, keluaran, penjelasan baris demi baris, kesalahan yang sering terjadi dengan pesan `odinpc` asli, rangkuman, dan latihan. Gambar di Bab 22 adalah piksel jendela grafik yang sebenarnya: `scripts/build_book.py` menerima framebuffer program lewat `GraphChannel` seperti IDE. Peta buku, penutup, daftar program (113 berkas), dan glosarium ikut diperbarui. Baris listing yang lebih lebar dari halaman kini dilipat di bawah indentasinya sendiri.
+
 ### Diubah
 
 - **Antarmuka IDE berjendela modern** (cabang OTP-Win, `OTP_WIN_PLAN.md`), menggantikan tiruan layar DOS:

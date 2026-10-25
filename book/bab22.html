@@ -1,0 +1,659 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 Syams Ideris -->
+<ul class="tujuan">
+  <li>Menjelaskan cara kerja layar grafik: piksel, resolusi 640 x 480, dan sistem koordinat yang sumbu Y-nya mengarah ke bawah.</li>
+  <li>Menulis kerangka baku program grafik: <code>InitGraph</code>, <code>GraphResult</code>, menggambar, <code>ReadKey</code>, <code>CloseGraph</code>.</li>
+  <li>Menggambar garis, persegi panjang, lingkaran, busur, elips, dan segi banyak dengan warna dan gaya garis.</li>
+  <li>Mengisi bidang dengan <code>Bar</code>, <code>Bar3D</code>, <code>PieSlice</code>, <code>FillEllipse</code>, dan <code>FloodFill</code>, termasuk pola buatan sendiri.</li>
+  <li>Mengubah data dan rumus matematika menjadi gambar: grafik batang, diagram pai, kurva fungsi, himpunan Mandelbrot, dan jam analog.</li>
+  <li>Membuat animasi tanpa kedip dengan dua halaman, serta menggerakkan sprite dengan <code>GetImage</code>, <code>PutImage</code>, dan XOR.</li>
+  <li>Menggambar interaktif dengan <code>ReadKey</code> dan menulis teks dengan <code>OutTextXY</code>, <code>SetTextStyle</code>, dan <code>SetTextJustify</code>.</li>
+</ul>
+
+<p class="lead">Semua program di bab-bab sebelumnya bekerja di layar teks 80 kolom x 25 baris. Bab 19 sudah mewarnai
+layar itu dengan <code>Crt</code>, tetapi satuannya tetap satu karakter. Pada masa Turbo Pascal, unit <b>Graph</b>
+membuka pintu ke dunia yang jauh lebih halus: layar dibagi menjadi ratusan ribu titik kecil yang masing-masing bisa
+diwarnai. Dengan unit ini Anda bisa menggambar garis, lingkaran, grafik data, sampai animasi. Bab ini membahas keempat
+belas program dari menu <span class="menu">File ▸ Examples - Graph...</span>.</p>
+
+<h2>Layar Grafik dan Jendela Grafik</h2>
+
+<p>Gambar di layar grafik tersusun dari <b>piksel</b> (<i>picture element</i>), titik-titik kecil yang berjajar seperti
+ubin mozaik. Mode VGAHi, mode bawaan Odin, punya 640 piksel mendatar dan 480 piksel menurun, dengan 16 warna. Setiap
+piksel punya alamat berupa pasangan koordinat <code>(X, Y)</code>. Bedanya dengan pelajaran matematika: titik
+<code>(0, 0)</code> ada di <b>kiri atas</b>, dan Y bertambah ke <b>bawah</b>. Cara ini sama dengan <code>GotoXY</code>
+di Bab 19, hanya saja dimulai dari 0 dan satuannya piksel, bukan karakter.</p>
+
+<figure class="grafik" id="gb-koordinat-grafik">
+<svg viewBox="0 0 680 270">
+  <rect class="navy" x="60" y="30" width="320" height="230" rx="4"/>
+  <text class="mono b" x="64" y="22">(0, 0)</text>
+  <text class="mono b end" x="380" y="22">(639, 0)</text>
+  <text class="mono b" x="64" y="272">(0, 479)</text>
+  <path class="arrow" d="M60 30 H410" style="stroke:#3b7be0"/>
+  <text class="b" x="416" y="34" style="fill:#3b7be0">X</text>
+  <path class="arrow" d="M60 30 V266" style="stroke:#d64545"/>
+  <text class="b" x="40" y="262" style="fill:#d64545">Y</text>
+  <circle cx="220" cy="140" r="4" fill="#ffff55"/>
+  <path class="dash" d="M60 140 H216" style="stroke:#c9d4ff"/>
+  <path class="dash" d="M220 30 V136" style="stroke:#c9d4ff"/>
+  <text class="mono s" x="228" y="136" style="fill:#ffff55">PutPixel(320, 240, Yellow)</text>
+  <text class="xs mid" x="220" y="200" style="fill:#c9d4ff">GetMaxX = 639, GetMaxY = 479</text>
+  <rect class="box" x="450" y="30" width="220" height="230" rx="10"/>
+  <text class="h c" x="464" y="54">Layar teks vs grafik</text>
+  <text class="b s" x="464" y="80">Layar teks (Crt)</text>
+  <text class="s" x="464" y="96">80 x 25 sel karakter</text>
+  <text class="s" x="464" y="112">koordinat mulai (1, 1)</text>
+  <text class="s" x="464" y="128">GotoXY, Write</text>
+  <text class="b s" x="464" y="160">Layar grafik (Graph)</text>
+  <text class="s" x="464" y="176">640 x 480 piksel, 16 warna</text>
+  <text class="s" x="464" y="192">koordinat mulai (0, 0)</text>
+  <text class="s" x="464" y="208">Line, Circle, OutTextXY</text>
+  <text class="xs muted" x="464" y="240">Keduanya: Y bertambah ke bawah.</text>
+</svg>
+<figcaption>Koordinat layar grafik VGAHi. Titik <code>(320, 240)</code> berada tepat di tengah.</figcaption>
+</figure>
+
+<p>Di DOS, program grafik mengambil alih seluruh monitor. Di Odin Turbo Pascal, program yang memakai unit Graph membuka
+<b>jendela grafik</b> sendiri bernama <i>Odin • Graph</i>, yang menampilkan piksel sebenarnya. Jendela itu terbuka
+otomatis saat program memanggil <code>InitGraph</code>. Tombol yang Anda ketik di jendela itu diteruskan ke program,
+sehingga <code>ReadKey</code> dan <code>KeyPressed</code> bekerja seperti biasa. Jendela tertutup ketika program
+memanggil <code>CloseGraph</code>. Semua gambar di bab ini adalah isi jendela grafik yang sebenarnya, diambil saat
+program dijalankan untuk buku ini.</p>
+
+<div class="info"><p>Unit Graph di Odin adalah tiruan <i>clean-room</i> dari BGI (<i>Borland Graphics Interface</i>)
+Turbo Pascal 7. Nama prosedur dan parameternya sama, jadi program grafik TP7 lama umumnya langsung berjalan. Ada beberapa
+perbedaan: tidak ada berkas driver <code>*.BGI</code> atau font <code>*.CHR</code>, sehingga parameter ketiga
+<code>InitGraph</code> diabaikan dan semua font memakai satu font bitmap 8 x 8 yang diperbesar. Bila jendela grafik
+dimatikan (setelan <code>graph_window</code> di <code>settings.json</code> diubah menjadi <code>false</code>), gambar
+hanya tampil sebagai pratinjau kasar di User screen.</p></div>
+
+<h2>Program Grafik Pertama</h2>
+
+<p>Setiap program grafik mengikuti urutan yang sama. Hafalkan kerangka ini, karena keempat belas program di bab ini
+memakainya.</p>
+
+<div class="alur">
+  <div><span class="ikon">1</span><b>uses Crt, Graph</b>Graph untuk menggambar, Crt untuk <code>ReadKey</code></div>
+  <div><span class="ikon">2</span><b>InitGraph</b>membuka mode grafik, lalu periksa <code>GraphResult</code></div>
+  <div><span class="ikon">3</span><b>Menggambar</b><code>SetColor</code>, <code>Line</code>, <code>Circle</code>, ...</div>
+  <div><span class="ikon">4</span><b>ReadKey</b>menahan gambar sampai ada tombol</div>
+  <div><span class="ikon">5</span><b>CloseGraph</b>kembali ke layar teks</div>
+</div>
+
+<x-listing src="grafik_01_halo_grafik.pas"></x-listing>
+
+<x-run src="grafik_01_halo_grafik.pas" caption="Jendela grafik Program 22.1: persegi panjang, lingkaran, dua diagonal, dan teks"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>9</td><td><code>uses Crt, Graph;</code>. Graph menyediakan semua rutin gambar; Crt menyediakan <code>ReadKey</code> untuk menahan gambar.</td></tr>
+    <tr><td>12</td><td><code>Driver</code> dan <code>Mode</code> harus variabel <code>Integer</code>, karena <code>InitGraph</code> mengisinya dengan driver dan mode yang akhirnya dipakai.</td></tr>
+    <tr><td>15–16</td><td><code>Detect</code> meminta driver terbaik, yaitu VGA dengan mode VGAHi (640 x 480, 16 warna). Parameter ketiga adalah folder berkas driver; di Odin cukup string kosong.</td></tr>
+    <tr><td>17–21</td><td><code>GraphResult</code> memberi kode hasil operasi grafik terakhir. Bila bukan <code>grOk</code>, <code>GraphErrorMsg</code> menerjemahkannya menjadi pesan, lalu program berhenti dengan <code>Halt(1)</code>.</td></tr>
+    <tr><td>23–24</td><td><code>SetColor</code> memilih warna garis berikutnya. <code>Rectangle</code> menerima sudut kiri atas (100, 80) dan kanan bawah (540, 400).</td></tr>
+    <tr><td>26</td><td><code>Circle(320, 240, 120)</code>: pusat di tengah layar, jari-jari 120 piksel.</td></tr>
+    <tr><td>28–29</td><td>Dua diagonal persegi panjang dengan <code>Line(x1, y1, x2, y2)</code>. Keduanya berpotongan di pusat lingkaran.</td></tr>
+    <tr><td>32–33</td><td><code>OutTextXY</code> menulis teks dengan sudut kiri atasnya di titik yang diberikan.</td></tr>
+    <tr><td>35–36</td><td>Tanpa <code>ReadKey</code>, program langsung sampai di <code>CloseGraph</code> dan gambarnya hilang sebelum sempat dilihat.</td></tr>
+    <tr><td>37</td><td>Sesudah <code>CloseGraph</code>, <code>WriteLn</code> kembali menulis ke User screen.</td></tr>
+  </tbody>
+</table>
+
+<p>Setelah tombol ditekan, jendela grafik tertutup dan baris 37 menulis ke User screen:</p>
+
+<x-run src="grafik_01_halo_grafik.pas" user shot="2" caption="User screen sesudah <code>CloseGraph</code>: ukuran layar terbaca 0"></x-run>
+
+<div class="awas"><p>Angka yang tercetak 0, bukan 639 dan 479. <code>GetMaxX</code> dan <code>GetMaxY</code> hanya
+bermakna selama mode grafik masih aktif; sesudah <code>CloseGraph</code> tidak ada lagi layar grafik yang bisa diukur.
+Bila nilainya diperlukan sesudah grafik ditutup, simpan dulu dalam variabel sebelum <code>CloseGraph</code>, misalnya
+<code>MaksX := GetMaxX;</code>. Coba perbaiki Program 22.1 dengan cara itu.</p></div>
+
+<x-ide file="grafik_01_halo_grafik.pas" top="14" rows="14" cursor="24:3" caption="Program grafik diedit dan dijalankan seperti program lain: <kbd>Ctrl</kbd>+<kbd>F9</kbd> membuka jendela grafiknya"></x-ide>
+
+<h2>Garis, Gaya Garis, dan Titik Kini</h2>
+
+<p>Garis bisa digambar dengan dua cara. Cara pertama, <code>Line(x1, y1, x2, y2)</code>, menyebut kedua ujungnya.
+Cara kedua meniru pena: Graph mengingat <b>titik kini</b> (<i>current pointer</i>). <code>MoveTo</code> memindahkan pena
+tanpa menggambar, <code>LineTo(x, y)</code> menggambar dari titik kini ke titik tujuan, dan <code>LineRel(dx, dy)</code>
+menggambar sejauh <code>dx</code> ke kanan dan <code>dy</code> ke bawah. Setelah itu titik kini pindah ke ujung garis.
+Bentuk garis diatur oleh <code>SetLineStyle(Gaya, Pola, Tebal)</code>.</p>
+
+<table class="data">
+  <caption>Gaya garis untuk <code>SetLineStyle</code></caption>
+  <thead><tr><th>Konstanta</th><th>Nilai</th><th>Bentuk</th></tr></thead>
+  <tbody>
+    <tr><td><code>SolidLn</code></td><td>0</td><td>garis utuh</td></tr>
+    <tr><td><code>DottedLn</code></td><td>1</td><td>titik-titik</td></tr>
+    <tr><td><code>CenterLn</code></td><td>2</td><td>titik-garis (garis sumbu)</td></tr>
+    <tr><td><code>DashedLn</code></td><td>3</td><td>putus-putus</td></tr>
+    <tr><td><code>UserBitLn</code></td><td>4</td><td>pola 16 bit buatan sendiri dari parameter kedua</td></tr>
+    <tr><td><code>NormWidth</code>, <code>ThickWidth</code></td><td>1, 3</td><td>tebal garis: 1 atau 3 piksel</td></tr>
+  </tbody>
+</table>
+
+<x-listing src="grafik_02_garis_dan_gaya.pas"></x-listing>
+
+<x-run src="grafik_02_garis_dan_gaya.pas" caption="Empat gaya garis tipis (hijau) dan tebal (merah), dua pola buatan sendiri, dan zig-zag dengan <code>LineRel</code>"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>12</td><td>Nama keempat gaya disimpan dalam larik konstanta berindeks 0..3, sama dengan nilai konstanta gayanya.</td></tr>
+    <tr><td>23–33</td><td>Untuk setiap gaya <code>I</code>, satu garis tipis dan satu garis tebal digambar. Parameter kedua (pola) hanya dipakai <code>UserBitLn</code>, jadi di sini diisi 0. Jarak antarbaris 40 piksel dihitung dari <code>I * 40</code>.</td></tr>
+    <tr><td>37–40</td><td>Pola buatan sendiri. <code>$F0F0</code> dalam biner adalah <code>1111000011110000</code>: empat piksel menyala, empat padam. <code>$AAAA</code> (<code>1010...</code>) menyalakan setiap piksel kedua.</td></tr>
+    <tr><td>41</td><td>Gaya dikembalikan ke garis utuh. Setelan Graph berlaku sampai diubah lagi, jadi biasakan mengembalikannya.</td></tr>
+    <tr><td>47–49</td><td>Pena diletakkan di (150, 300), lalu delapan <code>LineRel</code> bergantian turun 90 dan naik 90 piksel, masing-masing 60 piksel ke kanan, membentuk zig-zag.</td></tr>
+  </tbody>
+</table>
+
+<h2>Bentuk Dasar</h2>
+
+<p>Selain garis, Graph menyediakan rutin untuk bentuk yang sering dipakai. Semua bentuk di bawah ini hanya menggambar
+<b>tepi</b> dengan warna dari <code>SetColor</code>; mengisi bidangnya dibahas di subbab berikutnya.</p>
+
+<table class="data">
+  <caption>Rutin bentuk dasar</caption>
+  <thead><tr><th>Rutin</th><th>Parameter</th></tr></thead>
+  <tbody>
+    <tr><td><code>Rectangle(x1, y1, x2, y2)</code></td><td>sudut kiri atas dan kanan bawah</td></tr>
+    <tr><td><code>Circle(x, y, r)</code></td><td>pusat dan jari-jari</td></tr>
+    <tr><td><code>Arc(x, y, awal, akhir, r)</code></td><td>busur lingkaran dari sudut <code>awal</code> sampai <code>akhir</code> (derajat)</td></tr>
+    <tr><td><code>Ellipse(x, y, awal, akhir, rx, ry)</code></td><td>elips (atau busurnya) dengan jari-jari mendatar <code>rx</code> dan tegak <code>ry</code></td></tr>
+    <tr><td><code>DrawPoly(n, titik)</code></td><td>segi banyak melewati <code>n</code> titik dari larik <code>PointType</code></td></tr>
+  </tbody>
+</table>
+
+<figure class="grafik" id="gb-sudut-busur">
+<svg viewBox="0 0 680 190">
+  <circle cx="110" cy="95" r="70" class="box-w"/>
+  <path class="line" d="M30 95 H190 M110 15 V175"/>
+  <path d="M170.6 60 A70 70 0 0 0 49.4 60" fill="none" stroke="#1a9e58" stroke-width="3"/>
+  <text class="b" x="196" y="99">0°</text>
+  <text class="b mid" x="110" y="12">90°</text>
+  <text class="b end" x="24" y="99">180°</text>
+  <text class="b mid" x="110" y="188">270°</text>
+  <text class="xs" x="160" y="52">30°</text>
+  <text class="xs end" x="62" y="52">150°</text>
+  <path class="arrow" d="M150 30 A80 80 0 0 0 70 30" style="stroke:#d64545"/>
+  <rect class="box" x="250" y="20" width="420" height="150" rx="10"/>
+  <text class="h c" x="266" y="46">Sudut pada Arc, Ellipse, dan PieSlice</text>
+  <text class="s" x="266" y="72">Sudut 0° ada di arah jam 3 (kanan).</text>
+  <text class="s" x="266" y="92">Sudut bertambah berlawanan arah jarum jam: 90° di atas,</text>
+  <text class="s" x="266" y="108">180° di kiri, 270° di bawah.</text>
+  <text class="s" x="266" y="134">Busur hijau adalah <tspan class="mono">Arc(470, 110, 30, 150, 60)</tspan></text>
+  <text class="s" x="266" y="150">dari Program 22.3: dari 30° sampai 150°.</text>
+</svg>
+<figcaption>Arah sudut di unit Graph mengikuti matematika, berlawanan dengan arah jarum jam.</figcaption>
+</figure>
+
+<x-listing src="grafik_03_bentuk_dasar.pas"></x-listing>
+
+<x-run src="grafik_03_bentuk_dasar.pas" caption="Enam bentuk dasar beserta nama rutinnya"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>12–13</td><td><code>PointType</code> adalah record bawaan Graph dengan field <code>X</code> dan <code>Y</code>. Segitiga butuh 4 titik dan bintang 6, karena titik terakhir harus sama dengan titik pertama agar bentuknya tertutup.</td></tr>
+    <tr><td>29</td><td>Busur dari 30° sampai 150° dengan pusat (470, 110): bagian atas sebuah lingkaran, seperti pelangi.</td></tr>
+    <tr><td>33</td><td><code>Ellipse</code> dari 0° sampai 360° adalah elips utuh. Jari-jari mendatar 70 dan tegak 35 membuatnya pipih.</td></tr>
+    <tr><td>36–41</td><td>Tiga sudut segitiga diisi satu per satu, titik keempat disalin dari titik pertama, lalu <code>DrawPoly(4, Segitiga)</code> menghubungkan keempatnya.</td></tr>
+    <tr><td>45–52</td><td>Bintang segi lima digambar tanpa mengangkat pena: urutan titiknya melompati satu titik setiap kali, sehingga garisnya saling bersilangan.</td></tr>
+  </tbody>
+</table>
+
+<h2>Warna dan Palet</h2>
+
+<p>Mode VGAHi punya 16 warna bernomor 0 sampai 15, dengan nama konstanta yang sama seperti di <code>Crt</code>:
+<code>Black</code>, <code>Blue</code>, <code>Green</code>, sampai <code>White</code>. Nomor warna sebenarnya hanyalah
+nomor laci di sebuah <b>palet</b>. Isi laci itu boleh diganti dengan <code>SetRGBPalette(Nomor, Merah, Hijau, Biru)</code>
+(masing-masing 0..63). Begitu isi laci berganti, <i>seluruh</i> piksel bernomor itu ikut berubah warna seketika, tanpa
+digambar ulang. Program berikut memakai cara ini untuk membuat warna yang bergerak.</p>
+
+<x-listing src="grafik_04_warna_dan_palet.pas"></x-listing>
+
+<x-run src="grafik_04_warna_dan_palet.pas" wait="1.5" caption="Enam belas nomor warna; warna 1 sampai 7 sudah diganti menjadi gradasi yang terus bergeser"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>17–19</td><td>Driver dan mode dipilih sendiri: <code>VGA</code> dan <code>VGAHi</code>. Hasilnya sama dengan <code>Detect</code>, tetapi lebih jelas tertulis.</td></tr>
+    <tr><td>23–31</td><td>Enam belas kotak dalam dua baris. <code>I mod 8</code> memberi kolom dan <code>I div 8</code> memberi baris, rumus yang sama dengan tabel perkalian di Bab 7. <code>SetFillStyle(SolidFill, I)</code> dan <code>Bar</code> mengisi kotak dengan warna <code>I</code>.</td></tr>
+    <tr><td>34–38</td><td>Pita tujuh kotak berwarna 1 sampai 7.</td></tr>
+    <tr><td>43–49</td><td>Selama belum ada tombol, isi laci 1 sampai 7 diganti setiap 120 milidetik. Rumus <code>(I + Geser) mod 8</code> membuat setiap laci mengambil tingkat warna laci sebelahnya, sehingga gradasinya tampak bergeser.</td></tr>
+    <tr><td>50</td><td><code>KeyPressed</code> hanya memeriksa ada tombol atau tidak; <code>ReadKey</code> mengambil tombolnya agar tidak tertinggal.</td></tr>
+  </tbody>
+</table>
+
+<div class="tip"><p>Perhatikan bahwa kotak berwarna 1 sampai 7 di baris atas ikut berubah, padahal yang diubah program
+hanya palet. Inilah ciri khas palet: gambar menyimpan <i>nomor</i> warna, dan palet menentukan warna apa yang tampil
+untuk nomor itu. Odin menampilkan campuran RGB yang dipilih program apa adanya di jendela grafik.</p></div>
+
+<h2>Isian, Pola, dan FloodFill</h2>
+
+<p>Rutin isian memakai warna dan pola dari <code>SetFillStyle(Pola, Warna)</code>. <code>Bar</code> mengisi persegi
+panjang tanpa tepi, <code>FillEllipse</code> mengisi elips, dan <code>PieSlice</code> mengisi juring (potongan pizza)
+yang tepinya digambar dengan warna garis. <code>FloodFill(x, y, Batas)</code> bekerja seperti ember cat di aplikasi
+menggambar: mulai dari titik <code>(x, y)</code>, cat menyebar ke segala arah sampai bertemu piksel berwarna
+<code>Batas</code>.</p>
+
+<x-listing src="grafik_05_isian_dan_pola.pas"></x-listing>
+
+<x-run src="grafik_05_isian_dan_pola.pas" caption="Dua belas pola bawaan, pola buatan sendiri, dan empat rutin isian"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>12–13</td><td>Nama kedua belas pola bawaan. Konstantanya bernama sama dengan akhiran <code>Fill</code>: <code>EmptyFill</code> (0), <code>SolidFill</code> (1), sampai <code>CloseDotFill</code> (11).</td></tr>
+    <tr><td>23–32</td><td>Dua belas kotak dalam dua baris enam kolom. Pola ke-<code>I</code> diberi warna <code>1 + I mod 15</code>; <code>EmptyFill</code> mengisi dengan warna latar, jadi kotak pertama tampak kosong.</td></tr>
+    <tr><td>35–38</td><td>Pola buatan sendiri bertipe <code>FillPatternType</code>, delapan byte untuk delapan baris piksel. <code>$FF</code> = <code>11111111</code> (baris penuh), <code>$81</code> = <code>10000001</code> (hanya kedua ujung). Polanya berupa kotak di dalam kotak.</td></tr>
+    <tr><td>42–48</td><td>Lingkaran kuning dibelah garis kuning. <code>FloodFill</code> dari (230, 280) mengisi setengah atas dengan merah, karena cat berhenti di garis kuning; dari (230, 330) mengisi setengah bawah dengan arsir.</td></tr>
+    <tr><td>54</td><td><code>FillEllipse</code> mengisi elips cokelat dengan tepi warna garis (putih).</td></tr>
+    <tr><td>58</td><td><code>PieSlice</code> dari 30° sampai 330° menyisakan celah 60° di kanan, seperti tokoh permainan yang sedang membuka mulut.</td></tr>
+  </tbody>
+</table>
+
+<div class="awas"><p><code>FloodFill</code> hanya berhenti di warna batas yang disebut. Bila bidangnya tidak tertutup
+rapat, atau batasnya digambar dengan warna lain, cat bocor dan memenuhi seluruh layar.</p></div>
+
+<h2>Grafik Batang dan Diagram Pai</h2>
+
+<p>Kegunaan grafik yang paling nyata adalah menampilkan data. Kesulitannya: data punya satuan sendiri (rupiah, persen),
+sedangkan layar bersatuan piksel. Kita perlu <b>skala</b>. Untuk grafik batang, nilai terbesar dibuat setinggi area
+gambar, dan nilai lain sebanding dengannya.</p>
+
+<div class="sintaks"><pre>tinggi batang (piksel) = nilai * tinggi area / nilai maksimum
+sudut juring (derajat) = persen * 360 / 100</pre></div>
+
+<x-listing src="grafik_06_grafik_batang.pas"></x-listing>
+
+<x-run src="grafik_06_grafik_batang.pas" caption="Grafik batang tiga dimensi dengan skala otomatis"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10–16</td><td>Data dan ukuran area gambar sebagai konstanta: sumbu kiri di X = 100, garis dasar di Y = 380, tinggi area 280 piksel.</td></tr>
+    <tr><td>28–32</td><td>Judul diperbesar dua kali dan diratakan di tengah dengan <code>SetTextJustify(CenterText, TopText)</code>, sehingga titik <code>GetMaxX div 2</code> menjadi tengah judul. Sesudahnya ukuran dan perataan dikembalikan.</td></tr>
+    <tr><td>34–36</td><td>Mencari nilai terbesar, algoritma yang sama dengan Bab 11.</td></tr>
+    <tr><td>43</td><td>Rumus skala. Perkalian dikerjakan sebelum <code>div</code>: bila dibalik, <code>120 div 175</code> sudah bernilai 0 dan semua batang (kecuali yang tertinggi) menjadi rata. Batang bernilai maksimum tepat setinggi area.</td></tr>
+    <tr><td>47</td><td><code>Bar3D(x1, y1, x2, y2, Dalam, Atas)</code> menggambar balok dengan kedalaman 12 piksel. <code>TopOn</code> menggambar tutup atasnya. Karena Y bertambah ke bawah, puncak batang ada di <code>Dasar - T</code>.</td></tr>
+    <tr><td>48–52</td><td>Nilai dicetak di atas batang dan nama bulan di bawah garis dasar.</td></tr>
+  </tbody>
+</table>
+
+<x-listing src="grafik_07_diagram_pai.pas"></x-listing>
+
+<x-run src="grafik_07_diagram_pai.pas" caption="Diagram pai pengeluaran bulanan dengan legenda"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>27</td><td>Juring pertama mulai dari 0°, yaitu arah jam 3.</td></tr>
+    <tr><td>30</td><td>Sudut akhir = sudut awal + bagian dari 360°. Makan (35%) mendapat <code>35 * 360 div 100 = 126</code> derajat.</td></tr>
+    <tr><td>31</td><td>Juring terakhir dipaksa berakhir di 360°, supaya sisa pembulatan <code>div</code> tidak meninggalkan celah.</td></tr>
+    <tr><td>34–35</td><td>Juring digambar, lalu sudut akhirnya menjadi sudut awal juring berikutnya. Juring-juring tersusun berlawanan arah jarum jam.</td></tr>
+    <tr><td>38–40</td><td>Legenda memakai pola isian yang sama dengan juringnya, karena <code>SetFillStyle</code> di baris 32 masih berlaku untuk <code>Bar</code>.</td></tr>
+  </tbody>
+</table>
+
+<h2>Grafik Fungsi Matematika</h2>
+
+<p>Untuk menggambar kurva seperti <i>y</i> = sin <i>x</i>, kita harus menerjemahkan koordinat matematika ke koordinat
+layar. Ada dua perbedaan: titik nol matematika ingin kita letakkan di tengah layar, dan sumbu Y matematika mengarah ke
+atas, sedangkan sumbu Y layar mengarah ke bawah.</p>
+
+<figure class="grafik" id="gb-transformasi">
+<svg viewBox="0 0 680 170">
+  <rect class="box" x="10" y="20" width="200" height="130" rx="10"/>
+  <text class="h c" x="24" y="44">Matematika</text>
+  <text class="mono s" x="24" y="72">x = 2.0</text>
+  <text class="mono s" x="24" y="92">y = sin 2.0 = 0.91</text>
+  <text class="xs muted" x="24" y="122">sumbu y ke atas,</text>
+  <text class="xs muted" x="24" y="136">titik nol di tengah</text>
+  <path class="arrow" d="M210 85 H262"/>
+  <rect class="navy" x="266" y="20" width="200" height="130" rx="10"/>
+  <text class="mono code-fg" x="280" y="48">Px := 320 + Round(x * 50)</text>
+  <text class="mono code-fg" x="280" y="72">Py := 240 - Round(y * 50)</text>
+  <text class="xs" x="280" y="104" style="fill:#c9d4ff">tambah pusat, kali skala;</text>
+  <text class="xs" x="280" y="118" style="fill:#c9d4ff">y dikurangi karena layar</text>
+  <text class="xs" x="280" y="132" style="fill:#c9d4ff">mengarah ke bawah</text>
+  <path class="arrow" d="M466 85 H518"/>
+  <rect class="ok" x="522" y="20" width="148" height="130" rx="10"/>
+  <text class="h" x="536" y="44">Layar</text>
+  <text class="mono s" x="536" y="72">Px = 420</text>
+  <text class="mono s" x="536" y="92">Py = 195</text>
+  <text class="xs muted" x="536" y="122">45 piksel di atas</text>
+  <text class="xs muted" x="536" y="136">garis tengah</text>
+</svg>
+<figcaption>Menerjemahkan titik matematika ke piksel: geser ke pusat, kalikan skala, dan balik arah Y.</figcaption>
+</figure>
+
+<x-listing src="grafik_08_grafik_fungsi.pas"></x-listing>
+
+<x-run src="grafik_08_grafik_fungsi.pas" caption="Kurva sin <i>x</i>, cos <i>x</i>, dan <i>x</i>²/6 - 2 di atas kisi bersatuan 50 piksel"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>12–14</td><td>Pusat koordinat di tengah layar, dan satu satuan matematika = 50 piksel.</td></tr>
+    <tr><td>20–42</td><td><code>Kurva</code> menelusuri <i>x</i> dari -6 sampai 6 dengan langkah 0,05. Titik pertama hanya memindahkan pena (<code>MoveTo</code>); titik-titik berikutnya disambung dengan <code>LineTo</code>, sehingga kurva tampak mulus.</td></tr>
+    <tr><td>30–35</td><td><code>case</code> memilih rumus menurut <code>Jenis</code>: 1 untuk sinus, 2 untuk kosinus, lainnya parabola.</td></tr>
+    <tr><td>36–37</td><td>Rumus terjemahan koordinat. <code>Round</code> diperlukan karena piksel harus bilangan bulat.</td></tr>
+    <tr><td>50–57</td><td>Garis bantu abu-abu tua tiap satu satuan, lalu sumbu putih di atasnya.</td></tr>
+    <tr><td>59–61</td><td>Satu prosedur dipakai tiga kali dengan warna dan rumus berbeda.</td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p>Ubah <code>Skala</code> menjadi 80 lalu jalankan lagi. Kurvanya membesar, tetapi garis bantu
+masih tergambar tiap satu satuan karena rumusnya memakai <code>Skala</code>. Begitulah keuntungan konstanta: satu angka
+diubah, seluruh gambar menyesuaikan.</p></div>
+
+<h2>Animasi Tanpa Kedip dengan Dua Halaman</h2>
+
+<p>Animasi adalah rangkaian gambar diam yang ditampilkan bergantian dengan cepat, seperti buku bergambar yang dibalik.
+Cara paling sederhana: hapus layar, gambar posisi baru, tunggu sebentar, ulangi. Masalahnya, mata sempat melihat layar
+yang kosong atau setengah jadi, sehingga gambar tampak berkedip. Solusinya adalah <b>dua halaman</b>: satu halaman
+terlihat, satu lagi tersembunyi tempat kita menggambar. Setelah gambar selesai, keduanya ditukar.</p>
+
+<figure class="grafik" id="gb-dua-halaman">
+<svg viewBox="0 0 680 160">
+  <rect class="ok" x="10" y="20" width="180" height="110" rx="8"/>
+  <text class="b mid" x="100" y="44">Halaman 0</text>
+  <text class="s mid" x="100" y="66">terlihat</text>
+  <text class="xs mid muted" x="100" y="90">SetVisualPage(0)</text>
+  <text class="xs mid muted" x="100" y="106">gambar sudah jadi</text>
+  <rect class="dec" x="250" y="20" width="180" height="110" rx="8"/>
+  <text class="b mid" x="340" y="44">Halaman 1</text>
+  <text class="s mid" x="340" y="66">tersembunyi</text>
+  <text class="xs mid muted" x="340" y="90">SetActivePage(1)</text>
+  <text class="xs mid muted" x="340" y="106">ClearDevice, gambar bola baru</text>
+  <path class="arrow" d="M430 75 H486"/>
+  <rect class="box" x="490" y="20" width="180" height="110" rx="8"/>
+  <text class="b c mid" x="580" y="44">Tukar</text>
+  <text class="s mid" x="580" y="66">SetVisualPage(1)</text>
+  <text class="xs mid muted" x="580" y="90">halaman 1 terlihat,</text>
+  <text class="xs mid muted" x="580" y="106">halaman 0 jadi tempat menggambar</text>
+  <path class="dash" d="M580 130 V150 H100 V134"/>
+  <text class="xs mid muted" x="340" y="146">berulang setiap langkah animasi: Halaman := 1 - Halaman</text>
+</svg>
+<figcaption>Teknik dua halaman (<i>page flipping</i>): mata hanya pernah melihat gambar yang sudah selesai.</figcaption>
+</figure>
+
+<p>Mode VGAHi hanya punya satu halaman, jadi program berikut memakai mode <code>EGAHi</code> (640 x 350, 16 warna) yang
+punya dua. Piksel EGA sedikit lebih tinggi daripada lebarnya, dan jendela grafik Odin memperhitungkannya agar lingkaran
+tetap bulat.</p>
+
+<x-listing src="grafik_09_animasi_bola.pas"></x-listing>
+
+<x-run src="grafik_09_animasi_bola.pas" wait="2" caption="Bola memantul dalam mode EGAHi 640 x 350, diambil sekitar dua detik setelah program mulai"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>21–23</td><td>Driver <code>EGA</code> dengan mode <code>EGAHi</code>, mode yang punya dua halaman gambar.</td></tr>
+    <tr><td>26</td><td>Posisi awal bola (100, 80) dan kecepatannya: 6 piksel ke kanan dan 4 piksel ke bawah setiap langkah.</td></tr>
+    <tr><td>29</td><td>Animasi berjalan sampai ada tombol, atau paling lama 600 langkah.</td></tr>
+    <tr><td>31–38</td><td>Semua perintah gambar menuju halaman tersembunyi. <code>ClearDevice</code> menghapus halaman itu, lalu bingkai, bola, dan teks digambar ulang. Jari-jari tegak dikali 77/100 karena piksel EGA lebih tinggi daripada lebarnya.</td></tr>
+    <tr><td>40–41</td><td>Halaman yang baru selesai digambar ditampilkan, dan halaman lainnya menjadi tempat menggambar berikutnya. <code>1 - Halaman</code> menukar 0 dan 1.</td></tr>
+    <tr><td>43–46</td><td>Bola dipindahkan. Bila menyentuh dinding kiri atau kanan, arah mendatarnya dibalik; begitu juga dinding atas dan bawah.</td></tr>
+    <tr><td>48</td><td><code>Delay(25)</code> memberi jeda 25 milidetik, sekitar 40 gambar per detik.</td></tr>
+    <tr><td>50</td><td>Tombol yang menghentikan animasi diambil agar tidak tertinggal di antrean.</td></tr>
+  </tbody>
+</table>
+
+<h2>Sprite dengan GetImage, PutImage, dan XOR</h2>
+
+<p><b>Sprite</b> adalah gambar kecil yang bergerak di atas latar, seperti tokoh dalam permainan. Menggambar ulang seluruh
+latar setiap langkah terlalu lambat bila latarnya rumit. Trik klasiknya memakai operasi <b>XOR</b>. Menempelkan sebuah
+gambar dengan XOR mengubah warna latar di bawahnya; menempelkan gambar yang sama dengan XOR sekali lagi di tempat yang
+sama mengembalikan latar persis seperti semula. Ini mirip menyalakan lalu mematikan saklar: dua kali menekan, keadaan
+kembali.</p>
+
+<table class="data">
+  <caption>Rutin salin gambar</caption>
+  <thead><tr><th>Rutin</th><th>Kegunaan</th></tr></thead>
+  <tbody>
+    <tr><td><code>ImageSize(x1, y1, x2, y2)</code></td><td>banyak byte yang dibutuhkan untuk menyimpan daerah itu</td></tr>
+    <tr><td><code>GetImage(x1, y1, x2, y2, Buf)</code></td><td>menyalin daerah layar ke memori</td></tr>
+    <tr><td><code>PutImage(x, y, Buf, Cara)</code></td><td>menempelkan salinan dengan sudut kiri atas di (x, y); <code>Cara</code> = <code>CopyPut</code>, <code>XORPut</code>, <code>OrPut</code>, <code>AndPut</code>, atau <code>NotPut</code></td></tr>
+  </tbody>
+</table>
+
+<x-listing src="grafik_10_sprite_getimage.pas"></x-listing>
+
+<x-run src="grafik_10_sprite_getimage.pas" wait="1.2" caption="Wajah tersenyum meluncur di atas latar garis tanpa merusaknya"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>14–15</td><td>Sprite disimpan di memori dinamis lewat <code>Pointer</code>, seperti di Bab 18. <code>Ukuran</code> bertipe <code>LongInt</code> karena gambar besar bisa melebihi 32767 byte.</td></tr>
+    <tr><td>23–27</td><td>Latar berupa 48 garis miring berwarna.</td></tr>
+    <tr><td>30–36</td><td>Wajah digambar sekali di pojok kiri atas: lingkaran kuning, dua mata hitam, dan busur senyum dari 200° sampai 340°.</td></tr>
+    <tr><td>37–39</td><td>Memori dipesan sebesar <code>ImageSize</code>, lalu daerah 60 x 60 piksel itu disalin dengan <code>GetImage</code>. <code>Sprite^</code> berarti "data yang ditunjuk <code>Sprite</code>".</td></tr>
+    <tr><td>40</td><td>Menempelkan salinan dengan XOR di tempat asalnya menghapus wajah dari pojok.</td></tr>
+    <tr><td>44–51</td><td>Setiap langkah: tempel (tampil), tunggu 15 ms, tempel lagi di tempat yang sama (hilang, latar utuh), lalu geser 4 piksel ke kanan dengan lintasan bergelombang <code>Sin(X / 40)</code>.</td></tr>
+    <tr><td>56</td><td><code>FreeMem</code> mengembalikan memori sprite dengan ukuran yang sama seperti saat dipesan.</td></tr>
+  </tbody>
+</table>
+
+<div class="tip"><p>Karena XOR mengubah warna latar di bawahnya, sprite tampak sedikit berbeda di atas garis yang
+berbeda warna. Itu harga kecil untuk kecepatan: latar tidak pernah perlu digambar ulang.</p></div>
+
+<h2>Himpunan Mandelbrot</h2>
+
+<p>Himpunan Mandelbrot adalah gambar terkenal dari dunia matematika: rumus yang sangat pendek menghasilkan tepi yang
+rumitnya tak berujung. Setiap piksel dianggap sebagai bilangan kompleks <i>c</i> = <i>cr</i> + <i>ci</i>·i. Mulai dari
+<i>z</i> = 0, kita ulangi <i>z</i> := <i>z</i>² + <i>c</i>. Bila <i>z</i> tetap kecil selamanya, titik itu anggota himpunan
+(hitam). Bila <i>z</i> membesar melewati jarak 2 dari titik nol, titik itu bukan anggota, dan banyaknya putaran sampai
+lepas menentukan warnanya.</p>
+
+<div class="sintaks"><pre><i>z</i>² + <i>c</i> dengan <i>z</i> = Zr + Zi·i  menjadi:
+  Zr baru = Zr * Zr - Zi * Zi + Cr
+  Zi baru = 2 * Zr * Zi + Ci
+lepas bila Zr * Zr + Zi * Zi &gt;= 4   (jarak dari nol lebih dari 2)</pre></div>
+
+<x-listing src="grafik_11_mandelbrot.pas"></x-listing>
+
+<x-run src="grafik_11_mandelbrot.pas" wait="3" caption="Himpunan Mandelbrot 640 x 480: warna menunjukkan berapa putaran sampai titik itu lepas"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>13</td><td>Paling banyak 40 putaran per piksel. Makin besar, makin halus tepinya tetapi makin lama dihitung.</td></tr>
+    <tr><td>25–27</td><td>Dua perulangan bersarang mengunjungi semua 307.200 piksel, baris demi baris.</td></tr>
+    <tr><td>29–30</td><td>Piksel diterjemahkan ke bilangan kompleks: 200 piksel = 1 satuan, dengan titik nol di piksel (440, 240). Jadi layar mencakup <i>cr</i> dari -2,2 sampai 1,0.</td></tr>
+    <tr><td>34–40</td><td>Iterasi <i>z</i> := <i>z</i>² + <i>c</i>. <code>T</code> menyimpan <code>Zr</code> baru sementara, karena <code>Zi</code> baru masih memerlukan <code>Zr</code> lama.</td></tr>
+    <tr><td>41–44</td><td>Titik yang lepas diwarnai <code>1 + N mod 15</code> (warna 1 sampai 15); titik yang bertahan 40 putaran diwarnai hitam.</td></tr>
+    <tr><td>46</td><td>Pemeriksaan tombol di setiap baris, supaya perhitungan bisa dihentikan di tengah jalan.</td></tr>
+  </tbody>
+</table>
+
+<h2>Jam Analog</h2>
+
+<p>Jam analog menggabungkan trigonometri dengan waktu sistem. Sudut jam dihitung dari arah jam 12 dan bertambah
+<i>searah</i> jarum jam, berlawanan dengan sudut matematika pada <code>Arc</code>. Karena itu ujung jarum dihitung
+dengan <code>Sin</code> untuk X dan <code>Cos</code> untuk Y (dengan tanda minus, karena Y layar ke bawah). Jarum detik
+bergerak 6° per detik (360° / 60), jarum menit 6° per menit, dan jarum jam 30° per jam (360° / 12).</p>
+
+<x-listing src="grafik_12_jam_analog.pas"></x-listing>
+
+<x-run src="grafik_12_jam_analog.pas" wait="1.5" caption="Jam analog menunjukkan waktu komputer saat program dijalankan untuk buku ini"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>10</td><td>Unit <code>Dos</code> diperlukan untuk <code>GetTime</code>.</td></tr>
+    <tr><td>23–32</td><td><code>Jarum</code> mengubah derajat ke radian (<code>* Pi / 180</code>), lalu menggambar garis dari pusat ke ujung <code>(PusatX + Panjang * Sin, PusatY - Panjang * Cos)</code> dengan tebal yang diminta.</td></tr>
+    <tr><td>34–49</td><td><code>Muka</code> menggambar lingkaran dan 60 tanda menit. Setiap tanda kelima (posisi angka jam) lebih panjang dan berwarna kuning.</td></tr>
+    <tr><td>59–60</td><td><code>GetTime</code> membaca jam, menit, detik, dan perseratus detik. Jam digambar ulang hanya saat detik berganti, jadi layar tidak berkedip setiap 100 ms.</td></tr>
+    <tr><td>65</td><td>Jarum jam: 30° per jam ditambah setengah derajat per menit (<code>M / 2</code>), supaya jarum jam bergeser pelan di antara dua angka.</td></tr>
+    <tr><td>66–67</td><td>Jarum menit (6° per menit ditambah sedikit per detik) dan jarum detik (6° per detik).</td></tr>
+  </tbody>
+</table>
+
+<h2>Menggambar dengan Tombol Panah</h2>
+
+<p>Program grafik juga bisa interaktif. Jendela grafik meneruskan tombol ke program, sehingga <code>ReadKey</code>
+bekerja persis seperti di Bab 19: tombol panah dan tombol fungsi menghasilkan <code>#0</code> lebih dulu, lalu kode
+tombolnya. Program berikut menjadikan tombol panah sebagai pena gambar.</p>
+
+<table class="data compact">
+  <caption>Tombol pada Program 22.13</caption>
+  <thead><tr><th>Tombol</th><th>Aksi</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>gerakkan pena 4 piksel</td></tr>
+    <tr><td><kbd>Spasi</kbd></td><td>angkat atau turunkan pena</td></tr>
+    <tr><td><kbd>1</kbd> sampai <kbd>9</kbd></td><td>ganti warna pena</td></tr>
+    <tr><td><kbd>C</kbd></td><td>bersihkan layar</td></tr>
+    <tr><td><kbd>Esc</kbd> atau <kbd>Q</kbd></td><td>selesai</td></tr>
+  </tbody>
+</table>
+
+<x-listing src="grafik_13_gambar_dengan_keyboard.pas"></x-listing>
+
+<x-run src="grafik_13_gambar_dengan_keyboard.pas" keys="Right*30 Up*25 Left*30 Down*25 Up*25 4 Up*2 Right*2 Up*2 Right*2 Up*2 Right*2 Up*2 Right*2 Up*2 Right*2 Up*2 Right*2 Up*2 Right*2 Right*2 Down*2 Right*2 Down*2 Right*2 Down*2 Right*2 Down*2 Right*2 Down*2 Right*2 Down*2 Right*2 Down*2 Right*2 Space Left*19 Down*25 Space 6 Up*12 Right*7 Down*12 Esc" caption="Rumah yang digambar dengan sekitar 250 ketukan tombol: dinding hijau, atap merah (tombol <kbd>4</kbd>), pintu cokelat (tombol <kbd>6</kbd>)"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>22–30</td><td><code>Kursor</code> menggambar tanda silang dengan <code>SetWriteMode(XORPut)</code>, sehingga memanggilnya dua kali di tempat yang sama menghapusnya, trik yang sama dengan sprite. Sesudahnya mode dikembalikan ke <code>CopyPut</code>.</td></tr>
+    <tr><td>43–45</td><td>Pena mulai di tengah layar, berwarna hijau muda, dalam keadaan turun.</td></tr>
+    <tr><td>47–48</td><td>Tunggu satu tombol, lalu hapus tanda silang sebelum pena bergerak.</td></tr>
+    <tr><td>49–51</td><td>Tombol khusus: <code>ReadKey</code> pertama memberi <code>#0</code>, yang kedua kode tombolnya (72 atas, 80 bawah, 75 kiri, 77 kanan).</td></tr>
+    <tr><td>52–67</td><td>Bila pena turun, titik kini dipasang di posisi lama, posisi diubah, dibatasi agar tetap di layar, lalu <code>LineTo</code> menggambar garis ke posisi baru.</td></tr>
+    <tr><td>68</td><td><code>Tombol := #0</code> mencegah kode 81 (<kbd>PgDn</kbd>) dianggap huruf <code>'Q'</code> di syarat <code>until</code>.</td></tr>
+    <tr><td>71–79</td><td>Tombol biasa: spasi membalik <code>Turun</code>, angka mengganti warna (<code>Ord(Tombol) - Ord('0')</code> mengubah karakter <code>'4'</code> menjadi angka 4), <code>C</code> membersihkan layar.</td></tr>
+    <tr><td>81</td><td>Perulangan berakhir dengan <kbd>Esc</kbd> (<code>#27</code>), <kbd>Q</kbd>, atau <kbd>Ctrl</kbd>+<kbd>Z</kbd> (<code>#26</code>).</td></tr>
+  </tbody>
+</table>
+
+<div class="coba"><p>Atap rumah di atas berbentuk tangga, karena pena hanya bisa bergerak lurus. Tambahkan tombol
+<kbd>Home</kbd>, <kbd>PgUp</kbd>, <kbd>End</kbd>, dan <kbd>PgDn</kbd> (kode 71, 73, 79, 81) untuk bergerak miring,
+misalnya <code>#73: begin Dec(Y, Langkah); Inc(X, Langkah); end;</code>.</p></div>
+
+<h2>Teks di Layar Grafik</h2>
+
+<p>Di layar grafik, <code>Write</code> dan <code>WriteLn</code> tidak dipakai untuk menulis. Gantinya
+<code>OutTextXY(x, y, Teks)</code>, yang bisa menaruh teks di piksel mana saja. Bentuknya diatur oleh dua prosedur.</p>
+
+<table class="data">
+  <caption>Mengatur teks grafik</caption>
+  <thead><tr><th>Rutin</th><th>Kegunaan</th></tr></thead>
+  <tbody>
+    <tr><td><code>SetTextStyle(Font, Arah, Ukuran)</code></td><td>font, arah (<code>HorizDir</code> mendatar, <code>VertDir</code> tegak dibaca dari bawah ke atas), dan ukuran 1..10 (ukuran 1 = 8 x 8 piksel)</td></tr>
+    <tr><td><code>SetTextJustify(Datar, Tegak)</code></td><td>titik tumpu teks: <code>LeftText</code>, <code>CenterText</code>, <code>RightText</code> dan <code>TopText</code>, <code>CenterText</code>, <code>BottomText</code></td></tr>
+    <tr><td><code>TextWidth(S)</code>, <code>TextHeight(S)</code></td><td>lebar dan tinggi teks dalam piksel dengan gaya yang sedang berlaku</td></tr>
+  </tbody>
+</table>
+
+<x-listing src="grafik_14_teks_dan_font.pas"></x-listing>
+
+<x-run src="grafik_14_teks_dan_font.pas" caption="Lima ukuran huruf, teks tegak, teks di tengah kotak, dan tiga perataan pada garis merah yang sama"></x-run>
+
+<table class="baris">
+  <thead><tr><th>Baris</th><th>Penjelasan</th></tr></thead>
+  <tbody>
+    <tr><td>24–28</td><td>Ukuran 1 sampai 5. Posisi Y dihitung agar baris yang lebih besar mendapat ruang lebih banyak. <code>Chr(48 + I)</code> mengubah angka <code>I</code> menjadi karakter <code>'1'</code>..<code>'5'</code>.</td></tr>
+    <tr><td>32–33</td><td>Teks tegak berukuran 2 di sisi kanan, dibaca dari bawah ke atas.</td></tr>
+    <tr><td>36–41</td><td>Teks ukuran 3 ditengahkan di X = 320: lebarnya diukur dulu dengan <code>TextWidth</code>, lalu titik awalnya <code>320 - Lebar div 2</code>. Kotak di sekelilingnya diberi jarak 10 piksel.</td></tr>
+    <tr><td>46–53</td><td>Tiga teks bertumpu pada X = 320 yang sama (garis merah). <code>LeftText</code> mulai di garis, <code>CenterText</code> berpusat di garis, <code>RightText</code> berakhir di garis.</td></tr>
+    <tr><td>54</td><td>Perataan dikembalikan ke kiri atas untuk teks berikutnya.</td></tr>
+  </tbody>
+</table>
+
+<div class="info"><p>Turbo Pascal asli punya beberapa font garis (<i>stroked font</i>) dari berkas <code>*.CHR</code>,
+seperti <code>TriplexFont</code> dan <code>SansSerifFont</code>. Odin menerima semua nama font itu, tetapi semuanya
+digambar dengan font bitmap 8 x 8 yang diperbesar. Karena itu <code>TextWidth</code> dan <code>TextHeight</code> di Odin
+tidak sama persis dengan ukuran font aslinya; selalu ukur teks dengan kedua fungsi itu, jangan menebak.</p></div>
+
+<h2>Kesalahan yang Sering Terjadi</h2>
+
+<p><b>Lupa <code>uses Graph</code>.</b> Semua nama grafik, termasuk <code>Detect</code>, tidak dikenal kompiler.</p>
+
+<x-error name="tanpa_graph.pas" caption="Konstanta <code>Detect</code> dan rutin grafik lain berasal dari unit Graph">program tanpa_graph;
+
+uses Crt;
+
+var
+  Driver, Mode: Integer;
+
+begin
+  Driver := Detect;
+  InitGraph(Driver, Mode, '');
+  Circle(320, 240, 100);
+  ReadKey;
+  CloseGraph;
+end.</x-error>
+
+<p><b>Lupa <code>uses Crt</code>.</b> <code>ReadKey</code> dan <code>KeyPressed</code> bukan bagian dari Graph.</p>
+
+<x-error name="tanpa_crt.pas" caption="<code>ReadKey</code> berasal dari unit Crt">program tanpa_crt;
+
+uses Graph;
+
+var
+  Driver, Mode: Integer;
+
+begin
+  Driver := Detect;
+  InitGraph(Driver, Mode, '');
+  Circle(320, 240, 100);
+  ReadKey;
+  CloseGraph;
+end.</x-error>
+
+<p><b>Memberi warna berupa teks.</b> Warna adalah nomor 0..15 atau konstantanya, bukan string.</p>
+
+<x-error name="warna_salah.pas" caption="Pakai <code>Yellow</code> atau 14, bukan <code>'Kuning'</code>">program warna_salah;
+
+uses Crt, Graph;
+
+var
+  Driver, Mode: Integer;
+
+begin
+  Driver := Detect;
+  InitGraph(Driver, Mode, '');
+  SetColor('Kuning');
+  Circle(320, 240, 100);
+  ReadKey;
+  CloseGraph;
+end.</x-error>
+
+<ul>
+  <li><b>Gambar langsung hilang.</b> Tidak ada <code>ReadKey</code> sebelum <code>CloseGraph</code>, sehingga jendela
+  grafik tertutup sebelum gambarnya terlihat.</li>
+  <li><b>Gambar terbalik atas-bawah.</b> Rumus matematika memakai Y ke atas; di layar Y ke bawah. Kurangkan, jangan
+  tambahkan: <code>PusatY - Round(Y * Skala)</code>.</li>
+  <li><b>Lupa mengembalikan setelan.</b> <code>SetLineStyle</code>, <code>SetTextStyle</code>,
+  <code>SetTextJustify</code>, dan <code>SetWriteMode</code> berlaku sampai diubah lagi, sehingga gambar berikutnya ikut
+  tebal, besar, atau rata kanan.</li>
+  <li><b><code>FloodFill</code> bocor</b> karena bidangnya tidak tertutup rapat atau warna batasnya salah.</li>
+  <li><b>Memakai <code>WriteLn</code> untuk menulis di layar grafik.</b> Pakai <code>OutTextXY</code>.</li>
+  <li><b>Menutup jendela grafik untuk menghentikan program.</b> Menutup jendela tidak menghentikan program; pakai
+  <span class="menu">Run ▸ Stop</span>, atau beri program tombol untuk keluar.</li>
+</ul>
+
+<div class="rangkuman"><h2>Rangkuman</h2><ul>
+  <li>Layar grafik VGAHi berukuran 640 x 480 piksel dengan 16 warna; <code>(0, 0)</code> di kiri atas dan Y bertambah ke bawah. <code>GetMaxX</code> dan <code>GetMaxY</code> memberi koordinat terbesar selama mode grafik aktif.</li>
+  <li>Kerangka program grafik: <code>uses Crt, Graph</code>, <code>InitGraph</code> lalu periksa <code>GraphResult</code>, menggambar, <code>ReadKey</code>, <code>CloseGraph</code>. Di Odin, gambarnya tampil di jendela grafik sendiri.</li>
+  <li>Garis: <code>Line</code>, atau pena titik kini dengan <code>MoveTo</code>, <code>LineTo</code>, <code>LineRel</code>; bentuknya diatur <code>SetLineStyle</code>.</li>
+  <li>Bentuk: <code>Rectangle</code>, <code>Circle</code>, <code>Arc</code>, <code>Ellipse</code>, <code>DrawPoly</code>. Sudut 0° di arah jam 3 dan bertambah berlawanan arah jarum jam.</li>
+  <li>Isian: <code>SetFillStyle</code> atau <code>SetFillPattern</code>, lalu <code>Bar</code>, <code>Bar3D</code>, <code>FillEllipse</code>, <code>PieSlice</code>, atau <code>FloodFill</code>.</li>
+  <li>Warna adalah nomor laci palet; <code>SetRGBPalette</code> mengganti isi laci dan seluruh piksel bernomor itu ikut berubah.</li>
+  <li>Data dan rumus digambar lewat skala dan terjemahan koordinat: geser ke pusat, kalikan skala, balik arah Y.</li>
+  <li>Animasi tanpa kedip memakai dua halaman (<code>SetActivePage</code>, <code>SetVisualPage</code>); sprite bergerak di atas latar dengan <code>GetImage</code> dan <code>PutImage</code> secara XOR.</li>
+  <li>Teks grafik ditulis dengan <code>OutTextXY</code>, diatur dengan <code>SetTextStyle</code> dan <code>SetTextJustify</code>, dan diukur dengan <code>TextWidth</code> dan <code>TextHeight</code>.</li>
+</ul></div>
+
+<div class="latihan"><h2>Latihan</h2><ol>
+  <li><span class="lv dasar">Dasar</span> Gambar bendera Merah Putih berukuran 300 x 200 piksel di tengah layar dengan dua <code>Bar</code>, diberi bingkai putih dengan <code>Rectangle</code>.</li>
+  <li><span class="lv dasar">Dasar</span> Gambar sepuluh lingkaran sepusat di tengah layar dengan jari-jari 20, 40, sampai 200, masing-masing dengan warna berbeda (gunakan perulangan).</li>
+  <li><span class="lv dasar">Dasar</span> Perbaiki Program 22.1 agar mencetak <code>Maks X = 639 dan maks Y = 479</code> sesudah <code>CloseGraph</code>, dengan menyimpan nilai <code>GetMaxX</code> dan <code>GetMaxY</code> lebih dulu.</li>
+  <li><span class="lv menengah">Menengah</span> Ubah Program 22.6 agar data penjualan diketik pengguna di layar teks sebelum <code>InitGraph</code>, lalu digambar sebagai grafik batang.</li>
+  <li><span class="lv menengah">Menengah</span> Tambahkan kurva <i>y</i> = 0,5<i>x</i> + 1 (garis lurus) ke Program 22.8, lengkap dengan labelnya, memakai warna kuning.</li>
+  <li><span class="lv menengah">Menengah</span> Ubah Program 22.9 agar ada dua bola dengan warna, posisi awal, dan kecepatan berbeda yang memantul bersamaan.</li>
+  <li><span class="lv tantangan">Tantangan</span> Perbesar bagian Mandelbrot di sekitar titik (-0,75, 0,1): ubah rumus di baris 29–30 agar 1 satuan = 2000 piksel dengan titik itu di tengah layar, dan naikkan <code>Maks</code> menjadi 100. Apa yang terlihat?</li>
+  <li><span class="lv tantangan">Tantangan</span> Gabungkan dengan Bab 21: buat class abstrak <code>TBentuk</code> dengan method virtual <code>Gambar</code>, turunan <code>TLingkaran</code> dan <code>TKotak</code>, lalu gambar sepuluh bentuk acak dari sebuah larik <code>TBentuk</code>.</li>
+</ol></div>
